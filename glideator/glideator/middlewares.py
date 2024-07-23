@@ -2,6 +2,7 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import random
 
 from scrapy import signals
 
@@ -101,3 +102,14 @@ class GlideatorDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class RandomProxyMiddleware:
+    def __init__(self):
+        self.proxies = [
+            "http://35.185.196.38:3128",
+        ]
+
+    def process_request(self, request, spider):
+        proxy = random.choice(self.proxies)
+        request.meta['proxy'] = proxy
