@@ -23,7 +23,7 @@ class FlightsSpider(scrapy.Spider):
                 "playwright_include_page": True,
                 "playwright_context": "new",
                 "playwright_context_kwargs": {
-                    "proxy": {"server": "http://35.185.196.38:3128"} # "http://163.172.33.137:4671" "http://35.185.196.38:3128"
+                    "proxy": {"server": "http://35.185.196.38:3128"} # "http://35.185.196.38:3128" "http://163.172.33.137:4671" "http://35.185.196.38:3128"
                 },
                 'playwright_page_methods': [
                     PageMethod('wait_for_timeout', 5000),
@@ -32,21 +32,24 @@ class FlightsSpider(scrapy.Spider):
         )
 
     def start_requests(self):
-        url = self.base_url + f'#filter[date]=2024-07-19@filter[country]=CZ@filter[detail_glider_catg]=FAI3'
+        url = self.base_url + f'#filter[date]=2024-07-20@filter[country]=CZ@filter[detail_glider_catg]=FAI3'
         yield self.get_response_spec(url, False)
 
     async def parse(self, response):
         page = response.meta['playwright_page']
+        await page.wait_for_selector('//table[contains(@class, "XClist")]')
+        await page.wait_for_selector('//div[contains(@class, "XCpager")]')
         content = await page.content()
         selector = Selector(text=content)
         await page.close()
+        await page.context.close()
         date_str = re.search(r'filter\[date\]=(\d{4}-\d{2}-\d{2})', response.url).group(1)
         table = selector.xpath('//table[contains(@class, "XClist")]')
         flights = table.xpath('.//tbody/tr')
         for flight in flights:
             yield {
                 'date': date_str,
-                'start_time': _parse_start_time(flight),
+                'start_time': flight.xpath('.//td[2]//div/em/text()').get().strip(),
                 'pilot': flight.xpath('./td[3]/div/a/b/text()').get().strip(),
                 'launch': flight.xpath('.//td[4]//div[@class="full"]/a/text()').get().strip(),
                 'type': flight.xpath('.//td[5]//text()').get().strip(),
@@ -64,23 +67,4 @@ class FlightsSpider(scrapy.Spider):
     async def errback_close_page(self, failure):
         page = failure.request.meta["playwright_page"]
         await page.close()
-
-
-def _parse_start_time(flight):
-    time_str = flight.xpath('.//td[2]//div/em/text()').get().strip()
-    utc_offset = flight.xpath('.//td[2]//div/span[@class="XCutcOffset"]/text()').get().strip()
-    tz = _parse_time_zone(utc_offset)
-    dt = datetime.strptime(time_str, "%H:%M").time()
-    return dt.replace(tzinfo=tz)
-
-
-def _parse_time_zone(timezone_str):
-    timezone_str = timezone_str[1:]
-    sign = timezone_str[3]
-    hours = int(timezone_str[4:6])
-    minutes = int(timezone_str[7:])
-    total_minutes = hours * 60 + minutes
-    if sign == '-':
-        total_minutes = -total_minutes
-    offset = timedelta(minutes=total_minutes)
-    return timezone(offset)
+        await page.context.close()
