@@ -10,37 +10,27 @@ from scrapy_playwright.page import PageMethod
 
 class FlightsSpider(scrapy.Spider):
     name = 'flights'
-    start_urls = ["https://www.xcontest.org/world/en/flights/daily-score-pg/"]
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        # Add more user agents as needed
-    ]
+    base_url = "https://www.xcontest.org/world/en/flights/daily-score-pg/"
 
     
     def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(
-                url=url,
-                callback=self.parse,
-                headers={'User-Agent': random.choice(self.user_agents)},
-                errback=self.errback_close_page,
-                meta={
-                    "playwright": True,
-                    "playwright_include_page": True,
-                    "playwright_context": "new",
-                    "playwright_context_kwargs": {
-                        "proxy": {"server": "http://35.185.196.38:3128"} # "http://163.172.33.137:4671" "http://35.185.196.38:3128"
-                    },
-                    'playwright_page_methods': [
-                        PageMethod('wait_for_selector', '#flights > div.XCslotFilter > form'),
-                        PageMethod('select_option', '//*[@id="flights"]/div[1]/form/fieldset/table/tbody/tr/td[1]/select', '2024-07-19'),
-                        PageMethod('select_option', '//*[@id="flights"]/div[1]/form/fieldset/table/tbody/tr/td[2]/select', 'CZ'),
-                        PageMethod('select_option', '//*[@id="flights"]/div[1]/form/fieldset/table/tbody/tr/td[3]/select', 'FAI3'),
-                        PageMethod('wait_for_timeout', 5000),
-                    ]
-                }
-            )
+        url = self.base_url + f'#filter[date]=2024-07-19@filter[country]=CZ@filter[detail_glider_catg]=FAI3'
+        yield scrapy.Request(
+            url=url,
+            callback=self.parse,
+            errback=self.errback_close_page,
+            meta={
+                "playwright": True,
+                "playwright_include_page": True,
+                "playwright_context": "new",
+                "playwright_context_kwargs": {
+                    "proxy": {"server": "http://35.185.196.38:3128"} # "http://163.172.33.137:4671" "http://35.185.196.38:3128"
+                },
+                'playwright_page_methods': [
+                    PageMethod('wait_for_timeout', 5000),
+                ]
+            }
+        )
 
     async def parse(self, response):
         page = response.meta['playwright_page']
@@ -62,6 +52,28 @@ class FlightsSpider(scrapy.Spider):
                 'glider_cat': flight.xpath('.//td[9]//text()').get().strip(),
                 'glider': flight.xpath('.//td[9]//div/@title').get().strip()
             }
+        next_href = response.xpath('//div[contains(@class, "XCpager")]//a[contains(@title, "next page")]/@href').get().strip()
+        next_url = self.base_url + next_href
+        if next_url != response.url:
+            yield scrapy.Request(
+                    url=next_url,
+                    callback=self.parse,
+                    errback=self.errback_close_page,
+                    dont_filter=True,
+                    meta={
+                        "playwright": True,
+                        "playwright_include_page": True,
+                        "playwright_context": "new",
+                        "playwright_context_kwargs": {
+                            "proxy": {"server": "http://35.185.196.38:3128"} # "http://163.172.33.137:4671" "http://35.185.196.38:3128"
+                        },
+                        'playwright_page_methods': [
+                            PageMethod('wait_for_timeout', 5000),
+                        ]
+                    }
+                )
+            
+        
 
     async def errback_close_page(self, failure):
         page = failure.request.meta["playwright_page"]

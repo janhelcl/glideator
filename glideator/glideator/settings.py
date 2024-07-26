@@ -53,7 +53,8 @@ COOKIES_ENABLED = False
 DOWNLOADER_MIDDLEWARES = {
    "scrapy_user_agents.middlewares.RandomUserAgentMiddleware": None, #400
    'glideator.middlewares.RandomProxyMiddleware': None, #410
-   'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 400,
+   'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+   'glideator.middlewares.UrlDecoderDownloaderMiddleware': 900,
 }
 
 DOWNLOAD_HANDLERS = {

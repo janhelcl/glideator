@@ -113,3 +113,10 @@ class RandomProxyMiddleware:
     def process_request(self, request, spider):
         proxy = random.choice(self.proxies)
         request.meta['proxy'] = proxy
+
+
+class UrlDecoderDownloaderMiddleware(object):
+
+    def process_request(self, request, spider):
+        request._url = request.url.replace("%5B", "[")
+        request._url = request.url.replace("%5D", "]")
