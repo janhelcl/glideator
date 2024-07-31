@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = "glideator.spiders"
 #USER_AGENT = "glideator (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+# ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
@@ -36,7 +36,8 @@ COOKIES_ENABLED = False
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
+    # 'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
+    'glideator.middlewares.PlaywrightRetryMiddleware': 543,
     'glideator.middlewares.UrlDecoderDownloaderMiddleware': 900,
 }
 
@@ -48,7 +49,7 @@ DOWNLOAD_HANDLERS = {
 PLAYWRIGHT_LAUNCH_OPTIONS = {
     "headless": True,
 }
-PLAYWRIGHT_BROWSER_TYPE = "firefox"
+PLAYWRIGHT_BROWSER_TYPE = "firefox"#"firefox" "webkit" "chromium"
 # PLAYWRIGHT_MAX_CONTEXTS = 1
 HTTPCACHE_ENABLED = False
 
@@ -61,6 +62,10 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 1
-AUTOTHROTTLE_MAX_DELAY = 3
+AUTOTHROTTLE_ENABLED = False
+# AUTOTHROTTLE_START_DELAY = 5
+# AUTOTHROTTLE_MAX_DELAY = 30
+# AUTOTHROTTLE_DEBUG = True
+
+RETRY_ENABLED = True
+RETRY_TIMES = 3
