@@ -102,10 +102,10 @@ class FlightsSpider(scrapy.Spider):
             if retries <= self.max_retries:
                 self.logger.info(f'Sleeping after TimeoutError on {failure.request.url} for {self.sleep_on_timeout}s')
                 time.sleep(self.sleep_on_timeout)
-                self.logger.debug(f"Retrying {failure.request} (failed {retries} times) due to timeout.")
+                self.logger.info(f"Retrying {failure.request} (failed {retries} times) due to timeout.")
                 yield self.get_request_spec(failure.request.url, date, retry_times=retries)
             else:
-                self.logger.debug(f"Gave up retrying {failure.request} (failed {retries} times) due to timeout.")
+                self.logger.info(f"Gave up retrying {failure.request} (failed {retries} times) due to timeout.")
                 self.failed_rls.append((date, failure.request.url))
         else:
             self.logger.error(f'Error on date: {date}, url: {failure.request.url}')
