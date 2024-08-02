@@ -6,19 +6,32 @@ import time
 import scrapy
 from scrapy.selector import Selector
 from scrapy_playwright.page import PageMethod
-from scrapy import signals
 from playwright.async_api import TimeoutError
-
 
 
 class FlightsSpider(scrapy.Spider):
     name = 'flights'
-    start_url = "https://www.xcontest.org/world/en/flights/daily-score-pg/#filter[date]={date}@filter[country]=CZ@filter[detail_glider_catg]=FAI3"
+    base_url = "https://www.xcontest.org/{year}world/en/flights/daily-score-pg/"
+    fragment = "#filter[date]={date}@filter[country]=CZ@filter[detail_glider_catg]=FAI3"
+    max_retries = 5
+    sleep_on_timeout = 60 * 5
     dates_in_process = []
     failed_rls = []
     
-    
-    def get_request_spec(self, url, date):
+    def resolve_url(self, date):
+        dt = datetime.strptime(date, "%Y-%m-%d")
+        dt_now = datetime.now()
+        if dt.month >= 10:
+            year = dt.year+1
+        else:
+            year = dt.year
+        if year == dt_now.year:
+            year = ""
+        else:
+            year = f"{year}/"
+        return self.base_url.format(year=year) + self.fragment.format(date=date)
+
+    def get_request_spec(self, url, date, retry_times=0):
         return scrapy.Request(
             url=url,
             callback=self.parse,
@@ -26,11 +39,12 @@ class FlightsSpider(scrapy.Spider):
             dont_filter=True,
             meta={
                 "date": date,
+                "retry_times": retry_times,
                 "playwright": True,
                 "playwright_include_page": True,
                 "playwright_context": "XC",
                 "playwright_context_kwargs": {
-                    "proxy": {"server": "http://35.185.196.38:3128"} # "http://35.185.196.38:3128" "http://163.172.33.137:4671" "34.122.187.196:80"
+                    "proxy": {"server": "http://35.185.196.38:3128"} # "http://35.185.196.38:3128" "http://163.172.33.137:4671" "http://34.122.187.196:80"
                 },
                 'playwright_page_methods': [
                     PageMethod('wait_for_selector', '//table[contains(@class, "XClist")]'),
@@ -45,7 +59,7 @@ class FlightsSpider(scrapy.Spider):
         for date in date_range(start_date, end_date):
             self.dates_in_process.append(date)
             time.sleep(random.uniform(3, 5))
-            url = self.start_url.format(date=date)
+            url = self.resolve_url(date)
             yield self.get_request_spec(url, date)
 
     async def parse(self, response):
@@ -76,18 +90,31 @@ class FlightsSpider(scrapy.Spider):
             yield self.get_request_spec(next_url, date)
         else:
             self.dates_in_process.remove(date)
-            
+   
     async def errback_close_page(self, failure):
         page = failure.request.meta["playwright_page"]
         date = failure.request.meta["date"]
         await page.close()
-        self.logger.error(f'Error on date: {date}, url: {failure.request.url}')
-        self.logger.error(repr(failure))
-        self.failed_rls.append((date, failure.request.url))
-        
+        if failure.check(TimeoutError):
+            self.logger.error(f'TimeoutError on date: {failure.request.meta["date"]}, url: {failure.request.url}')
+            self.logger.error(repr(failure))
+            retries = failure.request.meta.get('retry_times', 0) + 1
+            if retries <= self.max_retries:
+                self.logger.info(f'Sleeping after TimeoutError on {failure.request.url} for {self.sleep_on_timeout}s')
+                time.sleep(self.sleep_on_timeout)
+                self.logger.debug(f"Retrying {failure.request} (failed {retries} times) due to timeout.")
+                yield self.get_request_spec(failure.request.url, date, retry_times=retries)
+            else:
+                self.logger.debug(f"Gave up retrying {failure.request} (failed {retries} times) due to timeout.")
+                self.failed_rls.append((date, failure.request.url))
+        else:
+            self.logger.error(f'Error on date: {date}, url: {failure.request.url}')
+            self.logger.error(repr(failure))
+            self.failed_rls.append((date, failure.request.url))
+
     def closed(self, reason):
         self.logger.info(f'Unprocessed requests: {sorted(self.failed_rls)}')
-        self.logger.info(f'Days inprocessing: {sorted(self.dates_in_process)}')
+        self.logger.info(f'Days in processing: {sorted(self.dates_in_process)}')
 
 
 def date_range(start_date, end_date):
