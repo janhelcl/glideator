@@ -13,6 +13,8 @@ from psycopg2 import sql
 
 
 FILE_PATTERN = 'flights_*.jsonl'
+SCHEMA = 'source'
+TABLE = 'flights'
 
 
 def load_data_to_db(folder_path, db_config):
@@ -28,7 +30,25 @@ def load_data_to_db(folder_path, db_config):
 
     file_pattern = os.path.join(folder_path, FILE_PATTERN)
     files = glob.glob(file_pattern)
-
+    
+    create_query = f"""
+        CREATE SCHEMA IF NOT EXISTS {SCHEMA};
+        CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+            date DATE NOT NULL,
+            start_time TIME NOT NULL,
+            pilot VARCHAR(255) NOT NULL,
+            launch VARCHAR(255) NOT NULL,
+            type CHAR(2) NOT NULL,
+            length NUMERIC(5, 2) NOT NULL,
+            points NUMERIC(5, 2) NOT NULL,
+            glider_cat CHAR(2) NOT NULL,
+            glider VARCHAR(255) NOT NULL,
+            flight_id INTEGER PRIMARY KEY
+            ); 
+        """
+    cursor.execute(create_query)
+    conn.commit()
+    
     for file in files:
         rows_processed = 0
         with open(file, 'r', encoding='utf-8') as f:
@@ -39,8 +59,8 @@ def load_data_to_db(folder_path, db_config):
                 if 'lenght' in data:
                     data['length'] = data['lenght']
                 
-                insert_query = sql.SQL("""
-                    INSERT INTO flights_raw (date, start_time, pilot, launch, type, length, points, glider_cat, glider, flight_id)
+                insert_query = sql.SQL(f"""
+                    INSERT INTO {SCHEMA}.{TABLE} (date, start_time, pilot, launch, type, length, points, glider_cat, glider, flight_id)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """)
                 cursor.execute(insert_query, (
