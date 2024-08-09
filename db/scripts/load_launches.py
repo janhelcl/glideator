@@ -99,5 +99,4 @@ if __name__ == "__main__":
         'port': os.getenv('DB_PORT')
     }
     launches = fetch_data()
-    # print(launches[0])
     load_data_to_db(launches, db_config)
