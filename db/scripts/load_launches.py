@@ -1,10 +1,11 @@
 """
-Loads launches data from a JSONL file into a PostgreSQL database.
+Loads launches data from "Startovacky" API into a PostgreSQL database.
 """
 import os
 import json
 import logging
 import requests
+from datetime import datetime
 
 import psycopg2
 from psycopg2 import sql
@@ -52,18 +53,20 @@ def load_data_to_db(launches, db_config):
             wind_optimal_from INTEGER,
             wind_optimal_to INTEGER,
             flying_status INTEGER,
-            active BOOLEAN
+            active BOOLEAN,
+            loaded_dttm TIMESTAMPTZ
             ); 
         """
     cursor.execute(create_query)
     conn.commit()
-
+    
+    current_time = datetime.utcnow()
     rows_processed = 0
     for launch in launches:
         insert_query = sql.SQL(f"""
             INSERT INTO {SCHEMA}.{TABLE} (id, name, latitude, longitude, altitude, superelevation, wind_usable_from, 
-                                          wind_usable_to, wind_optimal_from, wind_optimal_to, flying_status, active)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                          wind_usable_to, wind_optimal_from, wind_optimal_to, flying_status, active, loaded_dttm)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """)
         cursor.execute(insert_query, (
             launch['id'],
@@ -78,6 +81,7 @@ def load_data_to_db(launches, db_config):
             launch['wind_optimal_to'],
             launch['flying_status'],
             launch['active'],
+            current_time
         ))
         rows_processed += 1
     logging.info(f'Processed {rows_processed} rows from API: {API_URL}')
