@@ -1,0 +1,6 @@
+jupyterlab
+psycopg2-binary
+pandas
+python-dotenv
+SQLAlchemy
+plotnine
