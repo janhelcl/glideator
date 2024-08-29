@@ -72,7 +72,7 @@ def load_data_to_db(launches, db_config):
             launch['id'],
             launch['name'],
             launch['latitude'],
-            launch['latitude'],
+            launch['longitude'],
             launch['altitude'],
             launch['superelevation'],
             launch['wind_usable_from'],
