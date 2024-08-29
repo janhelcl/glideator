@@ -15,4 +15,4 @@ SELECT
 	END is_official,
 	active AS is_active,
 	loaded_dttm AS loaded_at
-FROM source.launches
+FROM {{ source('launches', 'launches') }}

@@ -35,6 +35,6 @@ models:
     stage:
       +materialized: view
       +schema: stage
-    intermediate:
+    mart:
       +materialized: view
-      +schema: intermediate
+      +schema: mart

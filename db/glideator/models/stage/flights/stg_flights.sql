@@ -8,5 +8,5 @@ SELECT
 	points,
 	glider_cat,
 	glider
-FROM source.flights
+FROM {{ source('flights', 'flights') }}
 WHERE launch != '?' AND glider_cat != 'HG'

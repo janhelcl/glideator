@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: flights
+    description: Flights as scraped from XContest
+    schema: source
+    tables:
+      - name: flights

@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: launches
+    description: Launches downloaded via API from https://www.paragliding-mapa.cz/
+    schema: source
+    tables:
+      - name: launches
