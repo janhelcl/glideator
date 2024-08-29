@@ -35,3 +35,6 @@ models:
     stage:
       +materialized: view
       +schema: stage
+    intermediate:
+      +materialized: view
+      +schema: intermediate
