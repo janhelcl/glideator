@@ -12,7 +12,7 @@ SELECT
 		WHEN flying_status = 1 THEN true
 		WHEN flying_status = 2 THEN true
 		ELSE false
-	END official,
-	active,
-	loaded_dttm
+	END is_official,
+	active AS is_active,
+	loaded_dttm AS loaded_at
 FROM source.launches
