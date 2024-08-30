@@ -8,8 +8,8 @@ launches AS (
 
 date_range AS (
 	SELECT
-		MIN(date) AS min_date,
-		MAX(date) AS max_date
+		DATE_TRUNC('month', MIN(date)) AS min_date,
+		DATE_TRUNC('month', MAX(date)) AS max_date
 	FROM flights
 ),
 
