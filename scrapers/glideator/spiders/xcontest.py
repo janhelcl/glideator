@@ -10,6 +10,22 @@ from playwright.async_api import TimeoutError
 
 
 class FlightsSpider(scrapy.Spider):
+    """
+    A Scrapy spider for scraping flight data from XContest.org.
+
+    This spider crawls through daily flight records, extracting detailed information
+    about each flight including pilot, launch site, flight type, distance, and more.
+
+    Attributes:
+        name (str): The name of the spider.
+        base_url (str): The base URL for XContest flight data.
+        fragment (str): URL fragment for filtering flights.
+        max_retries (int): Maximum number of retry attempts for failed requests.
+        sleep_on_timeout (int): Time to sleep (in seconds) after a timeout before retrying.
+        dates_in_process (list): List of dates currently being processed.
+        failed_rls (list): List of failed requests (date, URL pairs).
+    """
+
     name = 'flights'
     base_url = "https://www.xcontest.org/{year}world/en/flights/daily-score-pg/"
     fragment = "#filter[date]={date}@filter[country]=CZ@filter[detail_glider_catg]=FAI3"
@@ -19,6 +35,15 @@ class FlightsSpider(scrapy.Spider):
     failed_rls = []
     
     def resolve_url(self, date):
+        """
+        Resolve the full URL for a given date.
+
+        Args:
+            date (str): The date in 'YYYY-MM-DD' format.
+
+        Returns:
+            str: The full URL for the given date.
+        """
         dt = datetime.strptime(date, "%Y-%m-%d")
         dt_now = datetime.now()
         if dt.month >= 10:
@@ -32,6 +57,17 @@ class FlightsSpider(scrapy.Spider):
         return self.base_url.format(year=year) + self.fragment.format(date=date)
 
     def get_request_spec(self, url, date, retry_times=0):
+        """
+        Generate a Scrapy Request object with necessary metadata and Playwright configurations.
+
+        Args:
+            url (str): The URL to request.
+            date (str): The date associated with the request.
+            retry_times (int, optional): Number of times this request has been retried. Defaults to 0.
+
+        Returns:
+            scrapy.Request: A configured Scrapy Request object.
+        """
         return scrapy.Request(
             url=url,
             callback=self.parse,
@@ -54,6 +90,12 @@ class FlightsSpider(scrapy.Spider):
         )
 
     def start_requests(self):
+        """
+        Initialize the spider by generating requests for each date in the specified range.
+
+        Yields:
+            scrapy.Request: A request for each date in the range.
+        """
         start_date = getattr(self, "start_date", None)
         end_date = getattr(self, "end_date", None)
         for date in date_range(start_date, end_date):
@@ -63,6 +105,15 @@ class FlightsSpider(scrapy.Spider):
             yield self.get_request_spec(url, date)
 
     async def parse(self, response):
+        """
+        Parse the response from each request, extracting flight data.
+
+        Args:
+            response (scrapy.http.Response): The response object.
+
+        Yields:
+            dict: Extracted flight data for each flight on the page.
+        """
         page = response.meta['playwright_page']
         content = await page.content()
         selector = Selector(text=content)
@@ -92,6 +143,15 @@ class FlightsSpider(scrapy.Spider):
             self.dates_in_process.remove(date)
    
     async def errback_close_page(self, failure):
+        """
+        Handle errors during the scraping process, including timeouts and retries.
+
+        Args:
+            failure (twisted.python.failure.Failure): The failure object containing error details.
+
+        Yields:
+            scrapy.Request: A new request in case of a retry.
+        """
         page = failure.request.meta["playwright_page"]
         date = failure.request.meta["date"]
         await page.close()
@@ -113,11 +173,31 @@ class FlightsSpider(scrapy.Spider):
             self.failed_rls.append((date, failure.request.url))
 
     def closed(self, reason):
+        """
+        Log information about unprocessed requests and dates still in processing when the spider closes.
+
+        Args:
+            reason (str): The reason for closing the spider.
+        """
         self.logger.info(f'Unprocessed requests: {sorted(self.failed_rls)}')
         self.logger.info(f'Days in processing: {sorted(self.dates_in_process)}')
 
 
 def date_range(start_date, end_date):
+    """
+    Generate a list of dates between two given dates, inclusive.
+
+    Args:
+        start_date (str): The start date in 'YYYY-MM-DD' format.
+        end_date (str): The end date in 'YYYY-MM-DD' format.
+
+    Returns:
+        list: A list of date strings in 'YYYY-MM-DD' format, including both start and end dates.
+
+    Example:
+        >>> date_range('2023-01-01', '2023-01-05')
+        ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05']
+    """
     start = datetime.strptime(start_date, "%Y-%m-%d")
     end = datetime.strptime(end_date, "%Y-%m-%d")
     date_list = []
@@ -129,6 +209,27 @@ def date_range(start_date, end_date):
 
 
 def increment_start_filter(url):
+    """
+    Increment the 'flights[start]' parameter in the given URL or add it if not present.
+
+    This function is used to paginate through flight results by updating the starting
+    index for flights in the URL.
+
+    Args:
+        url (str): The URL to modify.
+
+    Returns:
+        str: The updated URL with an incremented or newly added 'flights[start]' parameter.
+
+    Example:
+        >>> url = "https://example.com/flights@flights[start]=200"
+        >>> increment_start_filter(url)
+        "https://example.com/flights@flights[start]=300"
+
+        >>> url = "https://example.com/flights"
+        >>> increment_start_filter(url)
+        "https://example.com/flights@flights[start]=100"
+    """
     pattern = r'@flights\[start\]=(\d+)'
     match = re.search(pattern, url)
     if match:
