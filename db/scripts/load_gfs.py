@@ -144,7 +144,10 @@ def get_gfs_data(start_date, end_date, launches, engine):
     """
     logging.info(f"Fetching GFS data from {start_date} to {end_date}.")
     for date in pd.date_range(start_date, end_date):
-        get_gfs_for_day(date, launches, engine)
+        try:
+            get_gfs_for_day(date, launches, engine)
+        except Exception as e:
+            logging.error(f"Error fetching GFS data for {date}: {e}")
     logging.info("Completed fetching GFS data for the date range.")
 
 
