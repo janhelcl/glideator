@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: gfs
+    description: Data downloaded from the GFS archive
+    schema: source
+    tables:
+      - name: wind_isobaric
+        description: Wind data at isobaric levels
+      - name: temp_isobaric
+        description: Temperature data at isobaric levels
+      - name: wind_height
+        description: Wind data at height above ground
