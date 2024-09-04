@@ -8,14 +8,14 @@ launches AS (
 
 date_range AS (
 	SELECT
-		DATE_TRUNC('month', MIN(date)) AS min_date,
-		DATE_TRUNC('month', MAX(date)) AS max_date
+		DATE(MIN(date)) AS min_date,
+		DATE(MAX(date)) AS max_date
 	FROM flights
 ),
 
 all_dates AS (
 	SELECT
-		GENERATE_SERIES(min_date::date, max_date::date, '1 day') AS date
+		DATE(GENERATE_SERIES(min_date::date, max_date::date, '1 day')) AS date
 	FROM date_range
 ),
 
