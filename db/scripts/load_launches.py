@@ -1,8 +1,21 @@
 """
-Loads launches data from "Startovacky" API into a PostgreSQL database.
+This script is responsible for loading paragliding launch site data from the "Startovacky" API into a PostgreSQL database.
+
+Key features:
+1. Fetches launch site data for the Czech Republic from the paragliding-mapa.cz API.
+2. Processes and transforms the API response data.
+3. Loads the processed data into a specified PostgreSQL database table.
+
+The script uses the following main components:
+- requests: For making HTTP requests to the API.
+- psycopg2: For PostgreSQL database operations.
+- dotenv: For loading environment variables.
+
+Usage:
+This script is typically run as part of a data pipeline to update paragliding launch site information.
+It requires proper environment setup, including database credentials stored in a .env file.
 """
 import os
-import json
 import logging
 import requests
 from datetime import datetime
@@ -18,6 +31,12 @@ API_URL = 'https://www.paragliding-mapa.cz/api/v0.1/launch?country=cz'
 
 
 def fetch_data():
+    """
+    Fetch data from the API.
+
+    Returns:
+        list: A list of launch data from the API response.
+    """
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.info(f"Fetching data from API: {API_URL}")
     response = requests.get(API_URL)
@@ -28,6 +47,13 @@ def fetch_data():
 
 
 def load_data_to_db(launches, db_config):
+    """
+    Load data into the database.
+
+    Args:
+        launches (list): A list of launch data to be loaded.
+        db_config (dict): Database configuration parameters.
+    """
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     conn = psycopg2.connect(
@@ -89,7 +115,27 @@ def load_data_to_db(launches, db_config):
     cursor.close()
     conn.close()
 
-if __name__ == "__main__":
+
+def main():
+    """
+    Main function to fetch launch data from an API and load it into a database.
+
+    This function performs the following steps:
+    1. Loads environment variables from a .env file.
+    2. Configures the database connection using environment variables.
+    3. Fetches launch data from an external API.
+    4. Loads the fetched data into the specified database table.
+
+    The function relies on the following environment variables:
+    - DB_NAME: The name of the database
+    - DB_USER: The username for database access
+    - DB_PASSWORD: The password for database access
+    - DB_HOST: The host address of the database
+    - DB_PORT: The port number for the database connection
+
+    Note: This function assumes that the fetch_data() and load_data_to_db() 
+    functions are defined elsewhere in the script.
+    """
     load_dotenv()
     db_config = {
         'dbname': os.getenv('DB_NAME'),
@@ -100,3 +146,6 @@ if __name__ == "__main__":
     }
     launches = fetch_data()
     load_data_to_db(launches, db_config)
+
+if __name__ == "__main__":
+    main()
