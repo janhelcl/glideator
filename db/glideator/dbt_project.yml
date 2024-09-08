@@ -38,3 +38,5 @@ models:
     mart:
       +materialized: view
       +schema: mart
+on-run-start:
+  - "{{ create_udfs() }}"
