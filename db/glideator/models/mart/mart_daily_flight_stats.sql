@@ -31,7 +31,7 @@ aggregated_flights AS (
 	SELECT
 		date,
 		launch,
-		1 AS flight_registered,
+		COUNT(*) AS flight_cnt,
 		MAX(points) AS max_points,
 		MAX(length) AS max_length
 	FROM flights
@@ -42,7 +42,8 @@ daily_aggregated_flights AS (
 	SELECT
 		dates_launches_cross.date,
 		dates_launches_cross.launch,
-		COALESCE(flight_registered, 0) AS flight_registered,
+		CASE WHEN flight_cnt > 0 THEN 1 ELSE 0 END AS flight_registered,
+		COALESCE(flight_cnt, 0) AS flight_cnt,
 		COALESCE(max_points, 0) AS max_points,
 		COALESCE(max_length, 0) AS max_length
 	FROM dates_launches_cross
