@@ -37,15 +37,15 @@ Pa_levels = [20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
 CONFIG = {
     'wind_isobaric': {
         'vars': ['u-component_of_wind_isobaric', 'v-component_of_wind_isobaric'],
-        'index': {'name': 'isobaric1', 'values': Pa_levels}
+        'index': {'name': 'isobaric', 'values': Pa_levels}
     },
     'wind_height': {
         'vars': ['u-component_of_wind_height_above_ground', 'v-component_of_wind_height_above_ground'],
-        'index': {'name': 'height_above_ground4', 'values': [10.,  20.,  30.,  40.,  50.,  80., 100.]}
+        'index': {'name': 'height_above_ground', 'values': [10.,  20.,  30.,  40.,  50.,  80., 100.]}
     },
     'temp_isobaric': {
         'vars': ['Temperature_isobaric'],
-        'index': {'name': 'isobaric1', 'values': Pa_levels}
+        'index': {'name': 'isobaric', 'values': Pa_levels}
     },
 }
 
@@ -111,20 +111,24 @@ def get_gfs_for_day(date, launches, engine):
             logging.info(f"Fetching GFS data for table: {table}.")
             for launch in launches.T.to_dict().values():
                 logging.info(f"Fetching GFS data for launch: {launch['name']}.")
-                query = {
-                    'lat': launch['latitude'],
-                    'lon': launch['longitude'],
-                    'method': 'nearest',
-                    CONFIG[table]['index']['name']: CONFIG[table]['index']['values']
-                }
-                launch_data = ds.sel(**query)
+                launch_data = ds.sel(lat=launch['latitude'], lon=launch['longitude'], method='nearest')
                 launch_data_df = launch_data[CONFIG[table]['vars']].to_dataframe()
                 launch_data_df = launch_data_df.reset_index()
                 launch_data_df['name'] = launch['name']
                 launch_data_df['date'] = date
                 launch_data_df['run'] = RUN
+
+                # Find and rename the index column
+                index_name = CONFIG[table]['index']['name']
+                actual_column = next((col for col in launch_data_df.columns if col.startswith(index_name)), None)
+                if actual_column and actual_column != index_name:
+                    launch_data_df = launch_data_df.rename(columns={actual_column: index_name})
                 columns = ['name', 'date', 'run'] + [CONFIG[table]['index']['name']] + CONFIG[table]['vars']
-                launch_data_df = launch_data_df[columns]
+                launch_data_df = launch_data_df[columns].query(f'{index_name} in {CONFIG[table]["index"]["values"]}')
+                if 'isobaric' in launch_data_df.columns:
+                    launch_data_df = launch_data_df.rename({'isobaric': 'isobaric1'}, axis=1)
+                if 'height_above_ground' in launch_data_df.columns:
+                    launch_data_df = launch_data_df.rename({'height_above_ground': 'height_above_ground4'}, axis=1)
                 res.append(launch_data_df)
             load_gfs_data(pd.concat(res), engine, table)
             logging.info(f"Retrieved GFS data for {len(launches)} launch sites on {date}.")
