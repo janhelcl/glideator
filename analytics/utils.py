@@ -36,6 +36,35 @@ def bin_degrees(df, bin_size=5, wind_direction_col='wind_direction_dgr', bin_col
 
 
 def polar_plot(df, bar_col, color_col=None, bin_col='wind_bin', bin_size=5, range1=None, range2=None):
+    """
+    Create a polar plot of wind data with optional color mapping and range indicators.
+
+    This function generates a polar plot (wind rose) from binned wind direction data,
+    with the option to color-code the bars based on another variable and add range indicators.
+
+    Args:
+        df (pandas.DataFrame): The input DataFrame containing wind data.
+        bar_col (str): The name of the column to use for bar heights.
+        color_col (str, optional): The name of the column to use for color-coding the bars.
+            If None, bars will be a single color. Defaults to None.
+        bin_col (str, optional): The name of the column containing binned wind directions.
+            Defaults to 'wind_bin'.
+        bin_size (int, optional): The size of each wind direction bin in degrees.
+            Defaults to 5.
+        range1 (tuple, optional): A tuple of (start, end) degrees for the first range indicator.
+            If None, no range indicator is drawn. Defaults to None.
+        range2 (tuple, optional): A tuple of (start, end) degrees for the second range indicator.
+            If None, no range indicator is drawn. Defaults to None.
+
+    Returns:
+        None: This function displays the plot but does not return any value.
+
+    Note:
+        - The function assumes that wind directions are binned and in degrees (0-360).
+        - The polar plot is oriented with 0 degrees (North) at the top and proceeds clockwise.
+        - If color_col is provided, a colorbar will be added to show the color scale.
+        - Range indicators are drawn as dashed lines with shaded areas between them.
+    """
     # Prepare data for the polar plot
     theta = np.deg2rad(df[bin_col].astype(float))  # Convert bin centers to radians
     bar_values = df[bar_col]
