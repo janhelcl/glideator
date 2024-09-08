@@ -10,9 +10,9 @@ transformed AS (
 		name AS launch,
 		DATE(date) AS date,
 		run,
-		isobaric1 * 0.01 AS isobaric_lvl_hpa,
-		"u-component_of_wind_isobaric" AS u_wind,
-		"v-component_of_wind_isobaric" AS v_wind,
+		isobaric * 0.01 AS isobaric_lvl_hpa,
+		"u-component_of_wind_isobaric" AS u_wind_ms,
+		"v-component_of_wind_isobaric" AS v_wind_ms,
 		wind_direction_raw - FLOOR(wind_direction_raw / 360) * 360 AS wind_direction_dgr, -- postgres doesn't have modulo for floats
 		wind_speed AS wind_speed_ms
 	FROM wind

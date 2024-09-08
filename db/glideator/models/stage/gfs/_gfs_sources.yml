@@ -11,3 +11,7 @@ sources:
         description: Temperature data at isobaric levels
       - name: wind_height
         description: Wind data at height above ground
+      - name: dewpoint
+        description: Dewpoint data at height above ground
+      - name: pressure
+        description: Pressure data at height above ground
