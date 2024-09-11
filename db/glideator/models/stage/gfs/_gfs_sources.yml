@@ -15,3 +15,15 @@ sources:
         description: Dewpoint data at height above ground
       - name: pressure
         description: Pressure data at height above ground
+      - name: gust
+        description: Gust speed at surface
+      - name: humidity_isobaric
+        description: Relative humidity at isobaric levels
+      - name: precipitation
+        description: Precipitation data
+      - name: temp_height
+        description: Temperature data at height above ground
+      - name: geopotential_isobaric
+        description: Geopotential height at isobaric levels
+      - name: geopotential_height_surface
+        description: Geopotential height at surface
