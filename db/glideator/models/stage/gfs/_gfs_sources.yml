@@ -25,5 +25,5 @@ sources:
         description: Temperature data at height above ground
       - name: geopotential_isobaric
         description: Geopotential height at isobaric levels
-      - name: geopotential_height_surface
+      - name: geopotential_surface
         description: Geopotential height at surface

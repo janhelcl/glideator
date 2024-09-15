@@ -9,4 +9,3 @@ WITH geopotential AS (
 )
 
 SELECT * FROM geopotential
-
