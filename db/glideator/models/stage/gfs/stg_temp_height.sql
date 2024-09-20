@@ -6,5 +6,6 @@ WITH temp AS (
 		height_above_ground AS height_lvl_m,
 		"Temperature_height_above_ground" - 273.15 AS temperature_c
 	FROM {{ source('gfs', 'temp_height') }}
+	WHERE run = 12
 )
 SELECT * FROM temp

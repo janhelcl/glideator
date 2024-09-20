@@ -16,5 +16,6 @@ transformed AS (
 		wind_direction_raw - FLOOR(wind_direction_raw / 360) * 360 AS wind_direction_dgr, -- postgres doesn't have modulo for floats
 		wind_speed AS wind_speed_ms
 	FROM wind
+	WHERE run = 12
 )
 SELECT * FROM transformed

@@ -2,6 +2,7 @@ WITH temp_isobaric AS (
     SELECT
         launch,
         date,
+        run,
         isobaric_lvl_hpa,
         temperature_c
     FROM {{ ref('stg_temp_isobaric')}}
@@ -10,6 +11,7 @@ temp_height AS (
     SELECT
         launch,
         date,
+        run,
         height_lvl_m,
         temperature_c
     FROM {{ ref('stg_temp_height')}}
@@ -18,6 +20,7 @@ geopotential_isobaric AS (
     SELECT
         launch,
         date,
+        run,
         isobaric_lvl_hpa,
         geopotential_height_m
     FROM {{ ref('stg_geopotential_isobaric')}}
@@ -26,6 +29,7 @@ geopotential_surface AS (
     SELECT
         launch,
         date,
+        run,
         geopotential_height_m
     FROM {{ ref('stg_geopotential_surface')}}
 ),
@@ -33,6 +37,7 @@ temp_isobaric_amsl AS (
     SELECT
         t.launch,
         t.date,
+        t.run,
         g.geopotential_height_m AS height_m,
         NULL::real AS height_lvl_m,
         t.isobaric_lvl_hpa,
@@ -48,6 +53,7 @@ temp_height_amsl AS (
     SELECT
         t.launch,
         t.date,
+        t.run,
         t.height_lvl_m + g.geopotential_height_m AS height_m,
         t.height_lvl_m,
         NULL::real AS isobaric_lvl_hpa,
@@ -90,6 +96,7 @@ temp_dalr AS (
     SELECT
         launch,
 		date,
+        run,
 		height_m AS height_amsl,
 		temperature_c,
         temp_ground - 9.8 * ((height_m - height_ground) / 1000) AS dalr

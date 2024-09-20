@@ -41,5 +41,8 @@ models:
     mart:
       +materialized: view
       +schema: mart
+    feature_store:
+      +materialized: view
+      +schema: fs
 on-run-start:
   - "{{ create_udfs() }}"
