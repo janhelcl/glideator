@@ -24,62 +24,14 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
+import gfs
+
+
+SCHEMA = "source"
+TABLE = "gfs"
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-GFS_HIST_BASE = "https://thredds.rda.ucar.edu/thredds/dodsC/files/g/d084001"
-RUN = 12
-TIME = 0
-SCHEMA = 'source'
-
-
-Pa_levels = [50000, 55000,60000, 65000, 70000, 75000,80000, 85000,90000, 92500, 95000, 97500, 100000]
-CONFIG = {
-    'wind_isobaric': {
-        'vars': ['u-component_of_wind_isobaric', 'v-component_of_wind_isobaric'],
-        'index': {'name': 'isobaric', 'values': Pa_levels}
-    },
-    'wind_height': {
-        'vars': ['u-component_of_wind_height_above_ground', 'v-component_of_wind_height_above_ground'],
-        'index': {'name': 'height_above_ground', 'values': [10.,  20.,  30.,  40.,  50.,  80., 100.]}
-    },
-    'gust': {
-        'vars': ['Wind_speed_gust_surface'],
-        'index': None
-    },
-    'temp_isobaric': {
-        'vars': ['Temperature_isobaric'],
-        'index': {'name': 'isobaric', 'values': Pa_levels}
-    },
-    'temp_height': {
-        'vars': ['Temperature_height_above_ground'],
-        'index': {'name': 'height_above_ground', 'values': [2., 80., 100.]}
-    },
-    'dewpoint': {
-        'vars': ['Dewpoint_temperature_height_above_ground'],
-        'index': {'name': 'height_above_ground', 'values': [2]}
-    },
-    'pressure': {
-        'vars': ['Pressure_surface', 'Pressure_reduced_to_MSL_msl'],
-        'index': None
-    },
-    'precipitation': {
-        'vars': ['Precipitable_water_entire_atmosphere_single_layer', 'Precipitation_rate_surface'],
-        'index': None
-    },
-    'humidity_isobaric': {
-        'vars': ['Relative_humidity_isobaric'],
-        'index': {'name': 'isobaric', 'values': Pa_levels}
-    },
-    'geopotential_isobaric': {
-        'vars': ['Geopotential_height_isobaric'],
-        'index': {'name': 'isobaric', 'values': Pa_levels}
-    },
-    'geopotential_height_surface': {
-        'vars': ['Geopotential_height_surface'],
-        'index': None
-    }
-}
 
 
 def get_launches(engine):
@@ -102,6 +54,8 @@ def get_launches(engine):
         glideator_mart.dim_launches
     """
     launches = pd.read_sql(query, con=engine)
+    launches['lat_gfs'] = gfs.round_to_nearest_quarter(launches['latitude'])
+    launches['lon_gfs'] = gfs.round_to_nearest_quarter(launches['longitude'])
     logging.info(f"Retrieved {len(launches)} launch sites.")
     return launches
 
@@ -124,73 +78,36 @@ def get_db_engine():
     return create_engine(connection_string)
 
 
-def get_gfs_for_day(date, launches, engine):
-    """
-    Fetch GFS data for a specific date and launch sites.
-
-    Args:
-        date: datetime object for the date to fetch data for.
-        launches: pandas.DataFrame containing launch site information.
-        engine: SQLAlchemy engine object for database connection.
-    """
-    logging.info(f"Fetching GFS data for date: {date}.")
-    date_str = date.strftime("%Y%m%d")
-    year_str = date.strftime("%Y")
-    url = f"{GFS_HIST_BASE}/{year_str}/{date_str}/gfs.0p25.{date_str}{RUN:02d}.f{TIME:03d}.grib2"
-    with xr.open_dataset(url) as ds:
-        for table in CONFIG:
-            res = []
-            logging.info(f"Fetching GFS data for table: {table}.")
-            for launch in launches.T.to_dict().values():
-                logging.info(f"Fetching GFS data for launch: {launch['name']}.")
-                launch_data = ds.sel(lat=launch['latitude'], lon=launch['longitude'], method='nearest')
-                launch_data_df = launch_data[CONFIG[table]['vars']].to_dataframe()
-                launch_data_df = launch_data_df.reset_index()
-                launch_data_df['name'] = launch['name']
-                launch_data_df['date'] = date
-                launch_data_df['run'] = RUN
-                launch_data_df['time'] = TIME
-
-                # Find and rename the index column
-                columns = ['name', 'date', 'run', 'time']
-                if CONFIG[table]['index'] is not None:
-                    index_name = CONFIG[table]['index']['name']
-                    actual_column = next((col for col in launch_data_df.columns if col.startswith(index_name)), None)
-                    if actual_column and actual_column != index_name:
-                        launch_data_df = launch_data_df.rename(columns={actual_column: index_name})
-                    columns.append(index_name)
-                    columns.extend(CONFIG[table]['vars'])
-                    launch_data_df = launch_data_df[columns].query(f'{index_name} in {CONFIG[table]["index"]["values"]}')
-                else:
-                    columns.extend(CONFIG[table]['vars'])
-                    launch_data_df = launch_data_df[columns]
-                res.append(launch_data_df)
-            load_gfs_data(pd.concat(res), engine, table)
-            logging.info(f"Retrieved GFS data for {len(launches)} launch sites on {date}.")
-
-
-def get_gfs_data(start_date, end_date, launches, engine):
+def get_gfs_data(start_date, end_date, run, delta, lat_gfs, lon_gfs, engine):
     """
     Fetch GFS data for a range of dates and launch sites.
 
     Args:
         start_date: datetime object for the start date.
         end_date: datetime object for the end date.
-        launches: pandas.DataFrame containing launch site information.
+        run: int for the run number.
+        delta: int for the delta in hours.
+        lat_gfs: pandas.Series for the latitude.
+        lon_gfs: pandas.Series for the longitude.
+        engine: SQLAlchemy engine object for database connection.
 
     Returns:
         pandas.DataFrame: DataFrame containing GFS data for the specified date range and launch sites.
     """
     logging.info(f"Fetching GFS data from {start_date} to {end_date}.")
     for date in pd.date_range(start_date, end_date):
+        logging.info(f"Fetching GFS data for {date}.")
         try:
-            get_gfs_for_day(date, launches, engine)
+            load_gfs_data(
+                gfs.get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'),
+                engine
+            )
         except Exception as e:
             logging.error(f"Error fetching GFS data for {date}: {e}")
     logging.info("Completed fetching GFS data for the date range.")
 
 
-def load_gfs_data(gfs_data, engine, table):
+def load_gfs_data(gfs_data, engine):
     """
     Load GFS data into the database table.
 
@@ -198,8 +115,8 @@ def load_gfs_data(gfs_data, engine, table):
         gfs_data: pandas.DataFrame containing GFS data to be loaded.
         engine: SQLAlchemy engine object for database connection.
     """
-    logging.info(f"Loading GFS data into the database table {SCHEMA}.{table}.")
-    gfs_data.to_sql(name=table, schema=SCHEMA, con=engine, if_exists='append', index=False)
+    logging.info(f"Loading GFS data into the database table {SCHEMA}.{TABLE}.")
+    gfs_data.to_sql(name=TABLE, schema=SCHEMA, con=engine, if_exists='append', index=True)
     logging.info("GFS data loaded successfully.")
 
 
@@ -227,12 +144,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--start_date', type=str, required=True, help='Start date in YYYY-MM-DD format (inclusive)')
     parser.add_argument('--end_date', type=str, required=True, help='End date in YYYY-MM-DD format (inclusive)')
+    parser.add_argument('--run', type=int, default=12, help='Run number')
+    parser.add_argument('--delta', type=int, default=0, help='Delta in hours')
     args = parser.parse_args()
     start_date = pd.to_datetime(args.start_date, format='%Y-%m-%d')
     end_date = pd.to_datetime(args.end_date, format='%Y-%m-%d')
     engine = get_db_engine()
     launches = get_launches(engine)
-    get_gfs_data(start_date, end_date, launches, engine)
+    points = launches[['lat_gfs', 'lon_gfs']].drop_duplicates()
+    get_gfs_data(start_date, end_date, int(args.run), int(args.delta), points['lat_gfs'].values, points['lon_gfs'].values, engine)
 
 
 if __name__ == "__main__":
