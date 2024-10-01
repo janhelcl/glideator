@@ -1,0 +1,387 @@
+{
+    "u_wind_500hpa_ms": {
+        "forecast_name": "ugrdprs_500",
+        "hist_name": "u-component_of_wind_isobaric_50000",
+        "position": 0
+    },
+    "u_wind_550hpa_ms": {
+        "forecast_name": "ugrdprs_550",
+        "hist_name": "u-component_of_wind_isobaric_55000",
+        "position": 1
+    },
+    "u_wind_600hpa_ms": {
+        "forecast_name": "ugrdprs_600",
+        "hist_name": "u-component_of_wind_isobaric_60000",
+        "position": 2
+    },
+    "u_wind_650hpa_ms": {
+        "forecast_name": "ugrdprs_650",
+        "hist_name": "u-component_of_wind_isobaric_65000",
+        "position": 3
+    },
+    "u_wind_700hpa_ms": {
+        "forecast_name": "ugrdprs_700",
+        "hist_name": "u-component_of_wind_isobaric_70000",
+        "position": 4
+    },
+    "u_wind_750hpa_ms": {
+        "forecast_name": "ugrdprs_750",
+        "hist_name": "u-component_of_wind_isobaric_75000",
+        "position": 5
+    },
+    "u_wind_800hpa_ms": {
+        "forecast_name": "ugrdprs_800",
+        "hist_name": "u-component_of_wind_isobaric_80000",
+        "position": 6
+    },
+    "u_wind_850hpa_ms": {
+        "forecast_name": "ugrdprs_850",
+        "hist_name": "u-component_of_wind_isobaric_85000",
+        "position": 7
+    },
+    "u_wind_900hpa_ms": {
+        "forecast_name": "ugrdprs_900",
+        "hist_name": "u-component_of_wind_isobaric_90000",
+        "position": 8
+    },
+    "u_wind_925hpa_ms": {
+        "forecast_name": "ugrdprs_925",
+        "hist_name": "u-component_of_wind_isobaric_92500",
+        "position": 9
+    },
+    "u_wind_950hpa_ms": {
+        "forecast_name": "ugrdprs_950",
+        "hist_name": "u-component_of_wind_isobaric_95000",
+        "position": 10
+    },
+    "u_wind_975hpa_ms": {
+        "forecast_name": "ugrdprs_975",
+        "hist_name": "u-component_of_wind_isobaric_97500",
+        "position": 11
+    },
+    "u_wind_1000hpa_ms": {
+        "forecast_name": "ugrdprs_1000",
+        "hist_name": "u-component_of_wind_isobaric_100000",
+        "position": 12
+    },
+    "v_wind_500hpa_ms": {
+        "forecast_name": "vgrdprs_500",
+        "hist_name": "v-component_of_wind_isobaric_50000",
+        "position": 13
+    },
+    "v_wind_550hpa_ms": {
+        "forecast_name": "vgrdprs_550",
+        "hist_name": "v-component_of_wind_isobaric_55000",
+        "position": 14
+    },
+    "v_wind_600hpa_ms": {
+        "forecast_name": "vgrdprs_600",
+        "hist_name": "v-component_of_wind_isobaric_60000",
+        "position": 15
+    },
+    "v_wind_650hpa_ms": {
+        "forecast_name": "vgrdprs_650",
+        "hist_name": "v-component_of_wind_isobaric_65000",
+        "position": 16
+    },
+    "v_wind_700hpa_ms": {
+        "forecast_name": "vgrdprs_700",
+        "hist_name": "v-component_of_wind_isobaric_70000",
+        "position": 17
+    },
+    "v_wind_750hpa_ms": {
+        "forecast_name": "vgrdprs_750",
+        "hist_name": "v-component_of_wind_isobaric_75000",
+        "position": 18
+    },
+    "v_wind_800hpa_ms": {
+        "forecast_name": "vgrdprs_800",
+        "hist_name": "v-component_of_wind_isobaric_80000",
+        "position": 19
+    },
+    "v_wind_850hpa_ms": {
+        "forecast_name": "vgrdprs_850",
+        "hist_name": "v-component_of_wind_isobaric_85000",
+        "position": 20
+    },
+    "v_wind_900hpa_ms": {
+        "forecast_name": "vgrdprs_900",
+        "hist_name": "v-component_of_wind_isobaric_90000",
+        "position": 21
+    },
+    "v_wind_925hpa_ms": {
+        "forecast_name": "vgrdprs_925",
+        "hist_name": "v-component_of_wind_isobaric_92500",
+        "position": 22
+    },
+    "v_wind_950hpa_ms": {
+        "forecast_name": "vgrdprs_950",
+        "hist_name": "v-component_of_wind_isobaric_95000",
+        "position": 23
+    },
+    "v_wind_975hpa_ms": {
+        "forecast_name": "vgrdprs_975",
+        "hist_name": "v-component_of_wind_isobaric_97500",
+        "position": 24
+    },
+    "v_wind_1000hpa_ms": {
+        "forecast_name": "vgrdprs_1000",
+        "hist_name": "v-component_of_wind_isobaric_100000",
+        "position": 25
+    },
+    "u_wind_10m_ms": {
+        "forecast_name": "ugrd10m",
+        "hist_name": "u-component_of_wind_height_above_ground_10",
+        "position": 26
+    },
+    "u_wind_100m_ms": {
+        "forecast_name": "ugrd100m",
+        "hist_name": "u-component_of_wind_height_above_ground_100",
+        "position": 27
+    },
+    "v_wind_10m_ms": {
+        "forecast_name": "vgrd10m",
+        "hist_name": "v-component_of_wind_height_above_ground_10",
+        "position": 28
+    },
+    "v_wind_100m_ms": {
+        "forecast_name": "vgrd100m",
+        "hist_name": "v-component_of_wind_height_above_ground_100",
+        "position": 29
+    },
+    "wind_gust_sfc_ms": {
+        "forecast_name": "gustsfc",
+        "hist_name": "Wind_speed_gust_surface",
+        "position": 30
+    },
+    "temperature_500hpa_k": {
+        "forecast_name": "tmpprs_500",
+        "hist_name": "Temperature_isobaric_50000",
+        "position": 31
+    },
+    "temperature_550hpa_k": {
+        "forecast_name": "tmpprs_550",
+        "hist_name": "Temperature_isobaric_55000",
+        "position": 32
+    },
+    "temperature_600hpa_k": {
+        "forecast_name": "tmpprs_600",
+        "hist_name": "Temperature_isobaric_60000",
+        "position": 33
+    },
+    "temperature_650hpa_k": {
+        "forecast_name": "tmpprs_650",
+        "hist_name": "Temperature_isobaric_65000",
+        "position": 34
+    },
+    "temperature_700hpa_k": {
+        "forecast_name": "tmpprs_700",
+        "hist_name": "Temperature_isobaric_70000",
+        "position": 35
+    },
+    "temperature_750hpa_k": {
+        "forecast_name": "tmpprs_750",
+        "hist_name": "Temperature_isobaric_75000",
+        "position": 36
+    },
+    "temperature_800hpa_k": {
+        "forecast_name": "tmpprs_800",
+        "hist_name": "Temperature_isobaric_80000",
+        "position": 37
+    },
+    "temperature_850hpa_k": {
+        "forecast_name": "tmpprs_850",
+        "hist_name": "Temperature_isobaric_85000",
+        "position": 38
+    },
+    "temperature_900hpa_k": {
+        "forecast_name": "tmpprs_900",
+        "hist_name": "Temperature_isobaric_90000",
+        "position": 39
+    },
+    "temperature_925hpa_k": {
+        "forecast_name": "tmpprs_925",
+        "hist_name": "Temperature_isobaric_92500",
+        "position": 40
+    },
+    "temperature_950hpa_k": {
+        "forecast_name": "tmpprs_950",
+        "hist_name": "Temperature_isobaric_95000",
+        "position": 41
+    },
+    "temperature_975hpa_k": {
+        "forecast_name": "tmpprs_975",
+        "hist_name": "Temperature_isobaric_97500",
+        "position": 42
+    },
+    "temperature_1000hpa_k": {
+        "forecast_name": "tmpprs_1000",
+        "hist_name": "Temperature_isobaric_100000",
+        "position": 43
+    },
+    "temperature_2m_k": {
+        "forecast_name": "tmp2m",
+        "hist_name": "Temperature_height_above_ground_2",
+        "position": 44
+    },
+    "temperature_80m_k": {
+        "forecast_name": "tmp80m",
+        "hist_name": "Temperature_height_above_ground_80",
+        "position": 45
+    },
+    "temperature_100m_k": {
+        "forecast_name": "tmp100m",
+        "hist_name": "Temperature_height_above_ground_100",
+        "position": 46
+    },
+    "dewpoint_2m_k": {
+        "forecast_name": "dpt2m",
+        "hist_name": "Dewpoint_temperature_height_above_ground_2",
+        "position": 47
+    },
+    "pressure_sfc_pa": {
+        "forecast_name": "pressfc",
+        "hist_name": "Pressure_surface",
+        "position": 48
+    },
+    "precipitable_water_clm_kg_m2": {
+        "forecast_name": "pwatclm",
+        "hist_name": "Precipitable_water_entire_atmosphere_single_layer",
+        "position": 49
+    },
+    "relative_humidity_500hpa_pct": {
+        "forecast_name": "rhprs_500",
+        "hist_name": "Relative_humidity_isobaric_50000",
+        "position": 50
+    },
+    "relative_humidity_550hpa_pct": {
+        "forecast_name": "rhprs_550",
+        "hist_name": "Relative_humidity_isobaric_55000",
+        "position": 51
+    },
+    "relative_humidity_600hpa_pct": {
+        "forecast_name": "rhprs_600",
+        "hist_name": "Relative_humidity_isobaric_60000",
+        "position": 52
+    },
+    "relative_humidity_650hpa_pct": {
+        "forecast_name": "rhprs_650",
+        "hist_name": "Relative_humidity_isobaric_65000",
+        "position": 53
+    },
+    "relative_humidity_700hpa_pct": {
+        "forecast_name": "rhprs_700",
+        "hist_name": "Relative_humidity_isobaric_70000",
+        "position": 54
+    },
+    "relative_humidity_750hpa_pct": {
+        "forecast_name": "rhprs_750",
+        "hist_name": "Relative_humidity_isobaric_75000",
+        "position": 55
+    },
+    "relative_humidity_800hpa_pct": {
+        "forecast_name": "rhprs_800",
+        "hist_name": "Relative_humidity_isobaric_80000",
+        "position": 56
+    },
+    "relative_humidity_850hpa_pct": {
+        "forecast_name": "rhprs_850",
+        "hist_name": "Relative_humidity_isobaric_85000",
+        "position": 57
+    },
+    "relative_humidity_900hpa_pct": {
+        "forecast_name": "rhprs_900",
+        "hist_name": "Relative_humidity_isobaric_90000",
+        "position": 58
+    },
+    "relative_humidity_925hpa_pct": {
+        "forecast_name": "rhprs_925",
+        "hist_name": "Relative_humidity_isobaric_92500",
+        "position": 59
+    },
+    "relative_humidity_950hpa_pct": {
+        "forecast_name": "rhprs_950",
+        "hist_name": "Relative_humidity_isobaric_95000",
+        "position": 60
+    },
+    "relative_humidity_975hpa_pct": {
+        "forecast_name": "rhprs_975",
+        "hist_name": "Relative_humidity_isobaric_97500",
+        "position": 61
+    },
+    "relative_humidity_1000hpa_pct": {
+        "forecast_name": "rhprs_1000",
+        "hist_name": "Relative_humidity_isobaric_100000",
+        "position": 62
+    },
+    "geopotential_height_500hpa_m": {
+        "forecast_name": "hgtprs_500",
+        "hist_name": "Geopotential_height_isobaric_50000",
+        "position": 63
+    },
+    "geopotential_height_550hpa_m": {
+        "forecast_name": "hgtprs_550",
+        "hist_name": "Geopotential_height_isobaric_55000",
+        "position": 64
+    },
+    "geopotential_height_600hpa_m": {
+        "forecast_name": "hgtprs_600",
+        "hist_name": "Geopotential_height_isobaric_60000",
+        "position": 65
+    },
+    "geopotential_height_650hpa_m": {
+        "forecast_name": "hgtprs_650",
+        "hist_name": "Geopotential_height_isobaric_65000",
+        "position": 66
+    },
+    "geopotential_height_700hpa_m": {
+        "forecast_name": "hgtprs_700",
+        "hist_name": "Geopotential_height_isobaric_70000",
+        "position": 67
+    },
+    "geopotential_height_750hpa_m": {
+        "forecast_name": "hgtprs_750",
+        "hist_name": "Geopotential_height_isobaric_75000",
+        "position": 68
+    },
+    "geopotential_height_800hpa_m": {
+        "forecast_name": "hgtprs_800",
+        "hist_name": "Geopotential_height_isobaric_80000",
+        "position": 69
+    },
+    "geopotential_height_850hpa_m": {
+        "forecast_name": "hgtprs_850",
+        "hist_name": "Geopotential_height_isobaric_85000",
+        "position": 70
+    },
+    "geopotential_height_900hpa_m": {
+        "forecast_name": "hgtprs_900",
+        "hist_name": "Geopotential_height_isobaric_90000",
+        "position": 71
+    },
+    "geopotential_height_925hpa_m": {
+        "forecast_name": "hgtprs_925",
+        "hist_name": "Geopotential_height_isobaric_92500",
+        "position": 72
+    },
+    "geopotential_height_950hpa_m": {
+        "forecast_name": "hgtprs_950",
+        "hist_name": "Geopotential_height_isobaric_95000",
+        "position": 73
+    },
+    "geopotential_height_975hpa_m": {
+        "forecast_name": "hgtprs_975",
+        "hist_name": "Geopotential_height_isobaric_97500",
+        "position": 74
+    },
+    "geopotential_height_1000hpa_m": {
+        "forecast_name": "hgtprs_1000",
+        "hist_name": "Geopotential_height_isobaric_100000",
+        "position": 75
+    },
+    "geopotential_height_sfc_m": {
+        "forecast_name": "hgtsfc",
+        "hist_name": "Geopotential_height_surface",
+        "position": 76
+    }
+}
