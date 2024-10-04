@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Mount the current directory in the container (for development)
+    environment:
+      - DATABASE_URL=sqlite:///./glideator.db  # Use SQLite database
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      - rabbitmq
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  celery-worker:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite:///./glideator.db
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      - rabbitmq
+    command: celery -A app.celery_app worker --loglevel=info
+
+  celery-beat:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite:///./glideator.db
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      - rabbitmq
+    command: celery -A app.celery_app beat --loglevel=info
