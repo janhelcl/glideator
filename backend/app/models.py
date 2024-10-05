@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -21,5 +21,7 @@ class Prediction(Base):
     date = Column(Date, primary_key=True)
     metric = Column(String, primary_key=True)
     value = Column(Float, nullable=False)
+    computed_at = Column(DateTime, nullable=False)
+    gfs_forecast_at = Column(DateTime, nullable=False)
     
     site_rel = relationship("Site", back_populates="predictions")

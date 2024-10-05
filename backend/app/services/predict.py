@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -13,7 +14,7 @@ import net.io
 logger = logging.getLogger(__name__)
 
 
-def generate_and_store_predictions(db: Session, model_filename: str, preprocessor_filename: str):
+def generate_and_store_predictions(db: Session, model_filename: str, preprocessor_filename: str, date, run, delta):
     model_path = os.path.join(os.path.dirname(__file__), '..', 'models', model_filename)
     preprocessor_path = os.path.join(os.path.dirname(__file__), '..', 'models', preprocessor_filename)
 
@@ -28,11 +29,11 @@ def generate_and_store_predictions(db: Session, model_filename: str, preprocesso
             'lon_gfs': site.lon_gfs
         } for site in sites
     ])
-
-    date, run = gfs.utils.find_latest_forecast_parameters()
-    delta = gfs.utils.find_delta(run, 12)
     launch_forecasts = gfs.fetch.add_gfs_forecast(sites_df, date, run, delta)
     predictions = net.io.apply_pipeline(launch_forecasts, preprocessor_path, model_path)
+
+    computed_at = datetime.now()
+    gfs_forecast_at = datetime(year=date.year, month=date.month, day=date.day, hour=run)
     
     # Save predictions to database
     for site_name, pred_date, metric, value in predictions:
@@ -40,7 +41,9 @@ def generate_and_store_predictions(db: Session, model_filename: str, preprocesso
             site=site_name,
             date=pred_date,
             metric=metric,
-            value=value
+            value=value,
+            computed_at=computed_at,
+            gfs_forecast_at=gfs_forecast_at
         )
         # Delete existing prediction if any
         existing_prediction = crud.get_predictions(db, site_name, pred_date, metric)

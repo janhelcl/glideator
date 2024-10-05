@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 
 class PredictionBase(BaseModel):
     date: date
     metric: str
     value: float
+    computed_at: datetime
+    gfs_forecast_at: datetime
 
 class PredictionCreate(PredictionBase):
     site: str

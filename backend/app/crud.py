@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
-from typing import List
-from datetime import date
+from typing import Optional
+from datetime import date, datetime
 
 def get_site(db: Session, site_name: str):
     return db.query(models.Site).filter(models.Site.name == site_name).first()
@@ -29,3 +29,10 @@ def create_prediction(db: Session, prediction: schemas.PredictionCreate):
     db.commit()
     db.refresh(db_prediction)
     return db_prediction
+
+def get_latest_gfs_forecast(db: Session) -> Optional[datetime]:
+    """
+    Retrieves the latest gfs_forecast_at timestamp from predictions.
+    """
+    latest_prediction = db.query(models.Prediction).order_by(models.Prediction.gfs_forecast_at.desc()).first()
+    return latest_prediction.gfs_forecast_at if latest_prediction else None

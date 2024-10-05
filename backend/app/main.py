@@ -50,7 +50,7 @@ def startup_event():
         load_sites_from_csv(db, 'sites.csv')
         # Generate and store predictions
         logger.info("Generating and storing predictions...")
-        celery.send_task('app.celery_app.generate_predictions_task')
+        celery.send_task('app.celery_app.check_and_trigger_predictions_task')
     except Exception as e:
         logger.error(f"An error occurred during startup: {e}")
     finally:
