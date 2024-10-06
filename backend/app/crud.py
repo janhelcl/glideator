@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, with_loader_criteria
+from sqlalchemy import and_
 from . import models, schemas
 from typing import Optional
 from datetime import date, datetime
@@ -6,8 +7,34 @@ from datetime import date, datetime
 def get_site(db: Session, site_name: str):
     return db.query(models.Site).filter(models.Site.name == site_name).first()
 
-def get_sites(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Site).offset(skip).limit(limit).all()
+def get_sites(
+    db: Session, 
+    skip: int = 0, 
+    limit: int = 100, 
+    metric: Optional[str] = None, 
+    date: Optional[date] = None
+):
+    query = db.query(models.Site)
+    
+    if metric and date:
+        query = query.options(
+            with_loader_criteria(models.Prediction, 
+                                 and_(
+                                     models.Prediction.metric == metric,
+                                     models.Prediction.date == date
+                                 ), 
+                                 include_aliases=True)
+        ).options(selectinload(models.Site.predictions))
+        
+        query = query.join(models.Site.predictions).filter(
+            and_(
+                models.Prediction.metric == metric,
+                models.Prediction.date == date
+            )
+        ).distinct()
+    
+    sites = query.offset(skip).limit(limit).all()
+    return sites
 
 def create_site(db: Session, site: schemas.SiteCreate):
     db_site = models.Site(**site.dict())

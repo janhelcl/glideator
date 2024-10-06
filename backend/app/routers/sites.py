@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import date
 
 from .. import models, schemas, crud
@@ -25,8 +25,14 @@ def create_site(site: schemas.SiteCreate, db: Session = Depends(get_db)):
     return db_site
 
 @router.get("/", response_model=List[schemas.Site])
-def read_sites(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    sites = crud.get_sites(db, skip=skip, limit=limit)
+def read_sites(
+    skip: int = 0,
+    limit: int = 100,
+    metric: Optional[str] = Query(None, description="Metric to filter predictions"),
+    date: Optional[date] = Query(None, description="Date to filter predictions"),
+    db: Session = Depends(get_db)
+):
+    sites = crud.get_sites(db, skip=skip, limit=limit, metric=metric, date=date)
     return sites
 
 @router.get("/{site_name}/predictions", response_model=List[schemas.Prediction])
