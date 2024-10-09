@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = "glideator.spiders"
 #USER_AGENT = "glideator (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
@@ -48,6 +48,8 @@ PLAYWRIGHT_LAUNCH_OPTIONS = {
     "headless": True,
 }
 PLAYWRIGHT_BROWSER_TYPE = "firefox" #"firefox" "webkit" "chromium"
+PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 60000  # 60 seconds
+KEEP_FRAGMENTS = True
 # PLAYWRIGHT_MAX_CONTEXTS = 1
 HTTPCACHE_ENABLED = False
 
