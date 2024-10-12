@@ -43,12 +43,23 @@ def create_site(db: Session, site: schemas.SiteCreate):
     db.refresh(db_site)
     return db_site
 
-def get_predictions(db: Session, site_name: str, query_date: date, metric: str):
-    return db.query(models.Prediction).filter(
-        models.Prediction.site == site_name,
-        models.Prediction.date == query_date,
-        models.Prediction.metric == metric
-    ).all()
+def get_predictions(db: Session, site_name: str, query_date: Optional[date] = None, metric: Optional[str] = None):
+    """
+    Retrieves predictions based on site name, and optionally filters by date and metric.
+    
+    - If `metric` is provided, filters predictions by the specified metric.
+    - If `query_date` is provided, filters predictions by the specified date.
+    - If neither is provided, returns all predictions for the given site.
+    """
+    query = db.query(models.Prediction).filter(models.Prediction.site == site_name)
+    
+    if query_date:
+        query = query.filter(models.Prediction.date == query_date)
+    
+    if metric:
+        query = query.filter(models.Prediction.metric == metric)
+    
+    return query.all()
 
 def create_prediction(db: Session, prediction: schemas.PredictionCreate):
     db_prediction = models.Prediction(**prediction.dict())

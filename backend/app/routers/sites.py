@@ -36,7 +36,12 @@ def read_sites(
     return sites
 
 @router.get("/{site_name}/predictions", response_model=List[schemas.Prediction])
-def read_predictions(site_name: str, query_date: date, metric: str, db: Session = Depends(get_db)):
+def read_predictions(
+    site_name: str,
+    query_date: Optional[date] = Query(None, description="Date to filter predictions"),
+    metric: Optional[str] = Query(None, description="Metric to filter predictions"),
+    db: Session = Depends(get_db)
+):
     predictions = crud.get_predictions(db, site_name, query_date, metric)
     if not predictions:
         raise HTTPException(status_code=404, detail="Predictions not found")
