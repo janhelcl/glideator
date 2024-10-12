@@ -73,7 +73,7 @@ def get_idexes(ds, variables):
     for var in variables:
         if variables[var] is None:
             continue
-        index = next((index_name for index_name in ds[var].indexes if index_name not in ['lat', 'lon', 'time']), None)
+        index = next((index_name for index_name in ds[var].indexes if index_name not in ['lat', 'lon', 'time', 'time1']), None)
         if index not in idexes:
             idexes[index] = variables[var]
     return idexes
