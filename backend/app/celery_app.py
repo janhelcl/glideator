@@ -1,5 +1,7 @@
 import os
+import time
 from datetime import datetime
+
 from celery import Celery, chain
 from sqlalchemy.orm import sessionmaker
 from .database import engine
@@ -57,12 +59,15 @@ def check_and_trigger_predictions_task():
         db.close()
 
 
-@celery.task
-def generate_predictions_task(date, run, delta):
+@celery.task(bind=True)
+def generate_predictions_task(self, date, run, delta):
     db = SessionLocal()
     try:
         generate_and_store_predictions(db, 'glideator_model.pth', 'preprocessor.pkl', date, run, delta)
     except Exception as e:
         print(f"Error generating predictions: {e}")
+        raise self.retry(countdown=60 * 5, max_retries=1)
     finally:
         db.close()
+        # https://nomads.ncep.noaa.gov/info.php?page=gribfilter
+        time.sleep(15)
