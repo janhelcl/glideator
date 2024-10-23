@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gfs"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Jan Helcl <janhelcl@gmail.com>"]
 readme = "README.md"
@@ -10,6 +10,7 @@ python = "^3.10"
 xarray = "^2024.9.0"
 netcdf4 = "^1.7.1.post2"
 requests = "^2.32.3"
+cfgrib = "^0.9.14.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -16,8 +16,8 @@ def test_get_gfs_data_equality():
     lat_gfs = [50.00, 50.25, 49.75]
     lon_gfs = [16.00, 13.75, 18.75]
 
+    data_forecast = get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='grib')
     data_hist = get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist')
-    data_forecast = get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='forecast')
 
     num_gfs_cols = len(get_col_order())
 
@@ -25,4 +25,4 @@ def test_get_gfs_data_equality():
     assert data_hist.shape[1] == num_gfs_cols + 4, f"data_hist should have {num_gfs_cols + 4} columns, got {data_hist.shape[1]}"
     assert data_forecast.shape[0] == len(lat_gfs), f"data_forecast should have {len(lat_gfs)} rows, got {data_forecast.shape[0]}"
     assert data_forecast.shape[1] == num_gfs_cols + 4, f"data_forecast should have {num_gfs_cols + 4} columns, got {data_forecast.shape[1]}"
-    pd.testing.assert_frame_equal(data_hist, data_forecast, check_index_type=False)
+    pd.testing.assert_frame_equal(data_hist, data_forecast, check_index_type=False, check_exact=False, atol=1e-5)

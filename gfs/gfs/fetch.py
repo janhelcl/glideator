@@ -1,11 +1,14 @@
 from datetime import timedelta
 import warnings
 import logging
+import tempfile
+import requests
+from functools import reduce
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-
+import cfgrib
 import gfs.constants as constants
 
 logger = logging.getLogger(__name__)
@@ -45,6 +48,15 @@ def get_gfs_forecast_url(date, run, res='0p25'):
     date_str = date.strftime("%Y%m%d")
     url = f"{constants.GFS_FORECAST_BASE}/gfs_{res}/gfs{date_str}/gfs_{res}_{run:02d}z"
     logger.debug(f"Constructed forecast GFS URL: {url}")
+    return url
+
+
+def get_gfs_grib_url(date, run, delta):
+    date_str = date.strftime("%Y%m%d")
+    url = (
+     f"https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?dir=%2Fgfs.{date_str}%2F{run:02d}%2Fatmos&file=gfs.t{run:02d}z.pgrb2.0p25.f{delta:03d}&"
+     "var_DPT=on&var_GUST=on&var_HGT=on&var_PRES=on&var_PWAT=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&lev_2_m_above_ground=on&lev_10_m_above_ground=on&lev_80_m_above_ground=on&lev_100_m_above_ground=on&lev_1000_mb=on&lev_975_mb=on&lev_950_mb=on&lev_925_mb=on&lev_900_mb=on&lev_850_mb=on&lev_800_mb=on&lev_750_mb=on&lev_700_mb=on&lev_650_mb=on&lev_600_mb=on&lev_550_mb=on&lev_500_mb=on&lev_surface=on&lev_entire_atmosphere_(considered_as_a_single_layer)=on&subregion=&toplat=50.75&leftlon=13.25&rightlon=18.75&bottomlat=48.75"
+    )
     return url
 
 
@@ -147,12 +159,56 @@ def _download_forecast_data(date, run, ref_time, lat_gfs, lon_gfs):
         raise
 
 
+def _download_grib_data(date, run, delta, lat_gfs, lon_gfs):
+    """
+    Downloads the GRIB GFS data for the given date, run, delta, and coordinates.
+    """
+    logger.info(f"Starting download of GRIB GFS data for date: {date}, run: {run}, delta: {delta}")
+    url = get_gfs_grib_url(date, run, delta)
+    logger.debug(f"GRIB data URL: {url}")
+    points = pd.DataFrame({'lat': lat_gfs, 'lon': lon_gfs})
+    lat = xr.DataArray(points['lat'], dims=['points'])
+    lon = xr.DataArray(points['lon'], dims=['points'])
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            logger.debug("Created temporary file for GRIB data")
+            response = requests.get(url)
+            temp_file.write(response.content)
+            temp_file_path = temp_file.name
+            logger.debug(f"Downloaded GRIB data to temporary file: {temp_file_path}")
+
+            grib_data = cfgrib.open_datasets(temp_file_path, backend_kwargs={'indexpath': ''})
+            logger.debug("Opened GRIB datasets successfully")
+            pds = []
+            for idx in range(len(grib_data)):
+                pdf = grib_data[idx].sel(latitude=lat, longitude=lon).to_stacked_array('x', sample_dims=['points']).to_pandas()
+                pdf.columns = flatten_column_names(pdf.columns)
+                pds.append(pdf)
+                logger.debug(f"Processed GRIB dataset {idx+1}/{len(grib_data)}")
+
+            pdf = reduce(lambda x, y: pd.merge(x, y, on = 'points'), pds)
+            logger.debug("Merged all GRIB datasets")
+
+            pdf = pdf.rename(columns=get_col_map('grib'))
+            pdf = pdf[get_col_order()]
+            logger.debug("Renamed columns and reordered according to schema")
+
+            pdf = pdf.join(points).set_index(['lat', 'lon']).rename_axis(index={'lat': 'lat', 'lon': 'lon'})
+            logger.debug("Added latitude and longitude information to the dataset")
+
+        logger.info("Completed downloading and processing GRIB GFS data")
+        return pdf
+    except Exception as e:
+        logger.error(f"Failed to download GRIB GFS data from {url}: {e}")
+        raise
+
+
 def get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'):
     """
     Downloads the GFS data for the given date, run, delta, latitude, longitude, and source.
     """
     logger.info(f"Fetching GFS data with source: {source} for date: {date}, run: {run}, delta: {delta}")
-    assert source in ['hist', 'forecast'], 'Source must be either hist or forecast'
+    assert source in ['hist', 'forecast', 'grib'], 'Source must be either hist, forecast or grib'
     
     ref_time = date.replace(hour=run) + timedelta(hours=delta)
     logger.debug(f"Reference time calculated as: {ref_time}")
@@ -161,14 +217,21 @@ def get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'):
         if source == 'hist':
             logger.debug("Source set to historical data")
             data = _download_hist_data(date, run, delta, lat_gfs, lon_gfs)
-        else:
+            # force schema
+            logger.debug("Flattening and renaming data columns to match schema")
+            data.columns = flatten_column_names(data.columns)
+            data = data.rename(columns=get_col_map(source))
+            data = data[get_col_order()]
+        elif source == 'forecast':
             logger.debug("Source set to forecast data")
-            data = _download_forecast_data(date, run, ref_time, lat_gfs, lon_gfs)
-        # force schema
-        logger.debug("Flattening and renaming data columns to match schema")
-        data.columns = flatten_column_names(data.columns)
-        data = data.rename(columns=get_col_map(source))
-        data = data[get_col_order()]
+            data = _download_forecast_data(date, run, ref_time, lat_gfs, lon_gfs)            # force schema
+            logger.debug("Flattening and renaming data columns to match schema")
+            data.columns = flatten_column_names(data.columns)
+            data = data.rename(columns=get_col_map(source))
+            data = data[get_col_order()]
+        elif source == 'grib':
+            logger.debug("Source set to GRIB data")
+            data = _download_grib_data(date, run, delta, lat_gfs, lon_gfs)
         # add metadata
         logger.debug("Adding metadata to data")
         data['date'] = date
@@ -182,7 +245,7 @@ def get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'):
         raise
 
 
-def add_gfs_forecast(launches, date, run, delta):
+def add_gfs_forecast(launches, date, run, delta, source='grib'):
     """
     Add GFS forecast data to launch data.
 
@@ -202,7 +265,7 @@ def add_gfs_forecast(launches, date, run, delta):
         lon_gfs = points['lon_gfs'].values
         logger.debug(f"Unique latitude and longitude points extracted: {len(lat_gfs)} points")
 
-        gfs_data = get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='forecast')
+        gfs_data = get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source=source)
         logger.debug("GFS data retrieved successfully, proceeding to join with launch data")
 
         joined = gfs_data.join(launches.set_index(['lat_gfs', 'lon_gfs']), on=['lat', 'lon'])
