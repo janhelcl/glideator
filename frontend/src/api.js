@@ -26,3 +26,17 @@ export const fetchSitePredictions = async (siteName) => {
     return [];
   }
 };
+
+export const fetchSiteForecast = async (siteName, queryDate) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteName}/forecast/`, {
+      params: {
+        query_date: queryDate,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching forecast data:', error);
+    return null;
+  }
+};

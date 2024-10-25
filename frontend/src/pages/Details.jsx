@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { fetchSitePredictions } from '../api';
+import { fetchSitePredictions, fetchSiteForecast } from '../api';
 import Plot from 'react-plotly.js';
-import { CircularProgress, Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
+import { CircularProgress, Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, Button } from '@mui/material';
+import ForecastCharts from '../components/ForecastCharts';
 
 const Details = () => {
   const { siteName } = useParams();
@@ -14,6 +15,7 @@ const Details = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [uniqueMetrics, setUniqueMetrics] = useState([]);
   const [selectedMetrics, setSelectedMetrics] = useState([]);
+  const weatherRef = useRef(null); // Reference to Weather Forecast section
 
   // Get today's date in 'YYYY-MM-DD' format
   const today = new Date().toISOString().split('T')[0];
@@ -87,6 +89,12 @@ const Details = () => {
     );
   };
 
+  const scrollToWeather = () => {
+    if (weatherRef.current) {
+      weatherRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
@@ -109,95 +117,113 @@ const Details = () => {
     <div>
       <h1>Details for {siteName}</h1>
       
-      {/* Date Selector */}
-      <FormControl sx={{ m: 1, minWidth: 200 }}>
-        <InputLabel>Select Date</InputLabel>
-        <Select
-          value={selectedDate}
-          onChange={handleDateChange}
-          label="Select Date"
-        >
-          {availableDates.map((date) => (
-            <MenuItem key={date} value={date}>
-              {date}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      
-      {/* Metrics Selector for Line Chart */}
-      <FormControl sx={{ m: 1, minWidth: 200 }}>
-        <InputLabel>Metrics</InputLabel>
-        <Select
-          multiple
-          value={selectedMetrics}
-          onChange={handleMetricsChange}
-          input={<OutlinedInput label="Metrics" />}
-          renderValue={(selected) => selected.join(', ')}
-        >
-          {uniqueMetrics.map((metric) => (
-            <MenuItem key={metric} value={metric}>
-              <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
-              <ListItemText primary={metric} />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Controls */}
+      <Box display="flex" flexWrap="wrap" alignItems="center">
+        {/* Date Selector */}
+        <FormControl sx={{ m: 1, minWidth: 200 }}>
+          <InputLabel>Select Date</InputLabel>
+          <Select
+            value={selectedDate}
+            onChange={handleDateChange}
+            label="Select Date"
+          >
+            {availableDates.map((date) => (
+              <MenuItem key={date} value={date}>
+                {date}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        
+        {/* Metrics Selector for Line Chart */}
+        <FormControl sx={{ m: 1, minWidth: 200 }}>
+          <InputLabel>Metrics</InputLabel>
+          <Select
+            multiple
+            value={selectedMetrics}
+            onChange={handleMetricsChange}
+            input={<OutlinedInput label="Metrics" />}
+            renderValue={(selected) => selected.join(', ')}
+          >
+            {uniqueMetrics.map((metric) => (
+              <MenuItem key={metric} value={metric}>
+                <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
+                <ListItemText primary={metric} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      {/* Bar Chart */}
-      {filteredMetrics.length > 0 ? (
-        <Plot
-          data={[
-            {
-              type: 'bar',
-              x: filteredMetrics.map((m) => m.metric),
-              y: filteredMetrics.map((m) => m.value),
-              marker: {
-                color: '#1f77b4',
-              },
-              customdata: customHoverData,
-              hovertemplate: '%{customdata}<extra></extra>',
-              text: filteredMetrics.map((m) => `${m.value}%`),
-              textposition: 'auto',
-            },
-          ]}
-          layout={{
-            title: `Glideator Flyability Forecast for ${selectedDate} at ${siteName}`,
-            xaxis: { title: 'XC Points' },
-            yaxis: { title: 'Probability (%)', range: [0, 100], tickformat: 'd' },
-            bargap: 0,
-            hovermode: 'closest',
-          }}
-        />
-      ) : (
-        <p>Please select a date to view the metrics.</p>
-      )}
+        {/* Button to Skip to Weather Forecast */}
+        <Button variant="contained" color="primary" sx={{ m: 1 }} onClick={scrollToWeather}>
+          Skip to Weather Forecast
+        </Button>
+      </Box>
 
-      {/* Line Chart */}
-      {selectedMetrics.length > 0 && (
-        <Plot
-          data={selectedMetrics.map((metric) => {
-            const metricData = predictions
-              .filter((p) => p.metric === metric && p.date >= today)
-              .sort((a, b) => new Date(a.date) - new Date(b.date));
-            return {
-              x: metricData.map((p) => p.date),
-              y: metricData.map((p) => p.value),
-              type: 'scatter',
-              mode: 'lines+markers',
-              name: metric,
-              hovertemplate: `${metric}<br>Date: %{x}<br>Value: %{y}%<extra></extra>`,
-            };
-          })}
-          layout={{
-            title: 'Glideator Flyability Forecast Over Time',
-            xaxis: { title: 'Date', type: 'date' },
-            yaxis: { title: 'Probability (%)', range: [0, 100], tickformat: 'd' },
-            hovermode: 'x unified',
-            showlegend: true, // Ensures the legend is always displayed
-          }}
-        />
-      )}
+      {/* Flyability Charts */}
+      <Box display="flex" flexWrap="wrap" justifyContent="space-around" className="flyability-charts">
+        {/* Bar Chart */}
+        {filteredMetrics.length > 0 && (
+          <Box className="plot-container">
+            <Plot
+              data={[
+                {
+                  type: 'bar',
+                  x: filteredMetrics.map((m) => m.metric),
+                  y: filteredMetrics.map((m) => m.value),
+                  marker: {
+                    color: '#1f77b4',
+                  },
+                  customdata: customHoverData,
+                  hovertemplate: '%{customdata}<extra></extra>',
+                  text: filteredMetrics.map((m) => `${m.value}%`),
+                  textposition: 'auto',
+                },
+              ]}
+              layout={{
+                title: `Glideator Flyability Forecast for ${selectedDate} at ${siteName}`,
+                xaxis: { title: 'XC Points' },
+                yaxis: { title: 'Probability (%)', range: [0, 100], tickformat: 'd' },
+                bargap: 0,
+                hovermode: 'closest',
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Line Chart */}
+        {selectedMetrics.length > 0 && (
+          <Box className="plot-container">
+            <Plot
+              data={selectedMetrics.map((metric) => {
+                const metricData = predictions
+                  .filter((p) => p.metric === metric && p.date >= today)
+                  .sort((a, b) => new Date(a.date) - new Date(b.date));
+                return {
+                  x: metricData.map((p) => p.date),
+                  y: metricData.map((p) => p.value),
+                  type: 'scatter',
+                  mode: 'lines+markers',
+                  name: metric,
+                  hovertemplate: `${metric}<br>Date: %{x}<br>Value: %{y}%<extra></extra>`,
+                };
+              })}
+              layout={{
+                title: 'Glideator Flyability Forecast Over Time',
+                xaxis: { title: 'Date', type: 'date' },
+                yaxis: { title: 'Probability (%)', range: [0, 100], tickformat: 'd' },
+                hovermode: 'x unified',
+                showlegend: true,
+              }}
+            />
+          </Box>
+        )}
+      </Box>
+
+      {/* Weather Forecast Section */}
+      <Box ref={weatherRef} className="weather-forecast">
+        <ForecastCharts siteName={siteName} queryDate={selectedDate} />
+      </Box>
     </div>
   );
 };
