@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 from typing import List, Optional
 from datetime import date, datetime
 
@@ -32,5 +32,20 @@ class SiteCreate(SiteBase):
 class Site(SiteBase):
     predictions: List[Prediction] = []
 
+    class Config:
+        orm_mode = True
+
+class ForecastBase(BaseModel):
+    date: date
+    lat_gfs: float
+    lon_gfs: float
+    forecast_9: Json
+    forecast_12: Json
+    forecast_15: Json
+
+class ForecastCreate(ForecastBase):
+    pass
+
+class Forecast(ForecastBase):
     class Config:
         orm_mode = True

@@ -89,6 +89,7 @@ def fetch_forecast_for_day_task(date, run, deltas, lat_gfs, lon_gfs):
     """
     Fetches and processes GFS grib files for a given day.
     """
+    # https://blog.det.life/replacing-celery-tasks-inside-a-chain-b1328923fb02
     forecasts = []
     for delta in deltas:
         forecast = gfs.fetch.get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='grib')

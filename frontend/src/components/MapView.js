@@ -2,19 +2,15 @@ import React from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
+import { Box } from '@mui/material';
 
-const MapView = ({ sites, selectedMetric }) => {
+const MapView = ({ sites, selectedMetric, selectedDate }) => {
   const navigate = useNavigate();
 
   const getColor = (probability) => {
-    // Ensure probability is between 0 and 1
     const p = Math.max(0, Math.min(1, probability));
-    
-    // Calculate RGB values
     const r = Math.round(255 * (1 - p));
     const g = Math.round(255 * p);
-    
-    // Return color in RGB format
     return `rgb(${r}, ${g}, 0)`;
   };
 
@@ -49,7 +45,9 @@ const MapView = ({ sites, selectedMetric }) => {
             <Popup>
               <strong>{site.name}</strong><br />
               Probability: {getProbability(site, selectedMetric)}<br />
-              <button onClick={() => navigate(`/sites/${site.name}`)}>Details</button>
+              <button onClick={() => navigate(`/sites/${site.name}?date=${selectedDate}&metric=${selectedMetric}`)}>
+                Details
+              </button>
             </Popup>
           </CircleMarker>
         );

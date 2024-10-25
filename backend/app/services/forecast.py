@@ -2,14 +2,16 @@ import os
 import logging
 from datetime import datetime
 from pathlib import Path
+import json
 
+import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from .. import crud, schemas
+from .. import crud, schemas, models
 import gfs.fetch
-import gfs.utils
 import net.io
+from gfs.constants import HPA_LVLS
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,45 @@ MODEL_FILENAME = 'net.pth'
 PREPROCESSOR_FILENAME = 'preprocessor.pkl'
 MODEL_PATH = BASE_DIR / 'models' / MODEL_FILENAME
 PREPROCESSOR_PATH = BASE_DIR / 'models' / PREPROCESSOR_FILENAME
+
+
+def process_forecasts(db: Session, forecasts):
+    # reconstruct dfs
+    forecasts = [
+        pd.DataFrame.from_records(forecast).set_index(['lat', 'lon'])
+        for forecast in forecasts
+    ]
+    # prepare dataset
+    validate_forecasts(forecasts)
+    joined_forecasts = (
+        join_forecasts(forecasts)
+        .rename_axis(index={'lat': 'lat_gfs', 'lon': 'lon_gfs'})
+    )
+    joined_forecasts['ref_time'] = joined_forecasts['ref_time_12']
+    # prepare metadata
+    computed_at = datetime.now()
+    date = joined_forecasts['date_12'].iloc[0]
+    run = joined_forecasts['run_12'].iloc[0]
+    gfs_forecast_at = datetime(year=date.year, month=date.month, day=date.day, hour=run)
+    # score and save
+    get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
+    process_and_save_forecasts(db, joined_forecasts)
+    db.commit() # commit both together
+
+
+def fetch_sites(db: Session):
+    sites = crud.get_sites(db)
+    sites_df = pd.DataFrame([
+        {
+            'launch': site.name,
+            'latitude': site.latitude,
+            'longitude': site.longitude,
+            'altitude': site.altitude,
+            'lat_gfs': site.lat_gfs,
+            'lon_gfs': site.lon_gfs
+        } for site in sites
+    ])
+    return sites_df
 
 
 def validate_forecasts(forecasts):
@@ -56,51 +97,16 @@ def join_forecasts(forecasts):
     return joined
 
 
-def fetch_sites(db: Session):
-    sites = crud.get_sites(db)
-    sites_df = pd.DataFrame([
-        {
-            'launch': site.name,
-            'latitude': site.latitude,
-            'longitude': site.longitude,
-            'altitude': site.altitude,
-            'lat_gfs': site.lat_gfs,
-            'lon_gfs': site.lon_gfs
-        } for site in sites
-    ])
-    return sites_df
-
-
-def process_forecasts(db: Session, forecasts):
-    # reconstruct dfs
-    forecasts = [
-        pd.DataFrame.from_records(forecast).set_index(['lat', 'lon'])
-        for forecast in forecasts
-    ]
-    # prepare dataset
-    validate_forecasts(forecasts)
-    joined_forecasts = (
-        join_forecasts(forecasts)
-        .rename_axis(index={'lat': 'lat_gfs', 'lon': 'lon_gfs'})
-    )
+def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at):
+    # prepare data
     sites = (
         fetch_sites(db)
         .set_index(['lat_gfs', 'lon_gfs'])
     )
     full_data = joined_forecasts.join(sites)
-    full_data['ref_time'] = full_data['ref_time_12']
     # score
     predictions = net.io.apply_pipeline(full_data, PREPROCESSOR_PATH, MODEL_PATH)
     # save
-    computed_at = datetime.now()
-    date = full_data['date_12'].iloc[0]
-    run = full_data['run_12'].iloc[0]
-    gfs_forecast_at = datetime(year=date.year, month=date.month, day=date.day, hour=run)
-    _save_predictions(db, predictions, computed_at, gfs_forecast_at)
-    db.commit()
-
-
-def _save_predictions(db, predictions, computed_at, gfs_forecast_at):
     for site_name, pred_date, metric, value in predictions:
         prediction = schemas.PredictionCreate(
             site=site_name,
@@ -116,3 +122,79 @@ def _save_predictions(db, predictions, computed_at, gfs_forecast_at):
             db.delete(existing_prediction[0])
         # Create new prediction
         crud.create_prediction(db, prediction)
+
+def process_and_save_forecasts(db: Session, joined_forecasts):
+    joined_forecasts = joined_forecasts.reset_index()
+    forecasts = []
+    for _, row in joined_forecasts.iterrows():
+        forecast = schemas.ForecastCreate(
+            date=row['date_12'],
+            lat_gfs=row['lat_gfs'],
+            lon_gfs=row['lon_gfs'],
+            forecast_9=json.dumps(forecast_to_dict(row, suffix='_9')),
+            forecast_12=json.dumps(forecast_to_dict(row, suffix='_12')),
+            forecast_15=json.dumps(forecast_to_dict(row, suffix='_15'))
+        )
+        forecasts.append(forecast)
+    
+    # Delete existing forecasts for the same date
+    crud.delete_forecasts_by_date(db, forecasts[0].date)
+    
+    # Create new forecasts
+    for forecast in forecasts:
+        crud.create_forecast(db, forecast)
+    
+    db.commit()
+
+def forecast_to_dict(row, suffix=''):
+    geo_iso_cols = [f'geopotential_height_{int(lvl)}hpa_m{suffix}' for lvl in HPA_LVLS]
+    temp_iso_cols = [f'temperature_{int(lvl)}hpa_k{suffix}' for lvl in HPA_LVLS]
+    humidity_iso_cols = [f'relative_humidity_{int(lvl)}hpa_pct{suffix}' for lvl in HPA_LVLS]
+    u_wind_iso_cols = [f'u_wind_{int(lvl)}hpa_ms{suffix}' for lvl in HPA_LVLS]
+    v_wind_iso_cols = [f'v_wind_{int(lvl)}hpa_ms{suffix}' for lvl in HPA_LVLS]
+
+    forecast_dict = {
+        'hpa_lvls': HPA_LVLS.tolist(),
+        'geopotential_height_iso_m': row[geo_iso_cols].values.tolist(),
+        'temperature_iso_c': (row[temp_iso_cols] - 273.15).tolist(),
+        'relative_humidity_iso_pct': row[humidity_iso_cols].tolist()
+    }
+    forecast_dict['dewpoint_iso_c'] = calculate_dewpoint(
+        forecast_dict['temperature_iso_c'],
+        forecast_dict['relative_humidity_iso_pct']
+    ).tolist()
+    wind_speed, wind_direction = calculate_wind_speed_and_direction(
+        row[u_wind_iso_cols].values,
+        row[v_wind_iso_cols].values
+    )
+    forecast_dict['wind_speed_iso_ms'] = wind_speed.tolist()
+    forecast_dict['wind_direction_iso_dgr'] = wind_direction.tolist()
+    return forecast_dict
+
+def calculate_wind_speed_and_direction(u_wind, v_wind):
+    """
+    Calculate wind speed and direction from u and v components.
+    
+    Args:
+        u_wind (np.array): U component of wind (positive from west to east)
+        v_wind (np.array): V component of wind (positive from south to north)
+    
+    Returns:
+        tuple: (wind_speed, wind_direction)
+            wind_speed (np.array): Wind speed in m/s
+            wind_direction (np.array): Wind direction in degrees (0 at north, clockwise)
+    """
+    u_wind = np.asarray(u_wind, dtype=float)
+    v_wind = np.asarray(v_wind, dtype=float)
+    wind_speed = np.sqrt(u_wind**2 + v_wind**2)
+    wind_direction = np.mod(270 - np.degrees(np.arctan2(v_wind, u_wind)), 360)
+    
+    return wind_speed, wind_direction
+
+def calculate_dewpoint(temp_c, rh_percent):
+    temp_c = np.asarray(temp_c, dtype=float)
+    rh_percent = np.asarray(rh_percent, dtype=float)
+    a, b = 17.27, 237.7
+    alpha = (a * temp_c) / (b + temp_c) + np.log(rh_percent / 100.0)
+    dewpoint = (b * alpha) / (a - alpha)
+    return dewpoint

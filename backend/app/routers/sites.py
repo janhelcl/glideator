@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -46,3 +48,24 @@ def read_predictions(
     if not predictions:
         raise HTTPException(status_code=404, detail="Predictions not found")
     return predictions
+
+@router.get("/{site_name}/forecast", response_model=schemas.Forecast)
+def read_forecast(
+    site_name: str,
+    query_date: date = Query(..., description="Date of the forecast"),
+    db: Session = Depends(get_db)
+):
+    site = crud.get_site(db, site_name)
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    
+    forecast = crud.get_forecast(db, query_date, site.lat_gfs, site.lon_gfs)
+    if not forecast:
+        raise HTTPException(status_code=404, detail="Forecast not found")
+    
+    # Ensure that the JSON fields are properly serialized
+    forecast.forecast_9 = json.dumps(forecast.forecast_9)
+    forecast.forecast_12 = json.dumps(forecast.forecast_12)
+    forecast.forecast_15 = json.dumps(forecast.forecast_15)
+    
+    return forecast

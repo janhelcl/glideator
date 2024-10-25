@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -25,3 +25,13 @@ class Prediction(Base):
     gfs_forecast_at = Column(DateTime, nullable=False)
     
     site_rel = relationship("Site", back_populates="predictions")
+
+class Forecast(Base):
+    __tablename__ = 'forecasts'
+    
+    date = Column(Date, primary_key=True)
+    lat_gfs = Column(Float, primary_key=True)
+    lon_gfs = Column(Float, primary_key=True)
+    forecast_9 = Column(JSON, nullable=False)
+    forecast_12 = Column(JSON, nullable=False)
+    forecast_15 = Column(JSON, nullable=False)

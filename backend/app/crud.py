@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, selectinload, with_loader_criteria
 from sqlalchemy import and_
 from . import models, schemas
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 
 def get_site(db: Session, site_name: str):
@@ -74,3 +74,24 @@ def get_latest_gfs_forecast(db: Session) -> Optional[datetime]:
     """
     latest_prediction = db.query(models.Prediction).order_by(models.Prediction.gfs_forecast_at.desc()).first()
     return latest_prediction.gfs_forecast_at if latest_prediction else None
+
+def create_forecast(db: Session, forecast: schemas.ForecastCreate):
+    db_forecast = models.Forecast(**forecast.dict())
+    db.add(db_forecast)
+    db.commit()
+    db.refresh(db_forecast)
+    return db_forecast
+
+def get_forecasts_by_date(db: Session, query_date: date) -> List[models.Forecast]:
+    return db.query(models.Forecast).filter(models.Forecast.date == query_date).all()
+
+def get_forecast(db: Session, query_date: date, lat_gfs: float, lon_gfs: float) -> Optional[models.Forecast]:
+    return db.query(models.Forecast).filter(
+        models.Forecast.date == query_date,
+        models.Forecast.lat_gfs == lat_gfs,
+        models.Forecast.lon_gfs == lon_gfs
+    ).first()
+
+def delete_forecasts_by_date(db: Session, query_date: date):
+    db.query(models.Forecast).filter(models.Forecast.date == query_date).delete()
+    db.commit()
