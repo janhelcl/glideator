@@ -15,6 +15,7 @@ const Details = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [uniqueMetrics, setUniqueMetrics] = useState([]);
   const [selectedMetrics, setSelectedMetrics] = useState([]);
+  const [gfsForecastAt, setGfsForecastAt] = useState(''); // New state for gfs_forecast_at
   const weatherRef = useRef(null); // Reference to Weather Forecast section
 
   // Get today's date in 'YYYY-MM-DD' format
@@ -73,8 +74,17 @@ const Details = () => {
         (pred) => pred.date === selectedDate
       );
       setFilteredMetrics(metricsForDate);
+
+      // Since gfs_forecast_at is constant across metrics for the selected date,
+      // we can safely take it from the first metric
+      if (metricsForDate.length > 0) {
+        setGfsForecastAt(metricsForDate[0].gfs_forecast_at);
+      } else {
+        setGfsForecastAt('');
+      }
     } else {
       setFilteredMetrics([]);
+      setGfsForecastAt('');
     }
   }, [selectedDate, predictions]);
 
@@ -113,9 +123,17 @@ const Details = () => {
     }
   });
 
+  // Format the gfs_forecast_at date string
+  const formattedGfsForecastAt = gfsForecastAt
+    ? new Date(gfsForecastAt).toLocaleString()
+    : 'N/A';
+
   return (
     <div>
       <h1>Details for {siteName}</h1>
+      
+      {/* Updated Subtitle */}
+      <h2>Based on NOAA GFS forecast at: {formattedGfsForecastAt}</h2>
       
       {/* Controls */}
       <Box display="flex" flexWrap="wrap" alignItems="center">

@@ -11,18 +11,20 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  gap: 20px; /* Space between the two charts */
+  gap: 20px; /* Space between the charts */
   flex-wrap: wrap; /* Allows wrapping on smaller screens */
 }
 
 .plot-container {
-  flex: 1 1 48%; /* Allows two charts per row with some flexibility */
-  min-width: 300px; /* Prevents charts from becoming too narrow */
+  flex: 1 1 30%; /* Allows three charts per row with some flexibility */
+  min-width: 250px; /* Prevents charts from becoming too narrow */
   height: 400px; /* Sets a fixed height for readability */
 }
 
 .relative-humidity-chart {
-  /* Specific styles for the Relative Humidity chart can be added here */
+  /* Ensure the chart fills its container */
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Responsive Adjustments */
@@ -46,6 +48,7 @@ h2 {
 /* Optional: Style for the Plotly charts */
 .temp-dew-chart,
 .wind-chart,
+.relative-humidity-chart,
 .temperature-chart {
   width: 100% !important;
   height: 100% !important;
@@ -60,3 +63,11 @@ html {
   padding: 20px;
   /* Add any additional styling for the Weather Forecast section here */
 }
+
+.forecast-subtitle {
+  text-align: center;
+  font-size: 1.2em;
+  color: #555;
+  margin-bottom: 20px;
+}
+

@@ -150,6 +150,71 @@ const ForecastCharts = ({ siteName, queryDate }) => {
     );
   };
 
+  // **Updated Function:** Create Relative Humidity Heatmap
+  const createRelativeHumidityPlot = (forecast, title) => {
+    // Transform z to be an Nx1 matrix for a vertical heatmap
+    const transformedZ = forecast.relative_humidity_iso_pct.map(rh => [rh]);
+
+    return (
+      <Plot
+        data={[
+          {
+            z: transformedZ,
+            x: ['Relative Humidity'],
+            y: forecast.hpa_lvls,
+            type: 'heatmap',
+            colorscale: [
+              [0, '#E0E0E0'], // Light Gray for 0% RH
+              [0.5, '#A0A0A0'], // Medium Gray for 50% RH
+              [1, '#434343'] // Dark Gray for 100% RH
+            ],
+            colorbar: {
+              title: 'RH (%)',
+              titleside: 'top',
+              ticks: 'outside',
+              tick0: 0,
+              dtick: 20,
+              nticks: 6, // Ensures ticks at 0, 20, 40, 60, 80, 100
+            },
+            hovertemplate: 'Pressure: %{y} hPa<br>Relative Humidity: %{z}%<extra></extra>',
+            showscale: true, // Display color scale for contextual reference
+          },
+        ]}
+        layout={{
+          title: title,
+          yaxis: { 
+            title: 'Pressure (hPa)', 
+            autorange: 'reversed',
+            tickfont: { size: 12 },
+            titlefont: { size: 14 },
+          },
+          xaxis: { 
+            title: '', 
+            showticklabels: false, 
+            showgrid: false 
+          },
+          margin: { l: 60, r: 80, b: 50, t: 60, pad: 4 }, // Increased right margin for colorbar
+          zmin: 0, // Define the minimum RH value
+          zmax: 100, // Define the maximum RH value
+          annotations: forecast.relative_humidity_iso_pct.map((rh, index) => ({
+            x: 'Relative Humidity',
+            y: forecast.hpa_lvls[index],
+            text: `${Math.round(rh)}%`, // **Rounded RH Values**
+            showarrow: false,
+            font: {
+              color: rh > 50 ? 'white' : 'black', // Ensure text readability
+              size: 12
+            }
+          })),
+          autosize: true,
+        }}
+        config={{ responsive: true }}
+        className="relative-humidity-chart"
+        style={{ width: '100%', height: '100%' }}
+      />
+    );
+  };
+
   // Helper function to render plots for each forecast
   const renderForecastPlots = (forecast, forecastLabel) => {
     return (
@@ -159,6 +224,9 @@ const ForecastCharts = ({ siteName, queryDate }) => {
         </div>
         <div className="plot-container">
           {createWindPlot(forecast, `${forecastLabel} - Wind Speed & Direction`)}
+        </div>
+        <div className="plot-container">
+          {createRelativeHumidityPlot(forecast, `${forecastLabel} - Relative Humidity`)}
         </div>
       </div>
     );
