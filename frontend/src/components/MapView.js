@@ -1,9 +1,11 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import './MapView.css'; // Import the CSS for glowing markers
+
+const { BaseLayer } = LayersControl;
 
 const MapView = ({ sites, selectedMetric, selectedDate }) => {
   const navigate = useNavigate();
@@ -52,28 +54,7 @@ const MapView = ({ sites, selectedMetric, selectedDate }) => {
     `;
 
     return L.divIcon({
-      className: 'glowing-marker',
-      html: `
-        ${styleTag}
-        <div id="${uniqueId}">
-          <div class="glow"></div>
-          <div class="point"></div>
-        </div>
-      `,
-      iconSize: [12, 12], // Match the CSS size
-      iconAnchor: [6, 6],  // Center the icon
-      popupAnchor: [0, -6],
-      // Setting HTML to allow CSS to target the inner div
-      html: `
-        ${styleTag}
-        <div id="${uniqueId}" class="glowing-marker">
-          <div class="glow"></div>
-          <div class="point"></div>
-        </div>
-      `,
-      // Disable the default styles
       className: '',
-      // Ensure the marker is treated as a single element
       html: `
         ${styleTag}
         <div class="glowing-marker" id="${uniqueId}">
@@ -81,15 +62,28 @@ const MapView = ({ sites, selectedMetric, selectedDate }) => {
           <div class="point"></div>
         </div>
       `,
+      iconSize: [12, 12], // Match the CSS size
+      iconAnchor: [6, 6],  // Center the icon
+      popupAnchor: [0, -6],
     });
   };
 
   return (
     <MapContainer center={[50.0755, 14.4378]} zoom={7} style={{ height: '80vh', width: '100%' }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
+      <LayersControl position="topright">
+        <BaseLayer checked name="Basic">
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
+          />
+        </BaseLayer>
+        <BaseLayer name="Topographic">
+          <TileLayer
+            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+            attribution='Map data: &copy; <a href="https://www.opentopomap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
+          />
+        </BaseLayer>
+      </LayersControl>
       {sites.map((site) => {
         const prediction = getPrediction(site, selectedMetric);
         const probability = prediction ? prediction.value : 0;

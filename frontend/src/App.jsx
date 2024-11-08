@@ -1,14 +1,17 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './pages/Layout';
 import Home from './pages/Home';
-import Details from './pages/Details'; // This will now correctly import from Details.jsx
+import Details from './pages/Details';
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/sites/:siteName" element={<Details />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="sites/:siteName" element={<Details />} />
+        </Route>
       </Routes>
     </Router>
   );
