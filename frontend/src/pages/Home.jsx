@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Controls from '../components/Controls';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
@@ -23,7 +23,7 @@ const Home = () => {
     const params = new URLSearchParams(location.search);
     return params.get('date') || '';
   });
-  const [sites, setSites] = useState([]);
+  const [allSites, setAllSites] = useState([]); // Store all fetched sites
   const [loading, setLoading] = useState(false);
 
   // Generate dates and set initial values
@@ -44,7 +44,7 @@ const Home = () => {
     };
 
     generateDates();
-  }, [selectedDate]); // Add selectedDate as a dependency
+  }, [selectedDate]);
 
   // Update query parameters when selectedMetric or selectedDate changes
   useEffect(() => {
@@ -59,19 +59,58 @@ const Home = () => {
     navigate(`/?${newParams.toString()}`, { replace: true });
   }, [selectedMetric, selectedDate, navigate]);
 
-  const loadSites = async () => {
-    setLoading(true);
-    const data = await fetchSites(selectedMetric, selectedDate);
-    setSites(data);
-    setLoading(false);
-  };
-
-  // Load sites whenever selectedMetric or selectedDate changes
+  // Fetch all sites once on component mount
   useEffect(() => {
-    if (selectedDate) {
-      loadSites();
-    }
-  }, [selectedMetric, selectedDate]); // Removed loadSites from dependencies
+    const loadAllSites = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchSites(); // Fetch without filters
+        if (Array.isArray(data)) {
+          // Optional: Log fetched data for debugging
+          console.log('Fetched Sites:', data);
+
+          setAllSites(data);
+        } else {
+          console.error('Fetched data is not an array:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching sites:', error);
+      }
+      setLoading(false);
+    };
+
+    loadAllSites();
+  }, []);
+
+  // Derive filtered sites based on selectedMetric and selectedDate
+  const filteredSites = useMemo(() => {
+    console.log('Selected Metric:', selectedMetric);
+    console.log('Selected Date:', selectedDate);
+
+    const result = allSites.filter((site) => {
+      // Check if site has predictions
+      if (!site.predictions || !Array.isArray(site.predictions)) {
+        console.warn(`Site "${site.name}" has no predictions.`);
+        return false;
+      }
+
+      // Find a prediction that matches both metric and date
+      const hasMatchingPrediction = site.predictions.some(
+        (pred) => pred.metric === selectedMetric && pred.date === selectedDate
+      );
+
+      if (hasMatchingPrediction) {
+        console.log(`Site "${site.name}" matches the criteria.`);
+      } else {
+        console.log(`Site "${site.name}" does NOT match the criteria.`);
+      }
+
+      return hasMatchingPrediction;
+    });
+
+    console.log('Filtered Sites:', result);
+    return result;
+  }, [allSites, selectedMetric, selectedDate]);
 
   return (
     <div>
@@ -90,7 +129,7 @@ const Home = () => {
         </Box>
       ) : (
         <MapView
-          sites={sites}
+          sites={filteredSites}
           selectedMetric={selectedMetric}
           selectedDate={selectedDate}
         />

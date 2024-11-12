@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
@@ -7,13 +7,44 @@ import './MapView.css'; // Import the CSS for glowing markers
 
 const { BaseLayer } = LayersControl;
 
-const MapView = ({ sites, selectedMetric, selectedDate }) => {
+// Fix default icon issues with Webpack
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
+
+const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
   const navigate = useNavigate();
+
+  // State to preserve map's center and zoom
+  const [mapState, setMapState] = useState({
+    center: [50.0755, 14.4378], // Adjust to your default center
+    zoom: 7, // Adjust to your default zoom level
+  });
+
+  // Function to handle map movements
+  const handleMoveEnd = (map) => {
+    setMapState({
+      center: map.getCenter(),
+      zoom: map.getZoom(),
+    });
+  };
 
   // Function to convert RGB to RGBA with specified alpha
   const rgbToRgba = (rgb, alpha) => {
     const [r, g, b] = rgb.match(/\d+/g);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  // Function to get the prediction value for the selected metric and date
+  const getPredictionValue = (site) => {
+    const prediction = site.predictions.find(
+      (pred) => pred.metric === selectedMetric && pred.date === selectedDate
+    );
+    return prediction ? prediction.value : 'N/A';
   };
 
   const getColor = (probability) => {
@@ -23,23 +54,12 @@ const MapView = ({ sites, selectedMetric, selectedDate }) => {
     return `rgb(${r}, ${g}, 0)`;
   };
 
-  const getPrediction = (site, metric) => {
-    return site.predictions.find(pred => pred.metric === metric);
-  };
-
-  const getProbability = (site, metric) => {
-    const prediction = getPrediction(site, metric);
-    if (!prediction || prediction.value === undefined || isNaN(prediction.value)) {
-      return 'N/A';
-    }
-    return `${(prediction.value * 100).toFixed(2)}%`;
-  };
-
+  // Function to create a custom icon with CSS variables for styling
   const createCustomIcon = (color) => {
     const rgbaGlow = rgbToRgba(color, 0.7); // For default glow
     const rgbaGlowHover = rgbToRgba(color, 1); // For hover glow
 
-    // Unique identifier for CSS variables (optional)
+    // Unique identifier for CSS variables
     const uniqueId = `marker-${Math.random().toString(36).substr(2, 9)}`;
 
     // Create a style tag to define CSS variables for this marker
@@ -68,8 +88,39 @@ const MapView = ({ sites, selectedMetric, selectedDate }) => {
     });
   };
 
+  // Memoize markers to prevent unnecessary re-renders
+  const markers = useMemo(() => {
+    return sites.map((site) => {
+      const probability = getPredictionValue(site);
+      const color = probability !== 'N/A' ? getColor(probability) : 'gray';
+
+      return (
+        <Marker
+          key={`${site.name}-${site.latitude}-${site.longitude}`}
+          position={[site.latitude, site.longitude]}
+          icon={createCustomIcon(color)}
+        >
+          <Popup>
+            <strong>{site.name}</strong><br />
+            Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
+            <button onClick={() => navigate(`/sites/${encodeURIComponent(site.name)}?date=${selectedDate}&metric=${selectedMetric}`)}>
+              Details
+            </button>
+          </Popup>
+        </Marker>
+      );
+    });
+  }, [sites, selectedMetric, selectedDate, navigate]);
+
   return (
-    <MapContainer center={[50.0755, 14.4378]} zoom={7} style={{ height: '80vh', width: '100%' }}>
+    <MapContainer
+      center={mapState.center}
+      zoom={mapState.zoom}
+      style={{ height: '80vh', width: '100%' }}
+      whenCreated={(map) => {
+        map.on('moveend', () => handleMoveEnd(map));
+      }}
+    >
       <LayersControl position="topright">
         <BaseLayer checked name="Basic">
           <TileLayer
@@ -84,29 +135,9 @@ const MapView = ({ sites, selectedMetric, selectedDate }) => {
           />
         </BaseLayer>
       </LayersControl>
-      {sites.map((site) => {
-        const prediction = getPrediction(site, selectedMetric);
-        const probability = prediction ? prediction.value : 0;
-        const color = getColor(probability);
-
-        return (
-          <Marker
-            key={site.name}
-            position={[site.latitude, site.longitude]}
-            icon={createCustomIcon(color)}
-          >
-            <Popup>
-              <strong>{site.name}</strong><br />
-              Probability: {getProbability(site, selectedMetric)}<br />
-              <button onClick={() => navigate(`/sites/${site.name}?date=${selectedDate}&metric=${selectedMetric}`)}>
-                Details
-              </button>
-            </Popup>
-          </Marker>
-        );
-      })}
+      {markers}
     </MapContainer>
   );
-};
+});
 
 export default MapView;
