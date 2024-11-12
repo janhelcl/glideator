@@ -4,12 +4,13 @@ import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 
 const Layout = () => {
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Top Navigation Bar */}
       <AppBar
         position="fixed"
         sx={{
           backgroundColor: '#424242',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         <Toolbar>
@@ -34,9 +35,11 @@ const Layout = () => {
       <Box
         component="main"
         sx={{
+          flexGrow: 1,
           padding: '2rem',
-          minHeight: '80vh',
           paddingTop: '64px',
+          paddingBottom: '40px',
+          backgroundColor: '#f5f5f5',
         }}
       >
         {/* This is where child routes will be rendered */}
@@ -48,13 +51,25 @@ const Layout = () => {
         position="fixed"
         sx={{
           backgroundColor: '#424242',
-          height: '40px',
+          height: '30px',
           top: 'auto',
           bottom: 0,
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
-        <Toolbar variant="dense">
-          {/* Footer is currently empty */}
+        <Toolbar 
+          variant="dense"
+          sx={{ minHeight: '30px' }}
+        >
+          <Typography
+            variant="body2"
+            color="white"
+            align="center"
+            component="div"
+            sx={{ width: '100%' }}
+          >
+            © 2024 Glideator
+          </Typography>
         </Toolbar>
       </AppBar>
     </div>
