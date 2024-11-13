@@ -116,9 +116,6 @@ const Home = () => {
     <div>
       <h1>Paragliding Site Recommendations</h1>
       <Controls
-        metrics={METRICS}
-        selectedMetric={selectedMetric}
-        setSelectedMetric={setSelectedMetric}
         dates={dates}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
@@ -131,7 +128,9 @@ const Home = () => {
         <MapView
           sites={filteredSites}
           selectedMetric={selectedMetric}
+          setSelectedMetric={setSelectedMetric}
           selectedDate={selectedDate}
+          metrics={METRICS}
         />
       )}
     </div>

@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
-import './MapView.css'; // Import the CSS for glowing markers
+import './MapView.css';
+import { Slider, Typography, Box } from '@mui/material';
+import PreventLeafletControl from './PreventLeafletControl';
 
 const { BaseLayer } = LayersControl;
 
@@ -16,16 +18,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
+const MapView = React.memo(({ sites, selectedMetric, setSelectedMetric, selectedDate, metrics }) => {
   const navigate = useNavigate();
 
-  // State to preserve map's center and zoom
   const [mapState, setMapState] = useState({
-    center: [50.0755, 14.4378], // Adjust to your default center
-    zoom: 7, // Adjust to your default zoom level
+    center: [50.0755, 14.4378],
+    zoom: 7,
   });
 
-  // Function to handle map movements
   const handleMoveEnd = (map) => {
     setMapState({
       center: map.getCenter(),
@@ -33,13 +33,11 @@ const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
     });
   };
 
-  // Function to convert RGB to RGBA with specified alpha
   const rgbToRgba = (rgb, alpha) => {
     const [r, g, b] = rgb.match(/\d+/g);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  // Function to get the prediction value for the selected metric and date
   const getPredictionValue = (site) => {
     const prediction = site.predictions.find(
       (pred) => pred.metric === selectedMetric && pred.date === selectedDate
@@ -54,15 +52,11 @@ const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
     return `rgb(${r}, ${g}, 0)`;
   };
 
-  // Function to create a custom icon with CSS variables for styling
   const createCustomIcon = (color) => {
-    const rgbaGlow = rgbToRgba(color, 0.7); // For default glow
-    const rgbaGlowHover = rgbToRgba(color, 1); // For hover glow
-
-    // Unique identifier for CSS variables
+    const rgbaGlow = rgbToRgba(color, 0.7);
+    const rgbaGlowHover = rgbToRgba(color, 1);
     const uniqueId = `marker-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create a style tag to define CSS variables for this marker
     const styleTag = `
       <style>
         #${uniqueId} {
@@ -82,13 +76,12 @@ const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
           <div class="point"></div>
         </div>
       `,
-      iconSize: [12, 12], // Match the CSS size
-      iconAnchor: [6, 6],  // Center the icon
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
       popupAnchor: [0, -6],
     });
   };
 
-  // Memoize markers to prevent unnecessary re-renders
   const markers = useMemo(() => {
     return sites.map((site) => {
       const probability = getPredictionValue(site);
@@ -112,13 +105,35 @@ const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
     });
   }, [sites, selectedMetric, selectedDate, navigate]);
 
+  const sliderRef = useRef(null);
+
+  const handleSliderChange = (event, newValue) => {
+    event.stopPropagation();
+    if (newValue >= 0 && newValue < metrics.length) {
+      setSelectedMetric(metrics[newValue]);
+    }
+  };
+
+  const sliderValue = metrics.indexOf(selectedMetric);
+  const marks = metrics.map((metric, index) => ({
+    value: index,
+    label: metric,
+  }));
+
   return (
     <MapContainer
       center={mapState.center}
       zoom={mapState.zoom}
-      style={{ height: '80vh', width: '100%' }}
+      style={{ height: '80vh', width: '100%', position: 'relative' }}
       whenCreated={(map) => {
         map.on('moveend', () => handleMoveEnd(map));
+
+        // Initial disable of click and scroll propagation for the slider container
+        const sliderContainer = sliderRef.current;
+        if (sliderContainer) {
+          L.DomEvent.disableClickPropagation(sliderContainer);
+          L.DomEvent.disableScrollPropagation(sliderContainer);
+        }
       }}
     >
       <LayersControl position="topright">
@@ -135,6 +150,38 @@ const MapView = React.memo(({ sites, selectedMetric, selectedDate }) => {
           />
         </BaseLayer>
       </LayersControl>
+
+      <PreventLeafletControl>
+        <div className="metric-slider-container">
+          <div className="metric-slider-wrapper">
+            <Box
+              ref={sliderRef}
+              className="metric-slider"
+              sx={{
+                '& *': {
+                  pointerEvents: 'auto !important'
+                }
+              }}
+            >
+              <Typography variant="subtitle1" gutterBottom>
+                Select Metric
+              </Typography>
+              <Slider
+                orientation="vertical"
+                value={sliderValue === -1 ? 0 : sliderValue}
+                min={0}
+                max={metrics.length - 1}
+                step={1}
+                marks={marks}
+                onChange={handleSliderChange}
+                valueLabelDisplay="off"
+                aria-labelledby="metric-slider"
+              />
+            </Box>
+          </div>
+        </div>
+      </PreventLeafletControl>
+
       {markers}
     </MapContainer>
   );

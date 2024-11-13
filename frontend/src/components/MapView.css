@@ -1,4 +1,3 @@
-
 .glowing-marker {
   position: relative;
   width: 10px;
@@ -38,4 +37,75 @@
   transform: translate(-50%, -50%);
   transition: transform 0.3s ease-in-out;
   border: 1px solid black;
+}
+
+.metric-slider-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.metric-slider-wrapper {
+  position: absolute;
+  top: 100px;
+  right: 10px;
+  pointer-events: none;
+}
+
+.metric-slider {
+  pointer-events: auto !important;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  touch-action: none;
+  isolation: isolate;
+}
+
+/* Ensure all slider children have pointer events */
+.metric-slider * {
+  pointer-events: auto !important;
+}
+
+/* Override any leaflet-specific styles that might interfere */
+.leaflet-container .metric-slider {
+  pointer-events: auto !important;
+}
+
+.leaflet-container .metric-slider * {
+  pointer-events: auto !important;
+}
+
+/* Style adjustments for the MUI Slider */
+.metric-slider .MuiSlider-root {
+  pointer-events: auto !important;
+}
+
+.metric-slider .MuiSlider-thumb {
+  pointer-events: auto !important;
+}
+
+.metric-slider .MuiSlider-track {
+  pointer-events: auto !important;
+}
+
+.metric-slider .MuiTypography-root {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.metric-slider .MuiSlider-rail {
+  background-color: #ddd;
+}
+
+.metric-slider .MuiSlider-markLabel {
+  font-size: 0.75rem;
+  color: #333;
 }
