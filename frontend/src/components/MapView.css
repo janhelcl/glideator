@@ -39,24 +39,13 @@
   border: 1px solid black;
 }
 
-.metric-slider-container {
+.metric-slider {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 75px;
+  right: 10px;
   bottom: 0;
   pointer-events: none;
   z-index: 1000;
-}
-
-.metric-slider-wrapper {
-  position: absolute;
-  top: 100px;
-  right: 10px;
-  pointer-events: none;
-}
-
-.metric-slider {
-  pointer-events: auto !important;
   height: 200px;
   display: flex;
   flex-direction: column;
@@ -67,33 +56,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   touch-action: none;
   isolation: isolate;
-}
-
-/* Ensure all slider children have pointer events */
-.metric-slider * {
-  pointer-events: auto !important;
-}
-
-/* Override any leaflet-specific styles that might interfere */
-.leaflet-container .metric-slider {
-  pointer-events: auto !important;
-}
-
-.leaflet-container .metric-slider * {
-  pointer-events: auto !important;
-}
-
-/* Style adjustments for the MUI Slider */
-.metric-slider .MuiSlider-root {
-  pointer-events: auto !important;
-}
-
-.metric-slider .MuiSlider-thumb {
-  pointer-events: auto !important;
-}
-
-.metric-slider .MuiSlider-track {
-  pointer-events: auto !important;
 }
 
 .metric-slider .MuiTypography-root {

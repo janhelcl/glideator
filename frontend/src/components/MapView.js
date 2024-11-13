@@ -26,13 +26,6 @@ const MapView = React.memo(({ sites, selectedMetric, setSelectedMetric, selected
     zoom: 7,
   });
 
-  const handleMoveEnd = (map) => {
-    setMapState({
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-    });
-  };
-
   const rgbToRgba = (rgb, alpha) => {
     const [r, g, b] = rgb.match(/\d+/g);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -108,7 +101,6 @@ const MapView = React.memo(({ sites, selectedMetric, setSelectedMetric, selected
   const sliderRef = useRef(null);
 
   const handleSliderChange = (event, newValue) => {
-    event.stopPropagation();
     if (newValue >= 0 && newValue < metrics.length) {
       setSelectedMetric(metrics[newValue]);
     }
@@ -125,16 +117,6 @@ const MapView = React.memo(({ sites, selectedMetric, setSelectedMetric, selected
       center={mapState.center}
       zoom={mapState.zoom}
       style={{ height: '80vh', width: '100%', position: 'relative' }}
-      whenCreated={(map) => {
-        map.on('moveend', () => handleMoveEnd(map));
-
-        // Initial disable of click and scroll propagation for the slider container
-        const sliderContainer = sliderRef.current;
-        if (sliderContainer) {
-          L.DomEvent.disableClickPropagation(sliderContainer);
-          L.DomEvent.disableScrollPropagation(sliderContainer);
-        }
-      }}
     >
       <LayersControl position="topright">
         <BaseLayer checked name="Basic">
@@ -152,36 +134,31 @@ const MapView = React.memo(({ sites, selectedMetric, setSelectedMetric, selected
       </LayersControl>
 
       <PreventLeafletControl>
-        <div className="metric-slider-container">
-          <div className="metric-slider-wrapper">
-            <Box
-              ref={sliderRef}
-              className="metric-slider"
-              sx={{
-                '& *': {
-                  pointerEvents: 'auto !important'
-                }
-              }}
-            >
-              <Typography variant="subtitle1" gutterBottom>
-                Select Metric
-              </Typography>
-              <Slider
-                orientation="vertical"
-                value={sliderValue === -1 ? 0 : sliderValue}
-                min={0}
-                max={metrics.length - 1}
-                step={1}
-                marks={marks}
-                onChange={handleSliderChange}
-                valueLabelDisplay="off"
-                aria-labelledby="metric-slider"
-              />
-            </Box>
-          </div>
-        </div>
+        <Box
+          ref={sliderRef}
+          className="metric-slider"
+          sx={{
+            '& *': {
+              pointerEvents: 'auto !important'
+            }
+          }}
+        >
+          <Typography variant="subtitle1" gutterBottom>
+            Select Metric
+          </Typography>
+          <Slider
+            orientation="vertical"
+            value={sliderValue === -1 ? 0 : sliderValue}
+            min={0}
+            max={metrics.length - 1}
+            step={1}
+            marks={marks}
+            onChange={handleSliderChange}
+            valueLabelDisplay="off"
+            aria-labelledby="metric-slider"
+          />
+        </Box>
       </PreventLeafletControl>
-
       {markers}
     </MapContainer>
   );
