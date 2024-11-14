@@ -71,3 +71,29 @@
   font-size: 0.75rem;
   color: #333;
 }
+
+/* Ensure small maps have no additional controls or attributions */
+.leaflet-control-attribution {
+  display: none !important; /* Hide attribution if it still appears */
+}
+
+/* Style for small maps */
+.date-box .leaflet-container {
+  width: 150px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Adjust glowing-marker styles if necessary */
+.glowing-marker {
+  /* Existing styles */
+}
+
+.date-box.selected {
+  border: 2px solid #1976d2;
+}
+
+.date-box:hover {
+  border: 2px solid #90caf9;
+}

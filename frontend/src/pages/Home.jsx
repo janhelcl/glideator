@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import Controls from '../components/Controls';
+import DateBoxes from '../components/DateBoxes';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
 import { CircularProgress, Box } from '@mui/material';
@@ -25,6 +25,13 @@ const Home = () => {
   });
   const [allSites, setAllSites] = useState([]); // Store all fetched sites
   const [loading, setLoading] = useState(false);
+
+  // Shared map state excluding bounds
+  const [mapState, setMapState] = useState({
+    center: [50.0755, 14.4378],
+    zoom: 7,
+    bounds: null
+  });
 
   // Generate dates and set initial values
   useEffect(() => {
@@ -113,28 +120,39 @@ const Home = () => {
   }, [allSites, selectedMetric, selectedDate]);
 
   return (
-    <div>
-      <h1>Paragliding Site Recommendations</h1>
-      <Controls
-        dates={dates}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-      />
+    <div style={{ position: 'relative', height: '100vh' }}>
+      <h1 style={{ textAlign: 'center' }}>Paragliding Site Recommendations</h1>
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
+        <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
           <CircularProgress />
         </Box>
       ) : (
-        <MapView
-          sites={filteredSites}
-          selectedMetric={selectedMetric}
-          setSelectedMetric={setSelectedMetric}
-          selectedDate={selectedDate}
-          metrics={METRICS}
-        />
+        <>
+          <MapView
+            sites={filteredSites}
+            selectedMetric={selectedMetric}
+            setSelectedMetric={setSelectedMetric}
+            selectedDate={selectedDate}
+            metrics={METRICS}
+            center={mapState.center}
+            zoom={mapState.zoom}
+            setMapState={setMapState} // Used to update center and zoom
+          />
+          <DateBoxes
+            dates={dates}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            center={mapState.center}
+            zoom={mapState.zoom}
+            bounds={mapState.bounds}
+            allSites={allSites}
+            selectedMetric={selectedMetric}
+            metrics={METRICS}
+          />
+        </>
       )}
     </div>
   );
-}
+};
 
 export default Home;
