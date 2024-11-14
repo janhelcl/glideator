@@ -121,7 +121,6 @@ const Home = () => {
 
   return (
     <div style={{ position: 'relative', height: '100vh' }}>
-      <h1 style={{ textAlign: 'center' }}>Paragliding Site Recommendations</h1>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
           <CircularProgress />
