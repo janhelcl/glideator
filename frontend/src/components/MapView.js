@@ -194,10 +194,12 @@ const MapView = React.memo(({
       center={center}
       zoom={zoom}
       style={{ 
-        height: isSmallMap ? '100px' : '80vh', 
+        height: isSmallMap ? '100px' : '100%', 
         width: isSmallMap ? '150px' : '100%',
         position: 'relative',
         minWidth: isSmallMap ? '150px' : 'auto',
+        margin: 0,
+        padding: 0
       }}
       dragging={!isSmallMap}
       scrollWheelZoom={!isSmallMap}

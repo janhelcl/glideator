@@ -120,9 +120,15 @@ const Home = () => {
   }, [allSites, selectedMetric, selectedDate]);
 
   return (
-    <div style={{ position: 'relative', height: '100vh' }}>
+    <div style={{ 
+      position: 'relative', 
+      height: '100%',
+      margin: 0,
+      padding: 0,
+      overflow: 'hidden'
+    }}>
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
           <CircularProgress />
         </Box>
       ) : (
@@ -135,7 +141,8 @@ const Home = () => {
             metrics={METRICS}
             center={mapState.center}
             zoom={mapState.zoom}
-            setMapState={setMapState} // Used to update center and zoom
+            setMapState={setMapState}
+            bounds={mapState.bounds}
           />
           <DateBoxes
             dates={dates}

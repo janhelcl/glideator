@@ -129,7 +129,12 @@ const Details = () => {
     : 'N/A';
 
   return (
-    <div>
+    <div style={{
+      padding: '20px',
+      minHeight: '100%',
+      overflow: 'auto',
+      boxSizing: 'border-box'
+    }}>
       <h1>Details for {siteName}</h1>
       
       {/* Updated Subtitle */}

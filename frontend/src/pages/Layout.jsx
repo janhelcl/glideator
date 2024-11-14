@@ -36,10 +36,11 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          padding: '2rem',
-          paddingTop: '64px',
-          paddingBottom: '40px',
+          height: 'calc(100vh - 94px)',
+          marginTop: '64px',
+          marginBottom: '30px',
           backgroundColor: '#f5f5f5',
+          padding: 0,
         }}
       >
         {/* This is where child routes will be rendered */}
