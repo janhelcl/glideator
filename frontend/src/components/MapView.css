@@ -7,8 +7,17 @@
   transition: box-shadow 0.3s ease-in-out;
 }
 
+.date-box .glowing-marker {
+  width: 5px;
+  height: 5px;
+}
+
 .glowing-marker:hover .glow {
   box-shadow: 0 0 25px 8px var(--marker-glow-hover-color);
+}
+
+.date-box .glowing-marker:hover .glow {
+  box-shadow: 0 0 12px 4px var(--marker-glow-hover-color);
 }
 
 .glowing-marker:hover .point {
@@ -26,6 +35,10 @@
   transition: box-shadow 0.3s ease-in-out;
 }
 
+.date-box .glowing-marker .glow {
+  box-shadow: 0 0 7px 2px var(--marker-glow-color);
+}
+
 .glowing-marker .point {
   position: absolute;
   top: 50%;
@@ -37,6 +50,12 @@
   transform: translate(-50%, -50%);
   transition: transform 0.3s ease-in-out;
   border: 1px solid black;
+}
+
+.date-box .glowing-marker .point {
+  width: 5px;
+  height: 5px;
+  border-width: 0.5px;
 }
 
 .metric-slider {
