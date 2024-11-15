@@ -38,7 +38,7 @@ const DateBoxes = ({
               selectedMetric={selectedMetric}
               selectedDate={date}
               center={center}
-              zoom={zoom}
+              zoom={zoom + 1}
               bounds={bounds}
               isSmallMap
               metrics={metrics}

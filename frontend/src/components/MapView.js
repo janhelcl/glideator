@@ -164,18 +164,21 @@ const MapView = React.memo(({
           key={`${site.name}-${site.latitude}-${site.longitude}`}
           position={[site.latitude, site.longitude]}
           icon={createCustomIcon(color)}
+          interactive={!isSmallMap}
         >
-          <Popup>
-            <strong>{site.name}</strong><br />
-            Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
-            <button onClick={() => navigate(`/sites/${encodeURIComponent(site.name)}?date=${selectedDate}&metric=${selectedMetric}`)}>
-              Details
-            </button>
-          </Popup>
+          {!isSmallMap && (
+            <Popup>
+              <strong>{site.name}</strong><br />
+              Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
+              <button onClick={() => navigate(`/sites/${encodeURIComponent(site.name)}?date=${selectedDate}&metric=${selectedMetric}`)}>
+                Details
+              </button>
+            </Popup>
+          )}
         </Marker>
       );
     });
-  }, [sites, selectedMetric, selectedDate, navigate]);
+  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap]);
 
   const handleSliderChange = (event, newValue) => {
     if (newValue >= 0 && newValue < metrics.length) {
