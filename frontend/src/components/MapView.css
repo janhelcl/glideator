@@ -93,7 +93,7 @@
 
 /* Ensure small maps have no additional controls or attributions */
 .leaflet-control-attribution {
-  display: none !important; /* Hide attribution if it still appears */
+  display: block !important; /* Ensure attribution is visible */
 }
 
 /* Style for small maps */

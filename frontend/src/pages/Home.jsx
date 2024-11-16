@@ -122,7 +122,7 @@ const Home = () => {
   return (
     <div style={{ 
       position: 'relative', 
-      height: '100%',
+      height: 'calc(100vh - 94px)',
       margin: 0,
       padding: 0,
       overflow: 'hidden'
@@ -143,6 +143,7 @@ const Home = () => {
             zoom={mapState.zoom}
             setMapState={setMapState}
             bounds={mapState.bounds}
+            style={{ height: '100%', width: '100%' }}
           />
           <DateBoxes
             dates={dates}
