@@ -4,3 +4,7 @@ psycopg2-binary
 python-dotenv
 xarray
 sqlalchemy
+fastkml
+lxml
+pykml
+bs4
