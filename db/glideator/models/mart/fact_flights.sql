@@ -1,5 +1,5 @@
-WITH mapping AS (
-	SELECT * FROM {{ ref('seed_launch_mapping')}}
+WITH sites AS (
+	SELECT * FROM {{ ref('dim_sites')}}
 ),
 
 flights AS (
@@ -10,8 +10,8 @@ filtered_flights AS (
 	SELECT
 		flights.*
 	FROM flights
-	INNER JOIN mapping
-	ON flights.launch = mapping.xcontest_name
+	INNER JOIN sites
+	ON flights.site = sites.xc_name
 )
 
 SELECT * FROM filtered_flights

@@ -2,8 +2,8 @@ WITH flights AS (
 	SELECT * FROM {{ ref('fact_flights')}}
 ),
 
-launches AS (
-	SELECT * FROM {{ ref('dim_launches')}}
+sites AS (
+	SELECT * FROM {{ ref('dim_sites')}}
 ),
 
 date_range AS (
@@ -19,18 +19,20 @@ all_dates AS (
 	FROM date_range
 ),
 
-dates_launches_cross AS (
+dates_sites_cross AS (
 	SELECT
 		all_dates.date,
-		launches.name AS launch
+		sites.site_id,
+		sites.name,
+		sites.xc_name AS site
 	FROM all_dates
-	CROSS JOIN launches
+	CROSS JOIN sites
 ),
 
 aggregated_flights AS (
 	SELECT
 		date,
-		launch,
+		site,
 		COUNT(*) AS flight_cnt,
 		MAX(points) AS max_points,
 		MAX(length) AS max_length
@@ -40,16 +42,17 @@ aggregated_flights AS (
 
 daily_aggregated_flights AS (
 	SELECT
-		dates_launches_cross.date,
-		dates_launches_cross.launch,
+		dates_sites_cross.date,
+		dates_sites_cross.site_id,
+		dates_sites_cross.name AS site,
 		CASE WHEN flight_cnt > 0 THEN 1 ELSE 0 END AS flight_registered,
 		COALESCE(flight_cnt, 0) AS flight_cnt,
 		COALESCE(max_points, 0) AS max_points,
 		COALESCE(max_length, 0) AS max_length
-	FROM dates_launches_cross
+	FROM dates_sites_cross
 	LEFT JOIN aggregated_flights
-	ON dates_launches_cross.date = aggregated_flights.date
-	AND dates_launches_cross.launch = aggregated_flights.launch
+	ON dates_sites_cross.date = aggregated_flights.date
+	AND dates_sites_cross.site = aggregated_flights.site
 )
 
 SELECT * FROM daily_aggregated_flights
