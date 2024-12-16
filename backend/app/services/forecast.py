@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 
+import torch
 import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas, models
 import gfs.fetch
 import net.io
+import net.preprocessing as preprocessing
 from gfs.constants import HPA_LVLS
 
 
@@ -25,10 +27,20 @@ EXPECTED_COLUMNS = [
     'ref_time'
 ]
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_FILENAME = 'net.pth'
-PREPROCESSOR_FILENAME = 'preprocessor.pkl'
+MODEL_FILENAME = 'model.pth'
 MODEL_PATH = BASE_DIR / 'models' / MODEL_FILENAME
-PREPROCESSOR_PATH = BASE_DIR / 'models' / PREPROCESSOR_FILENAME
+REFERENCES = (
+    (6, 3),
+    (12, 0),
+    (12, 3)
+)
+WEATHER_FEATURES = []
+for run, delta in REFERENCES:
+    for col in gfs.fetch.get_col_order():
+        WEATHER_FEATURES.append(f'{col}_{run+delta}')
+SITE_FEATURES = ['latitude', 'longitude', 'altitude']
+SITE_ID = 'site_id'
+DATE_FEATURES = ['weekend', 'year', 'day_of_year_sin', 'day_of_year_cos']
 
 
 def process_forecasts(db: Session, forecasts):
@@ -56,10 +68,10 @@ def process_forecasts(db: Session, forecasts):
 
 
 def fetch_sites(db: Session):
-    sites = crud.get_sites(db)
+    sites = crud.get_sites(db, limit=1000)
     sites_df = pd.DataFrame([
         {
-            'launch': site.name,
+            'site_id': site.site_id,
             'latitude': site.latitude,
             'longitude': site.longitude,
             'altitude': site.altitude,
@@ -103,13 +115,22 @@ def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
         fetch_sites(db)
         .set_index(['lat_gfs', 'lon_gfs'])
     )
-    full_data = joined_forecasts.join(sites)
+    full_data = preprocessing.add_date_features(joined_forecasts.join(sites), date_col='ref_time')
     # score
-    predictions = net.io.apply_pipeline(full_data, PREPROCESSOR_PATH, MODEL_PATH)
+    predictions = net.io.score(
+        net=torch.load(MODEL_PATH),
+        full_df=full_data, 
+        weather_features=WEATHER_FEATURES, 
+        site_features=SITE_FEATURES, 
+        date_features=DATE_FEATURES, 
+        site_id_col=SITE_ID, 
+        date_col='ref_time',
+        output_mode='records'
+    )
     # save
-    for site_name, pred_date, metric, value in predictions:
+    for site_id, pred_date, metric, value in predictions:
         prediction = schemas.PredictionCreate(
-            site=site_name,
+            site_id=site_id,
             date=pred_date,
             metric=metric,
             value=value,
@@ -117,7 +138,7 @@ def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
             gfs_forecast_at=gfs_forecast_at
         )
         # Delete existing prediction if any
-        existing_prediction = crud.get_predictions(db, site_name, pred_date, metric)
+        existing_prediction = crud.get_predictions(db, site_id, pred_date, metric)
         if existing_prediction:
             db.delete(existing_prediction[0])
         # Create new prediction
@@ -128,7 +149,7 @@ def process_and_save_forecasts(db: Session, joined_forecasts):
     forecasts = []
     for _, row in joined_forecasts.iterrows():
         forecast = schemas.ForecastCreate(
-            date=row['date_12'],
+            date=row['ref_time'].date(),
             lat_gfs=row['lat_gfs'],
             lon_gfs=row['lon_gfs'],
             forecast_9=json.dumps(forecast_to_dict(row, suffix='_9')),

@@ -4,8 +4,11 @@ from . import models, schemas
 from typing import Optional, List
 from datetime import date, datetime
 
-def get_site(db: Session, site_name: str):
-    return db.query(models.Site).filter(models.Site.name == site_name).first()
+def get_site(db: Session, site_id: int):
+    return db.query(models.Site).filter(models.Site.site_id == site_id).first()
+
+def get_site_by_name(db: Session, name: str):
+    return db.query(models.Site).filter(models.Site.name == name).first()
 
 def get_sites(
     db: Session, 
@@ -43,15 +46,11 @@ def create_site(db: Session, site: schemas.SiteCreate):
     db.refresh(db_site)
     return db_site
 
-def get_predictions(db: Session, site_name: str, query_date: Optional[date] = None, metric: Optional[str] = None):
+def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
-    Retrieves predictions based on site name, and optionally filters by date and metric.
-    
-    - If `metric` is provided, filters predictions by the specified metric.
-    - If `query_date` is provided, filters predictions by the specified date.
-    - If neither is provided, returns all predictions for the given site.
+    Retrieves predictions based on site_id, and optionally filters by date and metric.
     """
-    query = db.query(models.Prediction).filter(models.Prediction.site == site_name)
+    query = db.query(models.Prediction).filter(models.Prediction.site_id == site_id)
     
     if query_date:
         query = query.filter(models.Prediction.date == query_date)

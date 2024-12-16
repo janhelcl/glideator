@@ -5,7 +5,8 @@ from .database import Base
 class Site(Base):
     __tablename__ = 'sites'
     
-    name = Column(String, primary_key=True, index=True)
+    site_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     altitude = Column(Integer, nullable=False)
@@ -17,7 +18,7 @@ class Site(Base):
 class Prediction(Base):
     __tablename__ = 'predictions'
     
-    site = Column(String, ForeignKey('sites.name'), primary_key=True)
+    site_id = Column(Integer, ForeignKey('sites.site_id'), primary_key=True)
     date = Column(Date, primary_key=True)
     metric = Column(String, primary_key=True)
     value = Column(Float, nullable=False)

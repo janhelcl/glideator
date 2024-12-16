@@ -16,6 +16,7 @@ def load_sites_from_csv(db: Session, csv_filename: str):
         reader = csv.DictReader(file)
         for row in reader:
             site = schemas.SiteCreate(
+                site_id=int(row['site_id']),
                 name=row['name'],
                 latitude=float(row['latitude']),
                 longitude=float(row['longitude']),
@@ -24,7 +25,7 @@ def load_sites_from_csv(db: Session, csv_filename: str):
                 lon_gfs=float(row['lon_gfs'])
             )
             # Check if site already exists to prevent duplicates
-            existing_site = crud.get_site(db, site_name=site.name)
+            existing_site = crud.get_site(db, site.site_id)
             if not existing_site:
                 crud.create_site(db, site)
     db.commit()

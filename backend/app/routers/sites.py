@@ -37,25 +37,29 @@ def read_sites(
     sites = crud.get_sites(db, skip=skip, limit=limit, metric=metric, date=date)
     return sites
 
-@router.get("/{site_name}/predictions", response_model=List[schemas.Prediction])
+@router.get("/{site_id}/predictions", response_model=List[schemas.Prediction])
 def read_predictions(
-    site_name: str,
+    site_id: int,
     query_date: Optional[date] = Query(None, description="Date to filter predictions"),
     metric: Optional[str] = Query(None, description="Metric to filter predictions"),
     db: Session = Depends(get_db)
 ):
-    predictions = crud.get_predictions(db, site_name, query_date, metric)
+    site = crud.get_site(db, site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+        
+    predictions = crud.get_predictions(db, site_id, query_date, metric)
     if not predictions:
         raise HTTPException(status_code=404, detail="Predictions not found")
     return predictions
 
-@router.get("/{site_name}/forecast", response_model=schemas.Forecast)
+@router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(
-    site_name: str,
+    site_id: int,
     query_date: date = Query(..., description="Date of the forecast"),
     db: Session = Depends(get_db)
 ):
-    site = crud.get_site(db, site_name)
+    site = crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
     

@@ -10,13 +10,13 @@ class PredictionBase(BaseModel):
     gfs_forecast_at: datetime
 
 class PredictionCreate(PredictionBase):
-    site: str
+    site_id: int
 
 class Prediction(PredictionBase):
-    site: str
+    site_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SiteBase(BaseModel):
     name: str
@@ -27,13 +27,17 @@ class SiteBase(BaseModel):
     lon_gfs: float
 
 class SiteCreate(SiteBase):
-    pass
+    site_id: int
 
-class Site(SiteBase):
+class SiteResponse(SiteBase):
+    site_id: int
     predictions: List[Prediction] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class Site(SiteResponse):
+    pass
 
 class ForecastBase(BaseModel):
     date: date
@@ -48,4 +52,4 @@ class ForecastCreate(ForecastBase):
 
 class Forecast(ForecastBase):
     class Config:
-        orm_mode = True
+        from_attributes = True

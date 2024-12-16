@@ -1,4 +1,7 @@
 import logging
+import time
+from kombu import Connection
+from kombu.exceptions import OperationalError
 
 from fastapi import FastAPI
 from .database import engine, Base, SessionLocal
@@ -48,6 +51,21 @@ def startup_event():
         # Load sites from CSV
         logger.info("Loading sites from CSV...")
         load_sites_from_csv(db, 'sites.csv')
+        
+        # Wait for RabbitMQ to be ready
+        retry_count = 0
+        while retry_count < 5:  # Try 5 times
+            try:
+                conn = Connection(celery.conf.broker_url)
+                conn.connect()
+                conn.close()
+                # If connection successful, break the loop
+                break
+            except OperationalError:
+                logger.info("Waiting for RabbitMQ to be ready...")
+                time.sleep(2)
+                retry_count += 1
+        
         # Generate and store predictions
         logger.info("Generating and storing predictions...")
         celery.send_task('app.celery_app.check_and_trigger_forecast_processing')
