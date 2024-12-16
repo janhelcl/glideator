@@ -55,7 +55,7 @@ def get_gfs_grib_url(date, run, delta):
     date_str = date.strftime("%Y%m%d")
     url = (
      f"https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?dir=%2Fgfs.{date_str}%2F{run:02d}%2Fatmos&file=gfs.t{run:02d}z.pgrb2.0p25.f{delta:03d}&"
-     "var_DPT=on&var_GUST=on&var_HGT=on&var_PRES=on&var_PWAT=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&lev_2_m_above_ground=on&lev_10_m_above_ground=on&lev_80_m_above_ground=on&lev_100_m_above_ground=on&lev_1000_mb=on&lev_975_mb=on&lev_950_mb=on&lev_925_mb=on&lev_900_mb=on&lev_850_mb=on&lev_800_mb=on&lev_750_mb=on&lev_700_mb=on&lev_650_mb=on&lev_600_mb=on&lev_550_mb=on&lev_500_mb=on&lev_surface=on&lev_entire_atmosphere_(considered_as_a_single_layer)=on&subregion=&toplat=50.75&leftlon=13.25&rightlon=18.75&bottomlat=48.75"
+     "var_DPT=on&var_GUST=on&var_HGT=on&var_PRES=on&var_PWAT=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&lev_2_m_above_ground=on&lev_10_m_above_ground=on&lev_80_m_above_ground=on&lev_100_m_above_ground=on&lev_1000_mb=on&lev_975_mb=on&lev_950_mb=on&lev_925_mb=on&lev_900_mb=on&lev_850_mb=on&lev_800_mb=on&lev_750_mb=on&lev_700_mb=on&lev_650_mb=on&lev_600_mb=on&lev_550_mb=on&lev_500_mb=on&lev_surface=on&lev_entire_atmosphere_(considered_as_a_single_layer)=on&subregion=&toplat=52&leftlon=6.5&rightlon=20.75&bottomlat=41.5"
     )
     return url
 
