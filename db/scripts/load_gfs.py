@@ -24,7 +24,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-import gfs
+import gfs.fetch
+import gfs.utils
 
 
 SCHEMA = "source"
@@ -54,8 +55,8 @@ def get_launches(engine):
         glideator_mart.dim_launches
     """
     launches = pd.read_sql(query, con=engine)
-    launches['lat_gfs'] = gfs.round_to_nearest_quarter(launches['latitude'])
-    launches['lon_gfs'] = gfs.round_to_nearest_quarter(launches['longitude'])
+    launches['lat_gfs'] = gfs.utils.round_to_nearest_quarter(launches['latitude'])
+    launches['lon_gfs'] = gfs.utils.round_to_nearest_quarter(launches['longitude'])
     logging.info(f"Retrieved {len(launches)} launch sites.")
     return launches
 
@@ -99,7 +100,7 @@ def get_gfs_data(start_date, end_date, run, delta, lat_gfs, lon_gfs, engine):
         logging.info(f"Fetching GFS data for {date}.")
         try:
             load_gfs_data(
-                gfs.get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'),
+                gfs.fetch.get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='hist'),
                 engine
             )
         except Exception as e:
