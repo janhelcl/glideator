@@ -6,7 +6,7 @@ import { CircularProgress, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Define metrics outside the component to maintain a stable reference
-const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50'];
+const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
 const Home = () => {
   const navigate = useNavigate();

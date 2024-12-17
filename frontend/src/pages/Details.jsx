@@ -6,7 +6,7 @@ import { CircularProgress, Box, FormControl, InputLabel, Select, MenuItem, Check
 import ForecastCharts from '../components/ForecastCharts';
 
 const Details = () => {
-  const { siteName } = useParams();
+  const { siteId } = useParams();
   const location = useLocation();
   const [predictions, setPredictions] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -29,7 +29,7 @@ const Details = () => {
 
     const loadPredictions = async () => {
       setLoading(true);
-      const data = await fetchSitePredictions(siteName);
+      const data = await fetchSitePredictions(siteId);
       
       // Filter out past dates and convert probabilities to percentages
       const filteredData = data
@@ -49,15 +49,20 @@ const Details = () => {
         setSelectedDate(dates[0]); // Set the first date as default
       }
 
-      // Extract unique metrics
+      // Extract unique metrics and sort them numerically
       const metrics = [...new Set(filteredData.map((pred) => pred.metric))];
-      setUniqueMetrics(metrics);
+      const sortedMetrics = metrics.sort((a, b) => {
+        const numA = parseInt(a.replace('XC', ''), 10);
+        const numB = parseInt(b.replace('XC', ''), 10);
+        return numA - numB;
+      });
+      setUniqueMetrics(sortedMetrics);
       
       // Set selectedMetrics based on the 'metric' query parameter
-      if (metric && metrics.includes(metric)) {
+      if (metric && sortedMetrics.includes(metric)) {
         setSelectedMetrics([metric]);
-      } else if (metrics.length > 0) {
-        setSelectedMetrics([metrics[0]]); // Select the first metric by default
+      } else if (sortedMetrics.length > 0) {
+        setSelectedMetrics([sortedMetrics[0]]); // Select the first metric by default
       } else {
         setSelectedMetrics([]);
       }
@@ -66,7 +71,7 @@ const Details = () => {
     };
 
     loadPredictions();
-  }, [siteName, location.search, today]);
+  }, [siteId, location.search, today]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -123,6 +128,13 @@ const Details = () => {
     }
   });
 
+  // Sort metrics numerically for the bar chart
+  const sortedFilteredMetrics = [...filteredMetrics].sort((a, b) => {
+    const numA = parseInt(a.metric.replace('XC', ''), 10);
+    const numB = parseInt(b.metric.replace('XC', ''), 10);
+    return numA - numB;
+  });
+
   // Format the gfs_forecast_at date string
   const formattedGfsForecastAt = gfsForecastAt
     ? new Date(gfsForecastAt).toLocaleString()
@@ -135,7 +147,7 @@ const Details = () => {
       overflow: 'auto',
       boxSizing: 'border-box'
     }}>
-      <h1>Details for {siteName}</h1>
+      <h1>Details for {siteId}</h1>
       
       {/* Updated Subtitle */}
       <h2>Based on NOAA GFS forecast at: {formattedGfsForecastAt}</h2>
@@ -186,25 +198,25 @@ const Details = () => {
       {/* Flyability Charts */}
       <Box display="flex" flexWrap="wrap" justifyContent="space-around" className="flyability-charts">
         {/* Bar Chart */}
-        {filteredMetrics.length > 0 && (
+        {sortedFilteredMetrics.length > 0 && (
           <Box className="plot-container">
             <Plot
               data={[
                 {
                   type: 'bar',
-                  x: filteredMetrics.map((m) => m.metric),
-                  y: filteredMetrics.map((m) => m.value),
+                  x: sortedFilteredMetrics.map((m) => m.metric),
+                  y: sortedFilteredMetrics.map((m) => m.value),
                   marker: {
                     color: '#1f77b4',
                   },
                   customdata: customHoverData,
                   hovertemplate: '%{customdata}<extra></extra>',
-                  text: filteredMetrics.map((m) => `${m.value}%`),
+                  text: sortedFilteredMetrics.map((m) => `${m.value}%`),
                   textposition: 'auto',
                 },
               ]}
               layout={{
-                title: `Glideator Flyability Forecast for ${selectedDate} at ${siteName}`,
+                title: `Glideator Flyability Forecast for ${selectedDate} at Site ID ${siteId}`,
                 xaxis: { title: 'XC Points' },
                 yaxis: { title: 'Probability (%)', range: [0, 100], tickformat: 'd' },
                 bargap: 0,
@@ -245,7 +257,7 @@ const Details = () => {
 
       {/* Weather Forecast Section */}
       <Box ref={weatherRef} className="weather-forecast">
-        <ForecastCharts siteName={siteName} queryDate={selectedDate} />
+        <ForecastCharts siteId={siteId} queryDate={selectedDate} />
       </Box>
     </div>
   );

@@ -161,7 +161,7 @@ const MapView = React.memo(({
 
       return (
         <Marker
-          key={`${site.name}-${site.latitude}-${site.longitude}`}
+          key={`site-${site.site_id}`}
           position={[site.latitude, site.longitude]}
           icon={createCustomIcon(color)}
           interactive={!isSmallMap}
@@ -170,7 +170,7 @@ const MapView = React.memo(({
             <Popup>
               <strong>{site.name}</strong><br />
               Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
-              <button onClick={() => navigate(`/sites/${encodeURIComponent(site.name)}?date=${selectedDate}&metric=${selectedMetric}`)}>
+              <button onClick={() => navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`)}>
                 Details
               </button>
             </Popup>

@@ -3,14 +3,14 @@ import Plot from 'react-plotly.js';
 import { fetchSiteForecast } from '../api';
 import './ForecastCharts.css'; // Ensure CSS is imported
 
-const ForecastCharts = ({ siteName, queryDate }) => {
+const ForecastCharts = ({ siteId, queryDate }) => {
   const [forecastData, setForecastData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadForecastData = async () => {
       try {
-        const data = await fetchSiteForecast(siteName, queryDate);
+        const data = await fetchSiteForecast(siteId, queryDate);
         setForecastData(data);
       } catch (err) {
         console.error("Error fetching forecast data:", err);
@@ -18,7 +18,7 @@ const ForecastCharts = ({ siteName, queryDate }) => {
       }
     };
     loadForecastData();
-  }, [siteName, queryDate]);
+  }, [siteId, queryDate]);
 
   if (error) {
     return <div>{error}</div>;
@@ -235,7 +235,7 @@ const ForecastCharts = ({ siteName, queryDate }) => {
   return (
     <div className="forecast-charts">
       <h2>
-        Forecast Charts for {siteName} on {queryDate}
+        Forecast Charts for Site ID {siteId} on {queryDate}
       </h2>
       {forecastData.forecast_9 && renderForecastPlots(forecastData.forecast_9, 'Forecast 9')}
       {forecastData.forecast_12 && renderForecastPlots(forecastData.forecast_12, 'Forecast 12')}

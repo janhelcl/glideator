@@ -19,19 +19,21 @@ export const fetchSites = async (metric = null, date = null) => {
   }
 };
 
-export const fetchSitePredictions = async (siteName) => {
+// Fetch predictions using site_id
+export const fetchSitePredictions = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteName}/predictions/`); // Added trailing slash
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/predictions/`); // Added trailing slash
     return response.data;
   } catch (error) {
-    console.error(`Error fetching predictions for site ${siteName}:`, error);
+    console.error(`Error fetching predictions for site ID ${siteId}:`, error);
     return [];
   }
 };
 
-export const fetchSiteForecast = async (siteName, queryDate) => {
+// Fetch forecast using site_id
+export const fetchSiteForecast = async (siteId, queryDate) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteName}/forecast/`, {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/forecast/`, {
       params: {
         query_date: queryDate,
       },
