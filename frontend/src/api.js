@@ -3,9 +3,11 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:8000'; // Update with your backend URL
 
 // Fetch all sites with optional metric and date filters
-export const fetchSites = async (metric = null, date = null) => {
+export const fetchSites = async (metric = null, date = null, limit = 1000) => {
   try {
-    const params = {};
+    const params = {
+      limit
+    };
     if (metric) params.metric = metric;
     if (date) params.date = date;
 

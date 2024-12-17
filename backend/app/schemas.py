@@ -18,6 +18,10 @@ class Prediction(PredictionBase):
     class Config:
         from_attributes = True
 
+class PredictionValues(BaseModel):
+    date: date
+    values: List[float]
+
 class SiteBase(BaseModel):
     name: str
     latitude: float
@@ -25,16 +29,20 @@ class SiteBase(BaseModel):
     altitude: int
     lat_gfs: float
     lon_gfs: float
+    site_id: int
 
 class SiteCreate(SiteBase):
     site_id: int
 
-class SiteResponse(SiteBase):
+class SiteResponse(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
     site_id: int
-    predictions: List[Prediction] = []
+    predictions: List[PredictionValues]
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class Site(SiteResponse):
     pass

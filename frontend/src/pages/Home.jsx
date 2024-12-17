@@ -8,6 +8,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
+const metricIndexMap = METRICS.reduce((acc, metric, index) => {
+  acc[metric] = index;
+  return acc;
+}, {});
+
 const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,6 +99,8 @@ const Home = () => {
     console.log('Selected Metric:', selectedMetric);
     console.log('Selected Date:', selectedDate);
 
+    const metricIdx = metricIndexMap[selectedMetric];
+
     const result = allSites.filter((site) => {
       // Check if site has predictions
       if (!site.predictions || !Array.isArray(site.predictions)) {
@@ -101,18 +108,22 @@ const Home = () => {
         return false;
       }
 
-      // Find a prediction that matches both metric and date
-      const hasMatchingPrediction = site.predictions.some(
-        (pred) => pred.metric === selectedMetric && pred.date === selectedDate
-      );
-
-      if (hasMatchingPrediction) {
-        console.log(`Site "${site.name}" matches the criteria.`);
-      } else {
-        console.log(`Site "${site.name}" does NOT match the criteria.`);
+      // Find a prediction that matches the selected date
+      const predictionForDate = site.predictions.find(pred => pred.date === selectedDate);
+      if (!predictionForDate || !Array.isArray(predictionForDate.values)) {
+        console.warn(`Site "${site.name}" has no predictions for date ${selectedDate}.`);
+        return false;
       }
 
-      return hasMatchingPrediction;
+      // Get the value for the selected metric based on its index
+      const value = predictionForDate.values[metricIdx];
+      if (value !== undefined && value !== null) {
+        console.log(`Site "${site.name}" matches the criteria with value ${value}.`);
+        return true;
+      } else {
+        console.log(`Site "${site.name}" does NOT match the criteria.`);
+        return false;
+      }
     });
 
     console.log('Filtered Sites:', result);

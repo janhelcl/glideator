@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import MapView from './MapView';
 import './DateBoxes.css';
@@ -14,15 +14,26 @@ const DateBoxes = ({
   selectedMetric,
   metrics,
 }) => {
+  const metricIndexMap = useMemo(() => {
+    return metrics.reduce((acc, metric, index) => {
+      acc[metric] = index;
+      return acc;
+    }, {});
+  }, [metrics]);
+
   return (
     <Box className="date-boxes-container">
       {dates.map((date) => {
-        // Filter sites based on the specific date
-        const filteredSites = allSites.filter((site) =>
-          site.predictions.some(
-            (pred) => pred.metric === selectedMetric && pred.date === date
-          )
-        );
+        // Filter sites based on the specific date and selected metric
+        const filteredSites = allSites.filter((site) => {
+          const predictionForDate = site.predictions.find(pred => pred.date === date);
+          if (!predictionForDate || !Array.isArray(predictionForDate.values)) {
+            return false;
+          }
+          const metricIdx = metricIndexMap[selectedMetric];
+          const value = predictionForDate.values[metricIdx];
+          return value !== undefined && value !== null;
+        });
 
         return (
           <Box

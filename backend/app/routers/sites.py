@@ -26,15 +26,13 @@ def create_site(site: schemas.SiteCreate, db: Session = Depends(get_db)):
     db_site = crud.create_site(db, site)
     return db_site
 
-@router.get("/", response_model=List[schemas.Site])
+@router.get("/", response_model=List[schemas.SiteResponse])
 def read_sites(
     skip: int = 0,
     limit: int = 100,
-    metric: Optional[str] = Query(None, description="Metric to filter predictions"),
-    date: Optional[date] = Query(None, description="Date to filter predictions"),
     db: Session = Depends(get_db)
 ):
-    sites = crud.get_sites(db, skip=skip, limit=limit, metric=metric, date=date)
+    sites = crud.get_sites_with_predictions(db, skip=skip, limit=limit)
     return sites
 
 @router.get("/{site_id}/predictions", response_model=List[schemas.Prediction])

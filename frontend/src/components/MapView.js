@@ -105,6 +105,13 @@ const MapView = React.memo(({
 }) => {
   const navigate = useNavigate();
 
+  const metricIndexMap = useMemo(() => {
+    return metrics.reduce((acc, metric, index) => {
+      acc[metric] = index;
+      return acc;
+    }, {});
+  }, [metrics]);
+
   const rgbToRgba = (rgb, alpha) => {
     const [r, g, b] = rgb.match(/\d+/g);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -112,12 +119,18 @@ const MapView = React.memo(({
 
   const getPredictionValue = (site) => {
     const prediction = site.predictions.find(
-      (pred) => pred.metric === selectedMetric && pred.date === selectedDate
+      (pred) => pred.date === selectedDate
     );
-    return prediction ? prediction.value : 'N/A';
+    if (prediction && Array.isArray(prediction.values)) {
+      const metricIdx = metricIndexMap[selectedMetric];
+      const value = prediction.values[metricIdx];
+      return value !== undefined ? value : 'N/A';
+    }
+    return 'N/A';
   };
 
   const getColor = (probability) => {
+    if (probability === 'N/A') return 'gray';
     const p = Math.max(0, Math.min(1, probability));
     const r = Math.round(255 * (1 - p));
     const g = Math.round(255 * p);

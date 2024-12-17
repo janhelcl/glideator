@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, selectinload, with_loader_criteria
-from sqlalchemy import and_
+from sqlalchemy import and_, func
+from collections import defaultdict
 from . import models, schemas
 from typing import Optional, List
 from datetime import date, datetime
@@ -94,3 +95,38 @@ def get_forecast(db: Session, query_date: date, lat_gfs: float, lon_gfs: float) 
 def delete_forecasts_by_date(db: Session, query_date: date):
     db.query(models.Forecast).filter(models.Forecast.date == query_date).delete()
     db.commit()
+
+def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
+    sites = db.query(models.Site).offset(skip).limit(limit).all()
+    site_predictions = defaultdict(lambda: defaultdict(list))
+
+    predictions = (
+        db.query(models.Prediction)
+        .filter(models.Prediction.site_id.in_([site.site_id for site in sites]))
+        .order_by(models.Prediction.date, models.Prediction.metric)
+        .all()
+    )
+
+    for pred in predictions:
+        site_predictions[pred.site_id][pred.date].append(pred.value)
+
+    result = []
+    for site in sites:
+        predictions_list = []
+        for pred_date, values in site_predictions[site.site_id].items():
+            # Ensure values are sorted by metric (assuming metric names like XC0, XC10, ...)
+            sorted_values = sorted(
+                values, 
+                key=lambda x: int(x.split('XC')[1]) if isinstance(x, str) and x.startswith('XC') else 0
+            )
+            predictions_list.append(schemas.PredictionValues(date=pred_date, values=sorted_values))
+        site_response = schemas.SiteResponse(
+            name=site.name,
+            latitude=site.latitude,
+            longitude=site.longitude,
+            site_id=site.site_id,
+            predictions=predictions_list
+        )
+        result.append(site_response)
+
+    return result
