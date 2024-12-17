@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime
+from datetime import datetime, date
 import logging
 
 from celery import Celery, chain
@@ -8,8 +8,11 @@ from sqlalchemy.orm import sessionmaker
 from .database import engine
 from .crud import get_latest_gfs_forecast
 from .services.forecast import process_forecasts, fetch_sites
+from .models import Prediction, Forecast
 import gfs.utils
 import gfs.fetch
+from sqlalchemy import and_
+from celery.schedules import crontab
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,10 @@ celery.conf.beat_schedule = {
     'generate-predictions-every-hour': {
         'task': 'app.celery_app.check_and_trigger_forecast_processing',
         'schedule': 3600.0,  # Every hour
+    },
+    'cleanup-old-data-daily': {
+        'task': 'app.celery_app.cleanup_old_data',
+        'schedule': crontab(hour=2, minute=0),  # Every day at 2 AM
     },
 }
 celery.conf.timezone = 'UTC'
@@ -103,3 +110,30 @@ def fetch_forecast_for_day_task(date, run, deltas, lat_gfs, lon_gfs):
 def process_forecasts_task(forecasts):
     with SessionLocal() as db:
         return process_forecasts(db, forecasts)
+
+
+@celery.task
+def cleanup_old_data():
+    """
+    Deletes all predictions and forecasts older than today.
+    """
+    today = date.today()
+    db = SessionLocal()
+    try:
+        # Delete old predictions
+        db.query(Prediction).filter(
+            Prediction.date < today
+        ).delete(synchronize_session=False)
+        
+        # Delete old forecasts
+        db.query(Forecast).filter(
+            Forecast.date < today
+        ).delete(synchronize_session=False)
+        
+        db.commit()
+        logger.info(f"Cleaned up predictions and forecasts older than {today}")
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
+        db.rollback()
+    finally:
+        db.close()

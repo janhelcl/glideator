@@ -66,6 +66,10 @@ def startup_event():
                 time.sleep(2)
                 retry_count += 1
         
+        # Clean up old data
+        logger.info("Cleaning up old data...")
+        celery.send_task('app.celery_app.cleanup_old_data')
+        
         # Generate and store predictions
         logger.info("Generating and storing predictions...")
         celery.send_task('app.celery_app.check_and_trigger_forecast_processing')
