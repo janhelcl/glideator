@@ -102,6 +102,8 @@ const MapView = React.memo(({
   setMapState,
   isSmallMap = false,
   metrics,
+  getMarkerRef,
+  mapRef,
 }) => {
   const navigate = useNavigate();
 
@@ -178,6 +180,11 @@ const MapView = React.memo(({
           position={[site.latitude, site.longitude]}
           icon={createCustomIcon(color)}
           interactive={!isSmallMap}
+          ref={(ref) => {
+            if (ref && getMarkerRef) {
+              getMarkerRef(site.site_id, ref);
+            }
+          }}
         >
           {!isSmallMap && (
             <Popup>
@@ -191,7 +198,7 @@ const MapView = React.memo(({
         </Marker>
       );
     });
-  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap]);
+  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, getMarkerRef]);
 
   const handleSliderChange = (event, newValue) => {
     if (newValue >= 0 && newValue < metrics.length) {
@@ -227,6 +234,7 @@ const MapView = React.memo(({
       touchZoom={!isSmallMap}
       attributionControl={!isSmallMap}
       maxBoundsViscosity={1.0}
+      ref={mapRef}
     >
       {/* Pass isSmallMap to SynchronizeMapView */}
       {isSmallMap && <SynchronizeMapView bounds={bounds} />}

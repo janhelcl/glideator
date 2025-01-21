@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Box } from '@mui/material';
+import SearchBar from '../components/SearchBar';
+import { fetchSites } from '../api';  // Make sure this import matches your API setup
 
 const Layout = () => {
+  // This state and function will be passed down to components that need it
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [sites, setSites] = useState([]);
+
+  useEffect(() => {
+    const loadSites = async () => {
+      try {
+        const sitesData = await fetchSites();
+        setSites(sitesData);
+      } catch (error) {
+        console.error('Error loading sites:', error);
+      }
+    };
+
+    loadSites();
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Top Navigation Bar */}
@@ -28,6 +47,10 @@ const Layout = () => {
           >
             Home
           </Typography>
+          <SearchBar 
+            sites={sites}  // Pass the actual sites data
+            onSiteSelect={setSelectedSite}
+          />
         </Toolbar>
       </AppBar>
 
@@ -44,7 +67,7 @@ const Layout = () => {
         }}
       >
         {/* This is where child routes will be rendered */}
-        <Outlet />
+        <Outlet context={{ selectedSite, setSelectedSite }} />
       </Box>
 
       {/* Bottom Footer Bar */}

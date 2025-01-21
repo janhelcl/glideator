@@ -3,7 +3,7 @@ import DateBoxes from '../components/DateBoxes';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
 import { CircularProgress, Box } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -17,6 +17,9 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isFirstRender = useRef(true);
+  const { selectedSite } = useOutletContext();
+  const markerRefs = useRef({});
+  const mapRef = useRef();
 
   const [selectedMetric, setSelectedMetric] = useState(() => {
     const params = new URLSearchParams(location.search);
@@ -130,6 +133,28 @@ const Home = () => {
     return result;
   }, [allSites, selectedMetric, selectedDate]);
 
+  // Update the effect to handle map centering
+  useEffect(() => {
+    if (selectedSite && mapRef.current) {
+      // Center map on selected site
+      mapRef.current.setView(
+        [selectedSite.latitude, selectedSite.longitude],
+        mapRef.current.getZoom()  // Maintain current zoom level
+      );
+
+      // Open the popup
+      const markerRef = markerRefs.current[selectedSite.site_id];
+      if (markerRef) {
+        markerRef.openPopup();
+      }
+    }
+  }, [selectedSite]);
+
+  // Add this to your MapView component props
+  const getMarkerRef = (siteId, ref) => {
+    markerRefs.current[siteId] = ref;
+  };
+
   return (
     <div style={{ 
       position: 'relative', 
@@ -155,6 +180,8 @@ const Home = () => {
             setMapState={setMapState}
             bounds={mapState.bounds}
             style={{ height: '100%', width: '100%' }}
+            getMarkerRef={getMarkerRef}
+            mapRef={mapRef}
           />
           <DateBoxes
             dates={dates}
