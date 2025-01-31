@@ -190,9 +190,15 @@ const MapView = React.memo(({
             <Popup>
               <strong>{site.name}</strong><br />
               Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
-              <button onClick={() => navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`)}>
+              <a 
+                href={`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
+                }}
+              >
                 Details
-              </button>
+              </a>
             </Popup>
           )}
         </Marker>
