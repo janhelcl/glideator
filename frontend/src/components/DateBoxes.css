@@ -1,6 +1,6 @@
 .date-boxes-container {
     position: absolute;
-    bottom: 10px;
+    bottom: calc(var(--footer-height, 30px) + 10px);
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -84,7 +84,7 @@
 /* Mobile optimizations */
 @media (max-width: 600px) {
     .date-boxes-container {
-        bottom: 5px;
+        bottom: calc(var(--footer-height, 24px) + 5px);
         padding: 5px;
         gap: 5px;
     }

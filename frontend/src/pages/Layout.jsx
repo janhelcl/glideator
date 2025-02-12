@@ -9,6 +9,15 @@ const Layout = () => {
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
 
+  // Update CSS variables for header and footer height
+  const headerHeight = '64px';
+  const footerHeight = '30px';
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--header-height', headerHeight);
+    document.documentElement.style.setProperty('--footer-height', footerHeight);
+  }, [headerHeight, footerHeight]);
+
   useEffect(() => {
     const loadSites = async () => {
       try {
