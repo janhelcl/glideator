@@ -1,7 +1,7 @@
 .glowing-marker {
   position: relative;
-  width: 10px;
-  height: 10px;
+  width: clamp(6px, 1vw, 10px);
+  height: clamp(6px, 1vw, 10px);
   border: none;
   border-radius: 50%;
   transition: box-shadow 0.3s ease-in-out;
@@ -43,8 +43,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 10px;
-  height: 10px;
+  width: clamp(6px, 1vw, 10px);
+  height: clamp(6px, 1vw, 10px);
   background-color: var(--marker-color);
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -60,26 +60,33 @@
 
 .metric-slider {
   position: absolute;
-  top: 75px;
-  right: 10px;
-  bottom: 0;
+  top: clamp(60px, 10vh, 75px);
+  right: clamp(10px, 2vw, 20px);
   pointer-events: none;
   z-index: 1000;
-  height: 200px;
+  height: clamp(180px, 30vh, 250px);
   display: flex;
   flex-direction: column;
   align-items: center;
   background-color: rgba(255, 255, 255, 0.9);
-  padding: 12px;
+  padding: clamp(8px, 1.5vw, 12px);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   touch-action: none;
   isolation: isolate;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .metric-slider .MuiTypography-root {
-  margin-bottom: 8px;
+  margin-bottom: clamp(4px, 1vw, 8px);
   font-weight: 500;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.metric-slider .MuiSlider-root {
+  height: 100%;
+  padding: 0 10px;
 }
 
 .metric-slider .MuiSlider-rail {
@@ -87,21 +94,40 @@
 }
 
 .metric-slider .MuiSlider-markLabel {
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
   color: #333;
 }
 
 /* Ensure small maps have no additional controls or attributions */
 .leaflet-control-attribution {
-  display: block !important; /* Ensure attribution is visible */
+  display: block !important;
+  font-size: clamp(8px, 1.2vw, 12px);
 }
 
-/* Style for small maps */
-.date-box .leaflet-container {
-  width: 150px;
-  height: 100px;
-  border-radius: 4px;
-  overflow: hidden;
+/* Mobile optimizations */
+@media (max-width: 600px) {
+  .metric-slider {
+    top: 50px;
+    right: 5px;
+    padding: 6px;
+    height: 160px;
+  }
+
+  .metric-slider .MuiSlider-markLabel {
+    font-size: 0.6rem;
+  }
+
+  .glowing-marker,
+  .glowing-marker .point {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* Ensure the map container is responsive */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .date-box.selected {

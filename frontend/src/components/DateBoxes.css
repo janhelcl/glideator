@@ -1,43 +1,109 @@
 .date-boxes-container {
     position: absolute;
-    bottom: 5px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
-    padding: 10px;
+    gap: clamp(5px, 1vw, 10px);
+    padding: clamp(5px, 1.5vw, 10px);
     background: rgba(255, 255, 255, 0.9);
     border-radius: 8px;
     overflow-x: auto;
-    max-width: 90%;
+    max-width: min(90%, 1200px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 1000;
-  }
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.date-boxes-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.date-boxes-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.date-boxes-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
   
-  .date-box {
+.date-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
     border: 2px solid transparent;
     border-radius: 4px;
-    padding: 5px;
+    padding: clamp(3px, 0.8vw, 5px);
     transition: border 0.3s;
     background-color: #f9f9f9;
-  }
-  
-  .date-box.selected {
-    border: 2px solid #1976d2;
-  }
-  
-  .date-box:hover {
-    border: 2px solid #90caf9;
-  }
-  
-  .date-box .leaflet-container {
-    width: 150px;
-    height: 100px;
-    border-radius: 4px;
-    display: block;
+    flex: 0 0 auto;
+    min-width: 80px;
+    max-width: 150px;
+    width: clamp(80px, 20vw, 150px);
     overflow: hidden;
-  }
+}
+  
+.date-box.selected {
+    border: 2px solid #1976d2;
+}
+  
+.date-box:hover {
+    border: 2px solid #90caf9;
+}
+  
+.date-box .leaflet-container {
+    width: 100% !important;
+    height: 0 !important;
+    padding-bottom: 66.67% !important; /* 3:2 aspect ratio */
+    position: relative !important;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.date-box .leaflet-container > div {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Typography adjustments */
+.date-box .MuiTypography-subtitle2 {
+    font-size: clamp(0.7rem, 1.5vw, 0.875rem);
+    white-space: nowrap;
+    text-align: center;
+    width: 100%;
+    padding: 2px 0;
+}
+
+/* Mobile optimizations */
+@media (max-width: 600px) {
+    .date-boxes-container {
+        bottom: 5px;
+        padding: 5px;
+        gap: 5px;
+    }
+
+    .date-box {
+        min-width: 70px;
+        padding: 2px;
+    }
+}
+
+/* Ensure smooth scrolling on touch devices */
+@media (hover: none) {
+    .date-boxes-container {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scroll-snap-type: x mandatory;
+    }
+
+    .date-box {
+        scroll-snap-align: start;
+    }
+}

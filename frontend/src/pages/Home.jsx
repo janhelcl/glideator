@@ -158,10 +158,13 @@ const Home = () => {
   return (
     <div style={{ 
       position: 'relative', 
-      height: 'calc(100vh - 94px)',
+      height: 'calc(100vh - var(--header-height, 94px))',
       margin: 0,
       padding: 0,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" height="100%">
@@ -169,20 +172,26 @@ const Home = () => {
         </Box>
       ) : (
         <>
-          <MapView
-            sites={filteredSites}
-            selectedMetric={selectedMetric}
-            setSelectedMetric={setSelectedMetric}
-            selectedDate={selectedDate}
-            metrics={METRICS}
-            center={mapState.center}
-            zoom={mapState.zoom}
-            setMapState={setMapState}
-            bounds={mapState.bounds}
-            style={{ height: '100%', width: '100%' }}
-            getMarkerRef={getMarkerRef}
-            mapRef={mapRef}
-          />
+          <Box sx={{ 
+            position: 'relative',
+            flex: 1,
+            minHeight: 0,
+            width: '100%'
+          }}>
+            <MapView
+              sites={filteredSites}
+              selectedMetric={selectedMetric}
+              setSelectedMetric={setSelectedMetric}
+              selectedDate={selectedDate}
+              metrics={METRICS}
+              center={mapState.center}
+              zoom={mapState.zoom}
+              setMapState={setMapState}
+              bounds={mapState.bounds}
+              getMarkerRef={getMarkerRef}
+              mapRef={mapRef}
+            />
+          </Box>
           <DateBoxes
             dates={dates}
             selectedDate={selectedDate}
