@@ -10,6 +10,7 @@
     border-radius: 8px;
     overflow-x: auto;
     max-width: min(90%, 1200px);
+    max-height: 25vh;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     scrollbar-width: thin;
@@ -41,9 +42,9 @@
     transition: border 0.3s;
     background-color: #f9f9f9;
     flex: 0 0 auto;
-    min-width: 80px;
-    max-width: 150px;
-    width: clamp(80px, 20vw, 150px);
+    min-width: 70px;
+    max-width: 120px;
+    width: clamp(70px, min(15vw, 15vh), 120px);
     overflow: hidden;
 }
   
@@ -74,7 +75,7 @@
 
 /* Typography adjustments */
 .date-box .MuiTypography-subtitle2 {
-    font-size: clamp(0.7rem, 1.5vw, 0.875rem);
+    font-size: clamp(0.65rem, min(1.2vw, 1.2vh), 0.875rem);
     white-space: nowrap;
     text-align: center;
     width: 100%;
@@ -87,11 +88,34 @@
         bottom: calc(var(--footer-height, 24px) + 5px);
         padding: 5px;
         gap: 5px;
+        max-height: 20vh;
     }
 
     .date-box {
-        min-width: 70px;
+        min-width: 60px;
         padding: 2px;
+    }
+}
+
+/* Landscape orientation specific styles */
+@media (orientation: landscape) {
+    .date-boxes-container {
+        max-height: 30vh;
+    }
+
+    .date-box {
+        width: clamp(70px, 12vw, 120px);
+    }
+}
+
+/* Portrait orientation specific styles */
+@media (orientation: portrait) {
+    .date-boxes-container {
+        max-height: 20vh;
+    }
+
+    .date-box {
+        width: clamp(70px, 20vw, 120px);
     }
 }
 
