@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState, useTransition } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
@@ -107,6 +107,21 @@ const MapView = React.memo(({
 }) => {
   const navigate = useNavigate();
 
+  // Initialize useTransition
+  const [isPending, startTransition] = useTransition();
+
+  // Local state for slider value
+  const [localSliderValue, setLocalSliderValue] = useState(metrics.indexOf(selectedMetric));
+
+  // Synchronize localSliderValue when selectedMetric changes externally
+  useEffect(() => {
+    const index = metrics.indexOf(selectedMetric);
+    if (index !== localSliderValue) {
+      setLocalSliderValue(index);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMetric, metrics]);
+
   const metricIndexMap = useMemo(() => {
     return metrics.reduce((acc, metric, index) => {
       acc[metric] = index;
@@ -206,13 +221,22 @@ const MapView = React.memo(({
     });
   }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, getMarkerRef]);
 
+  // Handle slider change (updates local state)
   const handleSliderChange = (event, newValue) => {
+    setLocalSliderValue(newValue);
+  };
+
+  // Handle slider change committed (updates selected metric)
+  const handleSliderChangeCommitted = (event, newValue) => {
     if (newValue >= 0 && newValue < metrics.length) {
-      setSelectedMetric(metrics[newValue]);
+      // Use transition for updating the selected metric
+      startTransition(() => {
+        setSelectedMetric(metrics[newValue]);
+      });
     }
   };
 
-  const sliderValue = metrics.indexOf(selectedMetric);
+  const sliderValue = localSliderValue;
   const marks = metrics.map((metric, index) => ({
     value: index,
     label: metric,
@@ -294,6 +318,7 @@ const MapView = React.memo(({
               step={1}
               marks={marks}
               onChange={handleSliderChange}
+              onChangeCommitted={handleSliderChangeCommitted}
               valueLabelDisplay="off"
               aria-labelledby="metric-slider"
             />
@@ -301,6 +326,24 @@ const MapView = React.memo(({
         </PreventLeafletControl>
       )}
       {markers}
+      
+      {/* Optional: Display a loading indicator when a transition is pending */}
+      {isPending && !isSmallMap && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '10px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            zIndex: 1001,
+          }}
+        >
+          <Typography variant="body2">Updating Metric...</Typography>
+        </Box>
+      )}
     </MapContainer>
   );
 });
