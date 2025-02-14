@@ -7,7 +7,7 @@ const PreventLeafletControl = ({ children }) => {
   const map = useMap();
 
   useEffect(() => {
-    const handleMouseOver = () => {
+    const handleInteractionStart = () => {
       // Disable map interactions
       map.doubleClickZoom.disable();
       map.dragging.disable();
@@ -17,7 +17,7 @@ const PreventLeafletControl = ({ children }) => {
       if (map.tap) map.tap.disable();
     };
 
-    const handleMouseOut = () => {
+    const handleInteractionEnd = () => {
       // Enable map interactions
       map.doubleClickZoom.enable();
       map.dragging.enable();
@@ -29,15 +29,27 @@ const PreventLeafletControl = ({ children }) => {
 
     const current = controlRef.current;
     if (current) {
-      DomEvent.on(current, 'mouseover', handleMouseOver);
-      DomEvent.on(current, 'mouseout', handleMouseOut);
+      // Mouse events
+      DomEvent.on(current, 'mouseover', handleInteractionStart);
+      DomEvent.on(current, 'mouseout', handleInteractionEnd);
+      
+      // Touch events
+      DomEvent.on(current, 'touchstart', handleInteractionStart);
+      DomEvent.on(current, 'touchend', handleInteractionEnd);
+      DomEvent.on(current, 'touchcancel', handleInteractionEnd);
     }
 
     // Cleanup event listeners on unmount
     return () => {
       if (current) {
-        DomEvent.off(current, 'mouseover', handleMouseOver);
-        DomEvent.off(current, 'mouseout', handleMouseOut);
+        // Mouse events
+        DomEvent.off(current, 'mouseover', handleInteractionStart);
+        DomEvent.off(current, 'mouseout', handleInteractionEnd);
+        
+        // Touch events
+        DomEvent.off(current, 'touchstart', handleInteractionStart);
+        DomEvent.off(current, 'touchend', handleInteractionEnd);
+        DomEvent.off(current, 'touchcancel', handleInteractionEnd);
       }
     };
   }, [map]);
