@@ -58,46 +58,6 @@
   border-width: 0.5px;
 }
 
-.metric-slider {
-  position: absolute;
-  top: clamp(60px, 10vh, 75px);
-  right: clamp(10px, 2vw, 20px);
-  pointer-events: none;
-  z-index: 1000;
-  height: clamp(180px, 30vh, 250px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: clamp(8px, 1.5vw, 12px);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  touch-action: none;
-  isolation: isolate;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-
-.metric-slider .MuiTypography-root {
-  margin-bottom: clamp(4px, 1vw, 8px);
-  font-weight: 500;
-  font-size: clamp(0.75rem, 1.5vw, 1rem);
-}
-
-.metric-slider .MuiSlider-root {
-  height: 100%;
-  padding: 0 10px;
-}
-
-.metric-slider .MuiSlider-rail {
-  background-color: #ddd;
-}
-
-.metric-slider .MuiSlider-markLabel {
-  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
-  color: #333;
-}
-
 /* Ensure small maps have no additional controls or attributions */
 .leaflet-control-attribution {
   display: block !important;
@@ -136,4 +96,38 @@
 
 .date-box:hover {
   border: 2px solid #90caf9;
+}
+
+/* Add new styles */
+.metric-control {
+  position: absolute;
+  top: clamp(60px, 10vh, 75px);
+  right: clamp(10px, 2vw, 20px);
+  z-index: 1000;
+}
+
+.metric-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.metric-slider .MuiTypography-root {
+  margin-bottom: clamp(4px, 1vw, 8px);
+  font-weight: 500;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.metric-slider .MuiSlider-root {
+  height: 100%;
+  padding: 0 10px;
+}
+
+.metric-slider .MuiSlider-rail {
+  background-color: #ddd;
+}
+
+.metric-slider .MuiSlider-markLabel {
+  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
+  color: #333;
 }

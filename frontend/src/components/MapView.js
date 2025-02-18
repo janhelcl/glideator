@@ -6,6 +6,7 @@ import L from 'leaflet';
 import './MapView.css';
 import { Slider, Typography, Box } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
+import MetricControl from './MetricControl';
 
 const { BaseLayer } = LayersControl;
 
@@ -298,32 +299,12 @@ const MapView = React.memo(({
 
       {/* Conditionally render the Metric Slider only on the main map */}
       {!isSmallMap && (
-        <PreventLeafletControl>
-          <Box
-            className="metric-slider"
-            sx={{
-              '& *': {
-                pointerEvents: 'auto !important'
-              }
-            }}
-          >
-            <Typography variant="subtitle1" gutterBottom>
-              Select Metric
-            </Typography>
-            <Slider
-              orientation="vertical"
-              value={sliderValue === -1 ? 0 : sliderValue}
-              min={0}
-              max={metrics.length - 1}
-              step={1}
-              marks={marks}
-              onChange={handleSliderChange}
-              onChangeCommitted={handleSliderChangeCommitted}
-              valueLabelDisplay="off"
-              aria-labelledby="metric-slider"
-            />
-          </Box>
-        </PreventLeafletControl>
+        <MetricControl
+          metrics={metrics}
+          sliderValue={sliderValue}
+          onSliderChange={handleSliderChange}
+          onSliderChangeCommitted={handleSliderChangeCommitted}
+        />
       )}
       {markers}
       

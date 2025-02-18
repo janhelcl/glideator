@@ -6,8 +6,8 @@
     "@date-io/date-fns": "^3.0.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/lab": "^6.0.0-beta.11",
-    "@mui/material": "^6.1.2",
+    "@mui/lab": "^5.0.0-alpha.165",
+    "@mui/material": "^5.15.11",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -20,7 +20,8 @@
     "react-plotly.js": "^2.6.0",
     "react-router-dom": "^6.26.2",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "@mui/icons-material": "^5.15.11"
   },
   "scripts": {
     "start": "react-scripts start",
