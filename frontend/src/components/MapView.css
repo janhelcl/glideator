@@ -110,6 +110,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 80px;
 }
 
 .metric-slider .MuiTypography-root {
@@ -128,6 +129,7 @@
 }
 
 .metric-slider .MuiSlider-markLabel {
-  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
-  color: #333;
+  font-size: 0.7rem;
+  color: #555;
+  white-space: nowrap;
 }
