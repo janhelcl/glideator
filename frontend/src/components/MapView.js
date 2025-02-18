@@ -1,13 +1,14 @@
 import React, { useMemo, useEffect, useState, useTransition } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import './MapView.css';
 import { Slider, Typography, Box, IconButton } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
 import MetricControl from './MetricControl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import debounce from 'lodash/debounce';
 
 const { BaseLayer } = LayersControl;
 
@@ -21,19 +22,23 @@ L.Icon.Default.mergeOptions({
 });
 
 // Component to handle map events and update shared state
-const MapEventHandler = ({ setMapState }) => {
+const MapEventHandler = ({ setMapState, updateUrlParams }) => {
   const map = useMap();
 
   useEffect(() => {
     const handleMoveEnd = () => {
       const currentBounds = map.getBounds();
-      console.log('Main map bounds:', currentBounds);
+      const center = map.getCenter();
+      const zoom = map.getZoom();
       
       setMapState({
-        center: [map.getCenter().lat, map.getCenter().lng],
-        zoom: map.getZoom(),
+        center: [center.lat, center.lng],
+        zoom: zoom,
         bounds: currentBounds
       });
+
+      // Update URL parameters
+      updateUrlParams([center.lat, center.lng], zoom);
     };
 
     map.on('moveend', handleMoveEnd);
@@ -42,7 +47,7 @@ const MapEventHandler = ({ setMapState }) => {
     return () => {
       map.off('moveend', handleMoveEnd);
     };
-  }, [map, setMapState]);
+  }, [map, setMapState, updateUrlParams]);
 
   return null;
 };
@@ -108,9 +113,47 @@ const MapView = React.memo(({
   mapRef,
 }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Initialize useTransition
   const [isPending, startTransition] = useTransition();
+
+  // Get location and zoom from URL or use defaults
+  const initialCenter = useMemo(() => {
+    const lat = parseFloat(searchParams.get('lat'));
+    const lng = parseFloat(searchParams.get('lng'));
+    return (lat && lng) ? [lat, lng] : center;
+  }, [center, searchParams]);
+
+  const initialZoom = useMemo(() => {
+    const z = parseInt(searchParams.get('zoom'));
+    return !isNaN(z) ? z : zoom;
+  }, [zoom, searchParams]);
+
+  // Debounced function to update URL parameters
+  const updateUrlParams = useMemo(
+    () =>
+      debounce((center, zoom) => {
+        const currentParams = Object.fromEntries(searchParams.entries());
+        setSearchParams(
+          {
+            ...currentParams,
+            lat: center[0].toFixed(4),
+            lng: center[1].toFixed(4),
+            zoom: zoom
+          },
+          { replace: true }
+        );
+      }, 1000),
+    [searchParams, setSearchParams]
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      updateUrlParams.cancel();
+    };
+  }, [updateUrlParams]);
 
   // Local state for slider value
   const [localSliderValue, setLocalSliderValue] = useState(metrics.indexOf(selectedMetric));
@@ -264,8 +307,8 @@ const MapView = React.memo(({
 
   return (
     <MapContainer
-      center={center}
-      zoom={zoom}
+      center={initialCenter}
+      zoom={initialZoom}
       style={{ 
         height: isSmallMap ? '100px' : '100%', 
         width: isSmallMap ? '150px' : '100%',
@@ -290,7 +333,12 @@ const MapView = React.memo(({
       {isSmallMap && <SynchronizeMapView bounds={bounds} />}
 
       {/* Handle map state updates for the main map */}
-      {!isSmallMap && setMapState && <MapEventHandler setMapState={setMapState} />}
+      {!isSmallMap && setMapState && (
+        <MapEventHandler 
+          setMapState={setMapState} 
+          updateUrlParams={updateUrlParams}
+        />
+      )}
 
       {/* Conditionally render LayersControl only on the main map */}
       {!isSmallMap ? (
