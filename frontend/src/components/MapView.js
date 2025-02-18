@@ -4,9 +4,10 @@ import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import './MapView.css';
-import { Slider, Typography, Box } from '@mui/material';
+import { Slider, Typography, Box, IconButton } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
 import MetricControl from './MetricControl';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 const { BaseLayer } = LayersControl;
 
@@ -243,6 +244,24 @@ const MapView = React.memo(({
     label: metric,
   }));
 
+  const handleLocationClick = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const currentZoom = mapRef.current?.getZoom() || zoom;
+          mapRef.current?.setView([latitude, longitude], currentZoom);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Unable to get your location. Please check your browser permissions.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
+
   return (
     <MapContainer
       center={center}
@@ -324,6 +343,40 @@ const MapView = React.memo(({
         >
           <Typography variant="body2">Updating Metric...</Typography>
         </Box>
+      )}
+
+      {!isSmallMap && (
+        <PreventLeafletControl>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 'clamp(10px, 5vh, 20px)',
+              right: 'clamp(10px, 2vw, 20px)',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              '& *': {
+                pointerEvents: 'auto !important'
+              }
+            }}
+          >
+            <IconButton
+              onClick={handleLocationClick}
+              sx={{
+                backgroundColor: 'white',
+                borderRadius: '4px',
+                padding: '6px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              <MyLocationIcon />
+            </IconButton>
+          </Box>
+        </PreventLeafletControl>
       )}
     </MapContainer>
   );

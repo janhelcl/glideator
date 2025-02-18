@@ -41,7 +41,7 @@ const MetricControl = ({ metrics, sliderValue, onSliderChange, onSliderChangeCom
         ref={controlRef}
         sx={{
           position: 'absolute',
-          top: 'clamp(60px, 10vh, 75px)',
+          top: 'clamp(110px, 15vh, 125px)',
           right: 'clamp(10px, 2vw, 20px)',
           zIndex: 1000,
           '& *': {
