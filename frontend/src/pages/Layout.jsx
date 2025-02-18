@@ -9,7 +9,7 @@ const Layout = () => {
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
 
-  // Update CSS variables for header and footer height
+  // Update these values
   const headerHeight = '64px';
   const footerHeight = '30px';
 
@@ -32,13 +32,14 @@ const Layout = () => {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {/* Top Navigation Bar */}
       <AppBar
-        position="fixed"
+        position="static"
         sx={{
           backgroundColor: '#424242',
           zIndex: (theme) => theme.zIndex.drawer + 1,
+          height: headerHeight,
         }}
       >
         <Toolbar>
@@ -68,9 +69,8 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          height: 'calc(100vh - 94px)',
-          marginTop: '64px',
-          marginBottom: '30px',
+          height: `calc(100vh - ${headerHeight} - ${footerHeight})`,
+          overflow: 'hidden',
           backgroundColor: '#f5f5f5',
           padding: 0,
         }}
@@ -81,12 +81,10 @@ const Layout = () => {
 
       {/* Bottom Footer Bar */}
       <AppBar
-        position="fixed"
+        position="static"
         sx={{
           backgroundColor: '#424242',
-          height: '30px',
-          top: 'auto',
-          bottom: 0,
+          height: footerHeight,
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >

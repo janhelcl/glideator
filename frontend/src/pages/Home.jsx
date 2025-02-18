@@ -157,14 +157,10 @@ const Home = () => {
 
   return (
     <div style={{ 
-      position: 'relative', 
-      height: 'calc(100vh - var(--header-height, 94px))',
-      margin: 0,
-      padding: 0,
-      overflow: 'hidden',
-      width: '100%',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      height: '100%',
+      overflow: 'hidden'
     }}>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" height="100%">
@@ -173,10 +169,9 @@ const Home = () => {
       ) : (
         <>
           <Box sx={{ 
-            position: 'relative',
             flex: 1,
-            minHeight: 0,
-            width: '100%'
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             <MapView
               sites={filteredSites}
