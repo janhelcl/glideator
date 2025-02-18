@@ -256,7 +256,7 @@ const MapView = React.memo(({
       }}
       dragging={!isSmallMap}
       scrollWheelZoom={!isSmallMap}
-      zoomControl={!isSmallMap}
+      zoomControl={false}
       doubleClickZoom={!isSmallMap}
       boxZoom={!isSmallMap}
       keyboard={!isSmallMap}
