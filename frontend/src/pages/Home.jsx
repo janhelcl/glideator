@@ -61,18 +61,20 @@ const Home = () => {
     generateDates();
   }, [selectedDate]);
 
-  // Update query parameters when selectedMetric or selectedDate changes
+  // Update query parameters when selectedMetric or selectedDate changes, preserving mapType
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-
-    const newParams = new URLSearchParams();
-    newParams.set('metric', selectedMetric);
-    newParams.set('date', selectedDate);
-    navigate(`/?${newParams.toString()}`, { replace: true });
-  }, [selectedMetric, selectedDate, navigate]);
+    
+    // Use the current URL parameters (including mapType) as a starting point
+    const currentParams = new URLSearchParams(location.search);
+    currentParams.set('metric', selectedMetric);
+    currentParams.set('date', selectedDate);
+    
+    navigate(`/?${currentParams.toString()}`, { replace: true });
+  }, [selectedMetric, selectedDate, navigate, location.search]);
 
   // Fetch all sites once on component mount
   useEffect(() => {

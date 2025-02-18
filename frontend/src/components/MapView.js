@@ -98,6 +98,29 @@ const SynchronizeMapView = ({ bounds }) => {
   return null;
 };
 
+// New component to listen for base layer changes and update the URL parameter "mapType"
+const MapBaseLayerHandler = ({ searchParams, setSearchParams }) => {
+  const map = useMap();
+  useEffect(() => {
+    const handleBaseLayerChange = (e) => {
+      const newMapType = e.name.toLowerCase();
+      const currentParams = Object.fromEntries(searchParams.entries());
+      setSearchParams(
+        {
+          ...currentParams,
+          mapType: newMapType
+        },
+        { replace: true }
+      );
+    };
+    map.on('baselayerchange', handleBaseLayerChange);
+    return () => {
+      map.off('baselayerchange', handleBaseLayerChange);
+    };
+  }, [map, searchParams, setSearchParams]);
+  return null;
+};
+
 const MapView = React.memo(({
   sites,
   selectedMetric,
@@ -129,6 +152,12 @@ const MapView = React.memo(({
     const z = parseInt(searchParams.get('zoom'));
     return !isNaN(z) ? z : zoom;
   }, [zoom, searchParams]);
+
+  // New: Get mapType from URL parameter ("basic" or "topographic")
+  const initialMapType = useMemo(() => {
+    const m = searchParams.get('mapType');
+    return m ? m.toLowerCase() : 'basic';
+  }, [searchParams]);
 
   // Debounced function to update URL parameters
   const updateUrlParams = useMemo(
@@ -340,19 +369,24 @@ const MapView = React.memo(({
         />
       )}
 
+      {/* New: Listen to base layer changes and update "mapType" URL parameter */}
+      {!isSmallMap && (
+        <MapBaseLayerHandler searchParams={searchParams} setSearchParams={setSearchParams} />
+      )}
+
       {/* Conditionally render LayersControl only on the main map */}
       {!isSmallMap ? (
         <LayersControl position="topright">
-          <BaseLayer checked name="Basic">
+          <BaseLayer checked={initialMapType === 'basic'} name="Basic">
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
             />
           </BaseLayer>
-          <BaseLayer name="Topographic">
+          <BaseLayer checked={initialMapType === 'topographic'} name="Topographic">
             <TileLayer
               url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-              attribution='Map data: &copy; <a href="https://www.opentopomap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
+              attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
             />
           </BaseLayer>
         </LayersControl>
