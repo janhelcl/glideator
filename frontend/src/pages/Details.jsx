@@ -4,6 +4,8 @@ import { fetchSitePredictions, fetchSiteForecast } from '../api';
 import Plot from 'react-plotly.js';
 import { CircularProgress, Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, OutlinedInput, Button } from '@mui/material';
 import ForecastCharts from '../components/ForecastCharts';
+import SiteDetails from '../components/SiteDetails';
+import ResponsiveForecast from '../components/ResponsiveForecast';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -17,6 +19,10 @@ const Details = () => {
   const [selectedMetrics, setSelectedMetrics] = useState([]);
   const [gfsForecastAt, setGfsForecastAt] = useState(''); // New state for gfs_forecast_at
   const weatherRef = useRef(null); // Reference to Weather Forecast section
+
+  // Retrieve query parameter "date" or default to today's date (YYYY-MM-DD)
+  const searchParams = new URLSearchParams(window.location.search);
+  const queryDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
   // Get today's date in 'YYYY-MM-DD' format
   const today = new Date().toISOString().split('T')[0];
@@ -141,12 +147,8 @@ const Details = () => {
     : 'N/A';
 
   return (
-    <div style={{
-      padding: '20px',
-      minHeight: '100%',
-      overflow: 'auto',
-      boxSizing: 'border-box'
-    }}>
+    <div style={{ overflowY: 'auto', height: '100vh', padding: '20px' }}>
+      <SiteDetails />
       <h1>Details for {siteId}</h1>
       
       {/* Updated Subtitle */}
@@ -257,7 +259,7 @@ const Details = () => {
 
       {/* Weather Forecast Section */}
       <Box ref={weatherRef} className="weather-forecast">
-        <ForecastCharts siteId={siteId} queryDate={selectedDate} />
+        <ResponsiveForecast siteId={siteId} queryDate={queryDate} />
       </Box>
     </div>
   );
