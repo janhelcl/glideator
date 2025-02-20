@@ -257,7 +257,7 @@ const Details = () => {
         )}
       </Box>
 
-      {/* Weather Forecast Section */}
+      {/* Weather Forecast Section - simplified */}
       <Box ref={weatherRef} className="weather-forecast">
         <ResponsiveForecast siteId={siteId} queryDate={queryDate} />
       </Box>
