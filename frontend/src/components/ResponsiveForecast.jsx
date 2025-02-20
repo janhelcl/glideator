@@ -178,6 +178,8 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
         borderRadius: 1,
         boxShadow: 1,
         bgcolor: 'background.paper',
+        width: '100%',
+        overflow: 'visible',
       }}
     >
       <Button
@@ -190,13 +192,22 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
       </Button>
       
       <Collapse in={showForecast}>
-        <Box sx={{ mt: 2 }}>
+        <Box 
+          sx={{ 
+            mt: 2,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'center',
               gap: 1,
               mb: 2,
+              width: '100%',
             }}
           >
             {[9, 12, 15].map((hour) => (
@@ -209,7 +220,15 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
               </Button>
             ))}
           </Box>
-          {error ? <Box>{error}</Box> : renderForecast()}
+          <Box 
+            sx={{ 
+              width: '100%',
+              minHeight: '550px',
+              overflow: 'visible',
+            }}
+          >
+            {error ? <Box>{error}</Box> : renderForecast()}
+          </Box>
         </Box>
       </Collapse>
     </Box>
