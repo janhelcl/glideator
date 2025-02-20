@@ -30,9 +30,12 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
   }, [siteId, queryDate]);
 
   const createCombinedPlot = (forecast) => {
-    // Calculate the temperature range for RH markers positioning
+    // Calculate x-axis ranges
     const maxTemp = Math.max(...forecast.temperature_iso_c);
-    const rhPosition = maxTemp + 5; // Place RH markers 5 degrees to the right of max temp
+    const maxWind = Math.max(...forecast.wind_speed_iso_ms);
+    const maxX = Math.max(maxTemp, maxWind);
+    const rhPosition = maxX + (maxX * 0.3);
+    const windPosition = rhPosition - (maxX * 0.15); // Place wind arrows between main plot and RH
 
     return (
       <Plot
@@ -59,12 +62,23 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
             marker: { size: 6 },
             hovertemplate: 'Dewpoint: %{x}°C<br>Pressure: %{y} hPa<extra></extra>',
           },
-          // Wind arrows
+          // Wind speed line
+          {
+            x: forecast.wind_speed_iso_ms,
+            y: forecast.hpa_lvls,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Wind Speed',
+            line: { color: 'green', width: 2 },
+            marker: { size: 6 },
+            hovertemplate: 'Wind Speed: %{x} m/s<br>Pressure: %{y} hPa<extra></extra>',
+          },
+          // Wind direction arrows
           {
             type: 'scatter',
             mode: 'markers',
-            name: 'Wind',
-            x: forecast.wind_speed_iso_ms,
+            name: 'Wind Direction',
+            x: Array(forecast.hpa_lvls.length).fill(windPosition),
             y: forecast.hpa_lvls,
             marker: {
               symbol: 'arrow',
@@ -72,16 +86,13 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
               angle: forecast.wind_direction_iso_dgr.map(angle => (angle + 180) % 360),
               color: 'green',
             },
-            hovertemplate: 
-              'Wind Speed: %{x} m/s<br>' +
-              'Direction: %{customdata}°<br>' +
-              'Pressure: %{y} hPa<extra></extra>',
+            hovertemplate: 'Direction: %{customdata}°<br>Pressure: %{y} hPa<extra></extra>',
             customdata: forecast.wind_direction_iso_dgr,
           },
-          // Relative Humidity as colored markers
+          // Relative Humidity markers
           {
             type: 'scatter',
-            mode: 'markers',
+            mode: 'markers+text',
             name: 'RH',
             x: Array(forecast.hpa_lvls.length).fill(rhPosition),
             y: forecast.hpa_lvls,
@@ -117,6 +128,7 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
             zeroline: false,
             showgrid: true,
             gridcolor: 'rgba(0,0,0,0.1)',
+            range: [-20, rhPosition + (maxX * 0.1)],
           },
           yaxis: {
             title: 'Pressure (hPa)',
