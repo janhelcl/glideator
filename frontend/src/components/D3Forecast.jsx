@@ -1,22 +1,47 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { debounce } from 'lodash';
 
 const D3Forecast = ({ forecast, selectedHour }) => {
   const svgRef = useRef();
   const tooltipRef = useRef();
   const containerRef = useRef();
 
-  useEffect(() => {
+  // Create chart function to reuse for initial render and resize
+  const createChart = () => {
     if (!forecast) return;
 
     // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Calculate dimensions
-    const margin = { top: 40, right: 80, bottom: 60, left: 60 };
+    // Get container width
     const container = containerRef.current;
-    const width = container.clientWidth - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+    const containerWidth = container.clientWidth;
+    
+    // Calculate dimensions with minimum sizes
+    const margin = { 
+      top: 40,
+      right: Math.max(80, containerWidth * 0.1), // Responsive margin
+      bottom: 60,
+      left: Math.max(60, containerWidth * 0.08) // Responsive margin
+    };
+    
+    // Set minimum width and height
+    const minWidth = 400;
+    const minHeight = 400;
+    
+    // Calculate actual width and height
+    const width = Math.max(minWidth, containerWidth - margin.left - margin.right);
+    const height = Math.max(minHeight, (width * 0.8)); // Maintain aspect ratio
+
+    // Update SVG size
+    const svg = d3.select(svgRef.current)
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Calculate x-axis ranges
     const maxTemp = Math.max(...forecast.temperature_iso_c);
@@ -33,13 +58,6 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     const yScale = d3.scaleLinear()
       .domain([d3.min(forecast.hpa_lvls), d3.max(forecast.hpa_lvls)])
       .range([0, height]);
-
-    // Create SVG
-    const svg = d3.select(svgRef.current)
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Create tooltip
     const tooltip = d3.select(tooltipRef.current)
@@ -99,18 +117,64 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('stroke-width', 2)
       .attr('d', tempLine);
 
-    // Add wind direction arrows
+    // Create a custom arrow path
+    const createWindArrow = (direction) => {
+      // Arrow dimensions
+      const arrowLength = 15;
+      const headLength = 6;
+      const headWidth = 6;
+      
+      // Calculate arrow points
+      const angle = (direction + 180) % 360 * (Math.PI / 180);
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      
+      // Calculate arrow coordinates
+      const x0 = 0;
+      const y0 = 0;
+      const x1 = x0 + dx * arrowLength;
+      const y1 = y0 + dy * arrowLength;
+      
+      // Calculate arrowhead points
+      const headAngle1 = angle + Math.PI * 0.8; // 144 degrees
+      const headAngle2 = angle - Math.PI * 0.8; // -144 degrees
+      const xHead1 = x1 + Math.cos(headAngle1) * headLength;
+      const yHead1 = y1 + Math.sin(headAngle1) * headLength;
+      const xHead2 = x1 + Math.cos(headAngle2) * headLength;
+      const yHead2 = y1 + Math.sin(headAngle2) * headLength;
+      
+      return `M ${x0} ${y0} 
+              L ${x1} ${y1}
+              L ${xHead1} ${yHead1}
+              M ${x1} ${y1}
+              L ${xHead2} ${yHead2}`;
+    };
+
+    // Replace the existing wind arrows section with this:
     svg.selectAll('.wind-arrow')
       .data(forecast.wind_direction_iso_dgr)
       .enter()
       .append('path')
       .attr('class', 'wind-arrow')
-      .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
-      .attr('fill', 'green')
+      .attr('d', d => createWindArrow(d))
+      .attr('fill', 'none')
+      .attr('stroke', 'green')
+      .attr('stroke-width', 1.5)
       .attr('transform', (d, i) => {
         const x = xScale(windPosition);
         const y = yScale(forecast.hpa_lvls[i]);
-        return `translate(${x},${y}) rotate(${(d + 180) % 360})`;
+        return `translate(${x},${y})`;
+      })
+      // Add hover effect
+      .on('mouseover', function(event, d) {
+        d3.select(this)
+          .attr('stroke-width', 2.5)
+          .attr('stroke', '#006400');
+      })
+      .on('mouseout', function() {
+        d3.select(this)
+          .attr('stroke-width', 1.5)
+          .attr('stroke', 'green');
       });
 
     // Add RH circles with text
@@ -222,21 +286,65 @@ const D3Forecast = ({ forecast, selectedHour }) => {
         tooltip.style('visibility', 'hidden');
       });
 
-    // Handle window resize
-    const handleResize = () => {
-      // Recalculate dimensions and update chart
-      // This would need to re-render the entire chart
-      // For better performance, you might want to debounce this function
-    };
+    // Update font sizes based on container width
+    const baseFontSize = Math.max(10, Math.min(16, containerWidth / 50));
+    
+    // Update text elements with responsive font sizes
+    svg.selectAll('text')
+      .style('font-size', `${baseFontSize}px`);
+
+    svg.selectAll('.rh-group text')
+      .style('font-size', `${baseFontSize * 0.8}px`);
+
+    // Update title with larger font
+    svg.select('text')
+      .style('font-size', `${baseFontSize * 1.2}px`);
+  };
+
+  // Initial render
+  useEffect(() => {
+    createChart();
+  }, [forecast, selectedHour]);
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = debounce(() => {
+      createChart();
+    }, 250); // Debounce resize events
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      handleResize.cancel(); // Cancel any pending debounced calls
+    };
   }, [forecast, selectedHour]);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <svg ref={svgRef}></svg>
-      <div ref={tooltipRef}></div>
+    <div 
+      ref={containerRef} 
+      style={{ 
+        width: '100%',
+        height: '100%',
+        minWidth: '400px', // Minimum width
+        position: 'relative',
+        overflow: 'hidden' // Prevent overflow
+      }}
+    >
+      <svg 
+        ref={svgRef}
+        style={{
+          maxWidth: '100%',
+          height: 'auto',
+          display: 'block' // Remove extra space below SVG
+        }}
+      />
+      <div 
+        ref={tooltipRef}
+        style={{
+          position: 'absolute',
+          pointerEvents: 'none' // Prevent tooltip from interfering with hover
+        }}
+      />
     </div>
   );
 };
