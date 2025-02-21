@@ -49,7 +49,7 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
             name: 'Temperature',
             line: { color: 'red', width: 2 },
             marker: { size: 6 },
-            hovertemplate: 'Temperature: %{x}°C<br>Pressure: %{y} hPa<extra></extra>',
+            hovertemplate: 'Temperature: %{x:.1f}°C<extra></extra>',
           },
           // Dewpoint line
           {
@@ -60,7 +60,7 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
             name: 'Dewpoint',
             line: { color: 'blue', width: 2, dash: 'dot' },
             marker: { size: 6 },
-            hovertemplate: 'Dewpoint: %{x}°C<br>Pressure: %{y} hPa<extra></extra>',
+            hovertemplate: 'Dewpoint: %{x:.1f}°C<extra></extra>',
           },
           // Wind speed line
           {
@@ -71,7 +71,7 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
             name: 'Wind Speed',
             line: { color: 'green', width: 2 },
             marker: { size: 6 },
-            hovertemplate: 'Wind Speed: %{x} m/s<br>Pressure: %{y} hPa<extra></extra>',
+            hovertemplate: 'Wind Speed: %{x:.1f} m/s<extra></extra>',
           },
           // Wind direction arrows
           {
@@ -86,8 +86,8 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
               angle: forecast.wind_direction_iso_dgr.map(angle => (angle + 180) % 360),
               color: 'green',
             },
-            hovertemplate: 'Direction: %{customdata}°<br>Pressure: %{y} hPa<extra></extra>',
-            customdata: forecast.wind_direction_iso_dgr,
+            customdata: forecast.wind_direction_iso_dgr.map(dir => Math.round(dir)),
+            hovertemplate: 'Direction: %{customdata}°<extra></extra>',
           },
           // Relative Humidity markers
           {
@@ -117,12 +117,21 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
               color: forecast.relative_humidity_iso_pct.map(rh => rh > 50 ? 'white' : 'black'),
               size: 10,
             },
-            hovertemplate: 'RH: %{marker.color}%<br>Pressure: %{y} hPa<extra></extra>',
+            customdata: forecast.relative_humidity_iso_pct,
+            hovertemplate: 'RH: %{customdata:.0f}%<extra></extra>',
           }
         ]}
         layout={{
           title: `Atmospheric Profile - ${selectedHour}:00`,
-          hovermode: 'closest',
+          hovermode: 'y unified',
+          hoverdistance: 50,
+          hoverlabel: {
+            bgcolor: 'white',
+            font: { family: 'Arial', size: 12 },
+            bordercolor: '#666',
+          },
+          hovertext: `Pressure: %{y} hPa<br>`,
+          annotations: [],
           xaxis: {
             title: 'Temperature (°C) / Wind Speed (m/s)',
             zeroline: false,
