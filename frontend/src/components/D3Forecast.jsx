@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
 import { debounce } from 'lodash';
 
@@ -7,8 +7,8 @@ const D3Forecast = ({ forecast, selectedHour }) => {
   const tooltipRef = useRef();
   const containerRef = useRef();
 
-  // Create chart function to reuse for initial render and resize
-  const createChart = () => {
+  // Move createChart to useCallback to fix dependency warning
+  const createChart = useCallback(() => {
     if (!forecast) return;
 
     // Clear previous content
@@ -21,18 +21,16 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     // Calculate dimensions with minimum sizes
     const margin = { 
       top: 40,
-      right: Math.max(80, containerWidth * 0.1), // Responsive margin
+      right: Math.max(80, containerWidth * 0.1),
       bottom: 60,
-      left: Math.max(60, containerWidth * 0.08) // Responsive margin
+      left: Math.max(60, containerWidth * 0.08)
     };
     
-    // Set minimum width and height
     const minWidth = 400;
     const minHeight = 400;
     
-    // Calculate actual width and height
     const width = Math.max(minWidth, containerWidth - margin.left - margin.right);
-    const height = Math.max(minHeight, (width * 0.8)); // Maintain aspect ratio
+    const height = Math.max(minHeight, (width * 0.8));
 
     // Update SVG size
     const svg = d3.select(svgRef.current)
@@ -119,25 +117,20 @@ const D3Forecast = ({ forecast, selectedHour }) => {
 
     // Create a custom arrow path
     const createWindArrow = (direction) => {
-      // Arrow dimensions
       const arrowLength = 15;
       const headLength = 6;
-      const headWidth = 6;
       
-      // Calculate arrow points
       const angle = (direction + 180) % 360 * (Math.PI / 180);
       const dx = Math.cos(angle);
       const dy = Math.sin(angle);
       
-      // Calculate arrow coordinates
       const x0 = 0;
       const y0 = 0;
       const x1 = x0 + dx * arrowLength;
       const y1 = y0 + dy * arrowLength;
       
-      // Calculate arrowhead points
-      const headAngle1 = angle + Math.PI * 0.8; // 144 degrees
-      const headAngle2 = angle - Math.PI * 0.8; // -144 degrees
+      const headAngle1 = angle + Math.PI * 0.8;
+      const headAngle2 = angle - Math.PI * 0.8;
       const xHead1 = x1 + Math.cos(headAngle1) * headLength;
       const yHead1 = y1 + Math.sin(headAngle1) * headLength;
       const xHead2 = x1 + Math.cos(headAngle2) * headLength;
@@ -241,17 +234,13 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('fill', 'none')
       .attr('pointer-events', 'all')
       .on('mousemove', function(event) {
-        const [mouseX, mouseY] = d3.pointer(event);
+        const [, mouseY] = d3.pointer(event);
         const closestY = yScale.invert(mouseY);
         
-        // Find the closest index while ensuring it's within bounds
         const bisector = d3.bisector(d => d).left;
         let yIndex = bisector(forecast.hpa_lvls, closestY);
-        
-        // Ensure index is within bounds
         yIndex = Math.max(0, Math.min(yIndex, forecast.hpa_lvls.length - 1));
 
-        // Only show tooltip if we have valid data
         if (yIndex >= 0 && yIndex < forecast.hpa_lvls.length) {
           hoverLine
             .style('visibility', 'visible')
@@ -299,25 +288,25 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     // Update title with larger font
     svg.select('text')
       .style('font-size', `${baseFontSize * 1.2}px`);
-  };
+  }, [forecast, selectedHour]); // Add dependencies for useCallback
 
   // Initial render
   useEffect(() => {
     createChart();
-  }, [forecast, selectedHour]);
+  }, [createChart]); // Update dependency
 
   // Handle resize
   useEffect(() => {
     const handleResize = debounce(() => {
       createChart();
-    }, 250); // Debounce resize events
+    }, 250);
 
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      handleResize.cancel(); // Cancel any pending debounced calls
+      handleResize.cancel();
     };
-  }, [forecast, selectedHour]);
+  }, [createChart]); // Update dependency
 
   return (
     <div 
@@ -325,9 +314,9 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       style={{ 
         width: '100%',
         height: '100%',
-        minWidth: '400px', // Minimum width
+        minWidth: '400px',
         position: 'relative',
-        overflow: 'hidden' // Prevent overflow
+        overflow: 'hidden'
       }}
     >
       <svg 
@@ -335,14 +324,14 @@ const D3Forecast = ({ forecast, selectedHour }) => {
         style={{
           maxWidth: '100%',
           height: 'auto',
-          display: 'block' // Remove extra space below SVG
+          display: 'block'
         }}
       />
       <div 
         ref={tooltipRef}
         style={{
           position: 'absolute',
-          pointerEvents: 'none' // Prevent tooltip from interfering with hover
+          pointerEvents: 'none'
         }}
       />
     </div>
