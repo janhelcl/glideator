@@ -18,6 +18,9 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     const container = containerRef.current;
     const containerWidth = container.clientWidth;
     
+    // Calculate base font size early
+    const baseFontSize = Math.max(10, Math.min(16, containerWidth / 50));
+
     // Calculate dimensions with minimum sizes
     const margin = { 
       top: 40,
@@ -61,12 +64,16 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     const tooltip = d3.select(tooltipRef.current)
       .style('position', 'absolute')
       .style('visibility', 'hidden')
-      .style('background-color', 'white')
-      .style('padding', '10px')
+      .style('background-color', 'rgba(255, 255, 255, 0.9)')
+      .style('padding', '12px')
       .style('border', '1px solid #666')
-      .style('border-radius', '4px')
+      .style('border-radius', '6px')
       .style('font-family', 'Arial')
-      .style('font-size', '12px');
+      .style('font-size', `${baseFontSize}px`)
+      .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+      .style('pointer-events', 'none')
+      .style('left', `${margin.left + 10}px`)
+      .style('top', `${margin.top + 10}px`);
 
     // Add grid
     svg.append('g')
@@ -257,27 +264,58 @@ const D3Forecast = ({ forecast, selectedHour }) => {
           const windDir = Math.round(forecast.wind_direction_iso_dgr[yIndex] ?? 0);
           const rh = Math.round(forecast.relative_humidity_iso_pct[yIndex] ?? 0);
 
+          // Update tooltip content with responsive font size
           tooltip
             .style('visibility', 'visible')
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 10}px`)
+            .style('font-size', `${baseFontSize}px`)
             .html(`
-              Pressure: ${pressure} hPa<br>
-              Temperature: ${temp}°C<br>
-              Dewpoint: ${dewpoint}°C<br>
-              Wind: ${windSpeed} m/s @ ${windDir}°<br>
-              RH: ${rh}%
+              <div style="
+                display: grid;
+                grid-template-columns: auto auto;
+                gap: 4px;
+                white-space: nowrap;
+              ">
+                <span style="color: #666">Pressure:</span> <span>${pressure} hPa</span>
+                <span style="color: #666">Temp:</span> <span style="color: red">${temp}°C</span>
+                <span style="color: #666">Dewpoint:</span> <span style="color: blue">${dewpoint}°C</span>
+                <span style="color: #666">Wind:</span> <span style="color: green">${windSpeed} m/s @ ${windDir}°</span>
+                <span style="color: #666">RH:</span> <span>${rh}%</span>
+              </div>
             `);
         }
       })
       .on('mouseleave', function() {
         hoverLine.style('visibility', 'hidden');
-        tooltip.style('visibility', 'hidden');
+        // Don't hide the tooltip on mouseleave
       });
 
-    // Update font sizes based on container width
-    const baseFontSize = Math.max(10, Math.min(16, containerWidth / 50));
-    
+    // Show tooltip initially with data from the middle level
+    const midIndex = Math.floor(forecast.hpa_lvls.length / 2);
+    const pressure = Math.round(forecast.hpa_lvls[midIndex]);
+    const temp = forecast.temperature_iso_c[midIndex]?.toFixed(1) ?? 'N/A';
+    const dewpoint = forecast.dewpoint_iso_c[midIndex]?.toFixed(1) ?? 'N/A';
+    const windSpeed = forecast.wind_speed_iso_ms[midIndex]?.toFixed(1) ?? 'N/A';
+    const windDir = Math.round(forecast.wind_direction_iso_dgr[midIndex] ?? 0);
+    const rh = Math.round(forecast.relative_humidity_iso_pct[midIndex] ?? 0);
+
+    tooltip
+      .style('visibility', 'visible')
+      .style('font-size', `${baseFontSize}px`)
+      .html(`
+        <div style="
+          display: grid;
+          grid-template-columns: auto auto;
+          gap: 4px;
+          white-space: nowrap;
+        ">
+          <span style="color: #666">Pressure:</span> <span>${pressure} hPa</span>
+          <span style="color: #666">Temp:</span> <span style="color: red">${temp}°C</span>
+          <span style="color: #666">Dewpoint:</span> <span style="color: blue">${dewpoint}°C</span>
+          <span style="color: #666">Wind:</span> <span style="color: green">${windSpeed} m/s @ ${windDir}°</span>
+          <span style="color: #666">RH:</span> <span>${rh}%</span>
+        </div>
+      `);
+
     // Update text elements with responsive font sizes
     svg.selectAll('text')
       .style('font-size', `${baseFontSize}px`);
