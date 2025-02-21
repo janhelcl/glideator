@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Box, Collapse } from '@mui/material';
-import Plot from 'react-plotly.js';
+import D3Forecast from './D3Forecast';
 import { fetchSiteForecast } from '../api';
 
 const ResponsiveForecast = ({ siteId, queryDate }) => {
@@ -29,150 +29,6 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
     }
   }, [siteId, queryDate]);
 
-  const createCombinedPlot = (forecast) => {
-    // Calculate x-axis ranges
-    const maxTemp = Math.max(...forecast.temperature_iso_c);
-    const maxWind = Math.max(...forecast.wind_speed_iso_ms);
-    const maxX = Math.max(maxTemp, maxWind);
-    const rhPosition = maxX + (maxX * 0.3);
-    const windPosition = rhPosition - (maxX * 0.15); // Place wind arrows between main plot and RH
-
-    return (
-      <Plot
-        data={[
-          // Temperature line
-          {
-            x: forecast.temperature_iso_c,
-            y: forecast.hpa_lvls,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Temperature',
-            line: { color: 'red', width: 2 },
-            marker: { size: 6 },
-            hovertemplate: 'Temperature: %{x:.1f}°C<extra></extra>',
-          },
-          // Dewpoint line
-          {
-            x: forecast.dewpoint_iso_c,
-            y: forecast.hpa_lvls,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Dewpoint',
-            line: { color: 'blue', width: 2, dash: 'dot' },
-            marker: { size: 6 },
-            hovertemplate: 'Dewpoint: %{x:.1f}°C<extra></extra>',
-          },
-          // Wind speed line
-          {
-            x: forecast.wind_speed_iso_ms,
-            y: forecast.hpa_lvls,
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Wind Speed',
-            line: { color: 'green', width: 2 },
-            marker: { size: 6 },
-            hovertemplate: 'Wind Speed: %{x:.1f} m/s<extra></extra>',
-          },
-          // Wind direction arrows
-          {
-            type: 'scatter',
-            mode: 'markers',
-            name: 'Wind Direction',
-            x: Array(forecast.hpa_lvls.length).fill(windPosition),
-            y: forecast.hpa_lvls,
-            marker: {
-              symbol: 'arrow',
-              size: 12,
-              angle: forecast.wind_direction_iso_dgr.map(angle => (angle + 180) % 360),
-              color: 'green',
-            },
-            customdata: forecast.wind_direction_iso_dgr.map(dir => Math.round(dir)),
-            hovertemplate: 'Direction: %{customdata}°<extra></extra>',
-          },
-          // Relative Humidity markers
-          {
-            type: 'scatter',
-            mode: 'markers+text',
-            name: 'RH',
-            x: Array(forecast.hpa_lvls.length).fill(rhPosition),
-            y: forecast.hpa_lvls,
-            marker: {
-              size: 20,
-              color: forecast.relative_humidity_iso_pct,
-              colorscale: [
-                [0, 'rgb(255,255,255)'],
-                [0.5, 'rgb(166,206,227)'],
-                [1, 'rgb(31,120,180)']
-              ],
-              showscale: true,
-              colorbar: {
-                title: 'Relative Humidity %',
-                x: 1.15,
-                thickness: 15,
-              }
-            },
-            text: forecast.relative_humidity_iso_pct.map(rh => `${Math.round(rh)}%`),
-            textposition: 'middle center',
-            textfont: {
-              color: forecast.relative_humidity_iso_pct.map(rh => rh > 50 ? 'white' : 'black'),
-              size: 10,
-            },
-            customdata: forecast.relative_humidity_iso_pct,
-            hovertemplate: 'RH: %{customdata:.0f}%<extra></extra>',
-          }
-        ]}
-        layout={{
-          title: `Atmospheric Profile - ${selectedHour}:00`,
-          hovermode: 'y unified',
-          hoverdistance: 50,
-          hoverlabel: {
-            bgcolor: 'white',
-            font: { family: 'Arial', size: 12 },
-            bordercolor: '#666',
-          },
-          hovertext: `Pressure: %{y} hPa<br>`,
-          annotations: [],
-          xaxis: {
-            title: 'Temperature (°C) / Wind Speed (m/s)',
-            zeroline: false,
-            showgrid: true,
-            gridcolor: 'rgba(0,0,0,0.1)',
-            range: [-20, rhPosition + (maxX * 0.1)],
-          },
-          yaxis: {
-            title: 'Pressure (hPa)',
-            autorange: 'reversed',
-            showgrid: true,
-            gridcolor: 'rgba(0,0,0,0.1)',
-          },
-          showlegend: true,
-          legend: {
-            x: 0,
-            y: 1,
-            orientation: 'h',
-          },
-          margin: { 
-            l: 60, 
-            r: 80, 
-            t: 40, 
-            b: 60 
-          },
-          height: 500,
-          plot_bgcolor: 'white',
-          paper_bgcolor: 'white',
-        }}
-        config={{ 
-          responsive: true, 
-          displayModeBar: false,
-        }}
-        style={{
-          width: '100%',
-          height: '100%',
-        }}
-      />
-    );
-  };
-
   const renderForecast = () => {
     if (!forecastData) {
       return <Box>Loading forecast data...</Box>;
@@ -185,7 +41,7 @@ const ResponsiveForecast = ({ siteId, queryDate }) => {
 
     return (
       <Box sx={{ width: '100%', mt: 2 }}>
-        {createCombinedPlot(forecast)}
+        <D3Forecast forecast={forecast} selectedHour={selectedHour} />
       </Box>
     );
   };
