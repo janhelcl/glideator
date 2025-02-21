@@ -122,26 +122,31 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('stroke-width', 2)
       .attr('d', tempLine);
 
-    // Create a custom arrow path
+    // Add the new function to convert meteorological degrees to D3 angle
+    const metToD3Angle = (metDegrees) => ((90 - metDegrees) * Math.PI) / 180;
+
+    // Update the createWindArrow function to use the new angle calculation
     const createWindArrow = (direction) => {
       const arrowLength = 15;
       const headLength = 6;
       
-      const angle = (direction + 180) % 360 * (Math.PI / 180);
-      const dx = Math.cos(angle);
-      const dy = Math.sin(angle);
+      // Use the new function to calculate the angle
+      const angle = metToD3Angle(direction);
+      const adjustedAngle = angle + Math.PI; // Rotate by 180 degrees
+      const dx = Math.cos(adjustedAngle);
+      const dy = Math.sin(adjustedAngle);
       
       const x0 = 0;
       const y0 = 0;
       const x1 = x0 + dx * arrowLength;
-      const y1 = y0 + dy * arrowLength;
+      const y1 = y0 - dy * arrowLength;
       
-      const headAngle1 = angle + Math.PI * 0.8;
-      const headAngle2 = angle - Math.PI * 0.8;
+      const headAngle1 = adjustedAngle + Math.PI * 0.8;
+      const headAngle2 = adjustedAngle - Math.PI * 0.8;
       const xHead1 = x1 + Math.cos(headAngle1) * headLength;
-      const yHead1 = y1 + Math.sin(headAngle1) * headLength;
+      const yHead1 = y1 - Math.sin(headAngle1) * headLength;
       const xHead2 = x1 + Math.cos(headAngle2) * headLength;
-      const yHead2 = y1 + Math.sin(headAngle2) * headLength;
+      const yHead2 = y1 - Math.sin(headAngle2) * headLength;
       
       return `M ${x0} ${y0} 
               L ${x1} ${y1}
