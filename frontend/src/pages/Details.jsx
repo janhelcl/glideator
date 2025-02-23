@@ -64,10 +64,18 @@ const Details = () => {
     }
 
     return (
-      <>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+      }}>
         <ButtonGroup 
           variant="contained" 
-          sx={{ alignSelf: 'center', mb: 2 }}
+          sx={{ 
+            minWidth: 'min-content',
+            mb: 1  // 8px fixed margin below buttons
+          }}
         >
           {[9, 12, 15].map((hour) => (
             <Button
@@ -81,7 +89,10 @@ const Details = () => {
         </ButtonGroup>
         
         <Box sx={{ 
-          height: '600px',
+          width: '100%',
+          aspectRatio: '1/1',  // Makes it square
+          maxHeight: 'calc(100vh - 300px)',  // Limits maximum height
+          maxWidth: '1000px',  // Limits maximum width
           position: 'relative'
         }}>
           <D3Forecast 
@@ -89,7 +100,7 @@ const Details = () => {
             selectedHour={selectedHour}
           />
         </Box>
-      </>
+      </Box>
     );
   };
 

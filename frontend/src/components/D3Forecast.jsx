@@ -14,32 +14,33 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Get container width
+    // Get container dimensions
     const container = containerRef.current;
     const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
     
-    // Calculate base font size early
-    const baseFontSize = Math.max(10, Math.min(16, containerWidth / 50));
+    // Use the smaller dimension to maintain square aspect ratio
+    const size = Math.min(containerWidth, containerHeight);
+    
+    // Calculate base font size based on container size
+    const baseFontSize = Math.max(8, Math.min(12, size / 40));
 
-    // Calculate dimensions with minimum sizes
-    const margin = { 
-      top: 40,
-      right: Math.max(80, containerWidth * 0.1),
-      bottom: 60,
-      left: Math.max(60, containerWidth * 0.08)
+    // Calculate margins based on container size
+    const margin = {
+      top: size * 0.1,
+      right: size * 0.15,
+      bottom: size * 0.15,
+      left: size * 0.15
     };
-    
-    const minWidth = 400;
-    const minHeight = 400;
-    
-    const width = Math.max(minWidth, containerWidth - margin.left - margin.right);
-    const height = Math.max(minHeight, (width * 0.8));
+
+    const width = size - margin.left - margin.right;
+    const height = size - margin.top - margin.bottom;
 
     // Update SVG size
     const svg = d3.select(svgRef.current)
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
-      .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .attr('width', size)
+      .attr('height', size)
+      .attr('viewBox', `0 0 ${size} ${size}`)
       .attr('preserveAspectRatio', 'xMidYMid meet')
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
@@ -60,7 +61,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .domain([d3.min(forecast.hpa_lvls), d3.max(forecast.hpa_lvls)])
       .range([0, height]);
 
-    // Create tooltip
+    // Create tooltip with initial styles
     const tooltip = d3.select(tooltipRef.current)
       .style('position', 'absolute')
       .style('visibility', 'hidden')
@@ -71,9 +72,44 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .style('font-family', 'Arial')
       .style('font-size', `${baseFontSize}px`)
       .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
-      .style('pointer-events', 'none')
-      .style('left', `${margin.left + 10}px`)
-      .style('top', `${margin.top + 10}px`);
+      .style('pointer-events', 'none');
+
+    // Add this function to handle tooltip positioning
+    const positionTooltip = (event) => {
+      const tooltipNode = tooltipRef.current;
+      const containerNode = containerRef.current;
+      const containerRect = containerNode.getBoundingClientRect();
+      
+      // Get mouse position relative to container
+      const mouseX = event.clientX - containerRect.left;
+      const mouseY = event.clientY - containerRect.top;
+      
+      // Get tooltip dimensions
+      const tooltipRect = tooltipNode.getBoundingClientRect();
+      const tooltipWidth = tooltipRect.width;
+      const tooltipHeight = tooltipRect.height;
+      
+      // Calculate position
+      let left = mouseX + 20; // 20px offset from cursor
+      let top = mouseY - tooltipHeight / 2; // Center vertically with cursor
+      
+      // Adjust if tooltip would overflow right edge
+      if (left + tooltipWidth > containerRect.width) {
+        left = mouseX - tooltipWidth - 20;
+      }
+      
+      // Adjust if tooltip would overflow top/bottom edges
+      if (top < 0) {
+        top = 0;
+      } else if (top + tooltipHeight > containerRect.height) {
+        top = containerRect.height - tooltipHeight;
+      }
+      
+      // Apply position
+      tooltip
+        .style('left', `${left}px`)
+        .style('top', `${top}px`);
+    };
 
     // Add grid
     svg.append('g')
@@ -211,26 +247,29 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .call(d3.axisBottom(xScale))
       .append('text')
       .attr('x', width / 2)
-      .attr('y', 40)
+      .attr('y', margin.bottom * 0.7)
       .attr('fill', 'black')
+      .attr('text-anchor', 'middle')
+      .style('font-size', `${baseFontSize}px`)
       .text('Temperature (°C) / Wind Speed (m/s)');
 
     svg.append('g')
       .call(d3.axisLeft(yScale))
       .append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('y', -40)
+      .attr('y', -margin.left * 0.7)
       .attr('x', -height / 2)
       .attr('fill', 'black')
       .style('text-anchor', 'middle')
+      .style('font-size', `${baseFontSize}px`)
       .text('Pressure (hPa)');
 
     // Add title
     svg.append('text')
       .attr('x', width / 2)
-      .attr('y', -10)
+      .attr('y', -margin.top * 0.3)
       .attr('text-anchor', 'middle')
-      .style('font-size', '16px')
+      .style('font-size', `${baseFontSize * 1.2}px`)
       .text(`Atmospheric Profile - ${selectedHour}:00`);
 
     // Add hover functionality
@@ -261,7 +300,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
             .attr('y1', yScale(forecast.hpa_lvls[yIndex]))
             .attr('y2', yScale(forecast.hpa_lvls[yIndex]));
 
-          // Safely access data values
+          // Update tooltip content
           const pressure = Math.round(forecast.hpa_lvls[yIndex]);
           const temp = forecast.temperature_iso_c[yIndex]?.toFixed(1) ?? 'N/A';
           const dewpoint = forecast.dewpoint_iso_c[yIndex]?.toFixed(1) ?? 'N/A';
@@ -269,10 +308,8 @@ const D3Forecast = ({ forecast, selectedHour }) => {
           const windDir = Math.round(forecast.wind_direction_iso_dgr[yIndex] ?? 0);
           const rh = Math.round(forecast.relative_humidity_iso_pct[yIndex] ?? 0);
 
-          // Update tooltip content with responsive font size
           tooltip
             .style('visibility', 'visible')
-            .style('font-size', `${baseFontSize}px`)
             .html(`
               <div style="
                 display: grid;
@@ -287,39 +324,15 @@ const D3Forecast = ({ forecast, selectedHour }) => {
                 <span style="color: #666">RH:</span> <span>${rh}%</span>
               </div>
             `);
+          
+          // Position the tooltip
+          positionTooltip(event);
         }
       })
       .on('mouseleave', function() {
         hoverLine.style('visibility', 'hidden');
-        // Don't hide the tooltip on mouseleave
+        tooltip.style('visibility', 'hidden');
       });
-
-    // Show tooltip initially with data from the middle level
-    const midIndex = Math.floor(forecast.hpa_lvls.length / 2);
-    const pressure = Math.round(forecast.hpa_lvls[midIndex]);
-    const temp = forecast.temperature_iso_c[midIndex]?.toFixed(1) ?? 'N/A';
-    const dewpoint = forecast.dewpoint_iso_c[midIndex]?.toFixed(1) ?? 'N/A';
-    const windSpeed = forecast.wind_speed_iso_ms[midIndex]?.toFixed(1) ?? 'N/A';
-    const windDir = Math.round(forecast.wind_direction_iso_dgr[midIndex] ?? 0);
-    const rh = Math.round(forecast.relative_humidity_iso_pct[midIndex] ?? 0);
-
-    tooltip
-      .style('visibility', 'visible')
-      .style('font-size', `${baseFontSize}px`)
-      .html(`
-        <div style="
-          display: grid;
-          grid-template-columns: auto auto;
-          gap: 4px;
-          white-space: nowrap;
-        ">
-          <span style="color: #666">Pressure:</span> <span>${pressure} hPa</span>
-          <span style="color: #666">Temp:</span> <span style="color: red">${temp}°C</span>
-          <span style="color: #666">Dewpoint:</span> <span style="color: blue">${dewpoint}°C</span>
-          <span style="color: #666">Wind:</span> <span style="color: green">${windSpeed} m/s @ ${windDir}°</span>
-          <span style="color: #666">RH:</span> <span>${rh}%</span>
-        </div>
-      `);
 
     // Update text elements with responsive font sizes
     svg.selectAll('text')
@@ -357,16 +370,14 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       style={{ 
         width: '100%',
         height: '100%',
-        minWidth: '400px',
-        position: 'relative',
-        overflow: 'hidden'
+        position: 'relative'
       }}
     >
       <svg 
         ref={svgRef}
         style={{
-          maxWidth: '100%',
-          height: 'auto',
+          width: '100%',
+          height: '100%',
           display: 'block'
         }}
       />
