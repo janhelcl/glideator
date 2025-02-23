@@ -35,7 +35,7 @@ def read_sites(
     sites = crud.get_sites_with_predictions(db, skip=skip, limit=limit)
     return sites
 
-@router.get("/{site_id}/predictions", response_model=List[schemas.Prediction])
+@router.get("/{site_id}/predictions", response_model=schemas.SiteResponse)
 def read_predictions(
     site_id: int,
     query_date: Optional[date] = Query(None, description="Date to filter predictions"),
@@ -49,7 +49,34 @@ def read_predictions(
     predictions = crud.get_predictions(db, site_id, query_date, metric)
     if not predictions:
         raise HTTPException(status_code=404, detail="Predictions not found")
-    return predictions
+
+    # Group predictions by date and metric
+    predictions_by_date = {}
+    for pred in predictions:
+        if pred.date not in predictions_by_date:
+            predictions_by_date[pred.date] = {}
+        predictions_by_date[pred.date][pred.metric] = pred.value
+
+    # Create sorted values list for each date
+    prediction_values = []
+    for date in sorted(predictions_by_date.keys()):
+        metrics_dict = predictions_by_date[date]
+        # Ensure consistent ordering: XC0, XC10, XC20, ..., XC100
+        ordered_values = [
+            metrics_dict.get(f'XC{i}', 0.0) 
+            for i in [0] + list(range(10, 101, 10))
+        ]
+        prediction_values.append(
+            schemas.PredictionValues(date=date, values=ordered_values)
+        )
+
+    return schemas.SiteResponse(
+        name=site.name,
+        latitude=site.latitude,
+        longitude=site.longitude,
+        site_id=site.site_id,
+        predictions=prediction_values
+    )
 
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(

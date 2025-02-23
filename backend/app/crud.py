@@ -98,7 +98,7 @@ def delete_forecasts_by_date(db: Session, query_date: date):
 
 def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
     sites = db.query(models.Site).offset(skip).limit(limit).all()
-    site_predictions = defaultdict(lambda: defaultdict(list))
+    site_predictions = defaultdict(lambda: defaultdict(dict))  # Changed to dict instead of list
 
     predictions = (
         db.query(models.Prediction)
@@ -107,19 +107,22 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
         .all()
     )
 
+    # Store predictions by site_id, date, and metric
     for pred in predictions:
-        site_predictions[pred.site_id][pred.date].append(pred.value)
+        site_predictions[pred.site_id][pred.date][pred.metric] = pred.value
 
     result = []
     for site in sites:
         predictions_list = []
-        for pred_date, values in site_predictions[site.site_id].items():
-            # Ensure values are sorted by metric (assuming metric names like XC0, XC10, ...)
-            sorted_values = sorted(
-                values, 
-                key=lambda x: int(x.split('XC')[1]) if isinstance(x, str) and x.startswith('XC') else 0
-            )
-            predictions_list.append(schemas.PredictionValues(date=pred_date, values=sorted_values))
+        for pred_date in sorted(site_predictions[site.site_id].keys()):
+            metrics_dict = site_predictions[site.site_id][pred_date]
+            # Ensure consistent ordering: XC0, XC10, XC20, ..., XC100
+            ordered_values = [
+                metrics_dict.get(f'XC{i}', 0.0)
+                for i in [0] + list(range(10, 101, 10))
+            ]
+            predictions_list.append(schemas.PredictionValues(date=pred_date, values=ordered_values))
+        
         site_response = schemas.SiteResponse(
             name=site.name,
             latitude=site.latitude,
