@@ -45,16 +45,21 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Calculate x-axis ranges
+    // Update the x-axis range calculation and scale
     const maxTemp = Math.max(...forecast.temperature_iso_c);
     const maxWind = Math.max(...forecast.wind_speed_iso_ms);
+    const minTemp = Math.min(...forecast.temperature_iso_c, ...forecast.dewpoint_iso_c);
     const maxX = Math.max(maxTemp, maxWind);
     const rhPosition = maxX + (maxX * 0.3);
     const windPosition = rhPosition - (maxX * 0.15);
 
+    // Add some padding to the domain
+    const xMin = Math.floor(minTemp) - 2; // Round down and add 2 units of padding
+    const xMax = Math.ceil(rhPosition + (maxX * 0.1)); // Round up the max value
+
     // Create scales
     const xScale = d3.scaleLinear()
-      .domain([-20, rhPosition + (maxX * 0.1)])
+      .domain([xMin, xMax])
       .range([0, width]);
 
     const yScale = d3.scaleLinear()
