@@ -64,11 +64,28 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     const rhPosition = domainMax + (domainMax - domainMin) * 0.2;
     const windPosition = domainMax + (domainMax - domainMin) * 0.1;
 
-    // Create scales
-    const xScale = d3.scaleLinear()
-      .domain([domainMin, rhPosition])
+    // Separate domains for temperature and wind
+    const tempPadding = (maxTemp - minTemp) * 0.1;
+    const windPadding = (maxWind - minWind) * 0.1;
+    const tempDomainMin = Math.floor(minTemp - tempPadding);
+    const tempDomainMax = Math.ceil(maxTemp + tempPadding);
+    const windDomainMin = Math.floor(minWind - windPadding);
+    const windDomainMax = Math.ceil(maxWind + windPadding);
+
+    // Calculate positions for RH and wind arrows relative to temperature domain
+    const rhPositionTemp = tempDomainMax + (tempDomainMax - tempDomainMin) * 0.25;
+    const windPositionTemp = rhPositionTemp - (tempDomainMax - tempDomainMin) * 0.15;
+
+    // Create separate scales for temperature and wind
+    const tempScale = d3.scaleLinear()
+      .domain([tempDomainMin, rhPositionTemp])
       .range([0, width]);
 
+    const windScale = d3.scaleLinear()
+      .domain([windDomainMin, windDomainMax])
+      .range([0, width]);
+
+    // Create scales
     const yScale = d3.scaleLinear()
       .domain([d3.min(forecast.hpa_lvls), d3.max(forecast.hpa_lvls)])
       .range([0, height]);
@@ -127,7 +144,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     svg.append('g')
       .attr('class', 'grid')
       .attr('opacity', 0.1)
-      .call(d3.axisBottom(xScale)
+      .call(d3.axisBottom(tempScale)
         .tickSize(height)
         .tickFormat('')
       );
@@ -142,7 +159,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
 
     // Create line generators
     const tempLine = d3.line()
-      .x(d => xScale(d))
+      .x(d => tempScale(d))
       .y((d, i) => yScale(forecast.hpa_lvls[i]));
 
     // Draw temperature line
@@ -172,12 +189,16 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('height', height);
 
     // Draw wind speed line
+    const windLine = d3.line()
+      .x(d => windScale(d))
+      .y((d, i) => yScale(forecast.hpa_lvls[i]));
+
     svg.append('path')
       .datum(forecast.wind_speed_iso_ms)
       .attr('fill', 'none')
       .attr('stroke', 'green')
       .attr('stroke-width', 2)
-      .attr('d', tempLine);
+      .attr('d', windLine);
 
     // Add the new function to convert meteorological degrees to D3 angle
     const metToD3Angle = (metDegrees) => ((90 - metDegrees) * Math.PI) / 180;
@@ -212,7 +233,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
               L ${xHead2} ${yHead2}`;
     };
 
-    // Replace the existing wind arrows section with this:
+    // Update the wind arrows positioning
     svg.selectAll('.wind-arrow')
       .data(forecast.wind_direction_iso_dgr)
       .enter()
@@ -223,7 +244,8 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('stroke', 'green')
       .attr('stroke-width', 1.5)
       .attr('transform', (d, i) => {
-        const x = xScale(windPosition);
+        // Use fixed position for wind arrows instead of wind scale
+        const x = tempScale(windPositionTemp);  // Use the fixed position
         const y = yScale(forecast.hpa_lvls[i]);
         return `translate(${x},${y})`;
       })
@@ -246,7 +268,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .append('g')
       .attr('class', 'rh-group')
       .attr('transform', (d, i) => {
-        const x = xScale(rhPosition);
+        const x = tempScale(rhPositionTemp);
         const y = yScale(forecast.hpa_lvls[i]);
         return `translate(${x},${y})`;
       });
@@ -265,14 +287,14 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     // Add axes
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(xScale))
+      .call(d3.axisBottom(tempScale))
       .append('text')
       .attr('x', width / 2)
       .attr('y', margin.bottom * 0.7)
       .attr('fill', 'black')
       .attr('text-anchor', 'middle')
       .style('font-size', `${baseFontSize}px`)
-      .text('Temperature (°C) / Wind Speed (m/s)');
+      .text('Temperature (°C)');
 
     svg.append('g')
       .call(d3.axisLeft(yScale))
@@ -284,6 +306,17 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .style('text-anchor', 'middle')
       .style('font-size', `${baseFontSize}px`)
       .text('Pressure (hPa)');
+
+    // Add wind axis (top)
+    svg.append('g')
+      .call(d3.axisTop(windScale))
+      .append('text')
+      .attr('x', width / 2)
+      .attr('y', -margin.top * 0.4)
+      .attr('fill', 'black')
+      .attr('text-anchor', 'middle')
+      .style('font-size', `${baseFontSize}px`)
+      .text('Wind Speed (m/s)');
 
     // Add title
     svg.append('text')
