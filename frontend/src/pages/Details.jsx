@@ -109,6 +109,7 @@ const Details = () => {
       maxWidth: '1200px',
       margin: '0 auto',
       p: 2,
+      minHeight: '100%',  // Ensure it takes full height if content is short
     }}>
       {/* Site Information Section */}
       <Accordion defaultExpanded>

@@ -70,7 +70,7 @@ const Layout = () => {
         sx={{
           flexGrow: 1,
           height: `calc(100vh - ${headerHeight} - ${footerHeight})`,
-          overflow: 'hidden',
+          overflow: 'auto',
           backgroundColor: '#f5f5f5',
           padding: 0,
         }}
