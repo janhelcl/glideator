@@ -45,21 +45,28 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Update the x-axis range calculation and scale
+    // Calculate x-axis ranges with padding
     const maxTemp = Math.max(...forecast.temperature_iso_c);
+    const minTemp = Math.min(...forecast.temperature_iso_c);
     const maxWind = Math.max(...forecast.wind_speed_iso_ms);
-    const minTemp = Math.min(...forecast.temperature_iso_c, ...forecast.dewpoint_iso_c);
+    const minWind = Math.min(...forecast.wind_speed_iso_ms);
+    
+    // Find overall min and max for temperature and wind only
+    const minX = Math.min(minTemp, minWind);
     const maxX = Math.max(maxTemp, maxWind);
-    const rhPosition = maxX + (maxX * 0.3);
-    const windPosition = rhPosition - (maxX * 0.15);
-
-    // Add some padding to the domain
-    const xMin = Math.floor(minTemp) - 2; // Round down and add 2 units of padding
-    const xMax = Math.ceil(rhPosition + (maxX * 0.1)); // Round up the max value
+    
+    // Add padding to domain
+    const xPadding = (maxX - minX) * 0.1;
+    const domainMin = Math.floor(minX - xPadding);
+    const domainMax = Math.ceil(maxX + xPadding);
+    
+    // Calculate positions for RH and wind arrows
+    const rhPosition = domainMax + (domainMax - domainMin) * 0.2;
+    const windPosition = domainMax + (domainMax - domainMin) * 0.1;
 
     // Create scales
     const xScale = d3.scaleLinear()
-      .domain([xMin, xMax])
+      .domain([domainMin, rhPosition])
       .range([0, width]);
 
     const yScale = d3.scaleLinear()
@@ -146,14 +153,23 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .attr('stroke-width', 2)
       .attr('d', tempLine);
 
-    // Draw dewpoint line
+    // Draw dewpoint line with clipping
     svg.append('path')
       .datum(forecast.dewpoint_iso_c)
       .attr('fill', 'none')
       .attr('stroke', 'blue')
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', '4')
-      .attr('d', tempLine);
+      .attr('d', tempLine)
+      .attr('clip-path', 'url(#clip)');
+
+    // Define the clipping path
+    svg.append('defs')
+      .append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('width', width)  // Use the full width of the chart
+      .attr('height', height);
 
     // Draw wind speed line
     svg.append('path')
