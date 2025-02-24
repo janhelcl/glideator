@@ -51,19 +51,6 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     const maxWind = Math.max(...forecast.wind_speed_iso_ms);
     const minWind = Math.min(...forecast.wind_speed_iso_ms);
     
-    // Find overall min and max for temperature and wind only
-    const minX = Math.min(minTemp, minWind);
-    const maxX = Math.max(maxTemp, maxWind);
-    
-    // Add padding to domain
-    const xPadding = (maxX - minX) * 0.1;
-    const domainMin = Math.floor(minX - xPadding);
-    const domainMax = Math.ceil(maxX + xPadding);
-    
-    // Calculate positions for RH and wind arrows
-    const rhPosition = domainMax + (domainMax - domainMin) * 0.2;
-    const windPosition = domainMax + (domainMax - domainMin) * 0.1;
-
     // Separate domains for temperature and wind
     const tempPadding = (maxTemp - minTemp) * 0.1;
     const windPadding = (maxWind - minWind) * 0.1;
