@@ -108,7 +108,7 @@ const Details = () => {
   }, [siteData]);
   
   // Available metrics (same as in Home)
-  const metrics = ['XC50', 'XC75', 'XC100', 'XC125', 'XC150'];
+  const metrics = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
   
   const [forecast, setForecast] = useState(null);
   const [selectedHour, setSelectedHour] = useState(9);
@@ -198,6 +198,14 @@ const Details = () => {
     );
   };
 
+  // First, let's add a useEffect to log the site data structure
+  useEffect(() => {
+    if (siteData && siteData.length > 0) {
+      console.log('Site data structure:', siteData[0]);
+      console.log('Predictions available:', siteData[0].predictions);
+    }
+  }, [siteData]);
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -262,8 +270,9 @@ const Details = () => {
           </Accordion>
 
           {/* Add DateBoxes at bottom, just like on Home page */}
-          {allDates.length > 0 && (
+          {allDates.length > 0 && siteData && (
             <DateBoxes
+              key={`datebox-${siteData[0]?.site_id}`}
               dates={allDates}
               selectedDate={selectedDate}
               setSelectedDate={handleDateChange}
