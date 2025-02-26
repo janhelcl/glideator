@@ -36,7 +36,7 @@ def read_sites(
     sites = crud.get_sites_with_predictions(db, skip=skip, limit=limit)
     return sites
 
-@router.get("/{site_id}/predictions", response_model=List[schemas.SitePredictionResponse])
+@router.get("/{site_id}/predictions", response_model=List[schemas.SiteResponse])
 def read_predictions(
     site_id: int,
     db: Session = Depends(get_db),
@@ -56,19 +56,16 @@ def read_predictions(
         predictions_by_date[pred.date]['computed_at'] = pred.computed_at
         predictions_by_date[pred.date]['gfs_forecast_at'] = pred.gfs_forecast_at
     
-    result = []
+    # Format predictions in the same way as the /sites/ endpoint
+    predictions_list = []
     for date, data in sorted(predictions_by_date.items()):
         metrics_dict = data['metrics']
         ordered_values = [
             metrics_dict.get(f'XC{i}', 0.0)
             for i in [0] + list(range(10, 101, 10))
         ]
-        result.append(
-            schemas.SitePredictionResponse(
-                name=site.name,
-                latitude=site.latitude,
-                longitude=site.longitude,
-                site_id=site.site_id,
+        predictions_list.append(
+            schemas.PredictionValues(
                 date=date,
                 values=ordered_values,
                 computed_at=data['computed_at'],
@@ -76,7 +73,16 @@ def read_predictions(
             )
         )
     
-    return result
+    # Create a single SiteResponse object with all predictions
+    site_response = schemas.SiteResponse(
+        name=site.name,
+        latitude=site.latitude,
+        longitude=site.longitude,
+        site_id=site.site_id,
+        predictions=predictions_list
+    )
+    
+    return [site_response]  # Return as a list to match the expected response_model
 
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(
