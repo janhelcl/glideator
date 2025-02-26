@@ -14,6 +14,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import GlideatorForecast from '../components/GlideatorForecast';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -235,6 +236,27 @@ const Details = () => {
               <Typography>
                 Site details coming soon...
               </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Glideator Forecast Section - NEW */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Glideator Forecast</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {loading ? (
+                <Box display="flex" justifyContent="center" p={3}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <GlideatorForecast 
+                  siteData={siteData[0]}
+                  selectedDate={selectedDate}
+                  selectedMetric={selectedMetric}
+                  metrics={metrics}
+                />
+              )}
             </AccordionDetails>
           </Accordion>
 
