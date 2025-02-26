@@ -63,7 +63,7 @@ def process_forecasts(db: Session, forecasts):
     gfs_forecast_at = datetime(year=date.year, month=date.month, day=date.day, hour=run)
     # score and save
     get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
-    process_and_save_forecasts(db, joined_forecasts)
+    process_and_save_forecasts(db, joined_forecasts, computed_at, gfs_forecast_at)
     db.commit() # commit both together
 
 
@@ -144,12 +144,14 @@ def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
         # Create new prediction
         crud.create_prediction(db, prediction)
 
-def process_and_save_forecasts(db: Session, joined_forecasts):
+def process_and_save_forecasts(db: Session, joined_forecasts, computed_at, gfs_forecast_at):
     joined_forecasts = joined_forecasts.reset_index()
     forecasts = []
     for _, row in joined_forecasts.iterrows():
         forecast = schemas.ForecastCreate(
             date=row['ref_time'].date(),
+            computed_at=computed_at,
+            gfs_forecast_at=gfs_forecast_at,
             lat_gfs=row['lat_gfs'],
             lon_gfs=row['lon_gfs'],
             forecast_9=json.dumps(forecast_to_dict(row, suffix='_9')),

@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -35,48 +36,47 @@ def read_sites(
     sites = crud.get_sites_with_predictions(db, skip=skip, limit=limit)
     return sites
 
-@router.get("/{site_id}/predictions", response_model=schemas.SiteResponse)
+@router.get("/{site_id}/predictions", response_model=List[schemas.SitePredictionResponse])
 def read_predictions(
     site_id: int,
-    query_date: Optional[date] = Query(None, description="Date to filter predictions"),
-    metric: Optional[str] = Query(None, description="Metric to filter predictions"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    date: Optional[date] = None,
+    metric: Optional[str] = None
 ):
     site = crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
-        
-    predictions = crud.get_predictions(db, site_id, query_date, metric)
-    if not predictions:
-        raise HTTPException(status_code=404, detail="Predictions not found")
 
-    # Group predictions by date and metric
-    predictions_by_date = {}
+    predictions = crud.get_predictions(db, site_id, date, metric)
+    
+    # Group predictions by date
+    predictions_by_date = defaultdict(lambda: {'metrics': {}, 'computed_at': None, 'gfs_forecast_at': None})
     for pred in predictions:
-        if pred.date not in predictions_by_date:
-            predictions_by_date[pred.date] = {}
-        predictions_by_date[pred.date][pred.metric] = pred.value
-
-    # Create sorted values list for each date
-    prediction_values = []
-    for date in sorted(predictions_by_date.keys()):
-        metrics_dict = predictions_by_date[date]
-        # Ensure consistent ordering: XC0, XC10, XC20, ..., XC100
+        predictions_by_date[pred.date]['metrics'][pred.metric] = pred.value
+        predictions_by_date[pred.date]['computed_at'] = pred.computed_at
+        predictions_by_date[pred.date]['gfs_forecast_at'] = pred.gfs_forecast_at
+    
+    result = []
+    for date, data in sorted(predictions_by_date.items()):
+        metrics_dict = data['metrics']
         ordered_values = [
-            metrics_dict.get(f'XC{i}', 0.0) 
+            metrics_dict.get(f'XC{i}', 0.0)
             for i in [0] + list(range(10, 101, 10))
         ]
-        prediction_values.append(
-            schemas.PredictionValues(date=date, values=ordered_values)
+        result.append(
+            schemas.SitePredictionResponse(
+                name=site.name,
+                latitude=site.latitude,
+                longitude=site.longitude,
+                site_id=site.site_id,
+                date=date,
+                values=ordered_values,
+                computed_at=data['computed_at'],
+                gfs_forecast_at=data['gfs_forecast_at']
+            )
         )
-
-    return schemas.SiteResponse(
-        name=site.name,
-        latitude=site.latitude,
-        longitude=site.longitude,
-        site_id=site.site_id,
-        predictions=prediction_values
-    )
+    
+    return result
 
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(

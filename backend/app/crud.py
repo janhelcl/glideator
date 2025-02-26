@@ -107,21 +107,33 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
         .all()
     )
 
-    # Store predictions by site_id, date, and metric
+    # Store predictions by site_id and date
     for pred in predictions:
-        site_predictions[pred.site_id][pred.date][pred.metric] = pred.value
+        if pred.date not in site_predictions[pred.site_id]:
+            site_predictions[pred.site_id][pred.date] = {
+                'metrics': {},
+                'computed_at': pred.computed_at,
+                'gfs_forecast_at': pred.gfs_forecast_at
+            }
+        site_predictions[pred.site_id][pred.date]['metrics'][pred.metric] = pred.value
 
     result = []
     for site in sites:
         predictions_list = []
         for pred_date in sorted(site_predictions[site.site_id].keys()):
-            metrics_dict = site_predictions[site.site_id][pred_date]
+            pred_data = site_predictions[site.site_id][pred_date]
+            metrics_dict = pred_data['metrics']
             # Ensure consistent ordering: XC0, XC10, XC20, ..., XC100
             ordered_values = [
                 metrics_dict.get(f'XC{i}', 0.0)
                 for i in [0] + list(range(10, 101, 10))
             ]
-            predictions_list.append(schemas.PredictionValues(date=pred_date, values=ordered_values))
+            predictions_list.append(schemas.PredictionValues(
+                date=pred_date,
+                values=ordered_values,
+                computed_at=pred_data['computed_at'],
+                gfs_forecast_at=pred_data['gfs_forecast_at']
+            ))
         
         site_response = schemas.SiteResponse(
             name=site.name,

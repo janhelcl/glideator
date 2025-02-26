@@ -21,6 +21,8 @@ class Prediction(PredictionBase):
 class PredictionValues(BaseModel):
     date: date
     values: List[float]
+    computed_at: datetime
+    gfs_forecast_at: datetime
 
 class SiteBase(BaseModel):
     name: str
@@ -33,6 +35,16 @@ class SiteBase(BaseModel):
 
 class SiteCreate(SiteBase):
     site_id: int
+
+class SitePredictionResponse(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
+    site_id: int
+    date: date
+    values: List[float]
+    computed_at: datetime
+    gfs_forecast_at: datetime
 
 class SiteResponse(BaseModel):
     name: str
@@ -49,6 +61,8 @@ class Site(SiteResponse):
 
 class ForecastBase(BaseModel):
     date: date
+    computed_at: datetime
+    gfs_forecast_at: datetime
     lat_gfs: float
     lon_gfs: float
     forecast_9: Json

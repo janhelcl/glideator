@@ -31,6 +31,8 @@ class Forecast(Base):
     __tablename__ = 'forecasts'
     
     date = Column(Date, primary_key=True)
+    computed_at = Column(DateTime, nullable=False)
+    gfs_forecast_at = Column(DateTime, nullable=False)
     lat_gfs = Column(Float, primary_key=True)
     lon_gfs = Column(Float, primary_key=True)
     forecast_9 = Column(JSON, nullable=False)
