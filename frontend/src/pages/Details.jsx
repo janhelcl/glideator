@@ -83,12 +83,29 @@ const Details = () => {
     setSelectedDate(date);
   };
   
-  // Map state for DateBoxes component
-  const mapState = {
-    center: [48.5, -100],
-    zoom: 5,
-    bounds: null
-  };
+  // Replace the static mapState with one derived from the siteData
+  // This needs to be a useMemo to update when siteData changes
+
+  const mapState = useMemo(() => {
+    // Default values if site data isn't loaded yet
+    const defaultState = {
+      center: [48.5, -100],
+      zoom: 8, // Increased zoom level for better site visibility
+      bounds: null
+    };
+    
+    // If we have site data, use the site's coordinates as center
+    if (siteData && siteData.length > 0) {
+      const site = siteData[0];
+      return {
+        center: [site.latitude, site.longitude],
+        zoom: 10, // Higher zoom for site detail view
+        bounds: null
+      };
+    }
+    
+    return defaultState;
+  }, [siteData]);
   
   // Available metrics (same as in Home)
   const metrics = ['XC50', 'XC75', 'XC100', 'XC125', 'XC150'];
