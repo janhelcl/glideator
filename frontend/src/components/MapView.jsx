@@ -1,10 +1,10 @@
-import React, { useMemo, useEffect, useState, useTransition } from 'react';
+import React, { useMemo, useEffect, useState, useTransition, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import './MapView.css';
-import { Slider, Typography, Box, IconButton } from '@mui/material';
+import { Typography, Box, IconButton } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
 import MetricControl from './MetricControl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -208,7 +208,7 @@ const MapView = React.memo(({
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  const getPredictionValue = (site) => {
+  const getPredictionValue = useCallback((site) => {
     const prediction = site.predictions.find(
       (pred) => pred.date === selectedDate
     );
@@ -218,7 +218,7 @@ const MapView = React.memo(({
       return value !== undefined ? value : 'N/A';
     }
     return 'N/A';
-  };
+  }, [selectedMetric, selectedDate, metricIndexMap]);
 
   const getColor = (probability) => {
     if (probability === 'N/A') return 'gray';
@@ -228,7 +228,7 @@ const MapView = React.memo(({
     return `rgb(${r}, ${g}, 0)`;
   };
 
-  const createCustomIcon = (color) => {
+  const createCustomIcon = useCallback((color) => {
     const rgbaGlow = rgbToRgba(color, 0.7);
     const rgbaGlowHover = rgbToRgba(color, 1);
     const uniqueId = `marker-${Math.random().toString(36).substr(2, 9)}`;
@@ -256,7 +256,7 @@ const MapView = React.memo(({
       iconAnchor: [6, 6],
       popupAnchor: [0, -6],
     });
-  };
+  }, []);
 
   const markers = useMemo(() => {
     return sites.map((site) => {
@@ -293,7 +293,7 @@ const MapView = React.memo(({
         </Marker>
       );
     });
-  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, getMarkerRef]);
+  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, getMarkerRef, createCustomIcon, getPredictionValue]);
 
   // Handle slider change (updates local state)
   const handleSliderChange = (event, newValue) => {
@@ -311,10 +311,6 @@ const MapView = React.memo(({
   };
 
   const sliderValue = localSliderValue;
-  const marks = metrics.map((metric, index) => ({
-    value: index,
-    label: metric,
-  }));
 
   const handleLocationClick = () => {
     if ("geolocation" in navigator) {
