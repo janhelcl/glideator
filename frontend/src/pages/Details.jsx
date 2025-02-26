@@ -218,9 +218,9 @@ const Details = () => {
           {error}
         </Typography>
       ) : !siteData || !siteData.length ? (
-        <Typography variant="h6" align="center" my={4}>
-          Site not found
-        </Typography>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress />
+        </Box>
       ) : (
         <>
           {/* Site Information Section */}
