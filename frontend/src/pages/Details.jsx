@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast } from '../api';
+import { fetchSiteForecast, fetchSites } from '../api';
+import DateBoxes from '../components/DateBoxes';
 import { 
   Box, 
   Button, 
@@ -16,16 +17,90 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const Details = () => {
   const { siteId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get date and metric from URL or use defaults
+  const initialDate = searchParams.get('date') || '';
+  const initialMetric = searchParams.get('metric') || 'XC50';
+  
+  // State for site data and dates
+  const [siteData, setSiteData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedMetric] = useState(initialMetric);
+  
+  // Calculated values
+  const allDates = useMemo(() => {
+    if (!siteData || !siteData.length) return [];
+    // Get all unique dates from the site's predictions
+    const dates = siteData[0]?.predictions?.map(pred => pred.date) || [];
+    return [...new Set(dates)].sort();
+  }, [siteData]);
+  
+  // Effect to load site data
+  useEffect(() => {
+    const loadSiteData = async () => {
+      try {
+        setLoading(true);
+        // Fetch site data without date filter to get all dates
+        const data = await fetchSites(null, null);
+        // Filter for just this site
+        const filteredData = data.filter(site => site.site_id === parseInt(siteId));
+        setSiteData(filteredData);
+      } catch (err) {
+        console.error('Error loading site data:', err);
+        setError('Failed to load site data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadSiteData();
+  }, [siteId]);
+  
+  // Set default date if none selected and data is loaded
+  useEffect(() => {
+    if (allDates.length && !selectedDate) {
+      setSelectedDate(allDates[0]);
+    }
+  }, [allDates, selectedDate]);
+  
+  // Update URL when date or metric changes
+  useEffect(() => {
+    if (selectedDate) {
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('date', selectedDate);
+        newParams.set('metric', selectedMetric);
+        return newParams;
+      }, { replace: true });
+    }
+  }, [selectedDate, selectedMetric, setSearchParams]);
+  
+  // Handle date selection
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+  };
+  
+  // Map state for DateBoxes component
+  const mapState = {
+    center: [48.5, -100],
+    zoom: 5,
+    bounds: null
+  };
+  
+  // Available metrics (same as in Home)
+  const metrics = ['XC50', 'XC75', 'XC100', 'XC125', 'XC150'];
+  
   const [forecast, setForecast] = useState(null);
   const [selectedHour, setSelectedHour] = useState(9);
-  const [loading, setLoading] = useState(true);
-  const queryDate = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const loadForecast = async () => {
       try {
         setLoading(true);
-        const data = await fetchSiteForecast(siteId, queryDate);
+        const data = await fetchSiteForecast(siteId, selectedDate);
         setForecast(data);
       } catch (err) {
         console.error('Error fetching forecast:', err);
@@ -34,8 +109,10 @@ const Details = () => {
       }
     };
 
-    loadForecast();
-  }, [siteId, queryDate]);
+    if (selectedDate) {
+      loadForecast();
+    }
+  }, [siteId, selectedDate]);
 
   const renderForecastContent = () => {
     if (loading) {
@@ -111,51 +188,78 @@ const Details = () => {
       p: 2,
       minHeight: '100%',  // Ensure it takes full height if content is short
     }}>
-      {/* Site Information Section */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Site Information</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography>
-            Site details coming soon...
-          </Typography>
-        </AccordionDetails>
-      </Accordion>
+      {error ? (
+        <Typography color="error" variant="h6" align="center" my={4}>
+          {error}
+        </Typography>
+      ) : !siteData || !siteData.length ? (
+        <Typography variant="h6" align="center" my={4}>
+          Site not found
+        </Typography>
+      ) : (
+        <>
+          {/* Site Information Section */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Site Information</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography>
+                Site details coming soon...
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
 
-      {/* Weather Forecast Section */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Weather Forecast</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          {renderForecastContent()}
-        </AccordionDetails>
-      </Accordion>
+          {/* Weather Forecast Section */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Weather Forecast</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {renderForecastContent()}
+            </AccordionDetails>
+          </Accordion>
 
-      {/* Flight Statistics Section */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Flight Statistics</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography>
-            Flight statistics coming soon...
-          </Typography>
-        </AccordionDetails>
-      </Accordion>
+          {/* Flight Statistics Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Flight Statistics</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography>
+                Flight statistics coming soon...
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
 
-      {/* Historical Data Section */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Historical Data</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography>
-            Historical data coming soon...
-          </Typography>
-        </AccordionDetails>
-      </Accordion>
+          {/* Historical Data Section */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Historical Data</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography>
+                Historical data coming soon...
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Add DateBoxes at bottom, just like on Home page */}
+          {allDates.length > 0 && (
+            <DateBoxes
+              dates={allDates}
+              selectedDate={selectedDate}
+              setSelectedDate={handleDateChange}
+              center={mapState.center}
+              zoom={mapState.zoom}
+              bounds={mapState.bounds}
+              allSites={siteData}
+              selectedMetric={selectedMetric}
+              metrics={metrics}
+            />
+          )}
+        </>
+      )}
     </Box>
   );
 };
