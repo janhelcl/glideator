@@ -192,6 +192,9 @@ const Details = () => {
           <D3Forecast 
             forecast={currentForecast} 
             selectedHour={selectedHour}
+            date={forecast.date}
+            gfs_forecast_at={forecast.gfs_forecast_at}
+            computed_at={forecast.computed_at}
           />
         </Box>
       </Box>

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
 import { debounce } from 'lodash';
 
-const D3Forecast = ({ forecast, selectedHour }) => {
+const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at }) => {
   const svgRef = useRef();
   const tooltipRef = useRef();
   const containerRef = useRef();
@@ -27,7 +27,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
 
     // Calculate margins based on container size
     const margin = {
-      top: size * 0.1,
+      top: size * 0.15,
       right: size * 0.15,
       bottom: size * 0.15,
       left: size * 0.15
@@ -294,24 +294,58 @@ const D3Forecast = ({ forecast, selectedHour }) => {
       .style('font-size', `${baseFontSize}px`)
       .text('Pressure (hPa)');
 
-    // Add wind axis (top)
+    // Add wind axis (top) - moved up to give more space for title
     svg.append('g')
       .call(d3.axisTop(windScale))
       .append('text')
       .attr('x', width / 2)
-      .attr('y', -margin.top * 0.4)
+      .attr('y', -margin.top * 0.25)  // Adjusted from 0.4 to 0.25
       .attr('fill', 'black')
       .attr('text-anchor', 'middle')
       .style('font-size', `${baseFontSize}px`)
       .text('Wind Speed (m/s)');
 
-    // Add title
-    svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', -margin.top * 0.3)
+    // Format dates for display
+    const formatDate = (dateStr) => {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+
+    const formatDateTime = (dateTimeStr) => {
+      return new Date(dateTimeStr).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    };
+
+    // Add multi-line title with smaller font for details
+    const titleGroup = svg.append('g')
+      .attr('class', 'title-group')
+      .attr('transform', `translate(${width / 2}, ${-margin.top * 0.85})`);  // Moved up from 0.7 to 0.85
+
+    // Main title
+    titleGroup.append('text')
+      .attr('class', 'main-title')
       .attr('text-anchor', 'middle')
+      .attr('dy', '0em')
       .style('font-size', `${baseFontSize * 1.2}px`)
-      .text(`Atmospheric Profile - ${selectedHour}:00`);
+      .style('font-weight', 'bold')
+      .text(`Atmospheric Profile - ${formatDate(date)} ${selectedHour}:00`);
+
+    // Subtitle with forecast details
+    titleGroup.append('text')
+      .attr('class', 'subtitle')
+      .attr('text-anchor', 'middle')
+      .attr('dy', `${baseFontSize * 1.4}px`)  // Reduced from 1.6 to 1.4 to tighten spacing
+      .style('font-size', `${baseFontSize * 0.8}px`)
+      .style('fill', '#666')
+      .text(`GFS: ${formatDateTime(gfs_forecast_at)} | Processed: ${formatDateTime(computed_at)}`);
 
     // Add hover functionality
     const hoverLine = svg.append('line')
@@ -385,7 +419,7 @@ const D3Forecast = ({ forecast, selectedHour }) => {
     // Update title with larger font
     svg.select('text')
       .style('font-size', `${baseFontSize * 1.2}px`);
-  }, [forecast, selectedHour]); // Add dependencies for useCallback
+  }, [forecast, selectedHour, date, gfs_forecast_at, computed_at]); // Update dependencies
 
   // Initial render
   useEffect(() => {
