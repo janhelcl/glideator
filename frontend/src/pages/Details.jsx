@@ -233,6 +233,9 @@ const Details = () => {
               <Typography variant="h6">Site Information</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              <Typography variant="body1" gutterBottom>
+                <strong>Name:</strong> {siteData[0]?.name}
+              </Typography>
               <Typography>
                 Site details coming soon...
               </Typography>
