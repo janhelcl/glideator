@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Autocomplete, Box } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const SearchBar = ({ sites, onSiteSelect }) => {
   const [options, setOptions] = useState([]);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Transform sites into options format
@@ -14,9 +17,18 @@ const SearchBar = ({ sites, onSiteSelect }) => {
   }, [sites]);
 
   const handleSelect = (event, value) => {
-    if (value) {
-      // Only center map and open popup
+    if (!value) return;
+
+    // Get current URL parameters
+    const currentParams = new URLSearchParams(location.search);
+    
+    if (location.pathname === '/') {
+      // On Home page - keep existing behavior
       onSiteSelect(value.site);
+    } else {
+      // On other pages - navigate to Details page
+      // Preserve current URL parameters when navigating
+      navigate(`/sites/${value.site.site_id}?${currentParams.toString()}`);
     }
   };
 
