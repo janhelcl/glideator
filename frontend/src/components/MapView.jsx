@@ -396,12 +396,14 @@ const MapView = React.memo(({
 
       {/* Conditionally render the Metric Slider only on the main map */}
       {!isSmallMap && (
-        <MetricControl
-          metrics={metrics}
-          sliderValue={sliderValue}
-          onSliderChange={handleSliderChange}
-          onSliderChangeCommitted={handleSliderChangeCommitted}
-        />
+        <PreventLeafletControl>
+          <MetricControl
+            metrics={metrics}
+            sliderValue={sliderValue}
+            onSliderChange={handleSliderChange}
+            onSliderChangeCommitted={handleSliderChangeCommitted}
+          />
+        </PreventLeafletControl>
       )}
       {markers}
       
