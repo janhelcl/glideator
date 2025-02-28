@@ -83,20 +83,11 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .style('font-size', `${axisFontSize}px`)
       .text(d => d.replace('XC', '')); // Remove 'XC' prefix from axis labels
 
-    // Create and add y-axis with responsive font size
+    // For the bar chart - remove y-axis
     svg.append('g')
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d * 100}%`))
-      .selectAll('text')
-      .style('font-size', `${axisFontSize}px`);
-
-    // Add y-axis label with responsive font size
-    svg.append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', -margin.left + 20)
-      .attr('x', -height / 2)
-      .attr('dy', '1em')
-      .style('text-anchor', 'middle')
-      .style('font-size', `${axisFontSize + 2}px`);
+      .call(d3.axisLeft(y).tickSize(0).tickFormat(''))
+      .selectAll('path, line')
+      .style('stroke', 'transparent');
 
     // Add x-axis label with responsive font size
     svg.append('text')
@@ -253,20 +244,11 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('transform', containerWidth < 500 ? 'translate(-5,2)rotate(-45)' : 'translate(0,0)')
       .style('text-anchor', containerWidth < 500 ? 'end' : 'middle');
 
-    // Create and add y-axis with responsive font size
+    // For the line chart - remove y-axis
     svg.append('g')
-      .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d * 100}%`))
-      .selectAll('text')
-      .style('font-size', `${axisFontSize}px`);
-
-    // Add y-axis label with responsive font size
-    svg.append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', -margin.left + 20)
-      .attr('x', -height / 2)
-      .attr('dy', '1em')
-      .style('text-anchor', 'middle')
-      .style('font-size', `${axisFontSize + 2}px`);
+      .call(d3.axisLeft(y).tickSize(0).tickFormat(''))
+      .selectAll('path, line')
+      .style('stroke', 'transparent');
 
     // Add x-axis label with responsive font size
     svg.append('text')
