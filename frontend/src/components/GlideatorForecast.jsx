@@ -32,8 +32,27 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
     const containerWidth = barContainerRef.current.clientWidth;
     const containerHeight = barContainerRef.current.clientHeight;
 
-    // Set margins and dimensions
-    const margin = { top: 30, right: 30, bottom: 60, left: 60 };
+    // Calculate responsive font sizes based on container dimensions
+    // More aggressive scaling for small screens
+    const axisFontSize = Math.max(8, Math.min(12, containerWidth / 60));
+    const labelFontSize = Math.max(8, Math.min(12, containerWidth / 60));
+    const titleFontSize = Math.max(10, Math.min(16, containerWidth / 45));
+    
+    // Set margins and dimensions - adjust based on font sizes
+    const margin = { 
+      top: 20 + titleFontSize * 2, 
+      right: 20, 
+      bottom: 50 + axisFontSize, 
+      left: 50 + axisFontSize 
+    };
+    
+    // For very small screens, reduce margins further
+    if (containerWidth < 400) {
+      margin.left = 40 + axisFontSize;
+      margin.right = 15;
+      margin.bottom = 40 + axisFontSize;
+    }
+    
     const width = containerWidth - margin.left - margin.right;
     const height = containerHeight - margin.top - margin.bottom;
 
@@ -54,36 +73,37 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .domain([0, 1])
       .range([height, 0]);
 
-    // Create and add x-axis
+    // Create and add x-axis with responsive font size
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(x))
       .selectAll('text')
       .attr('transform', 'translate(-10,0)rotate(-45)')
       .style('text-anchor', 'end')
-      .style('font-size', '12px')
+      .style('font-size', `${axisFontSize}px`)
       .text(d => d.replace('XC', '')); // Remove 'XC' prefix from axis labels
 
-    // Create and add y-axis
+    // Create and add y-axis with responsive font size
     svg.append('g')
       .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d * 100}%`))
       .selectAll('text')
-      .style('font-size', '12px');
+      .style('font-size', `${axisFontSize}px`);
 
-    // Add y-axis label
+    // Add y-axis label with responsive font size
     svg.append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('y', -margin.left + 15)
+      .attr('y', -margin.left + 20)
       .attr('x', -height / 2)
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
-      .style('font-size', '14px')
+      .style('font-size', `${axisFontSize + 2}px`)
+      .text('Probability');
 
-    // Add x-axis label
+    // Add x-axis label with responsive font size
     svg.append('text')
       .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
       .style('text-anchor', 'middle')
-      .style('font-size', '14px')
+      .style('font-size', `${axisFontSize + 2}px`)
       .text('Minimum Flight Quality (XC Points)');
 
     // Use a single color for all bars
@@ -103,7 +123,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('rx', 0) // Remove rounded corners
       .attr('ry', 0);
 
-    // Add value labels on top of bars
+    // Add value labels on top of bars with responsive font size
     svg.selectAll('.label')
       .data(data)
       .enter()
@@ -112,7 +132,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('x', d => x(d.metric) + x.bandwidth() / 2)
       .attr('y', d => y(d.value) - 5)
       .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
+      .style('font-size', `${labelFontSize}px`)
       .style('font-weight', 'bold')
       .text(d => `${Math.round(d.value * 100)}%`);
 
@@ -122,14 +142,25 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('stroke', '#2196F3')
       .attr('stroke-width', 3);
 
-    // Add title
+    // Bar Chart Title - with adjusted positioning and responsive font size
+    const titleLine1 = `Will There Be a Flight on ${selectedDate}?`;
+    const titleLine2 = 'How Far Might It Go?';
+    
     svg.append('text')
       .attr('x', width / 2)
-      .attr('y', -10)
+      .attr('y', -margin.top + titleFontSize)
       .attr('text-anchor', 'middle')
-      .style('font-size', '16px')
+      .style('font-size', `${titleFontSize}px`)
       .style('font-weight', 'bold')
-      .text(`Will There Be a Flight on ${selectedDate}? How Far Might It Go?`);
+      .text(titleLine1);
+
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', -margin.top + titleFontSize * 2)
+      .attr('text-anchor', 'middle')
+      .style('font-size', `${titleFontSize}px`)
+      .style('font-weight', 'bold')
+      .text(titleLine2);
 
   }, [siteData, selectedDate, selectedMetric, metrics]);
 
@@ -159,8 +190,27 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
     const containerWidth = lineContainerRef.current.clientWidth;
     const containerHeight = lineContainerRef.current.clientHeight;
 
-    // Set margins and dimensions
-    const margin = { top: 30, right: 30, bottom: 60, left: 60 };
+    // Calculate responsive font sizes based on container dimensions
+    // More aggressive scaling for small screens
+    const axisFontSize = Math.max(8, Math.min(12, containerWidth / 60));
+    const labelFontSize = Math.max(8, Math.min(12, containerWidth / 60));
+    const titleFontSize = Math.max(10, Math.min(16, containerWidth / 45));
+    
+    // Set margins and dimensions - adjust based on font sizes
+    const margin = { 
+      top: 20 + titleFontSize * 2, 
+      right: 20, 
+      bottom: 50 + axisFontSize, 
+      left: 50 + axisFontSize 
+    };
+    
+    // For very small screens, reduce margins further
+    if (containerWidth < 400) {
+      margin.left = 40 + axisFontSize;
+      margin.right = 15;
+      margin.bottom = 40 + axisFontSize;
+    }
+    
     const width = containerWidth - margin.left - margin.right;
     const height = containerHeight - margin.top - margin.bottom;
 
@@ -180,45 +230,36 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .domain([0, 1])
       .range([height, 0]);
 
-    // Create and add x-axis
+    // Create and add x-axis with responsive font size and fewer ticks on small screens
+    const xTickCount = containerWidth < 400 ? 3 : (isMobile ? 4 : 7);
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(Math.min(data.length, 7)).tickFormat(d3.timeFormat('%b %d')))
+      .call(d3.axisBottom(x).ticks(Math.min(data.length, xTickCount)).tickFormat(d3.timeFormat('%b %d')))
       .selectAll('text')
-      .style('font-size', '12px');
+      .style('font-size', `${axisFontSize}px`);
 
-    // Create and add y-axis
+    // Create and add y-axis with responsive font size
     svg.append('g')
       .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d * 100}%`))
       .selectAll('text')
-      .style('font-size', '12px');
+      .style('font-size', `${axisFontSize}px`);
 
-    // Add y-axis label
+    // Add y-axis label with responsive font size
     svg.append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('y', -margin.left + 15)
+      .attr('y', -margin.left + 20)
       .attr('x', -height / 2)
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
-      .style('font-size', '14px')
+      .style('font-size', `${axisFontSize + 2}px`)
       .text('Probability');
 
-    // Add x-axis label
+    // Add x-axis label with responsive font size
     svg.append('text')
       .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
       .style('text-anchor', 'middle')
-      .style('font-size', '14px')
+      .style('font-size', `${axisFontSize + 2}px`)
       .text('Date');
-
-    // Add grid lines
-    svg.append('g')
-      .attr('class', 'grid')
-      .call(d3.axisLeft(y)
-        .ticks(5)
-        .tickSize(-width)
-        .tickFormat('')
-      )
-      .attr('stroke-opacity', 0.1);
 
     // Create line generator
     const line = d3.line()
@@ -234,7 +275,11 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('stroke-width', 3)
       .attr('d', line);
 
-    // Add dots for each data point
+    // Calculate dot size based on chart dimensions - smaller for small screens
+    const dotRadius = Math.max(2, Math.min(4, width / 120));
+    const selectedDotRadius = dotRadius * 1.6;
+
+    // Add dots for each data point with responsive size
     svg.selectAll('.dot')
       .data(data)
       .enter()
@@ -242,23 +287,10 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('class', 'dot')
       .attr('cx', d => x(d.date))
       .attr('cy', d => y(d.value))
-      .attr('r', 5)
+      .attr('r', dotRadius)
       .attr('fill', '#2196F3')
       .attr('stroke', 'white')
       .attr('stroke-width', 2);
-
-    // Add value labels above dots
-    svg.selectAll('.value-label')
-      .data(data)
-      .enter()
-      .append('text')
-      .attr('class', 'value-label')
-      .attr('x', d => x(d.date))
-      .attr('y', d => y(d.value) - 10)
-      .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .style('font-weight', 'bold')
-      .text(d => `${Math.round(d.value * 100)}%`);
 
     // Highlight the selected date
     const selectedDateObj = new Date(selectedDate);
@@ -268,25 +300,50 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       return currDiff < prevDiff ? curr : prev;
     }, data[0]);
 
+    // For very small screens, only show labels for selected point and a few others
+    const shouldShowLabel = (d) => {
+      if (containerWidth < 400) {
+        // On very small screens, only show label for selected point and first/last points
+        const isSelected = d.date.getTime() === closestPoint.date.getTime();
+        const isFirstOrLast = d === data[0] || d === data[data.length - 1];
+        return isSelected || isFirstOrLast;
+      }
+      return true;
+    };
+
+    // Add value labels above dots with responsive font size
+    svg.selectAll('.value-label')
+      .data(data)
+      .enter()
+      .filter(shouldShowLabel)
+      .append('text')
+      .attr('class', 'value-label')
+      .attr('x', d => x(d.date))
+      .attr('y', d => y(d.value) - dotRadius - 5)
+      .attr('text-anchor', 'middle')
+      .style('font-size', `${labelFontSize}px`)
+      .style('font-weight', 'bold')
+      .text(d => `${Math.round(d.value * 100)}%`);
+
     svg.selectAll('.dot')
       .filter(d => d.date.getTime() === closestPoint.date.getTime())
-      .attr('r', 8)
+      .attr('r', selectedDotRadius)
       .attr('fill', '#FFC107')
       .attr('stroke', '#FF5722')
       .attr('stroke-width', 2);
 
-    // Add title
+    // Line Chart Title with responsive font size
     svg.append('text')
       .attr('x', width / 2)
-      .attr('y', -10)
+      .attr('y', -margin.top + titleFontSize)
       .attr('text-anchor', 'middle')
-      .style('font-size', '16px')
+      .style('font-size', `${titleFontSize}px`)
       .style('font-weight', 'bold')
       .text(selectedMetric === 'XC0' 
         ? 'Chances of a Flight'
         : `Chances of a ${selectedMetric.replace('XC', '')} Point Flight`);
 
-    // Add tooltip
+    // Add tooltip with responsive styling
     const tooltip = d3.select(lineContainerRef.current)
       .append('div')
       .attr('class', 'd3-tooltip')
@@ -298,13 +355,13 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .style('padding', '8px')
       .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
       .style('pointer-events', 'none')
-      .style('font-size', '12px');
+      .style('font-size', `${labelFontSize}px`);
 
-    // Add hover interaction
+    // Add hover interaction with responsive dot sizing
     svg.selectAll('.dot')
       .on('mouseover', function(event, d) {
         d3.select(this)
-          .attr('r', 8)
+          .attr('r', selectedDotRadius)
           .attr('stroke-width', 3);
         
         tooltip
@@ -319,21 +376,16 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
           .style('top', (event.pageY - 10) + 'px')
           .style('left', (event.pageX + 10) + 'px');
       })
-      .on('mouseout', function() {
+      .on('mouseout', function(d) {
+        const isSelected = d3.select(this).datum().date.getTime() === closestPoint.date.getTime();
         d3.select(this)
-          .attr('r', d => {
-            const isSelected = d.date.getTime() === closestPoint.date.getTime();
-            return isSelected ? 8 : 5;
-          })
-          .attr('stroke-width', d => {
-            const isSelected = d.date.getTime() === closestPoint.date.getTime();
-            return isSelected ? 2 : 2;
-          });
+          .attr('r', isSelected ? selectedDotRadius : dotRadius)
+          .attr('stroke-width', 2);
         
         tooltip.style('visibility', 'hidden');
       });
 
-  }, [siteData, selectedDate, selectedMetric, metrics]);
+  }, [siteData, selectedDate, selectedMetric, metrics, isMobile]);
 
   // Create charts on initial render and when dependencies change
   useEffect(() => {
@@ -368,7 +420,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
           ref={barContainerRef}
           sx={{ 
             flex: 1, 
-            height: isMobile ? '300px' : '400px',
+            height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
             position: 'relative',
             minWidth: 0 // Prevents flex items from overflowing
           }}
@@ -388,7 +440,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
           ref={lineContainerRef}
           sx={{ 
             flex: 1, 
-            height: isMobile ? '300px' : '400px',
+            height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
             position: 'relative',
             minWidth: 0 // Prevents flex items from overflowing
           }}
