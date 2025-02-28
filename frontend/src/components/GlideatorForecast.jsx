@@ -96,8 +96,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('x', -height / 2)
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
-      .style('font-size', `${axisFontSize + 2}px`)
-      .text('Probability');
+      .style('font-size', `${axisFontSize + 2}px`);
 
     // Add x-axis label with responsive font size
     svg.append('text')
@@ -156,7 +155,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
 
     svg.append('text')
       .attr('x', width / 2)
-      .attr('y', -margin.top + titleFontSize * 2)
+      .attr('y', -margin.top + titleFontSize * 2.5)
       .attr('text-anchor', 'middle')
       .style('font-size', `${titleFontSize}px`)
       .style('font-weight', 'bold')
@@ -230,13 +229,29 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .domain([0, 1])
       .range([height, 0]);
 
-    // Create and add x-axis with responsive font size and fewer ticks on small screens
-    const xTickCount = containerWidth < 400 ? 3 : (isMobile ? 4 : 7);
+    // Create and add x-axis with responsive font size and ensure all dates are visible
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(Math.min(data.length, xTickCount)).tickFormat(d3.timeFormat('%b %d')))
+      .call(d3.axisBottom(x)
+        // Use all data points as ticks to ensure all dates are shown
+        .tickValues(data.map(d => d.date))
+        .tickFormat((d, i) => {
+          // Format dates based on available space
+          if (containerWidth < 400) {
+            // For very small screens, use day number only but show all dates
+            return d3.timeFormat('%d')(d);
+          } else if (isMobile) {
+            // For mobile, show day number only
+            return d3.timeFormat('%d')(d);
+          } else {
+            // For larger screens, show month and day
+            return d3.timeFormat('%b %d')(d);
+          }
+        }))
       .selectAll('text')
-      .style('font-size', `${axisFontSize}px`);
+      .style('font-size', `${axisFontSize}px`)
+      .attr('transform', containerWidth < 500 ? 'translate(-5,2)rotate(-45)' : 'translate(0,0)')
+      .style('text-anchor', containerWidth < 500 ? 'end' : 'middle');
 
     // Create and add y-axis with responsive font size
     svg.append('g')
@@ -251,8 +266,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('x', -height / 2)
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
-      .style('font-size', `${axisFontSize + 2}px`)
-      .text('Probability');
+      .style('font-size', `${axisFontSize + 2}px`);
 
     // Add x-axis label with responsive font size
     svg.append('text')
@@ -300,22 +314,10 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       return currDiff < prevDiff ? curr : prev;
     }, data[0]);
 
-    // For very small screens, only show labels for selected point and a few others
-    const shouldShowLabel = (d) => {
-      if (containerWidth < 400) {
-        // On very small screens, only show label for selected point and first/last points
-        const isSelected = d.date.getTime() === closestPoint.date.getTime();
-        const isFirstOrLast = d === data[0] || d === data[data.length - 1];
-        return isSelected || isFirstOrLast;
-      }
-      return true;
-    };
-
     // Add value labels above dots with responsive font size
     svg.selectAll('.value-label')
       .data(data)
       .enter()
-      .filter(shouldShowLabel)
       .append('text')
       .attr('class', 'value-label')
       .attr('x', d => x(d.date))
