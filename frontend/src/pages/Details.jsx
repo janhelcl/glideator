@@ -245,7 +245,7 @@ const Details = () => {
           {/* Glideator Forecast Section - NEW */}
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Glideator Forecast</Typography>
+              <Typography variant="h6">Site Activity Forecast</Typography>
             </AccordionSummary>
             <AccordionDetails>
               {loading ? (

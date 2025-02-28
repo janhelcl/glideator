@@ -61,7 +61,8 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .selectAll('text')
       .attr('transform', 'translate(-10,0)rotate(-45)')
       .style('text-anchor', 'end')
-      .style('font-size', '12px');
+      .style('font-size', '12px')
+      .text(d => d.replace('XC', '')); // Remove 'XC' prefix from axis labels
 
     // Create and add y-axis
     svg.append('g')
@@ -77,14 +78,13 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
-      .text('Probability');
 
     // Add x-axis label
     svg.append('text')
       .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
-      .text('XC Distance Metrics');
+      .text('Minimum Flight Quality (XC Points)');
 
     // Use a single color for all bars
     const barColor = '#4CAF50'; // Green color for all bars
@@ -129,7 +129,7 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('text-anchor', 'middle')
       .style('font-size', '16px')
       .style('font-weight', 'bold')
-      .text(`XC Probability Forecast for ${selectedDate}`);
+      .text(`Will There Be a Flight on ${selectedDate}? How Far Might It Go?`);
 
   }, [siteData, selectedDate, selectedMetric, metrics]);
 
@@ -282,7 +282,9 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
       .attr('text-anchor', 'middle')
       .style('font-size', '16px')
       .style('font-weight', 'bold')
-      .text(`${selectedMetric} Probability Trend`);
+      .text(selectedMetric === 'XC0' 
+        ? 'Chances of a Flight'
+        : `Chances of a ${selectedMetric.replace('XC', '')} Point Flight`);
 
     // Add tooltip
     const tooltip = d3.select(lineContainerRef.current)
