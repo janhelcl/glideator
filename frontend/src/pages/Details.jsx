@@ -16,6 +16,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
 import StandaloneMetricControl from '../components/StandaloneMetricControl';
+import DateBoxesControl from '../components/DateBoxesControl';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -319,7 +320,7 @@ const Details = () => {
 
           {/* Add DateBoxes at bottom, just like on Home page */}
           {allDates.length > 0 && siteData && (
-            <DateBoxes
+            <DateBoxesControl
               key={`datebox-${siteData[0]?.site_id}`}
               dates={allDates}
               selectedDate={selectedDate}
