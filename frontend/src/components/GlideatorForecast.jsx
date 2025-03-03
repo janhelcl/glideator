@@ -15,8 +15,9 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
   const createBarChart = useCallback(() => {
     if (!siteData || !selectedDate || !barChartRef.current || !barContainerRef.current) return;
 
-    // Clear previous chart
-    d3.select(barChartRef.current).selectAll('*').remove();
+    // Clear previous chart more thoroughly
+    const svgElement = d3.select(barChartRef.current);
+    svgElement.selectAll('*').remove();
 
     // Find prediction for selected date
     const prediction = siteData.predictions?.find(p => p.date === selectedDate);
@@ -158,8 +159,12 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
   const createLineChart = useCallback(() => {
     if (!siteData || !selectedMetric || !lineChartRef.current || !lineContainerRef.current) return;
 
-    // Clear previous chart
-    d3.select(lineChartRef.current).selectAll('*').remove();
+    // Clear previous chart more thoroughly
+    const svgElement = d3.select(lineChartRef.current);
+    svgElement.selectAll('*').remove();
+    
+    // Remove any tooltips that might have been appended to the container
+    d3.select(lineContainerRef.current).selectAll('.d3-tooltip').remove();
 
     // Get the index of the selected metric
     const metricIndex = metrics.indexOf(selectedMetric);
@@ -373,13 +378,34 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
 
   // Create charts on initial render and when dependencies change
   useEffect(() => {
-    createBarChart();
-    createLineChart();
+    if (barChartRef.current && lineChartRef.current) {
+      // Reset SVG content completely
+      d3.select(barChartRef.current).selectAll('*').remove();
+      d3.select(lineChartRef.current).selectAll('*').remove();
+      
+      // Also remove any tooltips or other elements added outside the SVG
+      if (barContainerRef.current) {
+        d3.select(barContainerRef.current).selectAll('.d3-tooltip').remove();
+      }
+      if (lineContainerRef.current) {
+        d3.select(lineContainerRef.current).selectAll('.d3-tooltip').remove();
+      }
+      
+      // Then create the charts
+      createBarChart();
+      createLineChart();
+    }
   }, [createBarChart, createLineChart]);
 
-  // Handle window resize
+  // Handle window resize with more thorough cleanup
   useEffect(() => {
     const handleResize = debounce(() => {
+      // Ensure we clear everything before redrawing
+      if (barChartRef.current) d3.select(barChartRef.current).selectAll('*').remove();
+      if (lineChartRef.current) d3.select(lineChartRef.current).selectAll('*').remove();
+      if (barContainerRef.current) d3.select(barContainerRef.current).selectAll('.d3-tooltip').remove();
+      if (lineContainerRef.current) d3.select(lineContainerRef.current).selectAll('.d3-tooltip').remove();
+      
       createBarChart();
       createLineChart();
     }, 300);
@@ -406,7 +432,8 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
             flex: 1, 
             height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
             position: 'relative',
-            minWidth: 0 // Prevents flex items from overflowing
+            minWidth: 0, // Prevents flex items from overflowing
+            overflow: 'visible' // Allow marks to overflow container
           }}
         >
           <svg 
@@ -414,7 +441,8 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
             style={{ 
               width: '100%', 
               height: '100%',
-              overflow: 'visible'
+              overflow: 'visible',
+              display: 'block' // Ensures no extra space
             }}
           />
         </Box>
@@ -426,7 +454,8 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
             flex: 1, 
             height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
             position: 'relative',
-            minWidth: 0 // Prevents flex items from overflowing
+            minWidth: 0, // Prevents flex items from overflowing
+            overflow: 'visible' // Allow marks to overflow container
           }}
         >
           <svg 
@@ -434,7 +463,8 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
             style={{ 
               width: '100%', 
               height: '100%',
-              overflow: 'visible'
+              overflow: 'visible',
+              display: 'block' // Ensures no extra space
             }}
           />
         </Box>

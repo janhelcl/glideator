@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
 import { fetchSiteForecast, fetchSites } from '../api';
 import DateBoxes from '../components/DateBoxes';
@@ -15,10 +15,12 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
+import StandaloneMetricControl from '../components/StandaloneMetricControl';
 
 const Details = () => {
   const { siteId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
@@ -29,7 +31,7 @@ const Details = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [selectedMetric] = useState(initialMetric);
+  const [selectedMetric, setSelectedMetric] = useState(initialMetric);
   
   // Calculated values
   const allDates = useMemo(() => {
@@ -210,6 +212,17 @@ const Details = () => {
     }
   }, [siteData]);
 
+  // Handle metric change
+  const handleMetricChange = (newMetric) => {
+    setSelectedMetric(newMetric);
+    // Update URL
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('metric', newMetric);
+      return newParams;
+    }, { replace: true });
+  };
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -242,12 +255,19 @@ const Details = () => {
             </AccordionDetails>
           </Accordion>
 
-          {/* Glideator Forecast Section - NEW */}
+          {/* Glideator Forecast Section */}
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Site Activity Forecast</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              {/* Add the StandaloneMetricControl here */}
+              <StandaloneMetricControl 
+                metrics={metrics}
+                selectedMetric={selectedMetric}
+                onMetricChange={handleMetricChange}
+              />
+              
               {loading ? (
                 <Box display="flex" justifyContent="center" p={3}>
                   <CircularProgress />
