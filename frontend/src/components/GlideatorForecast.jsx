@@ -2,8 +2,20 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { debounce } from 'lodash';
+import StandaloneMetricControl from './StandaloneMetricControl';
+import DateBoxesControl from './DateBoxesControl';
 
-const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) => {
+const GlideatorForecast = ({ 
+  siteData, 
+  selectedDate, 
+  selectedMetric, 
+  metrics, 
+  onMetricChange,
+  onDateChange,
+  allDates,
+  mapState,
+  allSites
+}) => {
   const barChartRef = useRef(null);
   const lineChartRef = useRef(null);
   const barContainerRef = useRef(null);
@@ -425,46 +437,84 @@ const GlideatorForecast = ({ siteData, selectedDate, selectedMetric, metrics }) 
         gap: 3,
         width: '100%'
       }}>
-        {/* Bar Chart */}
+        {/* Bar Chart with Date Control */}
         <Box 
           ref={barContainerRef}
           sx={{ 
             flex: 1, 
-            height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
+            height: isMobile ? '280px' : '400px',
             position: 'relative',
-            minWidth: 0, // Prevents flex items from overflowing
-            overflow: 'visible' // Allow marks to overflow container
+            minWidth: 0,
+            overflow: 'visible',
+            marginTop: '30px'
           }}
         >
+          {/* Date control positioned above the chart */}
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '-30px',
+            right: '10px', 
+            zIndex: 10 
+          }}>
+            {allDates && allDates.length > 0 && (
+              <DateBoxesControl
+                dates={allDates}
+                selectedDate={selectedDate}
+                setSelectedDate={onDateChange}
+                center={mapState?.center}
+                zoom={mapState?.zoom}
+                bounds={mapState?.bounds}
+                allSites={allSites || [siteData]}
+                selectedMetric={selectedMetric}
+                metrics={metrics}
+              />
+            )}
+          </Box>
+          
           <svg 
             ref={barChartRef}
             style={{ 
               width: '100%', 
               height: '100%',
               overflow: 'visible',
-              display: 'block' // Ensures no extra space
+              display: 'block'
             }}
           />
         </Box>
 
-        {/* Line Chart */}
+        {/* Line Chart with Metric Control */}
         <Box 
           ref={lineContainerRef}
           sx={{ 
             flex: 1, 
-            height: isMobile ? '280px' : '400px', // Slightly smaller height on mobile
+            height: isMobile ? '280px' : '400px',
             position: 'relative',
-            minWidth: 0, // Prevents flex items from overflowing
-            overflow: 'visible' // Allow marks to overflow container
+            minWidth: 0,
+            overflow: 'visible',
+            marginTop: '30px'
           }}
         >
+          {/* Metric control positioned above the chart */}
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '-30px',
+            right: '10px', 
+            zIndex: 10 
+          }}>
+            <StandaloneMetricControl
+              metrics={metrics}
+              selectedMetric={selectedMetric}
+              onMetricChange={onMetricChange}
+            />
+          </Box>
+          
           <svg 
             ref={lineChartRef}
             style={{ 
               width: '100%', 
               height: '100%',
               overflow: 'visible',
-              display: 'block' // Ensures no extra space
+              display: 'block'
             }}
           />
         </Box>

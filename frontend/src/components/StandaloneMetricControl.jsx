@@ -47,7 +47,6 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
         sx={{
           position: 'relative',
           zIndex: 1000,
-          margin: '0 auto 20px auto',
           width: 'fit-content'
         }}
       >
@@ -56,14 +55,16 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
           sx={{
             backgroundColor: 'white',
             borderRadius: '4px',
-            padding: '8px',
+            padding: '6px',
             boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
             '&:hover': {
               backgroundColor: '#f5f5f5',
             },
+            width: '32px',
+            height: '32px',
           }}
         >
-          <TimelineIcon />
+          <TimelineIcon fontSize="small" />
         </IconButton>
       </Box>
       

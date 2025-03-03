@@ -262,25 +262,17 @@ const Details = () => {
               <Typography variant="h6">Site Activity Forecast</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              {/* Add the StandaloneMetricControl here */}
-              <StandaloneMetricControl 
-                metrics={metrics}
+              <GlideatorForecast 
+                siteData={siteData[0]}
+                selectedDate={selectedDate}
                 selectedMetric={selectedMetric}
+                metrics={metrics}
                 onMetricChange={handleMetricChange}
+                onDateChange={handleDateChange}
+                allDates={allDates}
+                mapState={mapState}
+                allSites={siteData}
               />
-              
-              {loading ? (
-                <Box display="flex" justifyContent="center" p={3}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <GlideatorForecast 
-                  siteData={siteData[0]}
-                  selectedDate={selectedDate}
-                  selectedMetric={selectedMetric}
-                  metrics={metrics}
-                />
-              )}
             </AccordionDetails>
           </Accordion>
 
