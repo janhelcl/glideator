@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
 import { fetchSiteForecast, fetchSites } from '../api';
-import DateBoxes from '../components/DateBoxes';
 import { 
   Box, 
   Button, 
@@ -11,17 +10,16 @@ import {
   AccordionSummary,
   AccordionDetails,
   Typography,
-  CircularProgress
+  CircularProgress,
+  Collapse
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
-import StandaloneMetricControl from '../components/StandaloneMetricControl';
 import DateBoxesControl from '../components/DateBoxesControl';
 
 const Details = () => {
   const { siteId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
@@ -116,6 +114,7 @@ const Details = () => {
   
   const [forecast, setForecast] = useState(null);
   const [selectedHour, setSelectedHour] = useState(9);
+  const [showWeatherDetails, setShowWeatherDetails] = useState(false);
 
   useEffect(() => {
     const loadForecast = async () => {
@@ -262,27 +261,59 @@ const Details = () => {
               <Typography variant="h6">Site Activity Forecast</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <GlideatorForecast 
-                siteData={siteData[0]}
-                selectedDate={selectedDate}
-                selectedMetric={selectedMetric}
-                metrics={metrics}
-                onMetricChange={handleMetricChange}
-                onDateChange={handleDateChange}
-                allDates={allDates}
-                mapState={mapState}
-                allSites={siteData}
-              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
+                <GlideatorForecast 
+                  siteData={siteData[0]}
+                  selectedDate={selectedDate}
+                  selectedMetric={selectedMetric}
+                  metrics={metrics}
+                  onMetricChange={handleMetricChange}
+                  onDateChange={handleDateChange}
+                  allDates={allDates}
+                  mapState={mapState}
+                  allSites={siteData}
+                />
+                
+                {/* Button to show weather details */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Button 
+                    variant="outlined" 
+                    onClick={() => setShowWeatherDetails(!showWeatherDetails)}
+                    endIcon={showWeatherDetails ? 
+                      <ExpandMoreIcon style={{ transform: 'rotate(180deg)' }} /> : 
+                      <ExpandMoreIcon />
+                    }
+                  >
+                    {showWeatherDetails ? 'Hide Weather Details' : 'Show Weather Details'}
+                  </Button>
+                </Box>
+                
+                {/* Conditionally render the weather forecast content with smooth animation */}
+                <Collapse in={showWeatherDetails} timeout="auto">
+                  <Box 
+                    sx={{ 
+                      mt: 2,
+                      pt: 1  // Just a little padding at the top
+                    }}
+                  >
+                    {renderForecastContent()}
+                  </Box>
+                </Collapse>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
-          {/* Weather Forecast Section */}
-          <Accordion defaultExpanded>
+          {/* We can either remove the Weather Forecast section or leave it empty with a note */}
+          {/* Option 1: Remove it completely */}
+          {/* Option 2: Keep it with a note */}
+          <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Weather Forecast</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              {renderForecastContent()}
+              <Typography>
+                Weather forecast has been moved to the Site Activity Forecast section.
+              </Typography>
             </AccordionDetails>
           </Accordion>
 
