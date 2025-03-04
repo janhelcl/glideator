@@ -26,8 +26,9 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
     const baseFontSize = Math.max(8, Math.min(12, size / 40));
 
     // Calculate margins based on container size
+    // Increase top margin for small screens to accommodate wind axis title
     const margin = {
-      top: size * 0.15,
+      top: size < 400 ? size * 0.2 : size * 0.15, // Increased top margin for small screens
       right: size * 0.15,
       bottom: size * 0.15,
       left: size * 0.15
@@ -294,16 +295,24 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
       .style('font-size', `${baseFontSize}px`)
       .text('Pressure (hPa)');
 
-    // Add wind axis (top) - moved up to give more space for title
+    // Detect small screen
+    const isSmallScreen = size < 400;
+
+    // Add wind axis (top) with adjustments for small screens
     svg.append('g')
-      .call(d3.axisTop(windScale))
+      .call(d3.axisTop(windScale)
+        // Reduce number of ticks on small screens
+        .ticks(isSmallScreen ? 4 : undefined))
       .append('text')
       .attr('x', width / 2)
-      .attr('y', -margin.top * 0.25)  // Adjusted from 0.4 to 0.25
+      // Position the title higher up on small screens
+      .attr('y', isSmallScreen ? -margin.top * 0.4 : -margin.top * 0.25)
       .attr('fill', 'black')
       .attr('text-anchor', 'middle')
-      .style('font-size', `${baseFontSize}px`)
-      .text('Wind Speed (m/s)');
+      // Slightly smaller font for axis title on small screens
+      .style('font-size', isSmallScreen ? `${baseFontSize * 0.9}px` : `${baseFontSize}px`)
+      // Use shorter label on very small screens
+      .text(size < 300 ? 'Wind (m/s)' : 'Wind Speed (m/s)');
 
     // Format dates for display
     const formatDate = (dateStr) => {

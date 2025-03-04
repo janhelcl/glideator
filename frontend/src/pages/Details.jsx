@@ -112,7 +112,7 @@ const Details = () => {
   const metrics = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
   
   const [forecast, setForecast] = useState(null);
-  const [selectedHour, setSelectedHour] = useState(9);
+  const [selectedHour, setSelectedHour] = useState(12);
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
 
   useEffect(() => {
