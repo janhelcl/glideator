@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
-import DateBoxesControl from '../components/DateBoxesControl';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -284,7 +283,7 @@ const Details = () => {
                       <ExpandMoreIcon />
                     }
                   >
-                    {showWeatherDetails ? 'Hide Weather Details' : 'Show Weather Details'}
+                    {showWeatherDetails ? 'Hide' : "See What's Driving This"}
                   </Button>
                 </Box>
                 
@@ -340,22 +339,6 @@ const Details = () => {
               </Typography>
             </AccordionDetails>
           </Accordion>
-
-          {/* Add DateBoxes at bottom, just like on Home page */}
-          {allDates.length > 0 && siteData && (
-            <DateBoxesControl
-              key={`datebox-${siteData[0]?.site_id}`}
-              dates={allDates}
-              selectedDate={selectedDate}
-              setSelectedDate={handleDateChange}
-              center={mapState.center}
-              zoom={mapState.zoom}
-              bounds={mapState.bounds}
-              allSites={siteData}
-              selectedMetric={selectedMetric}
-              metrics={metrics}
-            />
-          )}
         </>
       )}
     </Box>
