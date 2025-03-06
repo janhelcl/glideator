@@ -145,3 +145,21 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
         result.append(site_response)
 
     return result
+
+def get_flight_stats(db: Session, site_id: int, month: int):
+    return db.query(models.FlightStats).filter(
+        models.FlightStats.site_id == site_id,
+        models.FlightStats.month == month
+    ).first()
+
+def create_flight_stats(db: Session, flight_stats: schemas.FlightStatsCreate):
+    db_flight_stats = models.FlightStats(**flight_stats.dict())
+    db.add(db_flight_stats)
+    db.commit()
+    db.refresh(db_flight_stats)
+    return db_flight_stats
+
+def get_flight_stats_by_site_id(db: Session, site_id: int):
+    return db.query(models.FlightStats).filter(
+        models.FlightStats.site_id == site_id
+    ).order_by(models.FlightStats.month).all()

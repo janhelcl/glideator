@@ -38,3 +38,23 @@ class Forecast(Base):
     forecast_9 = Column(JSON, nullable=False)
     forecast_12 = Column(JSON, nullable=False)
     forecast_15 = Column(JSON, nullable=False)
+
+class FlightStats(Base):
+    __tablename__ = 'flight_stats'
+    
+    site_id = Column(Integer, ForeignKey('sites.site_id'), primary_key=True)
+    month = Column(Integer, primary_key=True)
+    avg_days_over_0 = Column(Float, nullable=False)
+    avg_days_over_10 = Column(Float, nullable=False)
+    avg_days_over_20 = Column(Float, nullable=False)
+    avg_days_over_30 = Column(Float, nullable=False)
+    avg_days_over_40 = Column(Float, nullable=False)
+    avg_days_over_50 = Column(Float, nullable=False)
+    avg_days_over_60 = Column(Float, nullable=False)
+    avg_days_over_70 = Column(Float, nullable=False)
+    avg_days_over_80 = Column(Float, nullable=False)
+    avg_days_over_90 = Column(Float, nullable=False)
+    avg_days_over_100 = Column(Float, nullable=False)
+    
+    # Relationship with Site
+    site = relationship("Site", backref="flight_stats")

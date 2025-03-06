@@ -75,3 +75,25 @@ class ForecastCreate(ForecastBase):
 class Forecast(ForecastBase):
     class Config:
         from_attributes = True
+
+class FlightStatsBase(BaseModel):
+    site_id: int
+    month: int
+    avg_days_over_0: float
+    avg_days_over_10: float
+    avg_days_over_20: float
+    avg_days_over_30: float
+    avg_days_over_40: float
+    avg_days_over_50: float
+    avg_days_over_60: float
+    avg_days_over_70: float
+    avg_days_over_80: float
+    avg_days_over_90: float
+    avg_days_over_100: float
+
+class FlightStatsCreate(FlightStatsBase):
+    pass
+
+class FlightStats(FlightStatsBase):
+    class Config:
+        from_attributes = True

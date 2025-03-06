@@ -3,10 +3,10 @@ from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Dict, List, Optional
 from datetime import date
 
-from .. import models, schemas, crud
+from .. import schemas, crud
 from ..database import SessionLocal
 
 router = APIRouter(
@@ -104,3 +104,35 @@ def read_forecast(
     forecast.forecast_15 = json.dumps(forecast.forecast_15)
     
     return forecast
+
+@router.get("/{site_id}/flight_stats", response_model=Dict[int, List[float]])
+def get_flight_stats(site_id: int, db: Session = Depends(get_db)):
+    """
+    Get flight stats data for a specific site organized by temperature thresholds
+    """
+    flight_stats = crud.get_flight_stats_by_site_id(db, site_id)
+    
+    if not flight_stats:
+        raise HTTPException(status_code=404, detail=f"Flight stats not found for site {site_id}")
+    
+    # Initialize the result dictionary with empty lists for each temperature threshold
+    result = {
+        0: [], 10: [], 20: [], 30: [], 40: [], 
+        50: [], 60: [], 70: [], 80: [], 90: [], 100: []
+    }
+    
+    # Populate the result dictionary
+    for stat in flight_stats:
+        result[0].append(stat.avg_days_over_0)
+        result[10].append(stat.avg_days_over_10)
+        result[20].append(stat.avg_days_over_20)
+        result[30].append(stat.avg_days_over_30)
+        result[40].append(stat.avg_days_over_40)
+        result[50].append(stat.avg_days_over_50)
+        result[60].append(stat.avg_days_over_60)
+        result[70].append(stat.avg_days_over_70)
+        result[80].append(stat.avg_days_over_80)
+        result[90].append(stat.avg_days_over_90)
+        result[100].append(stat.avg_days_over_100)
+    
+    return result

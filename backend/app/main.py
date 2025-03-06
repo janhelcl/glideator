@@ -9,6 +9,7 @@ from .routers import sites
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
+from .services.flight_stats_loader import load_flight_stats_from_csv
 from .celery_app import celery
 
 # Configure logging
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Paragliding Site Recommendations API",
+    title="Glideator API",
     description="API for recommending paragliding sites based on weather forecasts.",
     version="1.0.0",
 )
@@ -45,12 +46,15 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def startup_event():
+def startup_db_client():
+    logger.info("Starting up...")
     db = SessionLocal()
     try:
-        # Load sites from CSV
-        logger.info("Loading sites from CSV...")
+        logger.info("Loading sites data...")
         load_sites_from_csv(db, 'sites.csv')
+        
+        logger.info("Loading flight stats data...")
+        load_flight_stats_from_csv(db)
         
         # Wait for RabbitMQ to be ready
         retry_count = 0
@@ -73,8 +77,10 @@ def startup_event():
         # Generate and store predictions
         logger.info("Generating and storing predictions...")
         celery.send_task('app.celery_app.check_and_trigger_forecast_processing')
+        
+        logger.info("Data loading completed successfully")
     except Exception as e:
-        logger.error(f"An error occurred during startup: {e}")
+        logger.error(f"Error during startup: {str(e)}")
     finally:
         db.close()
         logger.info("Database session closed.")
