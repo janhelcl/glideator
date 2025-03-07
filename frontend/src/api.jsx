@@ -57,3 +57,14 @@ export const fetchFlightStats = async (siteId) => {
     return null;
   }
 };
+
+// Fetch spots using site_id
+export const fetchSiteSpots = async (siteId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/spots/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching spots for site ID ${siteId}:`, error);
+    return [];
+  }
+};
