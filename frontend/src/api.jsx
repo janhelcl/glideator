@@ -46,3 +46,14 @@ export const fetchSiteForecast = async (siteId, queryDate) => {
     return null;
   }
 };
+
+// Fetch flight statistics using site_id
+export const fetchFlightStats = async (siteId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/flight_stats/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching flight statistics for site ID ${siteId}:`, error);
+    return null;
+  }
+};

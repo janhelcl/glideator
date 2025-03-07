@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast, fetchSites } from '../api';
+import { fetchSiteForecast, fetchSites, fetchFlightStats } from '../api';
 import { 
   Box, 
   Button, 
@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
+import FlightStatsChart from '../components/FlightStatsChart';
+import StandaloneMetricControl from '../components/StandaloneMetricControl';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -114,6 +116,8 @@ const Details = () => {
   const [forecast, setForecast] = useState(null);
   const [selectedHour, setSelectedHour] = useState(12);
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
+  const [flightStats, setFlightStats] = useState(null);
+  const [flightStatsLoading, setFlightStatsLoading] = useState(false);
 
   useEffect(() => {
     const loadForecast = async () => {
@@ -132,6 +136,23 @@ const Details = () => {
       loadForecast();
     }
   }, [siteId, selectedDate]);
+
+  // Add a new useEffect for loading flight statistics
+  useEffect(() => {
+    const loadFlightStats = async () => {
+      try {
+        setFlightStatsLoading(true);
+        const data = await fetchFlightStats(siteId);
+        setFlightStats(data);
+      } catch (err) {
+        console.error('Error loading flight statistics:', err);
+      } finally {
+        setFlightStatsLoading(false);
+      }
+    };
+    
+    loadFlightStats();
+  }, [siteId]);
 
   const renderForecastContent = () => {
     if (loading) {
@@ -301,42 +322,28 @@ const Details = () => {
               </Box>
             </AccordionDetails>
           </Accordion>
-
-          {/* We can either remove the Weather Forecast section or leave it empty with a note */}
-          {/* Option 1: Remove it completely */}
-          {/* Option 2: Keep it with a note */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Weather Forecast</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography>
-                Weather forecast has been moved to the Site Activity Forecast section.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
           {/* Flight Statistics Section */}
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Flight Statistics</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography>
-                Flight statistics coming soon...
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Historical Data Section */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Historical Data</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography>
-                Historical data coming soon...
-              </Typography>
+              {flightStatsLoading ? (
+                <Box display="flex" justifyContent="center" p={3}>
+                  <CircularProgress />
+                </Box>
+              ) : flightStats ? (
+                <FlightStatsChart 
+                  data={flightStats} 
+                  metrics={metrics}
+                  selectedMetric={selectedMetric}
+                  onMetricChange={handleMetricChange}
+                />
+              ) : (
+                <Typography>
+                  Flight statistics not available for this site.
+                </Typography>
+              )}
             </AccordionDetails>
           </Accordion>
         </>
