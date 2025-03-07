@@ -163,3 +163,16 @@ def get_flight_stats_by_site_id(db: Session, site_id: int):
     return db.query(models.FlightStats).filter(
         models.FlightStats.site_id == site_id
     ).order_by(models.FlightStats.month).all()
+
+def get_spot(db: Session, spot_id: int):
+    return db.query(models.Spot).filter(models.Spot.spot_id == spot_id).first()
+
+def get_spots_by_site_id(db: Session, site_id: int):
+    return db.query(models.Spot).filter(models.Spot.site_id == site_id).all()
+
+def create_spot(db: Session, spot: schemas.SpotCreate):
+    db_spot = models.Spot(**spot.dict())
+    db.add(db_spot)
+    db.commit()
+    db.refresh(db_spot)
+    return db_spot

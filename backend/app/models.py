@@ -58,3 +58,18 @@ class FlightStats(Base):
     
     # Relationship with Site
     site = relationship("Site", backref="flight_stats")
+
+class Spot(Base):
+    __tablename__ = 'spots'
+    
+    spot_id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    altitude = Column(Integer, nullable=False)
+    type = Column(String, nullable=False)
+    wind_direction = Column(String, nullable=True)
+    site_id = Column(Integer, ForeignKey('sites.site_id'), nullable=False)
+    
+    # Relationship with Site
+    site = relationship("Site", backref="spots")

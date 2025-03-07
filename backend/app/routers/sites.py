@@ -136,3 +136,19 @@ def get_flight_stats(site_id: int, db: Session = Depends(get_db)):
         result[100].append(stat.avg_days_over_100)
     
     return result
+
+@router.get("/{site_id}/spots", response_model=List[schemas.Spot], summary="Get Spots for Site")
+def get_spots_for_site(site_id: int, db: Session = Depends(get_db)):
+    """
+    Get all takeoff and landing spots for a specific site
+    """
+    # Check if site exists
+    site = crud.get_site(db, site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
+    
+    # Get all spots for the site
+    spots = crud.get_spots_by_site_id(db, site_id)
+    
+    # If no spots found, return empty list (not 404)
+    return spots

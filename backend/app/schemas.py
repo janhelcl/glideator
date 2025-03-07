@@ -97,3 +97,20 @@ class FlightStatsCreate(FlightStatsBase):
 class FlightStats(FlightStatsBase):
     class Config:
         from_attributes = True
+
+class SpotBase(BaseModel):
+    spot_id: int
+    name: str
+    latitude: float
+    longitude: float
+    altitude: int
+    type: str
+    wind_direction: Optional[str] = None
+    site_id: int
+
+class SpotCreate(SpotBase):
+    pass
+
+class Spot(SpotBase):
+    class Config:
+        from_attributes = True
