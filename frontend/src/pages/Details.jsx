@@ -17,6 +17,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import StandaloneMetricControl from '../components/StandaloneMetricControl';
+import SiteMap from '../components/SiteMap';
 
 const Details = () => {
   const { siteId } = useParams();
@@ -344,6 +345,15 @@ const Details = () => {
                   Flight statistics not available for this site.
                 </Typography>
               )}
+            </AccordionDetails>
+          </Accordion>
+          {/* Site Map Section - Now as an Accordion */}
+          <Accordion defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Site Map</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <SiteMap siteId={siteId} siteName={siteData?.name} />
             </AccordionDetails>
           </Accordion>
         </>
