@@ -98,55 +98,52 @@
   border: 2px solid #90caf9;
 }
 
-/* Add new styles */
-.metric-control {
-  position: absolute;
-  top: clamp(100px, 15vh, 110px) !important;
-  right: clamp(10px, 2vw, 20px);
-  z-index: 1000;
+/* Unified map controls positioning system */
+:root {
+  --control-spacing: clamp(10px, 2vh, 15px);
+  --control-right-position: clamp(10px, 2vw, 20px);
+  --control-height: 36px;
+  --control-starting-top: clamp(10px, 3vh, 20px);
+  --control-z-index: 1000;
 }
 
-.metric-slider {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 80px;
+/* Location button container */
+.map-controls-container {
+  position: absolute !important;
+  top: var(--control-starting-top) !important;
+  right: var(--control-right-position) !important;
+  z-index: var(--control-z-index) !important;
 }
 
-.metric-slider .MuiTypography-root {
-  margin-bottom: clamp(4px, 1vw, 8px);
-  font-weight: 500;
-  font-size: clamp(0.75rem, 1.5vw, 1rem);
-}
-
-.metric-slider .MuiSlider-root {
-  height: 100%;
-  padding: 0 10px;
-}
-
-.metric-slider .MuiSlider-rail {
-  background-color: #ddd;
-}
-
-.metric-slider .MuiSlider-markLabel {
-  font-size: 0.7rem;
-  color: #555;
-  white-space: nowrap;
-}
-
-/* Update the LayersControl position */
+/* Layer control */
 .leaflet-control-layers {
   margin-top: 0 !important;
   font-size: 14px !important;
   position: absolute !important;
-  right: clamp(10px, 2vw, 20px) !important;
-  top: clamp(55px, 10vh, 65px) !important;
+  right: var(--control-right-position) !important;
+  top: calc(var(--control-starting-top) + var(--control-height) + var(--control-spacing)) !important;
   margin-right: 0 !important;
-  z-index: 1000 !important;
+  z-index: var(--control-z-index) !important;
   border: none !important;
   background: none !important;
   clear: none !important;
   box-shadow: none !important;
+}
+
+/* Metric control */
+.metric-control {
+  position: absolute;
+  top: calc(var(--control-starting-top) + (var(--control-height) + var(--control-spacing)) * 2) !important;
+  right: var(--control-right-position);
+  z-index: var(--control-z-index);
+}
+
+/* Ensure all control buttons have consistent size */
+.leaflet-control-layers-toggle,
+.location-button,
+.map-controls-container button {
+  width: var(--control-height) !important;
+  height: var(--control-height) !important;
 }
 
 /* Style for the dropdown/popup that appears when clicking the layers control */
@@ -186,8 +183,30 @@
   background-color: #f5f5f5;
 }
 
-/* Update the location button container position in MapView.jsx */
-/* (This targets the Box component that contains the location button) */
-.map-controls-container {
-  top: clamp(10px, 5vh, 20px) !important;
+.metric-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+}
+
+.metric-slider .MuiTypography-root {
+  margin-bottom: clamp(4px, 1vw, 8px);
+  font-weight: 500;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.metric-slider .MuiSlider-root {
+  height: 100%;
+  padding: 0 10px;
+}
+
+.metric-slider .MuiSlider-rail {
+  background-color: #ddd;
+}
+
+.metric-slider .MuiSlider-markLabel {
+  font-size: 0.7rem;
+  color: #555;
+  white-space: nowrap;
 }
