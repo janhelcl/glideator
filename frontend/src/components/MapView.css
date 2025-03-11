@@ -101,7 +101,7 @@
 /* Add new styles */
 .metric-control {
   position: absolute;
-  top: clamp(60px, 10vh, 75px);
+  top: clamp(100px, 15vh, 110px) !important;
   right: clamp(10px, 2vw, 20px);
   z-index: 1000;
 }
@@ -136,7 +136,39 @@
 
 /* Update the LayersControl position */
 .leaflet-control-layers {
-  margin-top: 60px !important; /* Push the layers control down */
+  margin-top: 0 !important;
+  font-size: 14px !important;
+  position: absolute !important;
+  right: clamp(10px, 2vw, 20px) !important;
+  top: clamp(55px, 10vh, 65px) !important;
+  margin-right: 0 !important;
+  z-index: 1000 !important;
+  border: none !important;
+  background: none !important;
+  clear: none !important;
+  box-shadow: none !important;
+}
+
+/* Style for the dropdown/popup that appears when clicking the layers control */
+.leaflet-control-layers-expanded {
+  background-color: white !important;
+  border: 1px solid rgba(0,0,0,0.2) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  padding: 6px 10px 6px 6px !important;
+  min-width: 150px !important;
+  z-index: 1500 !important;
+}
+
+/* Make the LayersControl button match the other control buttons */
+.leaflet-control-layers-toggle {
+  width: 36px !important;
+  height: 36px !important;
+  background-size: 16px 16px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  background-color: white !important;
+  border: none !important;
 }
 
 /* Add styles for the location button */
@@ -152,4 +184,10 @@
 
 .location-button:hover {
   background-color: #f5f5f5;
+}
+
+/* Update the location button container position in MapView.jsx */
+/* (This targets the Box component that contains the location button) */
+.map-controls-container {
+  top: clamp(10px, 5vh, 20px) !important;
 }
