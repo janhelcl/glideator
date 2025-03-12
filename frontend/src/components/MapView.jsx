@@ -261,6 +261,7 @@ const MapView = React.memo(({
     return sites.map((site) => {
       const probability = getPredictionValue(site);
       const color = probability !== 'N/A' ? getColor(probability) : 'gray';
+      const percentValue = probability !== 'N/A' ? `${Math.round(probability * 100)}%` : 'N/A';
 
       return (
         <Marker
@@ -275,18 +276,33 @@ const MapView = React.memo(({
           }}
         >
           {!isSmallMap && (
-            <Popup>
-              <strong>{site.name}</strong><br />
-              Probability: {probability !== 'N/A' ? probability.toFixed(2) : 'N/A'}<br />
-              <a 
-                href={`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
-                }}
-              >
-                Details
-              </a>
+            <Popup closeButton={false} className="custom-popup">
+              <div className="popup-content">
+                <div className="popup-header">
+                  <h3>{site.name}</h3>
+                </div>
+                <div className="popup-metric-bar">
+                  <span 
+                    className="popup-metric-value" 
+                    style={{ 
+                      backgroundColor: color,
+                      opacity: probability !== 'N/A' ? 1 : 0.5
+                    }}
+                  >
+                    {percentValue}
+                  </span>
+                </div>
+                <div className="popup-footer">
+                  <button 
+                    className="popup-details-button"
+                    onClick={() => {
+                      navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
+                    }}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
             </Popup>
           )}
         </Marker>
