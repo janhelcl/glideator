@@ -95,11 +95,8 @@ const MetricControl = ({ metrics, sliderValue, onSliderChange, onSliderChangeCom
       )}
       <Box
         ref={controlRef}
+        className="metric-control"
         sx={{
-          position: 'absolute',
-          top: 'clamp(110px, 15vh, 125px)',
-          right: 'clamp(10px, 2vw, 20px)',
-          zIndex: 1000,
           pointerEvents: 'auto',
           '& *': {
             pointerEvents: 'auto !important'

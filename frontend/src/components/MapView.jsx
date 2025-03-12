@@ -359,7 +359,7 @@ const MapView = React.memo(({
       // The tile layers will be handled by the conditional rendering in the return
       console.log('Map type changed to:', mapType);
     }
-  }, [mapType, isSmallMap]);
+  }, [mapType, isSmallMap, mapRef]);
 
   return (
     <MapContainer
