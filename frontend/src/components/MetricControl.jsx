@@ -66,6 +66,11 @@ const MetricControl = ({ metrics, sliderValue, onSliderChange, onSliderChangeCom
       map.dragging.enable();
       map.scrollWheelZoom.enable();
     }
+    
+    // Ensure changes are committed when touch ends on mobile
+    if (e.type === 'touchend') {
+      onSliderChangeCommitted(e, sliderValue);
+    }
   };
 
   return (
