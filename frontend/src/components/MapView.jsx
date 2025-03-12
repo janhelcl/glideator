@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useTransition, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
@@ -8,9 +8,8 @@ import { Typography, Box, IconButton } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
 import MetricControl from './MetricControl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import LayersIcon from '@mui/icons-material/Layers';
 import debounce from 'lodash/debounce';
-
-const { BaseLayer } = LayersControl;
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -330,6 +329,38 @@ const MapView = React.memo(({
     }
   };
 
+  // Add state to track current map type
+  const [mapType, setMapType] = useState(initialMapType);
+
+  // Function to toggle between map types
+  const toggleMapType = () => {
+    const newMapType = mapType === 'basic' ? 'topographic' : 'basic';
+    setMapType(newMapType);
+    
+    // Update URL parameter
+    const currentParams = Object.fromEntries(searchParams.entries());
+    setSearchParams(
+      {
+        ...currentParams,
+        mapType: newMapType
+      },
+      { replace: true }
+    );
+    
+    // If we have a map reference, manually update the tile layer
+    if (mapRef.current) {
+      // This is handled by the effect below
+    }
+  };
+
+  // Effect to update tile layer when mapType changes
+  useEffect(() => {
+    if (!isSmallMap && mapRef.current) {
+      // The tile layers will be handled by the conditional rendering in the return
+      console.log('Map type changed to:', mapType);
+    }
+  }, [mapType, isSmallMap]);
+
   return (
     <MapContainer
       center={initialCenter}
@@ -370,28 +401,26 @@ const MapView = React.memo(({
         <MapBaseLayerHandler searchParams={searchParams} setSearchParams={setSearchParams} />
       )}
 
-      {/* Conditionally render LayersControl only on the main map */}
-      {!isSmallMap ? (
-        <LayersControl position="topright">
-          <BaseLayer checked={initialMapType === 'basic'} name="Basic">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
-            />
-          </BaseLayer>
-          <BaseLayer checked={initialMapType === 'topographic'} name="Topographic">
-            <TileLayer
-              url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-              attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
-            />
-          </BaseLayer>
-        </LayersControl>
-      ) : (
+      {/* Replace LayersControl with conditional TileLayers based on mapType */}
+      {isSmallMap ? (
         /* Render a default TileLayer without attribution on small maps */
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="" // No attribution for small maps
         />
+      ) : (
+        /* Render the appropriate TileLayer based on mapType */
+        mapType === 'basic' ? (
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
+          />
+        ) : (
+          <TileLayer
+            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+            attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
+          />
+        )
       )}
 
       {/* Conditionally render the Metric Slider only on the main map */}
@@ -425,35 +454,35 @@ const MapView = React.memo(({
         </Box>
       )}
 
+      {/* Update controls container to include both location and map type buttons */}
       {!isSmallMap && (
         <PreventLeafletControl>
           <Box
-            sx={{
-              position: 'absolute',
-              top: 'clamp(10px, 5vh, 20px)',
-              right: 'clamp(10px, 2vw, 20px)',
-              zIndex: 1000,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              '& *': {
-                pointerEvents: 'auto !important'
-              }
-            }}
+            className="map-controls-container"
           >
             <IconButton
               onClick={handleLocationClick}
-              sx={{
-                backgroundColor: 'white',
-                borderRadius: '4px',
-                padding: '6px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                },
-              }}
+              className="location-button"
+              title="My Location"
             >
               <MyLocationIcon />
+            </IconButton>
+          </Box>
+        </PreventLeafletControl>
+      )}
+
+      {/* Add custom map type control */}
+      {!isSmallMap && (
+        <PreventLeafletControl>
+          <Box
+            className="map-type-control"
+          >
+            <IconButton
+              onClick={toggleMapType}
+              className="map-type-button"
+              title={`Switch to ${mapType === 'basic' ? 'Topographic' : 'Basic'} Map`}
+            >
+              <LayersIcon />
             </IconButton>
           </Box>
         </PreventLeafletControl>

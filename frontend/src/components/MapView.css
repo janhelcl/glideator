@@ -105,6 +105,7 @@
   --control-height: 36px;
   --control-starting-top: clamp(10px, 3vh, 20px);
   --control-z-index: 1000;
+  --total-control-height: calc(var(--control-height) + var(--control-spacing));
 }
 
 /* Location button container */
@@ -115,72 +116,40 @@
   z-index: var(--control-z-index) !important;
 }
 
-/* Layer control */
-.leaflet-control-layers {
-  margin-top: 0 !important;
-  font-size: 14px !important;
+/* Map type control - positioned below location button */
+.map-type-control {
   position: absolute !important;
+  top: calc(var(--control-starting-top) + var(--total-control-height)) !important;
   right: var(--control-right-position) !important;
-  top: calc(var(--control-starting-top) + var(--control-height) + var(--control-spacing)) !important;
-  margin-right: 0 !important;
   z-index: var(--control-z-index) !important;
-  border: none !important;
-  background: none !important;
-  clear: none !important;
-  box-shadow: none !important;
 }
 
 /* Metric control */
 .metric-control {
-  position: absolute;
-  top: calc(var(--control-starting-top) + (var(--control-height) + var(--control-spacing)) * 2) !important;
-  right: var(--control-right-position);
-  z-index: var(--control-z-index);
+  position: absolute !important;
+  top: calc(var(--control-starting-top) + (var(--total-control-height) * 2)) !important;
+  right: var(--control-right-position) !important;
+  z-index: var(--control-z-index) !important;
 }
 
-/* Ensure all control buttons have consistent size */
-.leaflet-control-layers-toggle,
+/* Ensure all control buttons have consistent size and styling */
 .location-button,
+.map-type-button,
 .map-controls-container button {
   width: var(--control-height) !important;
   height: var(--control-height) !important;
-}
-
-/* Style for the dropdown/popup that appears when clicking the layers control */
-.leaflet-control-layers-expanded {
-  background-color: white !important;
-  border: 1px solid rgba(0,0,0,0.2) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
-  padding: 6px 10px 6px 6px !important;
-  min-width: 150px !important;
-  z-index: 1500 !important;
-}
-
-/* Make the LayersControl button match the other control buttons */
-.leaflet-control-layers-toggle {
-  width: 36px !important;
-  height: 36px !important;
-  background-size: 16px 16px !important;
-  border-radius: 4px !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
   background-color: white !important;
   border: none !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  cursor: pointer !important;
+  padding: 6px !important;
+  transition: background-color 0.3s !important;
 }
 
-/* Add styles for the location button */
-.location-button {
-  background-color: white;
-  border: none;
-  border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  cursor: pointer;
-  padding: 6px;
-  transition: background-color 0.3s;
-}
-
-.location-button:hover {
-  background-color: #f5f5f5;
+.location-button:hover,
+.map-type-button:hover {
+  background-color: #f5f5f5 !important;
 }
 
 .metric-slider {
