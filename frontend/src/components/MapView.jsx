@@ -295,8 +295,20 @@ const MapView = React.memo(({
                 <div className="popup-footer">
                   <button 
                     className="popup-details-button"
-                    onClick={() => {
-                      navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
+                    onClick={(e) => {
+                      // Only handle left clicks here, middle clicks are handled by onMouseUp
+                      if (e.button === 0 || e.button === undefined) {
+                        navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
+                      }
+                    }}
+                    onMouseUp={(e) => {
+                      // Handle middle mouse button (mousewheel) click
+                      if (e.button === 1) {
+                        // Prevent default to avoid potential scrolling behavior
+                        e.preventDefault();
+                        // Open in new tab
+                        window.open(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`, '_blank');
+                      }
                     }}
                   >
                     View Details
