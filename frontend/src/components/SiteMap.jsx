@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Box, Typography } from '@mui/material';
 import { fetchSiteSpots } from '../api';
+import './MapView.css'; // Import the MapView.css for popup styling
 
 // Component to fit map bounds to all spots with max zoom limit
 const FitBoundsToSpots = ({ spots }) => {
@@ -163,13 +164,27 @@ const SiteMap = ({ siteId, siteName }) => {
             position={[spot.latitude, spot.longitude]}
             icon={spot.type === 'takeoff' ? takeoffIcon : landingIcon}
           >
-            <Popup>
-              <Typography variant="subtitle2">{spot.name}</Typography>
-              <Typography variant="body2">Type: {spot.type.charAt(0).toUpperCase() + spot.type.slice(1)}</Typography>
-              <Typography variant="body2">Altitude: {spot.altitude}m</Typography>
-              {spot.wind_direction && (
-                <Typography variant="body2">Wind direction: {spot.wind_direction}</Typography>
-              )}
+            <Popup closeButton={false} className="custom-popup">
+              <div className="popup-content">
+                <div className="popup-header">
+                  <h3>{spot.name} ({spot.type})</h3>
+                </div>
+                <div className="popup-metric-bar">
+                  <div style={{ 
+                    textAlign: 'center',
+                    padding: '2px 6px',
+                    fontSize: '11px',
+                    fontWeight: 500
+                  }}>
+                    <div style={{ whiteSpace: 'nowrap' }}>Altitude: {spot.altitude}m</div>
+                    {spot.wind_direction && spot.type === 'takeoff' && (
+                      <div style={{ marginTop: '2px', whiteSpace: 'nowrap' }}>
+                        Wind: {spot.wind_direction}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </Popup>
           </Marker>
         ))}
