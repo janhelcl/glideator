@@ -266,24 +266,21 @@ const SiteMap = ({ siteId, siteName }) => {
                 </div>
                 <div className="popup-metric-bar">
                   <div style={{ 
-                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
                     padding: '2px 6px',
                     fontSize: '11px',
                     fontWeight: 500
                   }}>
-                    <div style={{ whiteSpace: 'nowrap' }}>Altitude: {spot.altitude}m</div>
-                    {spot.wind_direction && spot.type === 'takeoff' && (
-                      <div style={{ 
-                        marginTop: '2px', 
-                        whiteSpace: 'nowrap',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <span>Wind: {spot.wind_direction}</span>
-                        <WindDirectionIcon direction={spot.wind_direction} />
-                      </div>
-                    )}
+                    <WindDirectionIcon direction={spot.wind_direction} />
+                    <div style={{ marginLeft: '8px', textAlign: 'left' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>Altitude: {spot.altitude}m</div>
+                      {spot.wind_direction && spot.type === 'takeoff' && (
+                        <div style={{ marginTop: '2px', whiteSpace: 'nowrap' }}>
+                          Wind: {spot.wind_direction}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
