@@ -41,17 +41,23 @@ const WindDirectionIcon = ({ direction }) => {
     let startDeg = directionToDegrees[start] || 0;
     let endDeg = directionToDegrees[end] || 0;
     
+    // Adjust for wrapping around the compass
+    if (endDeg < startDeg) {
+      endDeg += 360;
+    }
+    
     // Calculate the number of 45-degree segments
-    const segmentCount = (endDeg - startDeg) / 45 + 1;
+    const segmentCount = Math.round((endDeg - startDeg) / 45) + 1;
     const totalDegrees = segmentCount * 45;
     
     // Adjust start and end to center the segments
     startDeg -= (totalDegrees - (endDeg - startDeg)) / 2;
     endDeg = startDeg + totalDegrees;
     
-    // Ensure clockwise arc
-    if (endDeg < startDeg) {
-      endDeg += 360;
+    // Special case: if the range covers the entire circle, adjust to full circle
+    if (endDeg - startDeg >= 360) {
+      startDeg = 0;
+      endDeg = 360;
     }
     
     return { start: startDeg, end: endDeg };
@@ -91,8 +97,12 @@ const WindDirectionIcon = ({ direction }) => {
       <text x={center} y={size - 2} fontSize="8" textAnchor="middle" fill="#666">S</text>
       <text x={3} y={center + 3} fontSize="8" textAnchor="middle" fill="#666">W</text>
       
-      {/* Direction arc */}
-      <path d={arcPath} fill="rgba(66, 133, 244, 0.5)" stroke="rgba(66, 133, 244, 0.8)" strokeWidth="1" />
+      {/* Direction arc or full circle */}
+      {end - start >= 360 ? (
+        <circle cx={center} cy={center} r={radius} fill="rgba(66, 133, 244, 0.5)" stroke="rgba(66, 133, 244, 0.8)" strokeWidth="1" />
+      ) : (
+        <path d={arcPath} fill="rgba(66, 133, 244, 0.5)" stroke="rgba(66, 133, 244, 0.8)" strokeWidth="1" />
+      )}
       
       {/* Center dot */}
       <circle cx={center} cy={center} r={2} fill="#333" />
@@ -272,7 +282,7 @@ const SiteMap = ({ siteId, siteName }) => {
                     fontSize: '11px',
                     fontWeight: 500
                   }}>
-                    <WindDirectionIcon direction={spot.wind_direction} />
+                    {spot.type === 'takeoff' && <WindDirectionIcon direction={spot.wind_direction} />}
                     <div style={{ marginLeft: '8px', textAlign: 'left' }}>
                       <div style={{ whiteSpace: 'nowrap' }}>Altitude: {spot.altitude}m</div>
                       {spot.wind_direction && spot.type === 'takeoff' && (
