@@ -161,8 +161,88 @@ const SiteMap = ({ siteId, siteName }) => {
     loadSpots();
   }, [siteId]);
 
-  // Create takeoff icon - now with green color
-  const createTakeoffIcon = () => {
+  // Create takeoff icon with wind direction visualization
+  const createTakeoffIcon = (windDirection) => {
+    // Parse wind direction to get the angles for visualization
+    const getWindArc = (direction) => {
+      if (!direction) return '';
+      
+      // Map cardinal directions to degrees (clockwise from top)
+      const directionToDegrees = {
+        'N': 0,
+        'NNE': 22.5,
+        'NE': 45,
+        'ENE': 67.5,
+        'E': 90,
+        'ESE': 112.5,
+        'SE': 135,
+        'SSE': 157.5,
+        'S': 180,
+        'SSW': 202.5,
+        'SW': 225,
+        'WSW': 247.5,
+        'W': 270,
+        'WNW': 292.5,
+        'NW': 315,
+        'NNW': 337.5
+      };
+
+      const parseDirection = (dirString) => {
+        if (!dirString) return { start: 0, end: 0 };
+        
+        // Handle single direction
+        if (!dirString.includes('-')) {
+          const deg = directionToDegrees[dirString] || 0;
+          return { start: deg - 22.5, end: deg + 22.5 }; // 45-degree segment
+        }
+        
+        // Handle direction range
+        const [start, end] = dirString.split('-');
+        let startDeg = directionToDegrees[start] || 0;
+        let endDeg = directionToDegrees[end] || 0;
+        
+        if (endDeg < startDeg) {
+          endDeg += 360;
+        }
+        
+        // Calculate segments
+        const segmentCount = Math.round((endDeg - startDeg) / 45) + 1;
+        const totalDegrees = segmentCount * 45;
+        
+        startDeg -= (totalDegrees - (endDeg - startDeg)) / 2;
+        endDeg = startDeg + totalDegrees;
+        
+        return { start: startDeg, end: endDeg };
+      };
+
+      const { start, end } = parseDirection(direction);
+      
+      // Full circle case
+      if (end - start >= 360) {
+        return `<circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>`;
+      }
+      
+      // Arc case
+      const r = 10; // radius
+      const cx = 12; // center x
+      const cy = 12; // center y
+      
+      // Convert to radians and adjust for SVG coordinate system
+      const startRad = (start - 90) * Math.PI / 180;
+      const endRad = (end - 90) * Math.PI / 180;
+      
+      const startX = cx + r * Math.cos(startRad);
+      const startY = cy + r * Math.sin(startRad);
+      const endX = cx + r * Math.cos(endRad);
+      const endY = cy + r * Math.sin(endRad);
+      
+      // Large arc flag
+      const largeArcFlag = end - start > 180 ? 1 : 0;
+      
+      return `<path d="M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 ${largeArcFlag} 1 ${endX} ${endY} Z" 
+               fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>`;
+    };
+
     return L.divIcon({
       className: '',
       html: `
@@ -177,18 +257,10 @@ const SiteMap = ({ siteId, siteName }) => {
             border-radius: 50%;
             border: 2px solid white;
             box-shadow: 0 0 4px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
           ">
-            <div style="
-              width: 0;
-              height: 0;
-              border-left: 5px solid transparent;
-              border-right: 5px solid transparent;
-              border-bottom: 8px solid white;
-              margin-bottom: 2px;
-            "></div>
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              ${getWindArc(windDirection)}
+            </svg>
           </div>
         </div>
       `,
@@ -236,7 +308,6 @@ const SiteMap = ({ siteId, siteName }) => {
   };
 
   // Create icons once
-  const takeoffIcon = createTakeoffIcon();
   const landingIcon = createLandingIcon();
 
   if (isLoading) {
@@ -267,7 +338,7 @@ const SiteMap = ({ siteId, siteName }) => {
           <Marker
             key={spot.spot_id}
             position={[spot.latitude, spot.longitude]}
-            icon={spot.type === 'takeoff' ? takeoffIcon : landingIcon}
+            icon={spot.type === 'takeoff' ? createTakeoffIcon(spot.wind_direction) : landingIcon}
           >
             <Popup closeButton={false} className="custom-popup">
               <div className="popup-content">
