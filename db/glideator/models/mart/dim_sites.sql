@@ -14,5 +14,6 @@ SELECT
     altitude,
     gfs_coords[1] AS lat_gfs,
     gfs_coords[2] AS lon_gfs,
-    source
+    source,
+    country
 FROM sites
