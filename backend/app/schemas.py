@@ -33,19 +33,6 @@ class SiteBase(BaseModel):
     lon_gfs: float
     site_id: int
 
-class SiteCreate(SiteBase):
-    site_id: int
-
-class SitePredictionResponse(BaseModel):
-    name: str
-    latitude: float
-    longitude: float
-    site_id: int
-    date: date
-    values: List[float]
-    computed_at: datetime
-    gfs_forecast_at: datetime
-
 class SiteResponse(BaseModel):
     name: str
     latitude: float

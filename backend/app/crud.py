@@ -40,13 +40,6 @@ def get_sites(
     sites = query.offset(skip).limit(limit).all()
     return sites
 
-def create_site(db: Session, site: schemas.SiteCreate):
-    db_site = models.Site(**site.dict())
-    db.add(db_site)
-    db.commit()
-    db.refresh(db_site)
-    return db_site
-
 def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
     Retrieves predictions based on site_id, and optionally filters by date and metric.
@@ -186,3 +179,10 @@ def create_site_info(db: Session, site_info: schemas.SiteInfoCreate):
 
 def get_site_info(db: Session, site_id: int):
     return db.query(models.SiteInfo).filter(models.SiteInfo.site_id == site_id).first()
+
+def create_site(db: Session, site: schemas.SiteBase):
+    db_site = models.Site(**site.dict())
+    db.add(db_site)
+    db.commit()
+    db.refresh(db_site)
+    return db_site

@@ -22,7 +22,7 @@ def load_sites_from_csv(db: Session, csv_filename: str):
     with open(csv_path, mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
-            site = schemas.SiteCreate(
+            site = schemas.SiteBase(
                 site_id=int(row['site_id']),
                 name=row['name'],
                 latitude=float(row['latitude']),

@@ -22,11 +22,6 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/", response_model=schemas.Site)
-def create_site(site: schemas.SiteCreate, db: Session = Depends(get_db)):
-    db_site = crud.create_site(db, site)
-    return db_site
-
 @router.get("/", response_model=List[schemas.SiteResponse])
 def read_sites(
     skip: int = 0,
