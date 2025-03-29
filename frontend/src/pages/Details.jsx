@@ -67,7 +67,7 @@ const Details = () => {
   const [siteInfoLoading, setSiteInfoLoading] = useState(false);
   
   // State for active tab
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(1);
   
   // Calculated values
   const allDates = useMemo(() => {
