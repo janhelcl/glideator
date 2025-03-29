@@ -176,3 +176,13 @@ def create_spot(db: Session, spot: schemas.SpotCreate):
     db.commit()
     db.refresh(db_spot)
     return db_spot
+
+def create_site_info(db: Session, site_info: schemas.SiteInfoCreate):
+    db_site_info = models.SiteInfo(**site_info.dict())
+    db.add(db_site_info)
+    db.commit()
+    db.refresh(db_site_info)
+    return db_site_info
+
+def get_site_info(db: Session, site_id: int):
+    return db.query(models.SiteInfo).filter(models.SiteInfo.site_id == site_id).first()

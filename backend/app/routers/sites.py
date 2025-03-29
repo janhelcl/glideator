@@ -152,3 +152,20 @@ def get_spots_for_site(site_id: int, db: Session = Depends(get_db)):
     
     # If no spots found, return empty list (not 404)
     return spots
+
+@router.get("/{site_id}/info", response_model=schemas.SiteInfo, summary="Get Site Info")
+def get_site_info(site_id: int, db: Session = Depends(get_db)):
+    """
+    Get detailed information about a specific site including description, facilities, access, etc.
+    """
+    # Check if site exists
+    site = crud.get_site(db, site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
+    
+    # Get site info
+    site_info = crud.get_site_info(db, site_id)
+    if not site_info:
+        raise HTTPException(status_code=404, detail=f"Site info not found for site {site_id}")
+    
+    return site_info

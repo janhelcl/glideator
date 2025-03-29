@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .services.sites_loader import load_sites_from_csv
 from .services.flight_stats_loader import load_flight_stats_from_csv
 from .services.spots_loader import load_spots_from_csv
+from .services.sites_info_loader import load_sites_info_from_jsonl
 from .celery_app import celery
 
 # Configure logging
@@ -59,6 +60,9 @@ def startup_db_client():
         
         logger.info("Loading spots data...")
         load_spots_from_csv(db)
+        
+        logger.info("Loading sites info data...")
+        load_sites_info_from_jsonl(db)
         
         # Wait for RabbitMQ to be ready
         retry_count = 0

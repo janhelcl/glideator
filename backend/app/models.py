@@ -73,3 +73,19 @@ class Spot(Base):
     
     # Relationship with Site
     site = relationship("Site", backref="spots")
+
+class SiteInfo(Base):
+    __tablename__ = 'sites_info'
+    
+    site_id = Column(Integer, ForeignKey('sites.site_id'), primary_key=True)
+    site_name = Column(String, nullable=False)
+    country = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    facilities = Column(String, nullable=False)
+    access = Column(String, nullable=False)
+    seasonality = Column(String, nullable=False)
+    risks = Column(String, nullable=False)
+    sources = Column(JSON, nullable=False)
+    
+    # Relationship with Site
+    site = relationship("Site", backref="site_info")

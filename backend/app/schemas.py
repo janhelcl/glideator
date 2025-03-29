@@ -114,3 +114,25 @@ class SpotCreate(SpotBase):
 class Spot(SpotBase):
     class Config:
         from_attributes = True
+
+class SourceInfo(BaseModel):
+    source_name: str
+    source_link: str
+
+class SiteInfoBase(BaseModel):
+    site_id: int
+    site_name: str
+    country: str
+    description: str
+    facilities: str
+    access: str
+    seasonality: str
+    risks: str
+    sources: List[SourceInfo]
+
+class SiteInfoCreate(SiteInfoBase):
+    pass
+
+class SiteInfo(SiteInfoBase):
+    class Config:
+        from_attributes = True
