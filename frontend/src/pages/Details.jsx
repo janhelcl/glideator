@@ -6,23 +6,46 @@ import {
   Box, 
   Button, 
   ButtonGroup,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
   CircularProgress,
   Collapse,
-  Divider,
   Link as MuiLink,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Tabs,
+  Tab,
+  Paper
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import InfoIcon from '@mui/icons-material/Info';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import MapIcon from '@mui/icons-material/Map';
 import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
-import StandaloneMetricControl from '../components/StandaloneMetricControl';
 import SiteMap from '../components/SiteMap';
+
+// TabPanel component to display tab content
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`site-tabpanel-${index}`}
+      aria-labelledby={`site-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
 const Details = () => {
   const { siteId } = useParams();
@@ -42,6 +65,9 @@ const Details = () => {
   // New state for site info
   const [siteInfo, setSiteInfo] = useState(null);
   const [siteInfoLoading, setSiteInfoLoading] = useState(false);
+  
+  // State for active tab
+  const [activeTab, setActiveTab] = useState(0);
   
   // Calculated values
   const allDates = useMemo(() => {
@@ -270,6 +296,106 @@ const Details = () => {
     }, { replace: true });
   };
 
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  // Render site info content
+  const renderSiteInfoContent = () => {
+    if (siteInfoLoading) {
+      return (
+        <Box display="flex" justifyContent="center" p={3}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+    
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Typography variant="h5" gutterBottom>
+          {siteInfo?.site_name || siteData[0]?.name}
+          {siteInfo?.country && ` (${siteInfo.country})`}
+        </Typography>
+        
+        {siteInfo ? (
+          <>
+            {siteInfo.description && (
+              <Box mb={2}>
+                <Typography variant="body1" paragraph>
+                  {siteInfo.description}
+                </Typography>
+              </Box>
+            )}
+            
+            {siteInfo.facilities && (
+              <Box mb={2}>
+                <Typography variant="h6" gutterBottom>Facilities</Typography>
+                <Typography variant="body1" paragraph>
+                  {siteInfo.facilities}
+                </Typography>
+              </Box>
+            )}
+            
+            {siteInfo.access && (
+              <Box mb={2}>
+                <Typography variant="h6" gutterBottom>Access</Typography>
+                <Typography variant="body1" paragraph>
+                  {siteInfo.access}
+                </Typography>
+              </Box>
+            )}
+            
+            {siteInfo.seasonality && (
+              <Box mb={2}>
+                <Typography variant="h6" gutterBottom>Seasonality</Typography>
+                <Typography variant="body1" paragraph>
+                  {siteInfo.seasonality}
+                </Typography>
+              </Box>
+            )}
+            
+            {siteInfo.risks && (
+              <Box mb={2}>
+                <Typography variant="h6" gutterBottom>Risks</Typography>
+                <Typography variant="body1" paragraph>
+                  {siteInfo.risks}
+                </Typography>
+              </Box>
+            )}
+            
+            {siteInfo.sources && siteInfo.sources.length > 0 && (
+              <Box mb={2}>
+                <Typography variant="h6" gutterBottom>Sources</Typography>
+                <List dense>
+                  {siteInfo.sources.map((source, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={
+                          source.source_link ? (
+                            <MuiLink href={source.source_link} target="_blank" rel="noopener noreferrer">
+                              {source.source_name}
+                            </MuiLink>
+                          ) : (
+                            source.source_name
+                          )
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </>
+        ) : (
+          <Typography>
+            Detailed information not available for this site yet.
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -286,184 +412,137 @@ const Details = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <>
-          {/* Site Information Section */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Site Information</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              {siteInfoLoading ? (
-                <Box display="flex" justifyContent="center" p={3}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography variant="h5" gutterBottom>
-                    {siteInfo?.site_name || siteData[0]?.name}
-                    {siteInfo?.country && ` (${siteInfo.country})`}
-                  </Typography>
-                  
-                  {siteInfo ? (
-                    <>
-                      {siteInfo.description && (
-                        <Box mb={2}>
-                          <Typography variant="body1" paragraph>
-                            {siteInfo.description}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {siteInfo.facilities && (
-                        <Box mb={2}>
-                          <Typography variant="h6" gutterBottom>Facilities</Typography>
-                          <Typography variant="body1" paragraph>
-                            {siteInfo.facilities}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {siteInfo.access && (
-                        <Box mb={2}>
-                          <Typography variant="h6" gutterBottom>Access</Typography>
-                          <Typography variant="body1" paragraph>
-                            {siteInfo.access}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {siteInfo.seasonality && (
-                        <Box mb={2}>
-                          <Typography variant="h6" gutterBottom>Seasonality</Typography>
-                          <Typography variant="body1" paragraph>
-                            {siteInfo.seasonality}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {siteInfo.risks && (
-                        <Box mb={2}>
-                          <Typography variant="h6" gutterBottom>Risks</Typography>
-                          <Typography variant="body1" paragraph>
-                            {siteInfo.risks}
-                          </Typography>
-                        </Box>
-                      )}
-                      
-                      {siteInfo.sources && siteInfo.sources.length > 0 && (
-                        <Box mb={2}>
-                          <Typography variant="h6" gutterBottom>Sources</Typography>
-                          <List dense>
-                            {siteInfo.sources.map((source, index) => (
-                              <ListItem key={index}>
-                                <ListItemText
-                                  primary={
-                                    source.source_link ? (
-                                      <MuiLink href={source.source_link} target="_blank" rel="noopener noreferrer">
-                                        {source.source_name}
-                                      </MuiLink>
-                                    ) : (
-                                      source.source_name
-                                    )
-                                  }
-                                />
-                              </ListItem>
-                            ))}
-                          </List>
-                        </Box>
-                      )}
-                    </>
-                  ) : (
-                    <Typography>
-                      Detailed information not available for this site yet.
-                    </Typography>
-                  )}
-                </Box>
-              )}
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Glideator Forecast Section */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Site Activity Forecast</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
-                <GlideatorForecast 
-                  siteData={siteData[0]}
-                  selectedDate={selectedDate}
-                  selectedMetric={selectedMetric}
-                  metrics={metrics}
-                  onMetricChange={handleMetricChange}
-                  onDateChange={handleDateChange}
-                  allDates={allDates}
-                  mapState={mapState}
-                  allSites={siteData}
-                />
-                
-                {/* Button to show weather details */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => setShowWeatherDetails(!showWeatherDetails)}
-                    endIcon={showWeatherDetails ? 
-                      <ExpandMoreIcon style={{ transform: 'rotate(180deg)' }} /> : 
-                      <ExpandMoreIcon />
-                    }
-                  >
-                    {showWeatherDetails ? 'Hide' : "See What's Driving This"}
-                  </Button>
-                </Box>
-                
-                {/* Conditionally render the weather forecast content with smooth animation */}
-                <Collapse in={showWeatherDetails} timeout="auto">
-                  <Box 
-                    sx={{ 
-                      mt: 2,
-                      pt: 1  // Just a little padding at the top
-                    }}
-                  >
-                    {renderForecastContent()}
-                  </Box>
-                </Collapse>
+        <Paper elevation={2}>
+          {/* Site title displayed above tabs */}
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography variant="h5">
+              {siteInfo?.site_name || siteData[0]?.name}
+            </Typography>
+          </Box>
+          
+          {/* Tabs navigation */}
+          <Tabs 
+            value={activeTab} 
+            onChange={handleTabChange} 
+            variant="fullWidth"
+            sx={{ 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              '& .MuiTab-root': {
+                minHeight: 'auto',
+                padding: '8px 0',
+                gap: '4px',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textTransform: 'none',
+                fontSize: '0.75rem',
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1.5rem',
+                  marginBottom: '4px'
+                }
+              }
+            }}
+          >
+            <Tab 
+              label="Details" 
+              icon={<InfoIcon />} 
+              iconPosition="top"
+              id="site-tab-0" 
+              aria-controls="site-tabpanel-0" 
+            />
+            <Tab 
+              label="Activity Forecast" 
+              icon={<TimelineIcon />} 
+              iconPosition="top"
+              id="site-tab-1" 
+              aria-controls="site-tabpanel-1" 
+            />
+            <Tab 
+              label="Season" 
+              icon={<CalendarMonthIcon />} 
+              iconPosition="top"
+              id="site-tab-2" 
+              aria-controls="site-tabpanel-2" 
+            />
+            <Tab 
+              label="Site Map" 
+              icon={<MapIcon />} 
+              iconPosition="top"
+              id="site-tab-3" 
+              aria-controls="site-tabpanel-3" 
+            />
+          </Tabs>
+          
+          {/* Tab panels */}
+          <TabPanel value={activeTab} index={0}>
+            {renderSiteInfoContent()}
+          </TabPanel>
+          
+          <TabPanel value={activeTab} index={1}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
+              <GlideatorForecast 
+                siteData={siteData[0]}
+                selectedDate={selectedDate}
+                selectedMetric={selectedMetric}
+                metrics={metrics}
+                onMetricChange={handleMetricChange}
+                onDateChange={handleDateChange}
+                allDates={allDates}
+                mapState={mapState}
+                allSites={siteData}
+              />
+              
+              {/* Button to show weather details */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  onClick={() => setShowWeatherDetails(!showWeatherDetails)}
+                  endIcon={showWeatherDetails ? 
+                    <ExpandMoreIcon style={{ transform: 'rotate(180deg)' }} /> : 
+                    <ExpandMoreIcon />
+                  }
+                >
+                  {showWeatherDetails ? 'Hide' : "See What's Driving This"}
+                </Button>
               </Box>
-            </AccordionDetails>
-          </Accordion>
-          {/* Flight Statistics Section */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Flight Statistics</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              {flightStatsLoading ? (
-                <Box display="flex" justifyContent="center" p={3}>
-                  <CircularProgress />
+              
+              {/* Conditionally render the weather forecast content with smooth animation */}
+              <Collapse in={showWeatherDetails} timeout="auto">
+                <Box 
+                  sx={{ 
+                    mt: 2,
+                    pt: 1  // Just a little padding at the top
+                  }}
+                >
+                  {renderForecastContent()}
                 </Box>
-              ) : flightStats ? (
-                <FlightStatsChart 
-                  data={flightStats} 
-                  metrics={metrics}
-                  selectedMetric={selectedMetric}
-                  onMetricChange={handleMetricChange}
-                />
-              ) : (
-                <Typography>
-                  Flight statistics not available for this site.
-                </Typography>
-              )}
-            </AccordionDetails>
-          </Accordion>
-          {/* Site Map Section - Now as an Accordion */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Site Map</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <SiteMap siteId={siteId} siteName={siteData?.name} />
-            </AccordionDetails>
-          </Accordion>
-        </>
+              </Collapse>
+            </Box>
+          </TabPanel>
+          
+          <TabPanel value={activeTab} index={2}>
+            {flightStatsLoading ? (
+              <Box display="flex" justifyContent="center" p={3}>
+                <CircularProgress />
+              </Box>
+            ) : flightStats ? (
+              <FlightStatsChart 
+                data={flightStats} 
+                metrics={metrics}
+                selectedMetric={selectedMetric}
+                onMetricChange={handleMetricChange}
+              />
+            ) : (
+              <Typography>
+                Flight statistics not available for this site.
+              </Typography>
+            )}
+          </TabPanel>
+          
+          <TabPanel value={activeTab} index={3}>
+            <SiteMap siteId={siteId} siteName={siteData[0]?.name} />
+          </TabPanel>
+        </Paper>
       )}
     </Box>
   );
