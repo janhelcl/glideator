@@ -21,6 +21,17 @@ export const fetchSites = async (metric = null, date = null, limit = 1000) => {
   }
 };
 
+// Fetch site information
+export const fetchSiteInfo = async (siteId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/info/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching info for site ID ${siteId}:`, error);
+    return null;
+  }
+};
+
 // Fetch predictions using site_id
 export const fetchSitePredictions = async (siteId) => {
   try {

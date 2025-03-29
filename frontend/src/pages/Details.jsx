@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast, fetchSites, fetchFlightStats } from '../api';
+import { fetchSiteForecast, fetchSites, fetchFlightStats, fetchSiteInfo } from '../api';
 import { 
   Box, 
   Button, 
@@ -11,7 +11,12 @@ import {
   AccordionDetails,
   Typography,
   CircularProgress,
-  Collapse
+  Collapse,
+  Divider,
+  Link as MuiLink,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GlideatorForecast from '../components/GlideatorForecast';
@@ -33,6 +38,10 @@ const Details = () => {
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [selectedMetric, setSelectedMetric] = useState(initialMetric);
+  
+  // New state for site info
+  const [siteInfo, setSiteInfo] = useState(null);
+  const [siteInfoLoading, setSiteInfoLoading] = useState(false);
   
   // Calculated values
   const allDates = useMemo(() => {
@@ -61,6 +70,23 @@ const Details = () => {
     };
     
     loadSiteData();
+  }, [siteId]);
+  
+  // New effect to load site info
+  useEffect(() => {
+    const loadSiteInfo = async () => {
+      try {
+        setSiteInfoLoading(true);
+        const info = await fetchSiteInfo(siteId);
+        setSiteInfo(info);
+      } catch (err) {
+        console.error('Error loading site info:', err);
+      } finally {
+        setSiteInfoLoading(false);
+      }
+    };
+    
+    loadSiteInfo();
   }, [siteId]);
   
   // Set default date if none selected and data is loaded
@@ -267,12 +293,93 @@ const Details = () => {
               <Typography variant="h6">Site Information</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body1" gutterBottom>
-                <strong>Name:</strong> {siteData[0]?.name}
-              </Typography>
-              <Typography>
-                Site details coming soon...
-              </Typography>
+              {siteInfoLoading ? (
+                <Box display="flex" justifyContent="center" p={3}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography variant="h5" gutterBottom>
+                    {siteInfo?.site_name || siteData[0]?.name}
+                    {siteInfo?.country && ` (${siteInfo.country})`}
+                  </Typography>
+                  
+                  {siteInfo ? (
+                    <>
+                      {siteInfo.description && (
+                        <Box mb={2}>
+                          <Typography variant="body1" paragraph>
+                            {siteInfo.description}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {siteInfo.facilities && (
+                        <Box mb={2}>
+                          <Typography variant="h6" gutterBottom>Facilities</Typography>
+                          <Typography variant="body1" paragraph>
+                            {siteInfo.facilities}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {siteInfo.access && (
+                        <Box mb={2}>
+                          <Typography variant="h6" gutterBottom>Access</Typography>
+                          <Typography variant="body1" paragraph>
+                            {siteInfo.access}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {siteInfo.seasonality && (
+                        <Box mb={2}>
+                          <Typography variant="h6" gutterBottom>Seasonality</Typography>
+                          <Typography variant="body1" paragraph>
+                            {siteInfo.seasonality}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {siteInfo.risks && (
+                        <Box mb={2}>
+                          <Typography variant="h6" gutterBottom>Risks</Typography>
+                          <Typography variant="body1" paragraph>
+                            {siteInfo.risks}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {siteInfo.sources && siteInfo.sources.length > 0 && (
+                        <Box mb={2}>
+                          <Typography variant="h6" gutterBottom>Sources</Typography>
+                          <List dense>
+                            {siteInfo.sources.map((source, index) => (
+                              <ListItem key={index}>
+                                <ListItemText
+                                  primary={
+                                    source.source_link ? (
+                                      <MuiLink href={source.source_link} target="_blank" rel="noopener noreferrer">
+                                        {source.source_name}
+                                      </MuiLink>
+                                    ) : (
+                                      source.source_name
+                                    )
+                                  }
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Box>
+                      )}
+                    </>
+                  ) : (
+                    <Typography>
+                      Detailed information not available for this site yet.
+                    </Typography>
+                  )}
+                </Box>
+              )}
             </AccordionDetails>
           </Accordion>
 
