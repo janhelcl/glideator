@@ -99,7 +99,7 @@ const Layout = () => {
             component="div"
             sx={{ width: '100%' }}
           >
-            © 2024 Glideator
+            © {new Date().getFullYear()} Glideator
           </Typography>
         </Toolbar>
       </AppBar>
