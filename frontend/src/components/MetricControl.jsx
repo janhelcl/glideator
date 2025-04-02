@@ -161,16 +161,18 @@ const MetricControl = ({ metrics, sliderValue, onSliderChange, onSliderChangeCom
               pointerEvents: 'auto',
             }}
           >
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
+            <Typography
+              variant="subtitle2"
+              sx={{
                 marginBottom: '8px',
-                fontSize: '0.75rem',
+                fontSize: '0.7rem',
+                lineHeight: 1.2,
                 textAlign: 'center',
                 width: '100%',
               }}
             >
-              minimum XC points
+              <span style={{ display: 'block', fontSize: '0.75rem' }}>Minimum Flight Quality</span>
+              <span style={{ display: 'block', fontSize: '0.65rem', marginTop: '2px' }}>(XC Points)</span>
             </Typography>
             <Slider
               orientation="vertical"
@@ -195,9 +197,11 @@ const MetricControl = ({ metrics, sliderValue, onSliderChange, onSliderChangeCom
               aria-labelledby="metric-slider"
               sx={{
                 height: '80%',
+                marginTop: '8px',
                 padding: '0 12px',
                 '& .MuiSlider-markLabel': {
-                  transform: 'translateX(10px)',
+                  transform: 'translateX(10px) translateY(50%)',
+                  margin: 0,
                   whiteSpace: 'nowrap',
                   fontSize: '0.7rem',
                   color: '#555',
