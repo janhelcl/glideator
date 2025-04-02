@@ -93,12 +93,13 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
               padding: '16px',
               borderRadius: '8px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-              height: 'clamp(280px, 40vh, 350px)',
-              width: 'clamp(80px, 15vw, 120px)',
+              height: 'clamp(180px, 30vh, 250px)',
+              width: '80px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               position: 'relative',
+              paddingTop: '24px',
             }}
           >
             {/* Close button */}
@@ -128,19 +129,8 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
                 width: '100%',
               }}
             >
-              {selectedMetric}
-            </Typography>
-            
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
-                marginBottom: '16px',
-                fontSize: '0.8rem',
-                textAlign: 'center',
-                width: '100%',
-              }}
-            >
-              minimum XC points
+              <span style={{ display: 'block', fontSize: '0.75rem' }}>Minimum Flight Quality</span>
+              <span style={{ display: 'block', fontSize: '0.65rem', marginTop: '2px' }}>(XC Points)</span>
             </Typography>
             
             <Box sx={{ height: '80%', width: '100%', padding: '0 12px' }}>
@@ -158,10 +148,12 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
                 aria-labelledby="metric-slider"
                 sx={{
                   height: '100%',
+                  marginTop: '8px',
                   '& .MuiSlider-markLabel': {
-                    transform: 'translateX(10px)',
+                    transform: 'translateX(10px) translateY(50%)',
+                    margin: 0,
                     whiteSpace: 'nowrap',
-                    fontSize: '0.8rem',
+                    fontSize: '0.7rem',
                     color: '#555',
                   },
                   '& .MuiSlider-thumb': {
