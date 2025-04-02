@@ -9,10 +9,6 @@ import {
   Typography,
   CircularProgress,
   Collapse,
-  Link as MuiLink,
-  List,
-  ListItem,
-  ListItemText,
   Tabs,
   Tab,
   Paper
@@ -318,75 +314,39 @@ const Details = () => {
           {siteInfo?.country && ` (${siteInfo.country})`}
         </Typography>
         
-        {siteInfo ? (
-          <>
-            {siteInfo.description && (
-              <Box mb={2}>
-                <Typography variant="body1" paragraph>
-                  {siteInfo.description}
-                </Typography>
-              </Box>
-            )}
-            
-            {siteInfo.facilities && (
-              <Box mb={2}>
-                <Typography variant="h6" gutterBottom>Facilities</Typography>
-                <Typography variant="body1" paragraph>
-                  {siteInfo.facilities}
-                </Typography>
-              </Box>
-            )}
-            
-            {siteInfo.access && (
-              <Box mb={2}>
-                <Typography variant="h6" gutterBottom>Access</Typography>
-                <Typography variant="body1" paragraph>
-                  {siteInfo.access}
-                </Typography>
-              </Box>
-            )}
-            
-            {siteInfo.seasonality && (
-              <Box mb={2}>
-                <Typography variant="h6" gutterBottom>Seasonality</Typography>
-                <Typography variant="body1" paragraph>
-                  {siteInfo.seasonality}
-                </Typography>
-              </Box>
-            )}
-            
-            {siteInfo.risks && (
-              <Box mb={2}>
-                <Typography variant="h6" gutterBottom>Risks</Typography>
-                <Typography variant="body1" paragraph>
-                  {siteInfo.risks}
-                </Typography>
-              </Box>
-            )}
-            
-            {siteInfo.sources && siteInfo.sources.length > 0 && (
-              <Box mb={2}>
-                <Typography variant="h6" gutterBottom>Sources</Typography>
-                <List dense>
-                  {siteInfo.sources.map((source, index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={
-                          source.source_link ? (
-                            <MuiLink href={source.source_link} target="_blank" rel="noopener noreferrer">
-                              {source.source_name}
-                            </MuiLink>
-                          ) : (
-                            source.source_name
-                          )
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-          </>
+        {siteInfo?.html ? (
+          <Box 
+            sx={{ 
+              '& h2': {
+                mt: 3,
+                mb: 2,
+                color: 'black',
+                fontWeight: 'bold'
+              },
+              '& p': {
+                mb: 2
+              },
+              '& ul': {
+                pl: 2,
+                mb: 2
+              },
+              '& li': {
+                mb: 1
+              },
+              '& a': {
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              },
+              '& strong': {
+                color: 'text.primary',
+                fontWeight: 'bold'
+              }
+            }}
+            dangerouslySetInnerHTML={{ __html: siteInfo.html }}
+          />
         ) : (
           <Typography>
             Detailed information not available for this site yet.
