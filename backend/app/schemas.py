@@ -110,12 +110,7 @@ class SiteInfoBase(BaseModel):
     site_id: int
     site_name: str
     country: str
-    description: str
-    facilities: str
-    access: str
-    seasonality: str
-    risks: str
-    sources: List[SourceInfo]
+    html: str
 
 class SiteInfoCreate(SiteInfoBase):
     pass
