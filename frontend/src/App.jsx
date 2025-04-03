@@ -3,11 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './pages/Layout';
 import Home from './pages/Home';
 import Details from './pages/Details';
+import Declined from './pages/Declined';
 
 const App = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/declined" element={<Declined />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="sites/:siteId" element={<Details />} />

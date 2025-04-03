@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import SearchBar from '../components/SearchBar';
+import DisclaimerModal from '../components/DisclaimerModal';
+import useDisclaimer from '../hooks/useDisclaimer';
 import { fetchSites } from '../api';  // Make sure this import matches your API setup
 
 const Layout = () => {
   // This state and function will be passed down to components that need it
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
+  const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
 
   // Update these values
   const headerHeight = '64px';
@@ -33,6 +36,13 @@ const Layout = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* Disclaimer Modal */}
+      <DisclaimerModal 
+        open={showDisclaimer} 
+        onAccept={handleAccept} 
+        onDecline={handleDecline} 
+      />
+      
       {/* Top Navigation Bar */}
       <AppBar
         position="static"
