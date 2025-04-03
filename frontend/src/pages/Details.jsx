@@ -113,8 +113,25 @@ const Details = () => {
   
   // Set default date if none selected and data is loaded
   useEffect(() => {
-    if (allDates.length && !selectedDate) {
-      setSelectedDate(allDates[0]);
+    if (allDates.length) {
+      if (!selectedDate) {
+        // No date selected, use the first available date
+        setSelectedDate(allDates[0]);
+      } else {
+        // Check if the selected date is valid (exists in available dates)
+        const dateExists = allDates.includes(selectedDate);
+        
+        if (!dateExists) {
+          // If date doesn't exist (likely because it's in the past), use today's date or earliest available
+          const today = new Date().toISOString().split('T')[0];
+          // Find today's date in available dates or get the earliest available
+          const todayIndex = allDates.indexOf(today);
+          const newDate = todayIndex >= 0 ? today : allDates[0];
+          
+          // Update selected date
+          setSelectedDate(newDate);
+        }
+      }
     }
   }, [allDates, selectedDate]);
   
