@@ -46,7 +46,6 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
         ref={controlRef}
         sx={{
           position: 'relative',
-          zIndex: 1000,
           width: 'fit-content'
         }}
       >

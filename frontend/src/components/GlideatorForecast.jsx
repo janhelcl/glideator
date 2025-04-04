@@ -453,8 +453,7 @@ const GlideatorForecast = ({
           <Box sx={{ 
             position: 'absolute', 
             top: '-30px',
-            right: '10px', 
-            zIndex: 10 
+            right: '10px'
           }}>
             {allDates && allDates.length > 0 && (
               <DateBoxesControl
@@ -498,8 +497,7 @@ const GlideatorForecast = ({
           <Box sx={{ 
             position: 'absolute', 
             top: '-30px',
-            right: '10px', 
-            zIndex: 10 
+            right: '10px'
           }}>
             <StandaloneMetricControl
               metrics={metrics}
