@@ -11,7 +11,9 @@ import {
   Collapse,
   Tabs,
   Tab,
-  Paper
+  Paper,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
@@ -64,6 +66,10 @@ const Details = () => {
   
   // State for active tab
   const [activeTab, setActiveTab] = useState(1);
+  
+  // Add theme and media query logic
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Calculated values
   const allDates = useMemo(() => {
@@ -401,7 +407,8 @@ const Details = () => {
           <Tabs 
             value={activeTab} 
             onChange={handleTabChange} 
-            variant="fullWidth"
+            variant={isSmallScreen ? "scrollable" : "fullWidth"}
+            allowScrollButtonsMobile
             sx={{ 
               borderBottom: 1, 
               borderColor: 'divider',
