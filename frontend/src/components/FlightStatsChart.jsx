@@ -167,11 +167,11 @@ const FlightStatsChart = ({ data, metrics, selectedMetric, onMetricChange }) => 
       display: 'flex',
       justifyContent: 'center' // Center the chart in the container
     }}>
-      {/* Metric control moved further up and to the right */}
+      {/* Metric control positioned in the top-right corner */}
       <Box sx={{ 
         position: 'absolute', 
-        top: '-20px',
-        right: '-5px', 
+        top: '2px', // Move closer to the top
+        right: '2px', // Move closer to the right
         zIndex: 10 
       }}>
         <StandaloneMetricControl
