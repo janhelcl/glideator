@@ -342,7 +342,7 @@ const GlideatorForecast = ({
       .style('font-weight', 'bold')
       .text(selectedMetric === 'XC0' 
         ? 'Chances of a Flight'
-        : `Chances of a ${selectedMetric.replace('XC', '')} Point Flight`);
+        : `Chances of a ${selectedMetric.replace('XC', '')}+ Point Flight`);
 
     // Add tooltip with responsive styling
     const tooltip = d3.select(lineContainerRef.current)

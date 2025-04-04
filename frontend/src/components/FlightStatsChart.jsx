@@ -98,7 +98,7 @@ const FlightStatsChart = ({ data, metrics, selectedMetric, onMetricChange }) => 
       .attr('text-anchor', 'middle')
       .style('font-size', `${titleFontSize}px`)
       .style('font-weight', 'bold')
-      .text(`Average Days with ${pointsLabel}`);
+      .text(`Days with ${pointsLabel}`);
 
     // Define the color for the bars
     const barColor = '#2196F3'; // Blue color
