@@ -75,8 +75,7 @@ const DateBoxesControl = (props) => {
               position: 'relative',
               width: '100%',
               backgroundColor: 'white',
-              padding: '16px',
-              paddingTop: '30px',  // Extra space for close button
+              padding: '30px 16px 0 16px',
               borderTopLeftRadius: '8px',
               borderTopRightRadius: '8px',
               boxShadow: '0 -4px 12px rgba(0,0,0,0.2)',
