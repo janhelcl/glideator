@@ -81,6 +81,7 @@ class SiteInfo(Base):
     site_name = Column(String, nullable=False)
     country = Column(String, nullable=False)
     html = Column(String, nullable=False)
+    search_recs = Column(String, nullable=True)
     
     # Relationship with Site
     site = relationship("Site", backref="site_info")

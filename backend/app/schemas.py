@@ -111,6 +111,7 @@ class SiteInfoBase(BaseModel):
     site_name: str
     country: str
     html: str
+    search_recs: Optional[str] = None
 
 class SiteInfoCreate(SiteInfoBase):
     pass
