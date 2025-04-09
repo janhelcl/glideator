@@ -10,6 +10,7 @@ import MetricControl from './MetricControl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LayersIcon from '@mui/icons-material/Layers';
 import debounce from 'lodash/debounce';
+import LoadingSpinner from './LoadingSpinner';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -466,20 +467,7 @@ const MapView = React.memo(({
       
       {/* Optional: Display a loading indicator when a transition is pending */}
       {isPending && !isSmallMap && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '10px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            zIndex: 1001,
-          }}
-        >
-          <Typography variant="body2">Updating Metric...</Typography>
-        </Box>
+        <LoadingSpinner />
       )}
 
       {/* Update controls container to include both location and map type buttons */}
