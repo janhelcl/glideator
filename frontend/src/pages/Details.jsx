@@ -14,7 +14,6 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
-  Divider
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
@@ -25,6 +24,9 @@ import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
 import SearchRecs from '../components/SearchRecs';
+
+// Define tab names for URL mapping
+const tabNames = ['details', 'forecast', 'season', 'map'];
 
 // TabPanel component to display tab content
 function TabPanel(props) {
@@ -54,6 +56,10 @@ const Details = () => {
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
   const initialMetric = searchParams.get('metric') || 'XC50';
+  const initialTabName = searchParams.get('tab') || tabNames[1]; // Default to 'forecast'
+
+  // Find the index corresponding to the initial tab name
+  const initialTabIndex = tabNames.indexOf(initialTabName) !== -1 ? tabNames.indexOf(initialTabName) : 1;
   
   // State for site data and dates
   const [siteData, setSiteData] = useState(null);
@@ -66,8 +72,8 @@ const Details = () => {
   const [siteInfo, setSiteInfo] = useState(null);
   const [siteInfoLoading, setSiteInfoLoading] = useState(false);
   
-  // State for active tab
-  const [activeTab, setActiveTab] = useState(1);
+  // State for active tab, initialized from URL or default
+  const [activeTab, setActiveTab] = useState(initialTabIndex);
   
   // Add theme and media query logic
   const theme = useTheme();
@@ -143,17 +149,19 @@ const Details = () => {
     }
   }, [allDates, selectedDate]);
   
-  // Update URL when date or metric changes
+  // Update URL when date, metric, or tab changes
   useEffect(() => {
     if (selectedDate) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
         newParams.set('date', selectedDate);
         newParams.set('metric', selectedMetric);
+        // Map the activeTab index back to its name for the URL
+        newParams.set('tab', tabNames[activeTab]); 
         return newParams;
       }, { replace: true });
     }
-  }, [selectedDate, selectedMetric, setSearchParams]);
+  }, [selectedDate, selectedMetric, activeTab, setSearchParams]);
   
   // Handle date selection
   const handleDateChange = (date) => {
