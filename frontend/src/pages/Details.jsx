@@ -24,6 +24,7 @@ import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
 import SearchRecs from '../components/SearchRecs';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -240,7 +241,7 @@ const Details = () => {
     if (loading) {
       return (
         <Box display="flex" justifyContent="center" p={3}>
-          <CircularProgress />
+          <LoadingSpinner />
         </Box>
       );
     }
@@ -335,7 +336,7 @@ const Details = () => {
     if (siteInfoLoading) {
       return (
         <Box display="flex" justifyContent="center" p={3}>
-          <CircularProgress />
+          <LoadingSpinner />
         </Box>
       );
     }
@@ -410,7 +411,7 @@ const Details = () => {
         </Typography>
       ) : !siteData || !siteData.length ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-          <CircularProgress />
+          <LoadingSpinner />
         </Box>
       ) : (
         <Paper elevation={2}>
@@ -525,7 +526,7 @@ const Details = () => {
           <TabPanel value={activeTab} index={2}>
             {flightStatsLoading ? (
               <Box display="flex" justifyContent="center" p={3}>
-                <CircularProgress />
+                <LoadingSpinner />
               </Box>
             ) : flightStats ? (
               <FlightStatsChart 

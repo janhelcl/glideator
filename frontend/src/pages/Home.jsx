@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import DateBoxes from '../components/DateBoxes';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
-import { CircularProgress, Box } from '@mui/material';
+import { Box } from '@mui/material';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 
 // Define metrics outside the component to maintain a stable reference
@@ -166,7 +167,7 @@ const Home = () => {
     }}>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-          <CircularProgress />
+          <LoadingSpinner />
         </Box>
       ) : (
         <>
