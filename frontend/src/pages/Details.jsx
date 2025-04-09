@@ -13,7 +13,8 @@ import {
   Tab,
   Paper,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Divider
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
@@ -23,6 +24,7 @@ import MapIcon from '@mui/icons-material/Map';
 import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
+import SearchRecs from '../components/SearchRecs';
 
 // TabPanel component to display tab content
 function TabPanel(props) {
@@ -374,6 +376,14 @@ const Details = () => {
           <Typography>
             Detailed information not available for this site yet.
           </Typography>
+        )}
+
+        {/* Conditionally render the SearchRecs component */}
+        {siteInfo && siteInfo.site_name && (
+          <SearchRecs 
+            siteName={siteInfo.site_name} 
+            country={siteInfo.country} 
+          />
         )}
       </Box>
     );
