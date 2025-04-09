@@ -23,8 +23,7 @@ def load_sites_info_from_jsonl(db: Session):
                 "site_id": data["site_id"],
                 "site_name": data["site_name"],
                 "country": data["country"],
-                "html": data["html"],
-                "search_recs": data["search_recs"]
+                "html": data["html"]
             }
             site_info = schemas.SiteInfoCreate(**site_info_data)
             crud.create_site_info(db, site_info)
