@@ -26,6 +26,20 @@ const Declined = () => {
             This application provides forecasts and data that should be used at your own risk.
             We require all users to acknowledge this before proceeding.
           </Typography>
+          <Box sx={{ my: 3 }}>
+            <Box 
+              component="img" 
+              src="/assets/images/restricted.png" 
+              alt="Access Restricted"
+              sx={{
+                width: '100%',
+                maxWidth: '400px',
+                display: 'block',
+                margin: '20px auto',
+                borderRadius: '4px'
+              }}
+            />
+          </Box>
           <Button 
             variant="contained" 
             color="primary" 
