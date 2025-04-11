@@ -7,7 +7,6 @@ import {
   Button, 
   ButtonGroup,
   Typography,
-  CircularProgress,
   Collapse,
   Tabs,
   Tab,
@@ -416,10 +415,17 @@ const Details = () => {
       ) : (
         <Paper elevation={2}>
           {/* Site title displayed above tabs */}
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h5">
               {siteInfo?.site_name || siteData[0]?.name}
             </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img 
+                src="/logo192.png" 
+                alt="Glideator Logo" 
+                style={{ height: '60px', width: 'auto' }} 
+              />
+            </Box>
           </Box>
           
           {/* Tabs navigation */}
