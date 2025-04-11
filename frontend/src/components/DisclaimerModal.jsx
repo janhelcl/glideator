@@ -31,6 +31,18 @@ const DisclaimerModal = ({ open, onAccept, onDecline }) => {
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="disclaimer-dialog-description">
+          <Box 
+            component="img" 
+            src="/assets/images/parraglideator_disclaimer.png" 
+            alt="Parraglideator Disclaimer"
+            sx={{
+              width: '100%',
+              maxWidth: '400px',
+              display: 'block',
+              margin: '20px auto',
+              borderRadius: '4px'
+            }}
+          />
           <Typography paragraph>
             Welcome to Glideator! Before you proceed, please read and acknowledge the following disclaimer:
           </Typography>
