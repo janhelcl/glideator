@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Slider, Typography, IconButton } from '@mui/material';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import CloseIcon from '@mui/icons-material/Close';
 
 const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -98,31 +97,14 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
               flexDirection: 'column',
               alignItems: 'center',
               position: 'relative',
-              paddingTop: '24px',
+              paddingTop: '16px',
             }}
           >
-            {/* Close button */}
-            <IconButton
-              size="small"
-              onClick={() => setIsOpen(false)}
-              sx={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                padding: '4px',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                },
-              }}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-            
             <Typography 
               variant="subtitle1" 
               sx={{ 
                 marginBottom: '12px',
-                marginTop: '8px',
+                marginTop: '0px',
                 fontWeight: 'bold',
                 textAlign: 'center',
                 width: '100%',
@@ -132,7 +114,7 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
               <span style={{ display: 'block', fontSize: '0.65rem', marginTop: '2px' }}>(XC Points)</span>
             </Typography>
             
-            <Box sx={{ height: '80%', width: '100%', padding: '0 12px' }}>
+            <Box sx={{ height: '80%', width: '100%', padding: '0 12px', marginBottom: '12px' }}>
               <Slider
                 orientation="vertical"
                 value={sliderValue}
@@ -142,8 +124,7 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
                 marks={marks}
                 onChange={handleSliderChange}
                 onChangeCommitted={handleSliderChange}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => metrics[value]}
+                valueLabelDisplay="off"
                 aria-labelledby="metric-slider"
                 sx={{
                   height: '100%',
