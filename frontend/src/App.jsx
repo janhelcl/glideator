@@ -1,9 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './pages/Layout';
 import Home from './pages/Home';
 import Details from './pages/Details';
 import Declined from './pages/Declined';
+import NotFound from './pages/NotFound';
 
 const App = () => {
   return (
@@ -14,7 +15,7 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="sites/:siteId" element={<Details />} />
           {/* Redirect old format URLs to new format */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </Router>

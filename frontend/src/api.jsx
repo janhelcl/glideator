@@ -11,13 +11,13 @@ export const fetchSites = async (metric = null, date = null, limit = 1000) => {
     if (metric) params.metric = metric;
     if (date) params.date = date;
 
-    const response = await axios.get(`${API_BASE_URL}/sites/`, { // Added trailing slash
+    const response = await axios.get(`${API_BASE_URL}/sites/`, {
       params,
     });
     return response.data;
   } catch (error) {
     console.error('Error fetching sites:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -28,18 +28,18 @@ export const fetchSiteInfo = async (siteId) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching info for site ID ${siteId}:`, error);
-    return null;
+    throw error;
   }
 };
 
 // Fetch predictions using site_id
 export const fetchSitePredictions = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/predictions/`); // Added trailing slash
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/predictions/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching predictions for site ID ${siteId}:`, error);
-    return [];
+    throw error;
   }
 };
 
@@ -54,7 +54,7 @@ export const fetchSiteForecast = async (siteId, queryDate) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching forecast data:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -65,7 +65,7 @@ export const fetchFlightStats = async (siteId) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching flight statistics for site ID ${siteId}:`, error);
-    return null;
+    throw error;
   }
 };
 
@@ -76,6 +76,6 @@ export const fetchSiteSpots = async (siteId) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching spots for site ID ${siteId}:`, error);
-    return [];
+    throw error;
   }
 };

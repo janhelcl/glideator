@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
 import { fetchSiteForecast, fetchSites, fetchFlightStats, fetchSiteInfo } from '../api';
 import { 
@@ -52,6 +52,7 @@ function TabPanel(props) {
 const Details = () => {
   const { siteId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
@@ -96,9 +97,20 @@ const Details = () => {
         const data = await fetchSites(null, null);
         // Filter for just this site
         const filteredData = data.filter(site => site.site_id === parseInt(siteId));
+        
+        if (filteredData.length === 0) {
+          // Site not found, redirect to 404
+          navigate('/404');
+          return;
+        }
+        
         setSiteData(filteredData);
       } catch (err) {
         console.error('Error loading site data:', err);
+        if (err.response?.data?.detail === "Site not found") {
+          navigate('/404');
+          return;
+        }
         setError('Failed to load site data');
       } finally {
         setLoading(false);
@@ -106,7 +118,7 @@ const Details = () => {
     };
     
     loadSiteData();
-  }, [siteId]);
+  }, [siteId, navigate]);
   
   // New effect to load site info
   useEffect(() => {
@@ -114,16 +126,24 @@ const Details = () => {
       try {
         setSiteInfoLoading(true);
         const info = await fetchSiteInfo(siteId);
+        if (!info) {
+          navigate('/404');
+          return;
+        }
         setSiteInfo(info);
       } catch (err) {
         console.error('Error loading site info:', err);
+        if (err.response?.data?.detail === "Site not found") {
+          navigate('/404');
+          return;
+        }
       } finally {
         setSiteInfoLoading(false);
       }
     };
     
     loadSiteInfo();
-  }, [siteId]);
+  }, [siteId, navigate]);
   
   // Set default date if none selected and data is loaded
   useEffect(() => {
