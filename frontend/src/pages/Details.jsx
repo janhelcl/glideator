@@ -435,7 +435,7 @@ const Details = () => {
               height="200" // Adjust height slightly
               src={windyIframeSrc} 
               frameBorder="0"
-              style={{ border: 0, maxWidth: '1050px', display: 'block', margin: '0 auto' }} // Center and max width
+              style={{ border: 0, maxWidth: '1250px', display: 'block', margin: '0 auto' }} // Center and max width
               title="Windy Forecast"
             ></iframe>
           </Box>
