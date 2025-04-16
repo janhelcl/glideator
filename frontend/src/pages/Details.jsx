@@ -359,7 +359,12 @@ const Details = () => {
         </Box>
       );
     }
-    
+
+    // Construct Windy iframe URL if site data is available
+    const windyIframeSrc = siteData && siteData[0]
+      ? `https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat=${siteData[0].latitude}&detailLon=${siteData[0].longitude}&metricTemp=°C&metricRain=mm&metricWind=m/s`
+      : '';
+
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography variant="h5" gutterBottom>
@@ -408,10 +413,106 @@ const Details = () => {
 
         {/* Conditionally render the SearchRecs component */}
         {siteInfo && siteInfo.site_name && (
-          <SearchRecs 
-            siteName={siteInfo.site_name} 
-            country={siteInfo.country} 
-          />
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Do your own research
+            </Typography>
+            <SearchRecs 
+              siteName={siteInfo.site_name} 
+              country={siteInfo.country} 
+            />
+          </Box>
+        )}
+
+        {/* Add Windy Widget */}
+        {windyIframeSrc && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Weather Forecast (Windy)
+            </Typography>
+            <iframe 
+              width="100%" // Make width responsive
+              height="200" // Adjust height slightly
+              src={windyIframeSrc} 
+              frameBorder="0"
+              style={{ border: 0, maxWidth: '1050px', display: 'block', margin: '0 auto' }} // Center and max width
+              title="Windy Forecast"
+            ></iframe>
+          </Box>
+        )}
+
+        {/* Links Section */}
+        {siteData && siteData[0] && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Links
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <a 
+                href={`https://windy.com/${siteData[0].latitude}/${siteData[0].longitude}?${siteData[0].latitude},${siteData[0].longitude},11`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                Windy.com
+              </a>
+              {/* Add xcmeteo link */}
+              <a 
+                href={`http://www.xcmeteo.net/cs?p=${siteData[0].longitude}x${siteData[0].latitude}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                xcmeteo.net
+              </a>
+              {/* Add Windguru link */}
+              <a 
+                href={`https://www.windguru.cz/map/?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                Windguru.cz - forecast
+              </a>
+              {/* Add Windguru meteostations link */}
+              <a 
+                href={`https://www.windguru.cz/map/station?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                Windguru.cz - meteostations
+              </a>
+              {/* Add Thermal map link */}
+              <a 
+                href={`https://thermal.kk7.ch/#${siteData[0].latitude},${siteData[0].longitude},11`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                Thermal map
+              </a>
+              {/* Add xcontest recent flights link */}
+              <a 
+                href={`https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=time_start&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                xcontest.org - recent flights
+              </a>
+              {/* Add xcontest best flights link */}
+              <a 
+                href={`https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=pts&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
+              >
+                xcontest.org - best flights
+              </a>
+              {/* Add more links here if needed */}
+            </Box>
+          </Box>
         )}
       </Box>
     );
