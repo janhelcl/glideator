@@ -26,7 +26,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
+def setup_database():
+    logger.info("Creating database tables...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created successfully")
+
+setup_database()
 
 app = FastAPI(
     title="Glideator API",
