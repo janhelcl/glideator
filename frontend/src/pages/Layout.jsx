@@ -109,7 +109,7 @@ const Layout = () => {
             component="div"
             sx={{ width: '100%' }}
           >
-            © {new Date().getFullYear()} Glideator
+            © {new Date().getFullYear()} Parra-Glideator
           </Typography>
         </Toolbar>
       </AppBar>
