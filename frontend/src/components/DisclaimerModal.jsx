@@ -44,7 +44,7 @@ const DisclaimerModal = ({ open, onAccept, onDecline }) => {
             }}
           />
           <Typography paragraph>
-            Welcome to Glideator! Before you proceed, please read and acknowledge the following disclaimer:
+            Welcome to Parra-Glideator! Before you proceed, please read and acknowledge the following disclaimer:
           </Typography>
           <Typography paragraph>
             The information provided by this application is for general informational purposes only. All data and forecasts 
