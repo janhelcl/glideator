@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
@@ -55,8 +55,8 @@ const Layout = () => {
         <Toolbar>
           <Typography
             variant="h6"
-            component={Link}
-            to="/"
+            component="a"
+            href="/"
             sx={{
               color: 'white',
               textDecoration: 'none',

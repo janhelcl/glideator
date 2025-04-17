@@ -37,10 +37,30 @@ const Home = () => {
 
   // Shared map state excluding bounds
   const [mapState, setMapState] = useState({
-    center: [50.0755, 14.4378],
-    zoom: 7,
+    center: [45.8403, 10.7336], // Default center changed
+    zoom: 6,
     bounds: null
   });
+
+  // Attempt geolocation on mount if no location is in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlLat = params.get('lat');
+    const urlLng = params.get('lng');
+
+    if (!urlLat && !urlLng && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapState(prevState => ({ ...prevState, center: [latitude, longitude] }));
+        },
+        (error) => {
+          console.warn("Geolocation failed or denied:", error);
+          // Keep the default center if geolocation fails
+        }
+      );
+    }
+  }, [location.search]); // Run only when search params change (effectively once on mount unless URL changes externally)
 
   // Generate dates and set initial values
   useEffect(() => {
