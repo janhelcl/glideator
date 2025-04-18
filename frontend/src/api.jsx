@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000'; // Update with your backend URL
+const API_BASE_URL = ''; // Nginx will handle proxying from the same origin
 
 // Fetch all sites with optional metric and date filters
 export const fetchSites = async (metric = null, date = null, limit = 1000) => {
