@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ../frontend # Path to the frontend directory
+      dockerfile: Dockerfile.dev # We might need to create this Dockerfile
+    ports:
+      - "3000:3000" # Expose React dev server port
+    volumes:
+      - ../frontend:/app # Mount frontend source code
+      - /app/node_modules # Use container's node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true # Helps with file watching in Docker
+      - WATCHPACK_POLLING=true   # Alternative polling variable for react-scripts
+    depends_on:
+      - web # Ensure backend is ready (optional, depends on startup needs)
+    command: npm start
+
+  web:
+    build: .
+    ports:
+      - "8000:8000" # Expose backend port for direct access (/docs)
+    volumes:
+      - .:/app # Mount backend source code for hot-reloading (if using uvicorn --reload)
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    # Consider adding --reload for FastAPI hot-reloading in development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=glideator
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data # Use a separate volume for dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Keep management UI accessible
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A app.celery_app worker --loglevel=info
+
+  celery-beat:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A app.celery_app beat --loglevel=info
+
+volumes:
+  postgres_dev_data: # Separate named volume for development database 
