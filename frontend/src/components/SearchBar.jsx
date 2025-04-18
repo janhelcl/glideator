@@ -28,7 +28,7 @@ const SearchBar = ({ sites, onSiteSelect }) => {
     } else {
       // On other pages - navigate to Details page
       // Preserve current URL parameters when navigating
-      navigate(`/sites/${value.site.site_id}?${currentParams.toString()}`);
+      navigate(`/details/${value.site.site_id}?${currentParams.toString()}`);
     }
   };
 

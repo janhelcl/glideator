@@ -299,7 +299,7 @@ const MapView = React.memo(({
                     onClick={(e) => {
                       // Only handle left clicks here, middle clicks are handled by onMouseUp
                       if (e.button === 0 || e.button === undefined) {
-                        navigate(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
+                        navigate(`/details/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`);
                       }
                     }}
                     onMouseUp={(e) => {
@@ -308,7 +308,7 @@ const MapView = React.memo(({
                         // Prevent default to avoid potential scrolling behavior
                         e.preventDefault();
                         // Open in new tab
-                        window.open(`/sites/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`, '_blank');
+                        window.open(`/details/${site.site_id}?date=${selectedDate}&metric=${selectedMetric}`, '_blank');
                       }
                     }}
                   >

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast, fetchSites, fetchFlightStats, fetchSiteInfo } from '../api';
+import { fetchSiteForecast, fetchSites, fetchFlightStats, fetchSiteInfo, fetchSitePredictions } from '../api';
 import { 
   Box, 
   Button, 
@@ -88,23 +88,23 @@ const Details = () => {
     return [...new Set(dates)].sort();
   }, [siteData]);
   
-  // Effect to load site data
+  // Effect to load site data (now specifically predictions)
   useEffect(() => {
     const loadSiteData = async () => {
       try {
         setLoading(true);
-        // Fetch site data without date filter to get all dates
-        const data = await fetchSites(null, null);
-        // Filter for just this site
-        const filteredData = data.filter(site => site.site_id === parseInt(siteId));
+        // Fetch predictions specifically for this siteId
+        const data = await fetchSitePredictions(siteId);
         
-        if (filteredData.length === 0) {
+        // Check if data is valid (should be an array with one item)
+        if (!data || data.length === 0) {
           // Site not found, redirect to 404
           navigate('/404');
           return;
         }
         
-        setSiteData(filteredData);
+        // Set the site data directly from the response
+        setSiteData(data);
       } catch (err) {
         console.error('Error loading site data:', err);
         if (err.response?.data?.detail === "Site not found") {

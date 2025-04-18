@@ -13,7 +13,7 @@ const App = () => {
         <Route path="/declined" element={<Declined />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="sites/:siteId" element={<Details />} />
+          <Route path="details/:siteId" element={<Details />} />
           {/* Redirect old format URLs to new format */}
           <Route path="*" element={<NotFound />} />
         </Route>

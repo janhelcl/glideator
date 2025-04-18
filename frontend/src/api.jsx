@@ -24,7 +24,7 @@ export const fetchSites = async (metric = null, date = null, limit = 1000) => {
 // Fetch site information
 export const fetchSiteInfo = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/info/`);
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/info`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching info for site ID ${siteId}:`, error);
@@ -35,7 +35,7 @@ export const fetchSiteInfo = async (siteId) => {
 // Fetch predictions using site_id
 export const fetchSitePredictions = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/predictions/`);
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/predictions`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching predictions for site ID ${siteId}:`, error);
@@ -46,7 +46,7 @@ export const fetchSitePredictions = async (siteId) => {
 // Fetch forecast using site_id
 export const fetchSiteForecast = async (siteId, queryDate) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/forecast/`, {
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/forecast`, {
       params: {
         query_date: queryDate,
       },
@@ -61,7 +61,7 @@ export const fetchSiteForecast = async (siteId, queryDate) => {
 // Fetch flight statistics using site_id
 export const fetchFlightStats = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/flight_stats/`);
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/flight_stats`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching flight statistics for site ID ${siteId}:`, error);
@@ -72,7 +72,7 @@ export const fetchFlightStats = async (siteId) => {
 // Fetch spots using site_id
 export const fetchSiteSpots = async (siteId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/spots/`);
+    const response = await axios.get(`${API_BASE_URL}/sites/${siteId}/spots`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching spots for site ID ${siteId}:`, error);
