@@ -14,6 +14,7 @@ services:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true # Helps with file watching in Docker
       - WATCHPACK_POLLING=true   # Alternative polling variable for react-scripts
+      - REACT_APP_API_BASE_URL=http://localhost:8000 # Add API base URL for development
     depends_on:
       - web # Ensure backend is ready (optional, depends on startup needs)
     command: npm start

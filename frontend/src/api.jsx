@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api'; // Use relative path for Render rewrite rule
+// Use environment variable for dev, fallback to relative path for production (handled by Render rewrite)
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api'; 
 
 // Fetch all sites with optional metric and date filters
 export const fetchSites = async (metric = null, date = null, limit = 1000) => {
