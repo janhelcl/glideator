@@ -69,31 +69,48 @@ def startup_db_client():
         logger.info("Loading sites info data...")
         load_sites_info_from_jsonl(db)
         
-        # Wait for RabbitMQ to be ready
+        # Wait for Broker (Redis) to be ready
         retry_count = 0
+        connected_to_broker = False # Flag to track connection status
         while retry_count < 5:  # Try 5 times
             try:
-                conn = Connection(celery.conf.broker_url)
+                # Uses celery.conf.broker_url which should be your Redis URL from env vars
+                conn = Connection(celery.conf.broker_url) 
                 conn.connect()
                 conn.close()
+                logger.info("Successfully connected to broker.") # Add success log
+                connected_to_broker = True 
                 # If connection successful, break the loop
                 break
-            except OperationalError:
-                logger.info("Waiting for RabbitMQ to be ready...")
+            except OperationalError as e: # Catch specific error
+                logger.warning(f"Waiting for Broker... Attempt {retry_count + 1}/5. Error: {e}")
                 time.sleep(2)
                 retry_count += 1
         
+        if not connected_to_broker:
+             logger.error("Failed to connect to broker after multiple retries. Tasks might not be sent.")
+             # Depending on requirements, you might want to raise an exception here
+             # or simply proceed knowing tasks might not be sent immediately.
+
         # Clean up old data
-        logger.info("Cleaning up old data...")
-        celery.send_task('app.celery_app.cleanup_old_data')
-        
+        try:
+            logger.info("Attempting to send task: cleanup_old_data")
+            celery.send_task('app.celery_app.cleanup_old_data')
+            logger.info("Task 'cleanup_old_data' sent successfully.")
+        except Exception as e:
+            logger.error(f"Failed to send task 'cleanup_old_data': {e}")
+
         # Generate and store predictions
-        logger.info("Generating and storing predictions...")
-        celery.send_task('app.celery_app.check_and_trigger_forecast_processing')
+        try:
+            logger.info("Attempting to send task: check_and_trigger_forecast_processing")
+            celery.send_task('app.celery_app.check_and_trigger_forecast_processing')
+            logger.info("Task 'check_and_trigger_forecast_processing' sent successfully.")
+        except Exception as e:
+            logger.error(f"Failed to send task 'check_and_trigger_forecast_processing': {e}")
         
-        logger.info("Data loading completed successfully")
+        logger.info("Data loading and task submission sequence completed.") # Modified log
     except Exception as e:
-        logger.error(f"Error during startup: {str(e)}")
+        logger.error(f"Error during startup sequence: {str(e)}", exc_info=True) # Add traceback logging
     finally:
         db.close()
         logger.info("Database session closed.")
