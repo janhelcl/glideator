@@ -11,10 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 def load_sites_from_csv(db: Session, csv_filename: str):
-    # Delete all existing sites first
+    # Delete dependent data first to avoid foreign key constraint violations
+    logger.info("Deleting existing dependent data (FlightStats, Spot, Prediction, SiteInfo)")
+    db.query(models.FlightStats).delete() 
+    db.query(models.Spot).delete()
+    db.query(models.Prediction).delete() # Assuming Prediction references Site
+    db.query(models.SiteInfo).delete() # Assuming SiteInfo references Site
+    # Now delete the sites themselves
     logger.info("Deleting all existing sites")
     db.query(models.Site).delete()
-    db.commit()
+    db.commit() # Commit deletions together
     
     csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', csv_filename)
     logger.info(f"Loading sites from {csv_path}")
