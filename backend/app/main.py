@@ -3,7 +3,7 @@ import time
 from kombu import Connection
 from kombu.exceptions import OperationalError
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from .database import engine, Base, SessionLocal
 from .routers import sites
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +12,7 @@ from .services.sites_loader import load_sites_from_csv
 from .services.flight_stats_loader import load_flight_stats_from_csv
 from .services.spots_loader import load_spots_from_csv
 from .services.sites_info_loader import load_sites_info_from_jsonl
-from .celery_app import celery
+from .celery_app import celery, simple_test_task
 
 # Configure logging
 logging.basicConfig(
@@ -114,3 +114,16 @@ def startup_db_client():
     finally:
         db.close()
         logger.info("Database session closed.")
+
+# Test endpoint for Celery
+@app.get("/test-celery/{message}")
+async def test_celery_task_endpoint(message: str):
+    logger.info(f"WEB SERVICE: Received request for /test-celery/{message}")
+    try:
+        logger.info(f"WEB SERVICE: Attempting to send simple_test_task with message: {message}")
+        task_result = simple_test_task.delay(message)
+        logger.info(f"WEB SERVICE: simple_test_task sent. Task ID: {task_result.id}")
+        return {"message": "Test task sent", "task_id": task_result.id}
+    except Exception as e:
+         logger.error(f"WEB SERVICE: Failed to send simple_test_task: {e}", exc_info=True)
+         raise HTTPException(status_code=500, detail="Failed to send test task")

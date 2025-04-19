@@ -137,3 +137,9 @@ def cleanup_old_data():
         db.rollback()
     finally:
         db.close()
+
+@celery.task(name="app.celery_app.simple_test_task")
+def simple_test_task(message: str):
+    logger.info(f"WORKER RECEIVED simple_test_task with message: {message}")
+    print(f"WORKER PRINT: simple_test_task with message: {message}") # Add print for extra visibility
+    return f"Acknowledged: {message}"
