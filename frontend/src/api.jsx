@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = ''; // Nginx will handle proxying from the same origin
+const API_BASE_URL = '/api'; // Use relative path for Render rewrite rule
 
 // Fetch all sites with optional metric and date filters
 export const fetchSites = async (metric = null, date = null, limit = 1000) => {
