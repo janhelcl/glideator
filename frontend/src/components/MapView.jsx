@@ -439,53 +439,50 @@ const MapView = React.memo(({
 
   // Add memory management for map instances, especially for lightweight maps
   useEffect(() => {
-    // Capture the current map ref value to avoid "ref value changed" warning
-    // This creates a stable reference that won't trigger the exhaustive-deps warning
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const currentMapRef = mapRef;
-    
+    // Capture the current map instance at the time the effect runs
+    const mapInstance = mapRef.current;
+
     // Return cleanup function to run on unmount
     return () => {
-      // Get the current map instance at cleanup time
-      const mapInstance = currentMapRef?.current;
-      
+      // Use the captured map instance in the cleanup
+
       // If this is a small lightweight map, do extra cleanup
-      if (isSmallMap && lightweight && mapInstance) {
+      if (isSmallMap && lightweight && mapInstance) { // Use the captured mapInstance
         console.log('Performing cleanup for lightweight map');
-        
+
         try {
           // Force garbage collection of tiles
-          mapInstance.eachLayer(layer => {
+          mapInstance.eachLayer(layer => { // Use the captured mapInstance
             if (layer instanceof L.TileLayer) {
               // Reduce tile buffer to minimum
               layer.options.keepBuffer = 0;
-              
+
               // Remove all tiles from cache
               if (layer._removeAllTiles) {
                 layer._removeAllTiles();
               }
-              
+
               // Cancel any pending tile requests
               if (layer._cancelTilesLoading) {
                 layer._cancelTilesLoading();
               }
             }
           });
-          
+
           // Remove event listeners
-          mapInstance.off();
-          
+          mapInstance.off(); // Use the captured mapInstance
+
           // Clear any bounds
-          if (mapInstance._boundsCenterZoom) {
+          if (mapInstance._boundsCenterZoom) { // Use the captured mapInstance
             mapInstance._boundsCenterZoom = null;
           }
-          
+
           // Additional cleanup for markers
-          if (mapInstance._layers) {
+          if (mapInstance._layers) { // Use the captured mapInstance
             Object.keys(mapInstance._layers).forEach(key => {
               const layer = mapInstance._layers[key];
               if (layer instanceof L.Marker) {
-                mapInstance.removeLayer(layer);
+                mapInstance.removeLayer(layer); // Use the captured mapInstance
               }
             });
           }
@@ -495,7 +492,7 @@ const MapView = React.memo(({
         }
       }
     };
-  }, [isSmallMap, lightweight]);
+  }, [isSmallMap, lightweight, mapRef]); // Keep mapRef in the dependencies
 
   return (
     <MapContainer
