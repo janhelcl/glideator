@@ -439,8 +439,8 @@ const MapView = React.memo(({
 
   // Add memory management for map instances, especially for lightweight maps
   useEffect(() => {
-    // Capture the current map instance at the time the effect runs
-    const mapInstance = mapRef.current;
+    // Capture the current map instance only if mapRef exists
+    const mapInstance = mapRef ? mapRef.current : null;
 
     // Return cleanup function to run on unmount
     return () => {
