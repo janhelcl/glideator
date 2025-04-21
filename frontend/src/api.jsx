@@ -22,6 +22,17 @@ export const fetchSites = async (metric = null, date = null, limit = 1000) => {
   }
 };
 
+// Fetch list of all sites (ID and Name only)
+export const fetchSitesList = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/list`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching sites list:', error);
+    throw error;
+  }
+};
+
 // Fetch site information
 export const fetchSiteInfo = async (siteId) => {
   try {

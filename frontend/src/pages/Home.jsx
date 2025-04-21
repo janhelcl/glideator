@@ -28,6 +28,9 @@ const Home = () => {
   const markerRefs = useRef({});
   const mapRef = useRef();
 
+  // Read site data using the resource. This will suspend if data is not ready.
+  const allSitesData = sitesResource.read();
+
   const [selectedMetric, setSelectedMetric] = useState(() => {
     const params = new URLSearchParams(location.search);
     const metric = params.get('metric');
@@ -38,8 +41,6 @@ const Home = () => {
     const params = new URLSearchParams(location.search);
     return params.get('date') || '';
   });
-  const [allSites, setAllSites] = useState([]); // Store all fetched sites
-  const [loading, setLoading] = useState(false);
 
   // Shared map state excluding bounds
   const [mapState, setMapState] = useState({
@@ -103,29 +104,6 @@ const Home = () => {
     navigate(`/?${currentParams.toString()}`, { replace: true });
   }, [selectedMetric, selectedDate, navigate, location.search]);
 
-  // Fetch for the main map only (Suspense will handle date boxes data)
-  useEffect(() => {
-    const loadMainMapSites = async () => {
-      setLoading(true);
-      try {
-        // We don't call fetchSites directly anymore for the all sites data
-        // That's handled by the Suspense resource
-        // This is just for the current selected data for main map
-        const data = await fetchSites();
-        if (Array.isArray(data)) {
-          setAllSites(data);
-        } else {
-          console.error('Fetched data is not an array:', data);
-        }
-      } catch (error) {
-        console.error('Error fetching sites for main map:', error);
-      }
-      setLoading(false);
-    };
-
-    loadMainMapSites();
-  }, []);
-
   // Derive filtered sites based on selectedMetric and selectedDate
   const filteredSites = useMemo(() => {
     console.log('Selected Metric:', selectedMetric);
@@ -133,7 +111,7 @@ const Home = () => {
 
     const metricIdx = metricIndexMap[selectedMetric];
 
-    const result = allSites.filter((site) => {
+    const result = allSitesData.filter((site) => {
       // Check if site has predictions
       if (!site.predictions || !Array.isArray(site.predictions)) {
         console.warn(`Site "${site.name}" has no predictions.`);
@@ -160,7 +138,7 @@ const Home = () => {
 
     console.log('Filtered Sites:', result);
     return result;
-  }, [allSites, selectedMetric, selectedDate]);
+  }, [allSitesData, selectedMetric, selectedDate]);
 
   // Update the effect to handle map centering
   useEffect(() => {
@@ -195,11 +173,12 @@ const Home = () => {
       height: '100%',
       overflow: 'hidden'
     }}>
-      {loading ? (
+      {/* Wrap main content in Suspense to handle loading state */}
+      <Suspense fallback={
         <Box display="flex" justifyContent="center" alignItems="center" height="100%">
           <LoadingSpinner />
         </Box>
-      ) : (
+      }>
         <>
           <Box sx={{ 
             flex: 1,
@@ -238,7 +217,7 @@ const Home = () => {
             </Suspense>
           </ErrorBoundary>
         </>
-      )}
+      </Suspense>
     </div>
   );
 };
