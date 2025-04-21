@@ -4,7 +4,7 @@ import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
 import useDisclaimer from '../hooks/useDisclaimer';
-import { fetchSitesList } from '../api';  // Updated import
+import { fetchSitesList } from '../api';  // Reverted back to fetchSitesList
 
 const Layout = () => {
   // This state and function will be passed down to components that need it

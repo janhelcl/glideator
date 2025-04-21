@@ -8,8 +8,12 @@ const SearchBar = ({ sites, onSiteSelect }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Transform sites into options format
-    const siteOptions = sites.map(site => ({
+    // Transform sites into options format, sorting by site_id first
+    const sortedSites = sites && sites.length > 0
+      ? [...sites].sort((a, b) => a.site_id - b.site_id) // Sort by site_id (numeric)
+      : [];
+
+    const siteOptions = sortedSites.map(site => ({
       label: `${site.name} (${site.site_id})`,
       site: site
     }));

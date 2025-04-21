@@ -142,24 +142,32 @@ const Home = () => {
 
   // Update the effect to handle map centering
   useEffect(() => {
-    if (selectedSite && mapRef && mapRef.current) {
-      try {
-        // Center map on selected site
-        mapRef.current.setView(
-          [selectedSite.latitude, selectedSite.longitude],
-          mapRef.current.getZoom()  // Maintain current zoom level
-        );
+    // selectedSite from context might only have id and name
+    if (selectedSite && selectedSite.site_id && mapRef && mapRef.current && allSitesData) {
+      // Find the full site data using the ID from the context
+      const fullSiteData = allSitesData.find(site => site.site_id === selectedSite.site_id);
+      
+      if (fullSiteData) {
+        try {
+          // Center map on selected site using full data
+          mapRef.current.setView(
+            [fullSiteData.latitude, fullSiteData.longitude],
+            mapRef.current.getZoom()  // Maintain current zoom level
+          );
 
-        // Open the popup
-        const markerRef = markerRefs.current[selectedSite.site_id];
-        if (markerRef) {
-          markerRef.openPopup();
+          // Open the popup using the ID
+          const markerRef = markerRefs.current[fullSiteData.site_id]; // Use fullSiteData.site_id
+          if (markerRef) {
+            markerRef.openPopup();
+          }
+        } catch (error) {
+          console.error("Error updating map view:", error);
         }
-      } catch (error) {
-        console.error("Error updating map view:", error);
+      } else {
+        console.warn(`Full site data not found for selected site ID: ${selectedSite.site_id}`);
       }
     }
-  }, [selectedSite]);
+  }, [selectedSite, allSitesData, mapRef]); // Add allSitesData to dependencies
 
   // Add this to your MapView component props
   const getMarkerRef = (siteId, ref) => {
