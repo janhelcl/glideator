@@ -40,6 +40,12 @@ def get_sites(
     sites = query.offset(skip).limit(limit).all()
     return sites
 
+def get_site_list(db: Session):
+    """
+    Retrieves a list of all sites with their IDs and names.
+    """
+    return db.query(models.Site.site_id, models.Site.name).all()
+
 def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
     Retrieves predictions based on site_id, and optionally filters by date and metric.

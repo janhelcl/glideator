@@ -22,6 +22,14 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/list", response_model=List[schemas.SiteListItem])
+def read_site_list(db: Session = Depends(get_db)):
+    """
+    Retrieves a list of all site names and their IDs.
+    """
+    sites = crud.get_site_list(db)
+    return sites
+
 @router.get("/", response_model=List[schemas.SiteResponse])
 def read_sites(
     skip: int = 0,

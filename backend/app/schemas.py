@@ -46,6 +46,13 @@ class SiteResponse(BaseModel):
 class Site(SiteResponse):
     pass
 
+class SiteListItem(BaseModel):
+    site_id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
 class ForecastBase(BaseModel):
     date: date
     computed_at: datetime
