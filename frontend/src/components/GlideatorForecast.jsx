@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { debounce } from 'lodash';
 import StandaloneMetricControl from './StandaloneMetricControl';
-import DateBoxesControl from './DateBoxesControl';
+import OptimizedDateBoxesControl from './OptimizedDateBoxesControl';
 
 const GlideatorForecast = ({ 
   siteData, 
@@ -456,7 +456,7 @@ const GlideatorForecast = ({
             right: '10px'
           }}>
             {allDates && allDates.length > 0 && (
-              <DateBoxesControl
+              <OptimizedDateBoxesControl
                 dates={allDates}
                 selectedDate={selectedDate}
                 setSelectedDate={onDateChange}

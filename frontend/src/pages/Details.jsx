@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast, fetchSites, fetchFlightStats, fetchSiteInfo, fetchSitePredictions } from '../api';
+import { fetchSiteForecast, fetchFlightStats, fetchSiteInfo, fetchSitePredictions } from '../api';
 import { 
   Box, 
   Button, 

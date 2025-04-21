@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import DateBoxes from '../components/DateBoxes';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import SuspenseDateBoxes from '../components/SuspenseDateBoxes';
+import DateBoxesPlaceholder from '../components/DateBoxesPlaceholder';
+import ErrorBoundary from '../components/ErrorBoundary';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
 import { Box } from '@mui/material';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import { createSitesResource } from '../utils/suspenseResource';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -13,6 +16,9 @@ const metricIndexMap = METRICS.reduce((acc, metric, index) => {
   acc[metric] = index;
   return acc;
 }, {});
+
+// Create a sites resource outside the component to avoid recreation on renders
+const sitesResource = createSitesResource(fetchSites);
 
 const Home = () => {
   const navigate = useNavigate();
@@ -97,27 +103,27 @@ const Home = () => {
     navigate(`/?${currentParams.toString()}`, { replace: true });
   }, [selectedMetric, selectedDate, navigate, location.search]);
 
-  // Fetch all sites once on component mount
+  // Fetch for the main map only (Suspense will handle date boxes data)
   useEffect(() => {
-    const loadAllSites = async () => {
+    const loadMainMapSites = async () => {
       setLoading(true);
       try {
-        const data = await fetchSites(); // Fetch without filters
+        // We don't call fetchSites directly anymore for the all sites data
+        // That's handled by the Suspense resource
+        // This is just for the current selected data for main map
+        const data = await fetchSites();
         if (Array.isArray(data)) {
-          // Optional: Log fetched data for debugging
-          console.log('Fetched Sites:', data);
-
           setAllSites(data);
         } else {
           console.error('Fetched data is not an array:', data);
         }
       } catch (error) {
-        console.error('Error fetching sites:', error);
+        console.error('Error fetching sites for main map:', error);
       }
       setLoading(false);
     };
 
-    loadAllSites();
+    loadMainMapSites();
   }, []);
 
   // Derive filtered sites based on selectedMetric and selectedDate
@@ -158,17 +164,21 @@ const Home = () => {
 
   // Update the effect to handle map centering
   useEffect(() => {
-    if (selectedSite && mapRef.current) {
-      // Center map on selected site
-      mapRef.current.setView(
-        [selectedSite.latitude, selectedSite.longitude],
-        mapRef.current.getZoom()  // Maintain current zoom level
-      );
+    if (selectedSite && mapRef && mapRef.current) {
+      try {
+        // Center map on selected site
+        mapRef.current.setView(
+          [selectedSite.latitude, selectedSite.longitude],
+          mapRef.current.getZoom()  // Maintain current zoom level
+        );
 
-      // Open the popup
-      const markerRef = markerRefs.current[selectedSite.site_id];
-      if (markerRef) {
-        markerRef.openPopup();
+        // Open the popup
+        const markerRef = markerRefs.current[selectedSite.site_id];
+        if (markerRef) {
+          markerRef.openPopup();
+        }
+      } catch (error) {
+        console.error("Error updating map view:", error);
       }
     }
   }, [selectedSite]);
@@ -210,17 +220,23 @@ const Home = () => {
               mapRef={mapRef}
             />
           </Box>
-          <DateBoxes
-            dates={dates}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            center={mapState.center}
-            zoom={mapState.zoom}
-            bounds={mapState.bounds}
-            allSites={allSites}
-            selectedMetric={selectedMetric}
-            metrics={METRICS}
-          />
+          
+          {/* Replace direct DateBoxes rendering with Suspense-wrapped component */}
+          <ErrorBoundary>
+            <Suspense fallback={<DateBoxesPlaceholder />}>
+              <SuspenseDateBoxes
+                sitesResource={sitesResource}
+                dates={dates}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                center={mapState.center}
+                zoom={mapState.zoom}
+                bounds={mapState.bounds}
+                selectedMetric={selectedMetric}
+                metrics={METRICS}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </>
       )}
     </div>

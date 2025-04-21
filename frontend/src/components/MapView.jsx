@@ -1,10 +1,10 @@
-import React, { useMemo, useEffect, useState, useTransition, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, useTransition, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import './MapView.css';
-import { Typography, Box, IconButton } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import PreventLeafletControl from './PreventLeafletControl';
 import MetricControl from './MetricControl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -55,42 +55,59 @@ const MapEventHandler = ({ setMapState, updateUrlParams }) => {
 // Component to synchronize small map views with main map
 const SynchronizeMapView = ({ bounds }) => {
   const map = useMap();
+  const lastBoundsRef = useRef(null);
 
   useEffect(() => {
+    // Make sure map is defined before using it
+    if (!map) return;
+    
     if (bounds) {
-      console.log('Small map receiving bounds:', bounds);
-      try {
-        // Get the container size
-        const container = map.getContainer();
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
+      // Only update bounds if there's a significant change
+      if (!lastBoundsRef.current || 
+          !lastBoundsRef.current.getCenter() || 
+          Math.abs(bounds.getCenter().lat - lastBoundsRef.current.getCenter().lat) > 0.01 ||
+          Math.abs(bounds.getCenter().lng - lastBoundsRef.current.getCenter().lng) > 0.01 ||
+          Math.abs(bounds.getNorth() - lastBoundsRef.current.getNorth()) > 0.02) {
+        
+        // Clone the bounds to ensure we have a new reference
+        lastBoundsRef.current = L.latLngBounds(
+          L.latLng(bounds.getSouth(), bounds.getWest()),
+          L.latLng(bounds.getNorth(), bounds.getEast())
+        );
+        
+        try {
+          // Get the container size
+          const container = map.getContainer();
+          const containerWidth = container.clientWidth;
+          const containerHeight = container.clientHeight;
 
-        // Calculate the aspect ratio of the container
-        const aspectRatio = containerWidth / containerHeight;
+          // Calculate the aspect ratio of the container
+          const aspectRatio = containerWidth / containerHeight;
 
-        // Calculate the bounds dimensions
-        const boundsWidth = bounds.getEast() - bounds.getWest();
-        const boundsHeight = bounds.getNorth() - bounds.getSouth();
-        const boundsAspectRatio = boundsWidth / boundsHeight;
+          // Calculate the bounds dimensions
+          const boundsWidth = bounds.getEast() - bounds.getWest();
+          const boundsHeight = bounds.getNorth() - bounds.getSouth();
+          const boundsAspectRatio = boundsWidth / boundsHeight;
 
-        // Calculate padding to maintain aspect ratio
-        let padding;
-        if (boundsAspectRatio > aspectRatio) {
-          // Bounds are wider than container
-          const heightDiff = (boundsHeight * (boundsAspectRatio / aspectRatio) - boundsHeight) / 2;
-          padding = [-heightDiff * containerHeight, 0];
-        } else {
-          // Bounds are taller than container
-          const widthDiff = (boundsWidth * (aspectRatio / boundsAspectRatio) - boundsWidth) / 2;
-          padding = [0, -widthDiff * containerWidth];
+          // Calculate padding to maintain aspect ratio
+          let padding;
+          if (boundsAspectRatio > aspectRatio) {
+            // Bounds are wider than container
+            const heightDiff = (boundsHeight * (boundsAspectRatio / aspectRatio) - boundsHeight) / 2;
+            padding = [-heightDiff * containerHeight, 0];
+          } else {
+            // Bounds are taller than container
+            const widthDiff = (boundsWidth * (aspectRatio / boundsAspectRatio) - boundsWidth) / 2;
+            padding = [0, -widthDiff * containerWidth];
+          }
+
+          map.fitBounds(bounds, {
+            animate: false,
+            padding: padding
+          });
+        } catch (error) {
+          console.error('Error fitting bounds:', error);
         }
-
-        map.fitBounds(bounds, {
-          animate: false,
-          padding: padding
-        });
-      } catch (error) {
-        console.error('Error fitting bounds:', error);
       }
     }
   }, [bounds, map]);
@@ -131,6 +148,7 @@ const MapView = React.memo(({
   bounds,
   setMapState,
   isSmallMap = false,
+  lightweight = false,
   metrics,
   getMarkerRef,
   mapRef,
@@ -228,7 +246,20 @@ const MapView = React.memo(({
     return `rgb(${r}, ${g}, 0)`;
   };
 
-  const createCustomIcon = useCallback((color) => {
+  const createCustomIcon = useCallback((color, isLightweight = false) => {
+    if (isLightweight) {
+      // Create a much simpler icon for lightweight maps - no glow, no hover effects
+      return L.divIcon({
+        className: '',
+        html: `
+          <div class="simple-marker" style="background-color: ${color}; width: 4px; height: 4px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.5);"></div>
+        `,
+        iconSize: [4, 4],
+        iconAnchor: [2, 2],
+      });
+    }
+    
+    // Regular detailed icon with glow for standard maps
     const rgbaGlow = rgbToRgba(color, 0.7);
     const rgbaGlowHover = rgbToRgba(color, 1);
     const uniqueId = `marker-${Math.random().toString(36).substr(2, 9)}`;
@@ -268,10 +299,10 @@ const MapView = React.memo(({
         <Marker
           key={`site-${site.site_id}`}
           position={[site.latitude, site.longitude]}
-          icon={createCustomIcon(color)}
+          icon={createCustomIcon(color, isSmallMap && lightweight)}
           interactive={!isSmallMap}
           ref={(ref) => {
-            if (ref && getMarkerRef) {
+            if (ref && getMarkerRef && typeof getMarkerRef === 'function') {
               getMarkerRef(site.site_id, ref);
             }
           }}
@@ -321,27 +352,43 @@ const MapView = React.memo(({
         </Marker>
       );
     });
-  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, getMarkerRef, createCustomIcon, getPredictionValue]);
+  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, lightweight, getMarkerRef, createCustomIcon, getPredictionValue]);
 
   // Handle slider change (updates local state)
   const handleSliderChange = (event, newValue) => {
     setLocalSliderValue(newValue);
   };
 
+  // Create debounced version of slider change committed
+  const debouncedHandleSliderChangeCommitted = useMemo(
+    () => debounce((event, newValue) => {
+      if (newValue >= 0 && newValue < metrics.length) {
+        // Use transition for updating the selected metric
+        startTransition(() => {
+          setSelectedMetric(metrics[newValue]);
+        });
+      }
+    }, 150), // Wait 150ms after sliding stops before updating
+    [metrics, setSelectedMetric]
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedHandleSliderChangeCommitted.cancel();
+    };
+  }, [debouncedHandleSliderChangeCommitted]);
+
   // Handle slider change committed (updates selected metric)
   const handleSliderChangeCommitted = (event, newValue) => {
-    if (newValue >= 0 && newValue < metrics.length) {
-      // Use transition for updating the selected metric
-      startTransition(() => {
-        setSelectedMetric(metrics[newValue]);
-      });
-    }
+    debouncedHandleSliderChangeCommitted(event, newValue);
   };
 
   const sliderValue = localSliderValue;
 
+  // Handle location click
   const handleLocationClick = () => {
-    if ("geolocation" in navigator) {
+    if ("geolocation" in navigator && mapRef && mapRef.current) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -384,11 +431,71 @@ const MapView = React.memo(({
 
   // Effect to update tile layer when mapType changes
   useEffect(() => {
-    if (!isSmallMap && mapRef.current) {
+    if (!isSmallMap && mapRef && mapRef.current) {
       // The tile layers will be handled by the conditional rendering in the return
       console.log('Map type changed to:', mapType);
     }
   }, [mapType, isSmallMap, mapRef]);
+
+  // Add memory management for map instances, especially for lightweight maps
+  useEffect(() => {
+    // Capture the current map ref value to avoid "ref value changed" warning
+    // This creates a stable reference that won't trigger the exhaustive-deps warning
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const currentMapRef = mapRef;
+    
+    // Return cleanup function to run on unmount
+    return () => {
+      // Get the current map instance at cleanup time
+      const mapInstance = currentMapRef?.current;
+      
+      // If this is a small lightweight map, do extra cleanup
+      if (isSmallMap && lightweight && mapInstance) {
+        console.log('Performing cleanup for lightweight map');
+        
+        try {
+          // Force garbage collection of tiles
+          mapInstance.eachLayer(layer => {
+            if (layer instanceof L.TileLayer) {
+              // Reduce tile buffer to minimum
+              layer.options.keepBuffer = 0;
+              
+              // Remove all tiles from cache
+              if (layer._removeAllTiles) {
+                layer._removeAllTiles();
+              }
+              
+              // Cancel any pending tile requests
+              if (layer._cancelTilesLoading) {
+                layer._cancelTilesLoading();
+              }
+            }
+          });
+          
+          // Remove event listeners
+          mapInstance.off();
+          
+          // Clear any bounds
+          if (mapInstance._boundsCenterZoom) {
+            mapInstance._boundsCenterZoom = null;
+          }
+          
+          // Additional cleanup for markers
+          if (mapInstance._layers) {
+            Object.keys(mapInstance._layers).forEach(key => {
+              const layer = mapInstance._layers[key];
+              if (layer instanceof L.Marker) {
+                mapInstance.removeLayer(layer);
+              }
+            });
+          }
+        } catch (e) {
+          // Safely handle any errors during cleanup
+          console.warn('Error during map cleanup:', e);
+        }
+      }
+    };
+  }, [isSmallMap, lightweight]);
 
   return (
     <MapContainer
@@ -402,23 +509,24 @@ const MapView = React.memo(({
         margin: 0,
         padding: 0
       }}
-      dragging={!isSmallMap}
-      scrollWheelZoom={!isSmallMap}
+      dragging={!isSmallMap && !lightweight}
+      scrollWheelZoom={!isSmallMap && !lightweight}
       zoomControl={false}
-      doubleClickZoom={!isSmallMap}
-      boxZoom={!isSmallMap}
-      keyboard={!isSmallMap}
-      tap={!isSmallMap}
-      touchZoom={!isSmallMap}
-      attributionControl={!isSmallMap}
+      doubleClickZoom={!isSmallMap && !lightweight}
+      boxZoom={!isSmallMap && !lightweight}
+      keyboard={!isSmallMap && !lightweight}
+      tap={!isSmallMap && !lightweight}
+      touchZoom={!isSmallMap && !lightweight}
+      attributionControl={!isSmallMap && !lightweight}
       maxBoundsViscosity={1.0}
+      preferCanvas={isSmallMap || lightweight}
       ref={mapRef}
     >
       {/* Pass isSmallMap to SynchronizeMapView */}
       {isSmallMap && <SynchronizeMapView bounds={bounds} />}
 
       {/* Handle map state updates for the main map */}
-      {!isSmallMap && setMapState && (
+      {!isSmallMap && !lightweight && setMapState && (
         <MapEventHandler 
           setMapState={setMapState} 
           updateUrlParams={updateUrlParams}
@@ -426,16 +534,22 @@ const MapView = React.memo(({
       )}
 
       {/* New: Listen to base layer changes and update "mapType" URL parameter */}
-      {!isSmallMap && (
+      {!isSmallMap && !lightweight && (
         <MapBaseLayerHandler searchParams={searchParams} setSearchParams={setSearchParams} />
       )}
 
       {/* Replace LayersControl with conditional TileLayers based on mapType */}
-      {isSmallMap ? (
-        /* Render a default TileLayer without attribution on small maps */
+      {(isSmallMap || lightweight) ? (
+        /* Render a simplified TileLayer for small/lightweight maps */
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
           attribution="" // No attribution for small maps
+          tileSize={256}
+          zoomOffset={0}
+          updateWhenIdle={true}
+          updateWhenZooming={false}
+          updateInterval={500}
+          keepBuffer={1}
         />
       ) : (
         /* Render the appropriate TileLayer based on mapType */
@@ -453,7 +567,7 @@ const MapView = React.memo(({
       )}
 
       {/* Conditionally render the Metric Slider only on the main map */}
-      {!isSmallMap && (
+      {!isSmallMap && !lightweight && (
         <PreventLeafletControl>
           <MetricControl
             metrics={metrics}
@@ -466,12 +580,12 @@ const MapView = React.memo(({
       {markers}
       
       {/* Optional: Display a loading indicator when a transition is pending */}
-      {isPending && !isSmallMap && (
+      {isPending && !isSmallMap && !lightweight && (
         <LoadingSpinner />
       )}
 
       {/* Update controls container to include both location and map type buttons */}
-      {!isSmallMap && (
+      {!isSmallMap && !lightweight && (
         <PreventLeafletControl>
           <Box
             className="map-controls-container"
@@ -488,7 +602,7 @@ const MapView = React.memo(({
       )}
 
       {/* Add custom map type control */}
-      {!isSmallMap && (
+      {!isSmallMap && !lightweight && (
         <PreventLeafletControl>
           <Box
             className="map-type-control"
