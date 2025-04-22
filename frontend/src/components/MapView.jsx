@@ -463,6 +463,9 @@ const MapView = React.memo(({
       });
       newTileLayer.addTo(map);
 
+      // Force map redraw to handle potential mobile rendering issues
+      map.invalidateSize();
+
       console.log('Explicitly changed map type to:', mapType);
     }
   }, [mapType, isSmallMap, mapRef]); // Depend on mapType
