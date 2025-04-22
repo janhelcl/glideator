@@ -463,20 +463,10 @@ const MapView = React.memo(({
       });
       newTileLayer.addTo(map);
 
-      // Force map redraw after a slight delay to handle potential mobile rendering issues
-      const timerId = setTimeout(() => {
-        if (mapRef.current) { // Check if map still exists
-          mapRef.current.invalidateSize();
-          console.log('Forced map redraw after delay');
-        }
-      }, 10); // 10ms delay
+      // Force map redraw to handle potential mobile rendering issues
+      map.invalidateSize();
 
       console.log('Explicitly changed map type to:', mapType);
-
-      // Cleanup function for the timeout
-      return () => {
-        clearTimeout(timerId);
-      };
     }
   }, [mapType, isSmallMap, mapRef]); // Depend on mapType
 
