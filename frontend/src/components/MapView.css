@@ -272,28 +272,23 @@
   background-color: #f5f5f5;
 }
 
-/* Dark mode support for popup elements */
+/* Dark mode support for popup */
 @media (prefers-color-scheme: dark) {
   .leaflet-popup-content-wrapper {
-    background-color: #2c2c2c;
-    color: white;
+    background-color: #303030 !important;
+    color: #fff;
   }
   
   .leaflet-popup-tip {
-    background-color: #2c2c2c;
+    background-color: #303030 !important;
   }
   
-  .popup-metric-bar,
+  .popup-metric-bar, 
   .popup-footer {
-    background-color: #333333;
+    background-color: #303030 !important;
   }
   
-  .popup-details-button {
-    background-color: #424242;
-    color: white;
-  }
-  
-  .popup-details-button:hover {
-    background-color: #616161;
+  .popup-footer {
+    border-top-color: #424242 !important;
   }
 }
