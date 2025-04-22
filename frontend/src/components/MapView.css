@@ -276,11 +276,16 @@
 @media (prefers-color-scheme: dark) {
   .leaflet-popup-content-wrapper {
     background-color: #303030 !important;
-    color: #fff;
+    color: #fff !important;
   }
   
-  .leaflet-popup-tip {
+  .leaflet-popup-tip,
+  .leaflet-popup-tip-container > *,
+  .leaflet-popup .leaflet-popup-tip {
     background-color: #303030 !important;
+    border-color: #303030 !important;
+    color: #303030 !important;
+    fill: #303030 !important;
   }
   
   .popup-metric-bar, 
