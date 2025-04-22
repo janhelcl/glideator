@@ -272,17 +272,28 @@
   background-color: #f5f5f5;
 }
 
-/* Dark Mode Popup Styles */
-html.dark .popup-metric-bar,
-body.dark .popup-metric-bar,
-html.dark .popup-footer,
-body.dark .popup-footer {
-  background-color: #333333;
-  border-top-color: #555555; /* Adjust border color for footer */
-}
-
-html.dark .leaflet-popup-tip,
-body.dark .leaflet-popup-tip {
-  background: #333333; /* Match the new dark background */
-  box-shadow: none;
+/* Dark mode support for popup elements */
+@media (prefers-color-scheme: dark) {
+  .leaflet-popup-content-wrapper {
+    background-color: #2c2c2c;
+    color: white;
+  }
+  
+  .leaflet-popup-tip {
+    background-color: #2c2c2c;
+  }
+  
+  .popup-metric-bar,
+  .popup-footer {
+    background-color: #333333;
+  }
+  
+  .popup-details-button {
+    background-color: #424242;
+    color: white;
+  }
+  
+  .popup-details-button:hover {
+    background-color: #616161;
+  }
 }
