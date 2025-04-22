@@ -244,8 +244,8 @@
   padding: 4px 10px;
   display: flex;
   justify-content: center;
-  /* background-color: #f5f5f5;
-  border-top: 1px solid #eeeeee; */
+  background-color: #f5f5f5;
+  border-top: 1px solid #eeeeee;
 }
 
 .popup-details-button {
@@ -265,4 +265,9 @@
 
 .popup-details-button:hover {
   background-color: #616161;
+}
+
+/* Fix popup arrow position for smaller popup */
+.leaflet-popup-tip {
+  /* background-color: #f8f8f8; */
 }
