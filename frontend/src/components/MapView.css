@@ -271,3 +271,10 @@
 .leaflet-popup-tip {
   background-color: #f5f5f5;
 }
+
+/* Dark Mode Popup Tip */
+html.dark .leaflet-popup-tip,
+body.dark .leaflet-popup-tip {
+  background: #424242; /* Match the popup header background in dark mode */
+  box-shadow: none; /* Optional: remove shadow if needed */
+}
