@@ -432,43 +432,10 @@ const MapView = React.memo(({
   // Effect to update tile layer when mapType changes
   useEffect(() => {
     if (!isSmallMap && mapRef && mapRef.current) {
-      const map = mapRef.current;
-      let newLayerUrl = '';
-      let newLayerAttribution = '';
-
-      // Determine the new layer URL and attribution
-      if (mapType === 'basic') {
-        newLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-        newLayerAttribution = 'Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors';
-      } else { // topographic
-        newLayerUrl = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
-        newLayerAttribution = 'Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)';
-      }
-
-      // Find and remove existing TileLayer
-      let existingTileLayer = null;
-      map.eachLayer(layer => {
-        if (layer instanceof L.TileLayer) {
-          existingTileLayer = layer;
-        }
-      });
-
-      if (existingTileLayer) {
-        map.removeLayer(existingTileLayer);
-      }
-
-      // Create and add the new TileLayer
-      const newTileLayer = L.tileLayer(newLayerUrl, {
-        attribution: newLayerAttribution
-      });
-      newTileLayer.addTo(map);
-
-      // Force map redraw to handle potential mobile rendering issues
-      map.invalidateSize();
-
-      console.log('Explicitly changed map type to:', mapType);
+      // The tile layers will be handled by the conditional rendering in the return
+      console.log('Map type changed to:', mapType);
     }
-  }, [mapType, isSmallMap, mapRef]); // Depend on mapType
+  }, [mapType, isSmallMap, mapRef]);
 
   // Add memory management for map instances, especially for lightweight maps
   useEffect(() => {
@@ -582,16 +549,14 @@ const MapView = React.memo(({
           keepBuffer={1}
         />
       ) : (
-        /* Initial render based on initialMapType */
-        initialMapType === 'basic' ? (
+        /* Render the appropriate TileLayer based on mapType */
+        mapType === 'basic' ? (
           <TileLayer
-            key="basic-tiles-initial" // Key for initial render consistency
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
           />
         ) : (
           <TileLayer
-            key="topo-tiles-initial" // Key for initial render consistency
             url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
             attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
           />
