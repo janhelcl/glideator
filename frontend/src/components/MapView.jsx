@@ -434,6 +434,15 @@ const MapView = React.memo(({
     if (!isSmallMap && mapRef && mapRef.current) {
       // The tile layers will be handled by the conditional rendering in the return
       console.log('Map type changed to:', mapType);
+
+      // Force map redraw after tile layer change, especially for mobile issues
+      const timer = setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+        }
+      }, 100); // Small delay to allow DOM updates
+
+      return () => clearTimeout(timer); // Cleanup timer on unmount or change
     }
   }, [mapType, isSmallMap, mapRef]);
 
