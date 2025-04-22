@@ -434,15 +434,32 @@ const MapView = React.memo(({
     if (!isSmallMap && mapRef && mapRef.current) {
       // The tile layers will be handled by the conditional rendering in the return
       console.log('Map type changed to:', mapType);
-
-      // Force map redraw after tile layer change, especially for mobile issues
-      const timer = setTimeout(() => {
+      
+      // Fix for mobile: Force map to refresh after type change
+      // Use setTimeout to ensure this runs after the rendering completes
+      setTimeout(() => {
         if (mapRef.current) {
+          // Force map to recalculate its size and redraw
           mapRef.current.invalidateSize();
+          
+          // Additional fix for mobile touch events
+          if ('ontouchstart' in window) {
+            // Temporarily disable and re-enable handlers to refresh them
+            mapRef.current.dragging.disable();
+            mapRef.current.dragging.enable();
+            
+            if (mapRef.current.tap) {
+              mapRef.current.tap.disable();
+              mapRef.current.tap.enable();
+            }
+            
+            if (mapRef.current.touchZoom) {
+              mapRef.current.touchZoom.disable();
+              mapRef.current.touchZoom.enable();
+            }
+          }
         }
-      }, 100); // Small delay to allow DOM updates
-
-      return () => clearTimeout(timer); // Cleanup timer on unmount or change
+      }, 100);
     }
   }, [mapType, isSmallMap, mapRef]);
 
