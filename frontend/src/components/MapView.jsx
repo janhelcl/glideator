@@ -394,6 +394,31 @@ const MapView = React.memo(({
           const { latitude, longitude } = position.coords;
           const currentZoom = mapRef.current?.getZoom() || zoom;
           mapRef.current?.setView([latitude, longitude], currentZoom);
+          
+          // Fix for mobile: Force map to refresh after centering
+          setTimeout(() => {
+            if (mapRef.current) {
+              // Force map to recalculate its size and redraw
+              mapRef.current.invalidateSize();
+              
+              // Additional fix for mobile touch events
+              if ('ontouchstart' in window) {
+                // Temporarily disable and re-enable handlers to refresh them
+                mapRef.current.dragging.disable();
+                mapRef.current.dragging.enable();
+                
+                if (mapRef.current.tap) {
+                  mapRef.current.tap.disable();
+                  mapRef.current.tap.enable();
+                }
+                
+                if (mapRef.current.touchZoom) {
+                  mapRef.current.touchZoom.disable();
+                  mapRef.current.touchZoom.enable();
+                }
+              }
+            }
+          }, 100);
         },
         (error) => {
           console.error("Error getting location:", error);
