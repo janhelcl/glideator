@@ -445,7 +445,7 @@ const MapView = React.memo(({
         newLayerAttribution = 'Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)';
       }
 
-      // Find and remove existing TileLayer
+      // Find existing TileLayer
       let existingTileLayer = null;
       map.eachLayer(layer => {
         if (layer instanceof L.TileLayer) {
@@ -454,14 +454,23 @@ const MapView = React.memo(({
       });
 
       if (existingTileLayer) {
-        map.removeLayer(existingTileLayer);
+        // Update the existing layer
+        existingTileLayer.setUrl(newLayerUrl);
+        existingTileLayer.options.attribution = newLayerAttribution;
+        // Manually update attribution control if visible
+        if (map.attributionControl) {
+          map.attributionControl.setPrefix(false); // Reset prefix
+          map.attributionControl._update(); // Force update
+        }
+        console.log('Updated existing tile layer URL and attribution');
+      } else {
+        // Fallback: Create and add a new TileLayer if none exists
+        const newTileLayer = L.tileLayer(newLayerUrl, {
+          attribution: newLayerAttribution
+        });
+        newTileLayer.addTo(map);
+        console.log('No existing tile layer found, added new one');
       }
-
-      // Create and add the new TileLayer
-      const newTileLayer = L.tileLayer(newLayerUrl, {
-        attribution: newLayerAttribution
-      });
-      newTileLayer.addTo(map);
 
       // Force map redraw to handle potential mobile rendering issues
       map.invalidateSize();
