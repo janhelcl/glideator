@@ -187,6 +187,8 @@
   border-radius: 4px !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.23) !important;
   max-width: none !important;
+  /* Use theme variable for background */
+  background-color: var(--mui-palette-background-paper, white) !important; 
 }
 
 .leaflet-popup-content {
@@ -270,4 +272,21 @@
 /* Fix popup arrow position for smaller popup */
 .leaflet-popup-tip {
   /* background-color: #f8f8f8; */
+}
+
+/* Popup Tip Styling for Dark Mode */
+/* Assuming the theme applies a class or attribute like [data-mui-color-scheme="dark"] to a parent */
+/* Using a common dark paper background color */
+[data-mui-color-scheme="dark"] .leaflet-popup-tip-container .leaflet-popup-tip {
+  background: #303030; 
+  box-shadow: none; 
+}
+
+/* Override the border color that forms the triangle tip */
+/* Adjust border-top-color or border-bottom-color based on tip direction */
+[data-mui-color-scheme="dark"] .leaflet-popup-tip {
+  /* Assuming tip points down */
+  border-top-color: #303030 !important; 
+  /* If tip points up, use this instead: */
+  /* border-bottom-color: #303030 !important; */
 }
