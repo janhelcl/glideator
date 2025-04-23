@@ -266,7 +266,3 @@
 .popup-details-button:hover {
   background-color: #616161;
 }
-
-.leaflet-popup-tip {
-  background: #424242; /* Light gray, matching footer */
-}
