@@ -58,7 +58,7 @@ services:
       retries: 5
       start_period: 90s
 
-  celery-worker:
+  celery-worker-beat:
     build: .
     volumes:
       - .:/app
@@ -71,22 +71,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    command: celery -A app.celery_app worker --loglevel=info
-
-  celery-beat:
-    build: .
-    volumes:
-      - .:/app
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
-      - CELERY_RESULT_BACKEND=rpc://
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    command: celery -A app.celery_app beat --loglevel=info
+    command: celery -A app.celery_app worker -B --loglevel=info
 
 volumes:
   postgres_data:
