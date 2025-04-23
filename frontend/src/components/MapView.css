@@ -267,13 +267,6 @@
   background-color: #616161;
 }
 
-/* Fix popup arrow position for smaller popup */
-/* Light mode default */
 .leaflet-popup-tip {
-  background: #f5f5f5; /* Light gray, matching footer */
-}
-
-/* Dark mode override (assumes data-theme="dark" is set on body/html) */
-[data-theme="dark"] .leaflet-popup-tip {
-  background: #424242; /* Dark gray, matching header */
+  background: #424242; /* Light gray, matching footer */
 }
