@@ -243,6 +243,47 @@ def plot_roc_curve(y_true, y_pred_proba, ax=None):
     ax.set_ylim([0, 1])
 
 
+def plot_learning_curves_per_target(train_losses_per_target, val_losses_per_target, labels=None):
+    num_targets = len(train_losses_per_target)
+    num_cols = 2
+    num_rows = (num_targets + 1) // 2  # Ceiling division to ensure enough rows
+
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(20, 8 * num_rows))
+    fig.suptitle('Learning Curves per Target', fontsize=16)
+
+    for idx, (target, train_losses) in enumerate(train_losses_per_target.items()):
+        row = idx // num_cols
+        col = idx % num_cols
+        ax = axes[row, col] if num_rows > 1 else axes[col]
+
+        val_losses = val_losses_per_target[target]
+        
+        ax.plot(train_losses, label='Training Loss')
+        ax.plot(val_losses, label='Validation Loss')
+
+        best_epoch = val_losses.index(min(val_losses))
+        ax.axvline(x=best_epoch, color='k', linestyle='--', label='Lowest Validation Loss')
+
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        
+        # Use labels if provided, otherwise use target index
+        title = labels[idx] if labels and idx < len(labels) else f'Target {target}'
+        ax.set_title(title)
+        
+        ax.legend()
+        ax.grid(True)
+
+    # Remove any unused subplots
+    for idx in range(num_targets, num_rows * num_cols):
+        row = idx // num_cols
+        col = idx % num_cols
+        fig.delaxes(axes[row, col] if num_rows > 1 else axes[col])
+
+    plt.tight_layout()
+    plt.show()
+
+
 def scatter_wind_shap_values(shap_values, mask=None, u_wind_col='u_wind_ms', v_wind_col='v_wind_ms', label=None, ax=None):
     """
     Create a scatter plot of wind SHAP values for a specific launch site.
