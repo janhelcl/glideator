@@ -125,3 +125,16 @@ class SiteInfoCreate(SiteInfoBase):
 class SiteInfo(SiteInfoBase):
     class Config:
         from_attributes = True
+
+class TripPlanRequest(BaseModel):
+    start_date: datetime.date
+    end_date: datetime.date
+
+class SiteSuggestion(BaseModel):
+    launch_name: str
+    average_flyability: float # Based on XC0
+    flyable_days: int # Days with XC0 >= 0.5
+    site_id: str
+
+class TripPlanResponse(BaseModel):
+    sites: List[SiteSuggestion]
