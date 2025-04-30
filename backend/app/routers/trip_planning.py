@@ -42,11 +42,4 @@ def plan_trip_endpoint(
     site_suggestions = trip_planner_service.plan_trip_service(
         db=db, start_date=request.start_date, end_date=request.end_date
     )
-    
-    # Handle case where service returns empty list (e.g., no data)
-    # The design doc specified 200 OK with empty list, so no extra check needed here
-    # unless we want a specific 404, but let's stick to the doc for now.
-
     return schemas.TripPlanResponse(sites=site_suggestions)
-
-# Placeholder function REMOVED 
