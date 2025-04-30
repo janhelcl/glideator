@@ -127,8 +127,8 @@ class SiteInfo(SiteInfoBase):
         from_attributes = True
 
 class TripPlanRequest(BaseModel):
-    start_date: datetime.date
-    end_date: datetime.date
+    start_date: date
+    end_date: date
 
 class SiteSuggestion(BaseModel):
     launch_name: str
