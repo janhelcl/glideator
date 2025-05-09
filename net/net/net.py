@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torchrec.modules.crossnet import CrossNet
 
 
@@ -168,6 +169,50 @@ class GlideatorNet(nn.Module):
         return torch.cat(outputs, dim=-1)
 
 
+class MultilabelHead(nn.Module):
+    """
+    Prediction head for multilabel classification.
+    Each target is predicted by an independent linear layer followed by a sigmoid.
+    """
+    def __init__(self, input_dim: int, num_targets: int):
+        super().__init__()
+        self.output_layers = nn.ModuleList([nn.Linear(input_dim, 1) for _ in range(num_targets)])
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        outputs = [torch.sigmoid(layer(x)) for layer in self.output_layers]
+        return torch.cat(outputs, dim=-1)
+
+
+class OrdinalHead(nn.Module):
+    """
+    Ordinal regression head that outputs P(Y > t_k) for thresholds t_k = [0, 10, ..., 100].
+    Assumes 11 thresholds → 12 ordinal bins.
+    Output: (batch_size, 11) corresponding to P(Y > 0), ..., P(Y > 100).
+    """
+    def __init__(self, input_dim: int, num_targets: int):
+        super().__init__()
+        self.num_targets = num_targets
+        self.num_classes = num_targets + 1  # 12 bins for 11 thresholds
+        self.fc = nn.Linear(input_dim, 1)
+
+        # Initialize thresholds using softplus deltas to guarantee order
+        self.bias_base = nn.Parameter(torch.tensor(0.0))  # Make this large enough!
+        self.bias_deltas = nn.Parameter(torch.ones(self.num_classes - 1))  # 11 deltas
+
+    def get_ordered_thresholds(self):
+        deltas = F.softplus(self.bias_deltas)
+        return self.bias_base + torch.cumsum(deltas, dim=0)  # (11,)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        a = self.fc(x).squeeze(-1)  # (B,)
+        thresholds = self.get_ordered_thresholds()  # (K = num_targets)
+
+        logits = thresholds.unsqueeze(0) - a.unsqueeze(1)  # (B, K)
+        p_gt = 1.0 - torch.sigmoid(logits)  # P(Y > t_k)
+
+        return p_gt
+
+
 class ExpandedGlideatorNet(nn.Module):
     """
     Neural network model for predicting gliding conditions using expanded time-based weather features.
@@ -183,6 +228,9 @@ class ExpandedGlideatorNet(nn.Module):
         deep_hidden_units (list, optional): List of hidden layer sizes for deep network. Defaults to [64, 32].
         cross_layers (int, optional): Number of cross layers. Defaults to 2.
         site_embedding_dim (int, optional): Dimension of site embeddings. Defaults to 8.
+        prediction_head_type (str, optional): Type of prediction head. Defaults to "multilabel".
+        parallel_deep_hidden_units (list | None, optional): List of hidden layer sizes for parallel deep network. Defaults to None.
+        share_cross_net (bool, optional): Whether to share a single CrossNet across time slices. Defaults to True.
 
     Input Features:
         The model expects a dictionary with the following keys:
@@ -201,13 +249,18 @@ class ExpandedGlideatorNet(nn.Module):
         2. Site ID embedding layer.
         3. For each weather time ('9', '12', '15'):
             a. Concatenate scaled weather (for time), scaled site, embedded site, date features.
-            b. Pass through the shared Cross network.
-        4. Concatenate the outputs of the three Cross network passes.
-        5. Pass the concatenated result through a Deep network.
-        6. Multiple sigmoid output heads for each probability threshold.
+            b. Pass through a Cross network. This network can either be shared across all time slices or unique to each.
+            c. (Optional, if parallel_deep_hidden_units is provided) Pass the same concatenated features through a parallel Deep network (shared across time slices).
+            d. Concatenate the output of the Cross network and (if used) the parallel Deep network for that time slice.
+        4. Concatenate the combined outputs from all three time slices.
+        5. Pass the final concatenated result through a main Deep network.
+        6. Use the specified prediction head (e.g., Multilabel or Ordinal) for final output.
     """
     def __init__(self, weather_scaler, site_scaler, num_launches, num_targets=11, 
-                 deep_hidden_units=[64, 32], cross_layers=2, site_embedding_dim=8):
+                 deep_hidden_units=[64, 32], cross_layers=2, site_embedding_dim=8,
+                 prediction_head_type: str = "multilabel",
+                 parallel_deep_hidden_units: list | None = None,
+                 share_cross_net: bool = True):
         super(ExpandedGlideatorNet, self).__init__()
         
         # Scaling layers
@@ -225,18 +278,44 @@ class ExpandedGlideatorNet(nn.Module):
         # Launch Embedding Layer
         self.launch_embedding = nn.Embedding(num_embeddings=num_launches, embedding_dim=site_embedding_dim)
         
-        # Calculate input dimension for CrossNet (for a single time point)
-        cross_input_dim = weather_dim + site_dim + site_embedding_dim + date_dim
+        # Calculate input dimension for CrossNet and ParallelDeepNet (for a single time point)
+        single_time_input_dim = weather_dim + site_dim + site_embedding_dim + date_dim
         
-        # Cross Network (shared across time points)
-        self.cross_net = CrossNet(in_features=cross_input_dim, num_layers=cross_layers)
+        self.share_cross_net = share_cross_net
+        self.time_keys = ['9', '12', '15']
+
+        # Cross Network(s) (shared or separate for each time point)
+        if self.share_cross_net:
+            self.cross_net = CrossNet(in_features=single_time_input_dim, num_layers=cross_layers)
+        else:
+            self.cross_nets = nn.ModuleDict({
+                time_key: CrossNet(in_features=single_time_input_dim, num_layers=cross_layers)
+                for time_key in self.time_keys
+            })
         
-        # Calculate input dimension for DeepNet (concatenation of 3 cross outputs)
-        deep_input_dim = 3 * cross_input_dim 
+        # Optional Parallel Deep Network (shared across time points)
+        self.parallel_deep_net = None
+        single_time_output_dim = single_time_input_dim # Output of CrossNet. This is the base dimension for one time slice.
+
+        # Only proceed if parallel_deep_hidden_units is a non-empty list
+        if parallel_deep_hidden_units and isinstance(parallel_deep_hidden_units, list) and len(parallel_deep_hidden_units) > 0:
+            parallel_deep_layers = []
+            prev_parallel_units = single_time_input_dim
+            for hidden_units in parallel_deep_hidden_units:
+                parallel_deep_layers.append(nn.Linear(prev_parallel_units, hidden_units))
+                parallel_deep_layers.append(nn.ReLU())
+                prev_parallel_units = hidden_units
+            self.parallel_deep_net = nn.Sequential(*parallel_deep_layers)
+            # If parallel_deep_net is created, its output will be concatenated.
+            # The dimension added is the size of the last layer of this parallel_deep_net.
+            single_time_output_dim += parallel_deep_hidden_units[-1] 
+            
+        # Calculate input dimension for the main DeepNet (concatenation of 3 time-slice outputs)
+        main_deep_input_dim = 3 * single_time_output_dim
         
-        # Deep Network
+        # Main Deep Network
         deep_layers = []
-        prev_units = deep_input_dim
+        prev_units = main_deep_input_dim
         for hidden_units in deep_hidden_units:
             deep_layers.append(nn.Linear(prev_units, hidden_units))
             deep_layers.append(nn.ReLU())
@@ -246,7 +325,16 @@ class ExpandedGlideatorNet(nn.Module):
         
         # Output Layers (input is the output of the deep network)
         final_dim = deep_hidden_units[-1]
-        self.output_layers = nn.ModuleList([nn.Linear(final_dim, 1) for _ in range(num_targets)])
+        
+        self.prediction_head_type = prediction_head_type
+        if self.prediction_head_type == "multilabel":
+            self.prediction_head = MultilabelHead(final_dim, num_targets)
+        elif self.prediction_head_type == "ordinal":
+            if num_targets < 2: # num_targets is treated as num_classes for ordinal
+                raise ValueError("Ordinal prediction head requires num_targets (num_classes) >= 2.")
+            self.prediction_head = OrdinalHead(final_dim, num_targets)
+        else:
+            raise ValueError(f"Unknown prediction_head_type: {self.prediction_head_type}")
 
     def forward(self, features):
         """
@@ -272,8 +360,8 @@ class ExpandedGlideatorNet(nn.Module):
         date_features = features['date'].clone()
         date_features[:, 1] = date_features[:, 1] / 2000
         
-        cross_outputs = []
-        for time_key in ['9', '12', '15']:
+        time_slice_outputs = []
+        for time_key in self.time_keys:
             # Scale weather features for the current time
             weather_scaled = self.weather_scaler(features['weather'][time_key])
             
@@ -286,16 +374,25 @@ class ExpandedGlideatorNet(nn.Module):
             ], dim=-1)
             
             # Cross Network forward pass for the current time
-            cross_out_time = self.cross_net(combined_features_time)
-            cross_outputs.append(cross_out_time)
+            if self.share_cross_net:
+                cross_out_time = self.cross_net(combined_features_time)
+            else:
+                cross_out_time = self.cross_nets[time_key](combined_features_time)
             
-        # Concatenate Cross outputs from all times
-        cross_concat = torch.cat(cross_outputs, dim=-1)
+            if self.parallel_deep_net is not None:
+                parallel_deep_out_time = self.parallel_deep_net(combined_features_time)
+                # Concatenate Cross and Parallel Deep outputs for the current time slice
+                time_slice_combined_out = torch.cat([cross_out_time, parallel_deep_out_time], dim=-1)
+            else:
+                time_slice_combined_out = cross_out_time
+                
+            time_slice_outputs.append(time_slice_combined_out)
+            
+        # Concatenate outputs from all time slices
+        final_concat = torch.cat(time_slice_outputs, dim=-1)
         
-        # Deep Network forward pass
-        deep_out = self.deep_net(cross_concat)
+        # Main Deep Network forward pass
+        deep_out = self.deep_net(final_concat)
         
         # Output layers
-        outputs = [torch.sigmoid(layer(deep_out)) for layer in self.output_layers]
-        
-        return torch.cat(outputs, dim=-1)
+        return self.prediction_head(deep_out)
