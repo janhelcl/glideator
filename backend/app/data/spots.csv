@@ -491,6 +491,7 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 12405,Felci,45.506975,7.809888,940,takeoff,SE-S,139
 12399,Pian dei Muli,45.520418,7.807523,1450,takeoff,SE-SW,139
 12406,Calea,45.498292,7.828241,260,landing,,139
+999921,Brosso,45.488313,7.801368,800,takeoff,SE,139
 11656,Col Rodella,46.496294,11.752142,2380,takeoff,NE-W,140
 11670,Campitello di Fassa,46.476278,11.750586,1440,landing,,140
 12099,Monte Nudo,45.922173,8.674063,1065,takeoff,SE-SW,141
@@ -609,7 +610,6 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 11878,Frascella,46.166946,8.492633,1860,takeoff,E-SE,166
 11869,Cima Trubbio,46.173018,8.495324,2015,takeoff,SE-SW,166
 11915,Piana di Vigezzo,46.133784,8.450598,810,landing,,166
-999921,Brosso,45.488313,7.801368,800,takeoff,SE,167
 11973,Alpe Giumello,46.045330,9.356230,1540,takeoff,S-SW,168
 11972,Alpe Giumello,46.046566,9.368990,1560,takeoff,SE-S,168
 11966,Monte Croce di Muggio,46.050417,9.357300,1760,takeoff,S-SW,168

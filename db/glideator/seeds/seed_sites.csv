@@ -164,7 +164,6 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 164,Colonei,Colonei,45.649914,10.814935,1350,,IT
 165,Rocca Can...,Rocca Canavese,45.327454,7.572553,910,,IT
 166,Trubbio,Trubbio,46.165393,8.483369,1900,,IT
-167,Brosso,Brosso,45.488313,7.801368,800,,IT
 168,Giumello,Giumello,46.046050,9.360353,1600,,IT
 169,Liretta,Liretta,44.499047,7.381950,1070,,IT
 170,Valcava,Valcava,45.779620,9.510186,1200,,IT
@@ -184,7 +183,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 184,Stol,Stol,46.272880,13.473253,1400,,SI
 185,Col de la...,Col de La Forclaz,45.814170,6.246833,1290,,FR
 186,Saint Hil...,Saint Hilaire,45.309165,5.889879,900,,FR
-187,St Andre,St. Andre,43.978359,6.479878,1570,,FR
+187,St André,St. André,43.978359,6.479878,1570,,FR
 188,Planfait,Planfait,45.853184,6.223013,950,,FR
 189,Gourdon,Gourdon,43.725519,6.947159,1100,,FR
 190,Treh,Treh,47.925513,7.010918,1200,,FR
