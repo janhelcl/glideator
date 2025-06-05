@@ -24,7 +24,11 @@ merged AS (
 		date,
 		start_time,
 		pilot,
-		CASE WHEN site = 'Brosso' THEN 'Cavallaria' ELSE site END AS site,
+		CASE 
+			WHEN site = 'Brosso' THEN 'Cavallaria' 
+			WHEN site = 'Eged DK' THEN 'Eged'
+			ELSE site 
+		END AS site,
 		type,
 		length,
 		points,

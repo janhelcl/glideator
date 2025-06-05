@@ -903,6 +903,7 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 10713,Vértesszőlős,47.619067,18.408336,425,takeoff,SW-NW,245
 10715,Vértesszőlős,47.614751,18.397668,225,landing,,245
 10669,Eged,47.928133,20.411503,500,takeoff,SE-NW,246
+10670,Eged DK,47.927404,20.420247,490,takeoff,SE-S,246
 10672,Eged,47.925447,20.398203,245,landing,,246
 10673,Eged,47.920033,20.424792,280,landing,,246
 10735,Csákberény,47.34986,18.300244,350,takeoff,S-SW,247
