@@ -243,7 +243,7 @@ def plot_roc_curve(y_true, y_pred_proba, ax=None):
     ax.set_ylim([0, 1])
 
 
-def plot_learning_curves_per_target(train_losses_per_target, val_losses_per_target, labels=None):
+def plot_learning_curves_per_target(train_losses_per_target, val_losses_per_target=None, labels=None):
     num_targets = len(train_losses_per_target)
     num_cols = 2
     num_rows = (num_targets + 1) // 2  # Ceiling division to ensure enough rows
@@ -256,13 +256,14 @@ def plot_learning_curves_per_target(train_losses_per_target, val_losses_per_targ
         col = idx % num_cols
         ax = axes[row, col] if num_rows > 1 else axes[col]
 
-        val_losses = val_losses_per_target[target]
+        val_losses = val_losses_per_target[target] if val_losses_per_target else None
         
         ax.plot(train_losses, label='Training Loss')
-        ax.plot(val_losses, label='Validation Loss')
+        if val_losses is not None:
+            ax.plot(val_losses, label='Validation Loss')
 
-        best_epoch = val_losses.index(min(val_losses))
-        ax.axvline(x=best_epoch, color='k', linestyle='--', label='Lowest Validation Loss')
+            best_epoch = val_losses.index(min(val_losses))
+            ax.axvline(x=best_epoch, color='k', linestyle='--', label='Lowest Validation Loss')
 
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
