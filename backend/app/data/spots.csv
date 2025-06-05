@@ -557,8 +557,6 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 12367,Monte Belpo,45.612803,10.747589,665,takeoff,S-SW,151
 12375,San Verolo,45.596936,10.737478,250,landing,,151
 12376,Monte Belpo (privat),45.596447,10.747589,250,landing,,151
-12254,Rubbio,45.793397,11.662563,870,takeoff,SE-SW,152
-12282,Rubbio,45.769055,11.652897,130,landing,,152
 11320,Speikboden,46.915032,11.897283,2400,takeoff,SE-SW,153
 11322,Speikboden,46.914408,11.907675,2380,takeoff,SE-SW,153
 999920,Speikboden,46.914409,11.907676,2380,takeoff,NE,153
