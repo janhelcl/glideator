@@ -56,7 +56,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 55,Stoderzinken,Stoderzinken,47.458318,13.825853,2000,,AT
 56,Penken,Penken,47.173170,11.811676,2020,,AT
 57,Feuerkogel,Feuerkogel,47.815177,13.720282,1600,,AT
-58,Hirschwaldstein ,Hirschwaldstein ,47.886547,14.163458,950,,AT
+58,Hirschwal...,Hirschwaldstein,47.886547,14.163458,950,,AT
 59,Choralpe,Choralpe,47.419271,12.244550,1800,,AT
 60,Marsbach,Marsbach,48.462906,13.817336,540,,AT
 61,Fulseck,Fulseck,47.235818,13.147096,2000,,AT
@@ -75,7 +75,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 74,Osterfelder,Osterfelder,47.442486,11.057146,2050,,DE
 75,Hausstein,Hausstein,48.870952,13.073238,876,,DE
 76,Skrzyczne,Skrzyczne,49.687826,19.031477,1190,,PL
-77,Żar,Żar,49.786692,19.224711,750,,PL
+77,Zar,Żar,49.786692,19.224711,750,,PL
 78,Mieroszów,Mieroszów,50.673017,16.209650,610,,PL
 79,Szczebel,Szczebel,49.689508,20.009618,965,,PL
 80,Ciecien,Ciecien,49.772452,20.141149,810,,PL
@@ -150,7 +150,6 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 149,Castelluccio,Castelluccio,42.796244,13.196243,1500,,IT
 150,Piossasco,Piossasco,44.996475,7.447578,810,,IT
 151,Gas Monte...,Gas Monte Belpo,45.612803,10.747589,665,,IT
-152,Rubbio,Rubbio,45.793461,11.663267,870,,IT
 153,Speikboden,Speikboden,46.914787,11.900284,2400,,IT
 154,Monte Mad...,Monte Maddalena,45.543472,10.278390,750,,IT
 155,Kronplatz,Kronplatz,46.738963,11.956648,2250,,IT
@@ -165,7 +164,6 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 164,Colonei,Colonei,45.649914,10.814935,1350,,IT
 165,Rocca Can...,Rocca Canavese,45.327454,7.572553,910,,IT
 166,Trubbio,Trubbio,46.165393,8.483369,1900,,IT
-167,Brosso,Brosso,45.488313,7.801368,800,,IT
 168,Giumello,Giumello,46.046050,9.360353,1600,,IT
 169,Liretta,Liretta,44.499047,7.381950,1070,,IT
 170,Valcava,Valcava,45.779620,9.510186,1200,,IT
@@ -185,7 +183,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 184,Stol,Stol,46.272880,13.473253,1400,,SI
 185,Col de la...,Col de La Forclaz,45.814170,6.246833,1290,,FR
 186,Saint Hil...,Saint Hilaire,45.309165,5.889879,900,,FR
-187,St Andre,St. Andre,43.978359,6.479878,1570,,FR
+187,St. André,St. André,43.978359,6.479878,1570,,FR
 188,Planfait,Planfait,45.853184,6.223013,950,,FR
 189,Gourdon,Gourdon,43.725519,6.947159,1100,,FR
 190,Treh,Treh,47.925513,7.010918,1200,,FR

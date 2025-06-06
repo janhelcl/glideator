@@ -491,6 +491,7 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 12405,Felci,45.506975,7.809888,940,takeoff,SE-S,139
 12399,Pian dei Muli,45.520418,7.807523,1450,takeoff,SE-SW,139
 12406,Calea,45.498292,7.828241,260,landing,,139
+999921,Brosso,45.488313,7.801368,800,takeoff,SE,139
 11656,Col Rodella,46.496294,11.752142,2380,takeoff,NE-W,140
 11670,Campitello di Fassa,46.476278,11.750586,1440,landing,,140
 12099,Monte Nudo,45.922173,8.674063,1065,takeoff,SE-SW,141
@@ -557,8 +558,6 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 12367,Monte Belpo,45.612803,10.747589,665,takeoff,S-SW,151
 12375,San Verolo,45.596936,10.737478,250,landing,,151
 12376,Monte Belpo (privat),45.596447,10.747589,250,landing,,151
-12254,Rubbio,45.793397,11.662563,870,takeoff,SE-SW,152
-12282,Rubbio,45.769055,11.652897,130,landing,,152
 11320,Speikboden,46.915032,11.897283,2400,takeoff,SE-SW,153
 11322,Speikboden,46.914408,11.907675,2380,takeoff,SE-SW,153
 999920,Speikboden,46.914409,11.907676,2380,takeoff,NE,153
@@ -611,7 +610,6 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 11878,Frascella,46.166946,8.492633,1860,takeoff,E-SE,166
 11869,Cima Trubbio,46.173018,8.495324,2015,takeoff,SE-SW,166
 11915,Piana di Vigezzo,46.133784,8.450598,810,landing,,166
-999921,Brosso,45.488313,7.801368,800,takeoff,SE,167
 11973,Alpe Giumello,46.045330,9.356230,1540,takeoff,S-SW,168
 11972,Alpe Giumello,46.046566,9.368990,1560,takeoff,SE-S,168
 11966,Monte Croce di Muggio,46.050417,9.357300,1760,takeoff,S-SW,168
@@ -905,6 +903,7 @@ spot_id,name,latitude,longitude,altitude,type,wind_direction,site_id
 10713,Vértesszőlős,47.619067,18.408336,425,takeoff,SW-NW,245
 10715,Vértesszőlős,47.614751,18.397668,225,landing,,245
 10669,Eged,47.928133,20.411503,500,takeoff,SE-NW,246
+10670,Eged DK,47.927404,20.420247,490,takeoff,SE-S,246
 10672,Eged,47.925447,20.398203,245,landing,,246
 10673,Eged,47.920033,20.424792,280,landing,,246
 10735,Csákberény,47.34986,18.300244,350,takeoff,S-SW,247

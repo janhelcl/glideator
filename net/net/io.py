@@ -1,10 +1,7 @@
 import logging
-import pickle
 
 import torch
 import pandas as pd
-
-from .net import StandardScalerLayer, GlideatorNet
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +82,16 @@ def score(net,
     
     # Convert inputs to tensors
     logger.debug("Converting inputs to tensors")
-    weather_features = torch.tensor(full_df[weather_features].values, dtype=torch.float32)
+    weather_feature_names = {
+        9: [col for col in weather_features if col.endswith('9')],
+        12: [col for col in weather_features if col.endswith('12')],
+        15: [col for col in weather_features if col.endswith('15')],
+    }
+    weather_features = {
+        '9': torch.tensor(full_df[weather_feature_names[9]].values, dtype=torch.float32),
+        '12': torch.tensor(full_df[weather_feature_names[12]].values, dtype=torch.float32),
+        '15': torch.tensor(full_df[weather_feature_names[15]].values, dtype=torch.float32),
+    }
     site_features = torch.tensor(full_df[site_features].values, dtype=torch.float32)
     site_ids = torch.tensor(full_df[site_id_col].values, dtype=torch.int64)
     date = torch.tensor(full_df[date_features].values, dtype=torch.float32)
