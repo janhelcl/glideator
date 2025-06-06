@@ -56,7 +56,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 55,Stoderzinken,Stoderzinken,47.458318,13.825853,2000,,AT
 56,Penken,Penken,47.173170,11.811676,2020,,AT
 57,Feuerkogel,Feuerkogel,47.815177,13.720282,1600,,AT
-58,Hirschwal... ,Hirschwaldstein ,47.886547,14.163458,950,,AT
+58,Hirschwal...,Hirschwaldstein,47.886547,14.163458,950,,AT
 59,Choralpe,Choralpe,47.419271,12.244550,1800,,AT
 60,Marsbach,Marsbach,48.462906,13.817336,540,,AT
 61,Fulseck,Fulseck,47.235818,13.147096,2000,,AT
@@ -183,7 +183,7 @@ site_id,xc_name,name,latitude,longitude,altitude,source,country
 184,Stol,Stol,46.272880,13.473253,1400,,SI
 185,Col de la...,Col de La Forclaz,45.814170,6.246833,1290,,FR
 186,Saint Hil...,Saint Hilaire,45.309165,5.889879,900,,FR
-187,St André,St. André,43.978359,6.479878,1570,,FR
+187,St. André,St. André,43.978359,6.479878,1570,,FR
 188,Planfait,Planfait,45.853184,6.223013,950,,FR
 189,Gourdon,Gourdon,43.725519,6.947159,1100,,FR
 190,Treh,Treh,47.925513,7.010918,1200,,FR
