@@ -222,3 +222,9 @@ def get_sites_by_ids(db: Session, site_ids: List[int]) -> List[models.Site]:
     return db.query(models.Site).filter(
         models.Site.site_id.in_(site_ids)
     ).all()
+
+def get_all_flight_stats(db: Session) -> List[models.FlightStats]:
+    """
+    Retrieves all flight statistics for all sites.
+    """
+    return db.query(models.FlightStats).all()

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Json
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import date, datetime
 
 class PredictionBase(BaseModel):
@@ -130,11 +130,16 @@ class TripPlanRequest(BaseModel):
     start_date: date
     end_date: date
 
+class DailyProbability(BaseModel):
+    date: date
+    probability: float
+    source: Literal['forecast', 'historical']
+
 class SiteSuggestion(BaseModel):
     launch_name: str
     average_flyability: float # Based on XC0
-    flyable_days: int # Days with XC0 >= 0.5
     site_id: str
+    daily_probabilities: List[DailyProbability]
 
 class TripPlanResponse(BaseModel):
     sites: List[SiteSuggestion]
