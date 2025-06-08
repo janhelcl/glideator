@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, Button } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
 import useDisclaimer from '../hooks/useDisclaimer';
@@ -67,6 +68,21 @@ const Layout = () => {
           >
             Home
           </Typography>
+          
+          <Button
+            component={RouterLink}
+            to="/trip-planner"
+            sx={{
+              color: 'white',
+              ml: 2,
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.1)',
+              },
+            }}
+          >
+            Plan a Trip
+          </Button>
+          
           <SearchBar 
             sites={sites}  // Pass the actual sites data
             onSiteSelect={setSelectedSite}

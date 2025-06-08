@@ -91,3 +91,17 @@ export const fetchSiteSpots = async (siteId) => {
     throw error;
   }
 };
+
+// Plan trip - fetch recommended sites for date range
+export const planTrip = async (startDate, endDate) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/plan-trip`, {
+      start_date: startDate,
+      end_date: endDate
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error planning trip:', error);
+    throw error;
+  }
+};
