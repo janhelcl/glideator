@@ -36,7 +36,7 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
         )
 
     all_flight_stats = crud.get_all_flight_stats(db)
-    all_sites = crud.get_site_list(db)
+    all_sites = crud.get_sites(db, skip=0, limit=1000)  # Get all sites with coordinates
 
     if not all_sites:
         return []
@@ -59,6 +59,8 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
                 stats_map[(stat.site_id, month)] = prob
 
     site_name_map = {site.site_id: site.name for site in all_sites}
+    site_lat_map = {site.site_id: site.latitude for site in all_sites}
+    site_lon_map = {site.site_id: site.longitude for site in all_sites}
 
     # --- 3. Aggregate Probabilities Per Site ---
 
@@ -91,7 +93,9 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
             suggestions.append(
                 schemas.SiteSuggestion(
                     site_id=str(site_id),
-                    launch_name=site_name_map.get(site_id, f'Site ID: {site_id}'),
+                    site_name=site_name_map.get(site_id, f'Site ID: {site_id}'),
+                    latitude=site_lat_map.get(site_id, 0.0),
+                    longitude=site_lon_map.get(site_id, 0.0),
                     average_flyability=round(avg_flyability, 3),
                     daily_probabilities=data['daily_probs']
                 )

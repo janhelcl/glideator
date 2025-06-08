@@ -136,9 +136,11 @@ class DailyProbability(BaseModel):
     source: Literal['forecast', 'historical']
 
 class SiteSuggestion(BaseModel):
-    launch_name: str
+    site_name: str
     average_flyability: float # Based on XC0
     site_id: str
+    latitude: float
+    longitude: float
     daily_probabilities: List[DailyProbability]
 
 class TripPlanResponse(BaseModel):
