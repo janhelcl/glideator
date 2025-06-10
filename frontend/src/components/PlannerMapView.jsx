@@ -63,10 +63,10 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10 }) => {
   }, []);
 
   const handleSiteClick = useCallback((site) => {
-    if (onSiteClick) {
-      onSiteClick(site);
-    }
-  }, [onSiteClick]);
+    // Open site details in new tab with XC0 selected
+    const url = `/details/${site.site_id}?metric=XC0`;
+    window.open(url, '_blank');
+  }, []);
 
   const markers = useMemo(() => {
     return validSites.map((site, index) => {
