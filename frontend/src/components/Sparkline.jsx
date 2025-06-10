@@ -49,21 +49,26 @@ const Sparkline = ({ dailyProbabilities, maxDots = 7 }) => {
       }}
       title={`${dailyProbabilities.length} days of data`}
     >
-      {sampledData.map((day, index) => (
-        <div
-          key={index}
-          style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: getColor(day.probability),
-            border: '1px solid rgba(0,0,0,0.1)',
-            flexShrink: 0,
-            display: 'block'
-          }}
-          title={`${day.date}: ${Math.round(day.probability * 100)}%`}
-        />
-      ))}
+      {sampledData.map((day, index) => {
+        const color = getColor(day.probability);
+        const isForecast = day.source === 'forecast';
+        
+        return (
+          <div
+            key={index}
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: isForecast ? color : 'transparent',
+              border: `1px solid ${color}`,
+              flexShrink: 0,
+              display: 'block'
+            }}
+            title={`${day.date}: ${Math.round(day.probability * 100)}% (${day.source})`}
+          />
+        );
+      })}
     </div>
   );
 };
