@@ -1,29 +1,37 @@
 import React from 'react';
 import { getColor } from '../utils/colorUtils';
 
-const Sparkline = ({ dailyProbabilities, maxDots = 5 }) => {
+const Sparkline = ({ dailyProbabilities, maxDots = 7 }) => {
   if (!dailyProbabilities || dailyProbabilities.length === 0) {
     return (
-      <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-        {[...Array(maxDots)].map((_, i) => (
-          <div
-            key={i}
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: '#ccc',
-            }}
-          />
-        ))}
+      <div style={{ 
+        display: 'flex', 
+        gap: '2px', 
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '8px',
+        padding: '2px 0'
+      }}>
+        <div
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: '#ccc',
+            flexShrink: 0
+          }}
+        />
       </div>
     );
   }
 
-  // Take up to maxDots evenly spaced samples from the data
-  const step = Math.max(1, Math.floor(dailyProbabilities.length / maxDots));
+  // Take up to maxDots from the data, use actual length if less than maxDots
+  const actualDots = Math.min(maxDots, dailyProbabilities.length);
+  const step = dailyProbabilities.length > maxDots ? 
+    Math.floor(dailyProbabilities.length / maxDots) : 1;
+  
   const sampledData = [];
-  for (let i = 0; i < Math.min(maxDots, dailyProbabilities.length); i++) {
+  for (let i = 0; i < actualDots; i++) {
     const index = Math.min(i * step, dailyProbabilities.length - 1);
     sampledData.push(dailyProbabilities[index]);
   }
@@ -34,7 +42,10 @@ const Sparkline = ({ dailyProbabilities, maxDots = 5 }) => {
         display: 'flex', 
         gap: '2px', 
         alignItems: 'center',
-        minWidth: `${maxDots * 8}px` // Ensure consistent width
+        justifyContent: 'center',
+        minHeight: '8px',
+        padding: '2px 0',
+        flexWrap: 'nowrap'
       }}
       title={`${dailyProbabilities.length} days of data`}
     >
@@ -47,20 +58,10 @@ const Sparkline = ({ dailyProbabilities, maxDots = 5 }) => {
             borderRadius: '50%',
             backgroundColor: getColor(day.probability),
             border: '1px solid rgba(0,0,0,0.1)',
+            flexShrink: 0,
+            display: 'block'
           }}
           title={`${day.date}: ${Math.round(day.probability * 100)}%`}
-        />
-      ))}
-      {/* Fill remaining dots if we have fewer than maxDots */}
-      {sampledData.length < maxDots && [...Array(maxDots - sampledData.length)].map((_, i) => (
-        <div
-          key={`empty-${i}`}
-          style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: '#eee',
-          }}
         />
       ))}
     </div>

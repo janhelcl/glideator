@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import L from 'leaflet';
 import { getColor } from '../utils/colorUtils';
+import Sparkline from './Sparkline';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -86,7 +87,7 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10 }) => {
               </div>
               <div className="popup-metric-bar">
                 <div className="popup-metric-value">
-                  Average: {Math.round(site.average_flyability * 100)}%
+                  <Sparkline dailyProbabilities={site.daily_probabilities} />
                 </div>
               </div>
               <div className="popup-footer">
