@@ -8,9 +8,6 @@ from collections import defaultdict
 from .. import schemas, crud, models # Ensure crud and models are imported
 
 
-TOP_N = 10
-
-
 def calculate_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate the great circle distance between two points on Earth using the Haversine formula.
@@ -73,8 +70,10 @@ def plan_trip_service(
     user_longitude: Optional[float] = None,
     max_distance_km: Optional[float] = None,
     min_altitude_m: Optional[int] = None,
-    max_altitude_m: Optional[int] = None
-) -> List[schemas.SiteSuggestion]:
+    max_altitude_m: Optional[int] = None,
+    offset: int = 0,
+    limit: int = 10
+) -> schemas.TripPlanResponse:
     """
     Core logic to query forecasts and historical stats, aggregate data, and rank sites.
     """
@@ -183,4 +182,15 @@ def plan_trip_service(
 
     suggestions.sort(key=lambda s: s.average_flyability, reverse=True)
     
-    return suggestions[:TOP_N]
+    # Calculate pagination
+    total_count = len(suggestions)
+    start_idx = offset
+    end_idx = offset + limit
+    paginated_sites = suggestions[start_idx:end_idx]
+    has_more = end_idx < total_count
+    
+    return schemas.TripPlanResponse(
+        sites=paginated_sites,
+        total_count=total_count,
+        has_more=has_more
+    )

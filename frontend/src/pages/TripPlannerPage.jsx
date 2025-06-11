@@ -55,6 +55,9 @@ const TripPlannerPage = () => {
   const [sites, setSites] = useState([]);
   const [sortBy, setSortBy] = useState('flyability'); // 'flyability' or 'distance'
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState(null);
   
   // Error handling
@@ -110,6 +113,8 @@ const TripPlannerPage = () => {
     const cachedResult = REQUEST_CACHE.get(cacheKey);
     if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
       setSites(cachedResult.data.sites || []);
+      setHasMore(cachedResult.data.has_more || false);
+      setTotalCount(cachedResult.data.total_count || 0);
       return;
     }
     
@@ -127,7 +132,7 @@ const TripPlannerPage = () => {
       // Prepare altitude range for API call
       const altitudeForApi = altitudeFilterEnabled ? altitudeRange : null;
       
-      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi, altitudeForApi);
+      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10);
       
       // Debug: Log the API response to understand its structure
       console.log('Plan Trip API Response:', result);
@@ -142,6 +147,8 @@ const TripPlannerPage = () => {
       });
       
       setSites(result.sites || []);
+      setHasMore(result.has_more || false);
+      setTotalCount(result.total_count || 0);
       
       if (!result.sites || result.sites.length === 0) {
         setError('No suitable sites found for the selected date range');
@@ -163,6 +170,40 @@ const TripPlannerPage = () => {
     const url = `/details/${site.site_id}?metric=${selectedMetric}`;
     window.open(url, '_blank');
   };
+
+  // Handle loading more sites
+  const handleLoadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const startDateStr = formatDate(startDate);
+      const endDateStr = formatDate(endDate);
+      
+      // Prepare location and distance for API call
+      const locationForApi = distanceFilterEnabled && userLocation ? userLocation : null;
+      const distanceForApi = distanceFilterEnabled && userLocation ? maxDistance : null;
+      
+      // Prepare altitude range for API call
+      const altitudeForApi = altitudeFilterEnabled ? altitudeRange : null;
+      
+      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10);
+      
+      // Append new sites to existing ones
+      setSites(prevSites => [...prevSites, ...(result.sites || [])]);
+      setHasMore(result.has_more || false);
+      setTotalCount(result.total_count || 0);
+      
+    } catch (err) {
+      console.error('Error loading more sites:', err);
+      setError('Failed to load more sites. Please try again.');
+      setSnackbarOpen(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled, altitudeRange, altitudeFilterEnabled, sites.length, hasMore, loadingMore]);
   
   // Auto-search on initial load with default dates
   useEffect(() => {
@@ -286,7 +327,7 @@ const TripPlannerPage = () => {
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Recommended Sites ({sortedSites.length})
+              Recommended Sites ({sortedSites.length}{totalCount > sortedSites.length ? ` of ${totalCount}` : ''})
             </Typography>
             
             {distanceFilterEnabled && userLocation && (
@@ -313,6 +354,20 @@ const TripPlannerPage = () => {
             selectedMetric={selectedMetric}
             showRanking={true}
           />
+          
+          {hasMore && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                size="large"
+                sx={{ px: 4 }}
+              >
+                {loadingMore ? 'Loading...' : 'More'}
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
       

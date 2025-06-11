@@ -93,12 +93,14 @@ export const fetchSiteSpots = async (siteId) => {
 };
 
 // Plan trip - fetch recommended sites for date range
-export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null, altitudeRange = null) => {
+export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null, altitudeRange = null, offset = 0, limit = 10) => {
   try {
     const requestBody = {
       start_date: startDate,
       end_date: endDate,
-      metric: metric
+      metric: metric,
+      offset: offset,
+      limit: limit
     };
 
     // Add location and distance parameters if provided

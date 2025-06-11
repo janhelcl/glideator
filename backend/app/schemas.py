@@ -135,6 +135,8 @@ class TripPlanRequest(BaseModel):
     max_distance_km: Optional[float] = Field(default=None, description="Maximum distance from user location in kilometers")
     min_altitude_m: Optional[int] = Field(default=None, description="Minimum altitude in meters")
     max_altitude_m: Optional[int] = Field(default=None, description="Maximum altitude in meters")
+    offset: Optional[int] = Field(default=0, description="Number of sites to skip for pagination")
+    limit: Optional[int] = Field(default=10, description="Maximum number of sites to return")
 
 class DailyProbability(BaseModel):
     date: date
@@ -153,3 +155,5 @@ class SiteSuggestion(BaseModel):
 
 class TripPlanResponse(BaseModel):
     sites: List[SiteSuggestion]
+    total_count: int
+    has_more: bool

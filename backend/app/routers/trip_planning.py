@@ -39,7 +39,7 @@ def plan_trip_endpoint(
 
     
     # Call Core Logic Service function
-    site_suggestions = trip_planner_service.plan_trip_service(
+    response = trip_planner_service.plan_trip_service(
         db=db, 
         start_date=request.start_date, 
         end_date=request.end_date,
@@ -48,6 +48,8 @@ def plan_trip_endpoint(
         user_longitude=request.user_longitude,
         max_distance_km=request.max_distance_km,
         min_altitude_m=request.min_altitude_m,
-        max_altitude_m=request.max_altitude_m
+        max_altitude_m=request.max_altitude_m,
+        offset=request.offset,
+        limit=request.limit
     )
-    return schemas.TripPlanResponse(sites=site_suggestions)
+    return response
