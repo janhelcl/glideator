@@ -133,6 +133,8 @@ class TripPlanRequest(BaseModel):
     user_latitude: Optional[float] = Field(default=None, description="User's latitude for distance filtering")
     user_longitude: Optional[float] = Field(default=None, description="User's longitude for distance filtering")
     max_distance_km: Optional[float] = Field(default=None, description="Maximum distance from user location in kilometers")
+    min_altitude_m: Optional[int] = Field(default=None, description="Minimum altitude in meters")
+    max_altitude_m: Optional[int] = Field(default=None, description="Maximum altitude in meters")
 
 class DailyProbability(BaseModel):
     date: date
@@ -145,6 +147,7 @@ class SiteSuggestion(BaseModel):
     site_id: str
     latitude: float
     longitude: float
+    altitude: int
     daily_probabilities: List[DailyProbability]
     distance_km: Optional[float] = Field(default=None, description="Distance from user location in kilometers")
 

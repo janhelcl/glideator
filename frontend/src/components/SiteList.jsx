@@ -72,10 +72,25 @@ const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0', showRanking = tr
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                   {site.site_name}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Typography variant="body2" color="text.secondary">
                     Avg: {Math.round(site.average_flyability * 100)}%
                   </Typography>
+                  
+                  {site.altitude !== null && site.altitude !== undefined && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        •
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {site.altitude >= 1000 
+                          ? `${(site.altitude / 1000).toFixed(1)}k m` 
+                          : `${site.altitude} m`
+                        }
+                      </Typography>
+                    </>
+                  )}
+                  
                   {site.distance_km !== null && site.distance_km !== undefined && (
                     <>
                       <Typography variant="body2" color="text.secondary">

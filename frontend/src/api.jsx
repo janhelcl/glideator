@@ -93,7 +93,7 @@ export const fetchSiteSpots = async (siteId) => {
 };
 
 // Plan trip - fetch recommended sites for date range
-export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null) => {
+export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null, altitudeRange = null) => {
   try {
     const requestBody = {
       start_date: startDate,
@@ -109,6 +109,16 @@ export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation 
     
     if (maxDistanceKm !== null && maxDistanceKm > 0) {
       requestBody.max_distance_km = maxDistanceKm;
+    }
+
+    // Add altitude filtering if provided
+    if (altitudeRange) {
+      if (altitudeRange.min !== null && altitudeRange.min >= 0) {
+        requestBody.min_altitude_m = altitudeRange.min;
+      }
+      if (altitudeRange.max !== null && altitudeRange.max >= 0) {
+        requestBody.max_altitude_m = altitudeRange.max;
+      }
     }
 
     const response = await axios.post(`${API_BASE_URL}/plan-trip`, requestBody);

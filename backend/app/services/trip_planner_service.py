@@ -71,7 +71,9 @@ def plan_trip_service(
     metric: str = 'XC0',
     user_latitude: Optional[float] = None,
     user_longitude: Optional[float] = None,
-    max_distance_km: Optional[float] = None
+    max_distance_km: Optional[float] = None,
+    min_altitude_m: Optional[int] = None,
+    max_altitude_m: Optional[int] = None
 ) -> List[schemas.SiteSuggestion]:
     """
     Core logic to query forecasts and historical stats, aggregate data, and rank sites.
@@ -116,6 +118,7 @@ def plan_trip_service(
     site_name_map = {site.site_id: site.name for site in all_sites}
     site_lat_map = {site.site_id: site.latitude for site in all_sites}
     site_lon_map = {site.site_id: site.longitude for site in all_sites}
+    site_altitude_map = {site.site_id: site.altitude for site in all_sites}
 
     # --- 3. Aggregate Probabilities Per Site ---
 
@@ -146,6 +149,13 @@ def plan_trip_service(
         if data['count'] > 0:
             site_lat = site_lat_map.get(site_id, 0.0)
             site_lon = site_lon_map.get(site_id, 0.0)
+            site_altitude = site_altitude_map.get(site_id, 0)
+            
+            # Apply altitude filtering if provided
+            if min_altitude_m is not None and site_altitude < min_altitude_m:
+                continue  # Skip sites below minimum altitude
+            if max_altitude_m is not None and site_altitude > max_altitude_m:
+                continue  # Skip sites above maximum altitude
             
             # Calculate distance if user location is provided
             distance_km = None
@@ -164,6 +174,7 @@ def plan_trip_service(
                     site_name=site_name_map.get(site_id, f'Site ID: {site_id}'),
                     latitude=site_lat,
                     longitude=site_lon,
+                    altitude=site_altitude,
                     average_flyability=round(avg_flyability, 3),
                     daily_probabilities=data['daily_probs'],
                     distance_km=round(distance_km, 1) if distance_km is not None else None
