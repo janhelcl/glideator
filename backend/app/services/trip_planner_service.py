@@ -10,14 +10,34 @@ from .. import schemas, crud, models # Ensure crud and models are imported
 TOP_N = 10
 
 
-def get_historical_prob(flight_stats: models.FlightStats, year: int, month: int) -> float:
-    """Calculates historical flyability probability from FlightStats."""
+def get_flight_stats_attr_for_metric(metric: str) -> str:
+    """Maps metric name to the corresponding FlightStats attribute name."""
+    metric_to_attr = {
+        'XC0': 'avg_days_over_0',
+        'XC10': 'avg_days_over_10', 
+        'XC20': 'avg_days_over_20',
+        'XC30': 'avg_days_over_30',
+        'XC40': 'avg_days_over_40',
+        'XC50': 'avg_days_over_50',
+        'XC60': 'avg_days_over_60',
+        'XC70': 'avg_days_over_70',
+        'XC80': 'avg_days_over_80',
+        'XC90': 'avg_days_over_90',
+        'XC100': 'avg_days_over_100'
+    }
+    return metric_to_attr.get(metric, 'avg_days_over_0')
+
+def get_historical_prob(flight_stats: models.FlightStats, year: int, month: int, metric: str) -> float:
+    """Calculates historical flyability probability from FlightStats for the given metric."""
     days_in_month = calendar.monthrange(year, month)[1]
-    # Using avg_days_over_0 as the equivalent of XC0 (any flight)
-    avg_flyable_days = flight_stats.avg_days_over_0
+    
+    # Get the appropriate attribute based on the metric
+    attr_name = get_flight_stats_attr_for_metric(metric)
+    avg_flyable_days = getattr(flight_stats, attr_name, 0.0)
+    
     return (avg_flyable_days / days_in_month) if days_in_month > 0 else 0
 
-def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime.date) -> List[schemas.SiteSuggestion]:
+def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime.date, metric: str = 'XC0') -> List[schemas.SiteSuggestion]:
     """
     Core logic to query forecasts and historical stats, aggregate data, and rank sites.
     """
@@ -32,7 +52,7 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
     predictions = []
     if forecast_start_date <= forecast_end_date:
         predictions = crud.get_predictions_for_range(
-            db, start_date=forecast_start_date, end_date=forecast_end_date, metric='XC0'
+            db, start_date=forecast_start_date, end_date=forecast_end_date, metric=metric
         )
 
     all_flight_stats = crud.get_all_flight_stats(db)
@@ -55,7 +75,7 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
     for stat in all_flight_stats:
         for year, month in unique_months:
             if stat.month == month:
-                prob = get_historical_prob(stat, year, month)
+                prob = get_historical_prob(stat, year, month, metric)
                 stats_map[(stat.site_id, month)] = prob
 
     site_name_map = {site.site_id: site.name for site in all_sites}
@@ -104,5 +124,3 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
     suggestions.sort(key=lambda s: s.average_flyability, reverse=True)
     
     return suggestions[:TOP_N]
-    
-    # return [] # Return empty list for now 

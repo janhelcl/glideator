@@ -4,10 +4,10 @@ import { Launch as LaunchIcon } from '@mui/icons-material';
 import Sparkline from './Sparkline';
 import { getColorWithAlpha } from '../utils/colorUtils';
 
-const SiteList = ({ sites, onSiteClick }) => {
+const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0' }) => {
   const handleSiteClick = (site) => {
-    // Open site details in new tab with XC0 selected
-    const url = `/details/${site.site_id}?metric=XC0`;
+    // Open site details in new tab with selected metric
+    const url = `/details/${site.site_id}?metric=${selectedMetric}`;
     window.open(url, '_blank');
   };
 

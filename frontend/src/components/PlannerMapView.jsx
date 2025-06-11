@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10 }) => {
+const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selectedMetric = 'XC0' }) => {
   // Validate and filter sites with valid coordinates
   const validSites = useMemo(() => {
     if (!sites || sites.length === 0) return [];
@@ -64,10 +64,10 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10 }) => {
   }, []);
 
   const handleSiteClick = useCallback((site) => {
-    // Open site details in new tab with XC0 selected
-    const url = `/details/${site.site_id}?metric=XC0`;
+    // Open site details in new tab with selected metric
+    const url = `/details/${site.site_id}?metric=${selectedMetric}`;
     window.open(url, '_blank');
-  }, []);
+  }, [selectedMetric]);
 
   const markers = useMemo(() => {
     return validSites.map((site, index) => {

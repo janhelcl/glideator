@@ -40,6 +40,9 @@ def plan_trip_endpoint(
     
     # Call Core Logic Service function
     site_suggestions = trip_planner_service.plan_trip_service(
-        db=db, start_date=request.start_date, end_date=request.end_date
+        db=db, 
+        start_date=request.start_date, 
+        end_date=request.end_date,
+        metric=request.metric
     )
     return schemas.TripPlanResponse(sites=site_suggestions)

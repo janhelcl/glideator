@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Json
+from pydantic import BaseModel, Json, Field
 from typing import List, Optional, Literal
 from datetime import date, datetime
 
@@ -129,6 +129,7 @@ class SiteInfo(SiteInfoBase):
 class TripPlanRequest(BaseModel):
     start_date: date
     end_date: date
+    metric: Literal['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'] = Field(default='XC0', description="Metric to use for trip planning")
 
 class DailyProbability(BaseModel):
     date: date

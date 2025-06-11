@@ -3,12 +3,16 @@ import { Box, Container, Typography, Alert, Snackbar } from '@mui/material';
 import DateRangePicker from '../components/DateRangePicker';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
+import StandaloneMetricControl from '../components/StandaloneMetricControl';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Available metrics (consistent with other pages)
+const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
 // Utility functions to replace date-fns
 const formatDate = (date) => {
@@ -40,6 +44,7 @@ const TripPlannerPage = () => {
     return addDays(getNextFriday(), 2);
   });
   
+  const [selectedMetric, setSelectedMetric] = useState('XC0');
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -48,8 +53,8 @@ const TripPlannerPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   
   // Generate cache key for requests
-  const getCacheKey = (start, end) => {
-    return `${formatDate(start)}_${formatDate(end)}`;
+  const getCacheKey = (start, end, metric) => {
+    return `${formatDate(start)}_${formatDate(end)}_${metric}`;
   };
   
   // Clean up expired cache entries
@@ -70,13 +75,13 @@ const TripPlannerPage = () => {
       return;
     }
     
-    if (startDate >= endDate) {
-      setError('End date must be after start date');
+    if (startDate > endDate) {
+      setError('End date cannot be before start date');
       setSnackbarOpen(true);
       return;
     }
     
-    const cacheKey = getCacheKey(startDate, endDate);
+    const cacheKey = getCacheKey(startDate, endDate, selectedMetric);
     
     // Check cache first
     cleanupCache();
@@ -93,7 +98,7 @@ const TripPlannerPage = () => {
       const startDateStr = formatDate(startDate);
       const endDateStr = formatDate(endDate);
       
-      const result = await planTrip(startDateStr, endDateStr);
+      const result = await planTrip(startDateStr, endDateStr, selectedMetric);
       
       // Debug: Log the API response to understand its structure
       console.log('Plan Trip API Response:', result);
@@ -121,12 +126,12 @@ const TripPlannerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, selectedMetric]);
   
   // Handle site click from map
   const handleSiteClick = (site) => {
-    // Open site details in new tab
-    const url = `/details/${site.site_id}`;
+    // Open site details in new tab with selected metric
+    const url = `/details/${site.site_id}?metric=${selectedMetric}`;
     window.open(url, '_blank');
   };
   
@@ -145,14 +150,28 @@ const TripPlannerPage = () => {
           Select your travel dates to find the best paragliding sites with optimal flying conditions
         </Typography>
         
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          onSearch={handlePlanTrip}
-          loading={loading}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: 1, minWidth: '300px' }}>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onSearch={handlePlanTrip}
+              loading={loading}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              Flight Quality
+            </Typography>
+            <StandaloneMetricControl
+              metrics={METRICS}
+              selectedMetric={selectedMetric}
+              onMetricChange={setSelectedMetric}
+            />
+          </Box>
+        </Box>
       </Box>
       
       {loading && (
@@ -172,6 +191,7 @@ const TripPlannerPage = () => {
             onSiteClick={handleSiteClick}
             isVisible={true}
             maxSites={15}
+            selectedMetric={selectedMetric}
           />
         </Box>
       )}
@@ -181,6 +201,7 @@ const TripPlannerPage = () => {
           <SiteList 
             sites={sites} 
             onSiteClick={handleSiteClick}
+            selectedMetric={selectedMetric}
           />
         </Box>
       )}
