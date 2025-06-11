@@ -1,10 +1,14 @@
-import React, { useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useMemo, useCallback, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 import L from 'leaflet';
+import { Box, IconButton } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import LayersIcon from '@mui/icons-material/Layers';
 import { getColor } from '../utils/colorUtils';
 import Sparkline from './Sparkline';
+import PreventLeafletControl from './PreventLeafletControl';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -15,7 +19,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selectedMetric = 'XC0' }) => {
+const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selectedMetric = 'XC0', userLocation = null }) => {
+  const mapRef = useRef(null);
+  const [mapType, setMapType] = useState('basic');
+
   // Validate and filter sites with valid coordinates
   const validSites = useMemo(() => {
     if (!sites || sites.length === 0) return [];
@@ -69,8 +76,32 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
     window.open(url, '_blank');
   }, [selectedMetric]);
 
+  // Function to center map on user's location
+  const handleLocationClick = () => {
+    if ("geolocation" in navigator && mapRef && mapRef.current) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const currentZoom = mapRef.current?.getZoom() || 10;
+          mapRef.current?.setView([latitude, longitude], currentZoom);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Unable to get your location. Please check your browser permissions.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
+
+  // Function to toggle between map types
+  const toggleMapType = () => {
+    setMapType(prevType => prevType === 'basic' ? 'topographic' : 'basic');
+  };
+
   const markers = useMemo(() => {
-    return validSites.map((site, index) => {
+    const siteMarkers = validSites.map((site, index) => {
       const lat = parseFloat(site.latitude);
       const lng = parseFloat(site.longitude);
       
@@ -103,7 +134,43 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
         </Marker>
       );
     });
-  }, [validSites, createColoredIcon, handleSiteClick]);
+
+    // Add user location marker if available
+    if (userLocation) {
+      const userMarker = (
+        <Marker
+          key="user-location"
+          position={[userLocation.latitude, userLocation.longitude]}
+          icon={L.divIcon({
+            className: '',
+            html: `
+              <div style="
+                width: 16px;
+                height: 16px;
+                background-color: #2196f3;
+                border: 3px solid white;
+                border-radius: 50%;
+                box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
+              "></div>
+            `,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+            popupAnchor: [0, -8],
+          })}
+        >
+          <Popup closeButton={false}>
+            <div style={{ textAlign: 'center', padding: '4px' }}>
+              <strong>Your Location</strong>
+            </div>
+          </Popup>
+        </Marker>
+      );
+      
+      return [...siteMarkers, userMarker];
+    }
+
+    return siteMarkers;
+  }, [validSites, createColoredIcon, handleSiteClick, userLocation]);
 
   // Calculate bounds to fit all markers with validation
   const bounds = useMemo(() => {
@@ -156,12 +223,52 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
           scrollWheelZoom={true}
           boundsOptions={{ padding: [20, 20] }}
           zoomControl={false}
+          ref={mapRef}
         >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
-          />
+          {/* Conditional TileLayer based on mapType */}
+          {mapType === 'basic' ? (
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
+            />
+          ) : (
+            <TileLayer
+              url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+              attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenTopoMap</a> contributors, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
+            />
+          )}
+          
           {markers}
+
+          {/* Location control */}
+          <PreventLeafletControl>
+            <Box
+              className="map-controls-container"
+            >
+              <IconButton
+                onClick={handleLocationClick}
+                className="location-button"
+                title="My Location"
+              >
+                <MyLocationIcon />
+              </IconButton>
+            </Box>
+          </PreventLeafletControl>
+
+          {/* Map type control */}
+          <PreventLeafletControl>
+            <Box
+              className="map-type-control"
+            >
+              <IconButton
+                onClick={toggleMapType}
+                className="map-type-button"
+                title={`Switch to ${mapType === 'basic' ? 'Topographic' : 'Basic'} Map`}
+              >
+                <LayersIcon />
+              </IconButton>
+            </Box>
+          </PreventLeafletControl>
         </MapContainer>
       ) : (
         <div style={{ 

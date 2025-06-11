@@ -8,6 +8,11 @@ const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChang
     return date.toISOString().split('T')[0];
   };
 
+  // Get today's date as minimum selectable date
+  const getMinDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
   // Convert string from input to Date object
   const handleStartDateChange = (event) => {
     const dateStr = event.target.value;
@@ -42,6 +47,9 @@ const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChang
         type="date"
         value={formatDateForInput(startDate)}
         onChange={handleStartDateChange}
+        inputProps={{
+          min: getMinDate()
+        }}
         size="small"
         sx={{ minWidth: 150 }}
         InputLabelProps={{
@@ -54,7 +62,7 @@ const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChang
         value={formatDateForInput(endDate)}
         onChange={handleEndDateChange}
         inputProps={{
-          min: formatDateForInput(startDate)
+          min: startDate ? Math.max(formatDateForInput(startDate), getMinDate()) : getMinDate()
         }}
         size="small"
         sx={{ minWidth: 150 }}

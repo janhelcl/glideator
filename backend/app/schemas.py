@@ -130,6 +130,9 @@ class TripPlanRequest(BaseModel):
     start_date: date
     end_date: date
     metric: Literal['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'] = Field(default='XC0', description="Metric to use for trip planning")
+    user_latitude: Optional[float] = Field(default=None, description="User's latitude for distance filtering")
+    user_longitude: Optional[float] = Field(default=None, description="User's longitude for distance filtering")
+    max_distance_km: Optional[float] = Field(default=None, description="Maximum distance from user location in kilometers")
 
 class DailyProbability(BaseModel):
     date: date
@@ -143,6 +146,7 @@ class SiteSuggestion(BaseModel):
     latitude: float
     longitude: float
     daily_probabilities: List[DailyProbability]
+    distance_km: Optional[float] = Field(default=None, description="Distance from user location in kilometers")
 
 class TripPlanResponse(BaseModel):
     sites: List[SiteSuggestion]

@@ -43,6 +43,9 @@ def plan_trip_endpoint(
         db=db, 
         start_date=request.start_date, 
         end_date=request.end_date,
-        metric=request.metric
+        metric=request.metric,
+        user_latitude=request.user_latitude,
+        user_longitude=request.user_longitude,
+        max_distance_km=request.max_distance_km
     )
     return schemas.TripPlanResponse(sites=site_suggestions)

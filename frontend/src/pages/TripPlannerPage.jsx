@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Container, Typography, Alert, Snackbar } from '@mui/material';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Box, Container, Typography, Alert, Snackbar, Button, ButtonGroup } from '@mui/material';
 import DateRangePicker from '../components/DateRangePicker';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
 import StandaloneMetricControl from '../components/StandaloneMetricControl';
+import DistanceFilter from '../components/DistanceFilter';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
 
@@ -45,7 +46,11 @@ const TripPlannerPage = () => {
   });
   
   const [selectedMetric, setSelectedMetric] = useState('XC0');
+  const [userLocation, setUserLocation] = useState(null);
+  const [maxDistance, setMaxDistance] = useState(200);
+  const [distanceFilterEnabled, setDistanceFilterEnabled] = useState(false);
   const [sites, setSites] = useState([]);
+  const [sortBy, setSortBy] = useState('flyability'); // 'flyability' or 'distance'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -53,8 +58,9 @@ const TripPlannerPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   
   // Generate cache key for requests
-  const getCacheKey = (start, end, metric) => {
-    return `${formatDate(start)}_${formatDate(end)}_${metric}`;
+  const getCacheKey = (start, end, metric, location, distance, enabled) => {
+    const locationStr = enabled && location ? `${location.latitude.toFixed(3)}_${location.longitude.toFixed(3)}_${distance}` : 'no_distance';
+    return `${formatDate(start)}_${formatDate(end)}_${metric}_${locationStr}`;
   };
   
   // Clean up expired cache entries
@@ -80,8 +86,20 @@ const TripPlannerPage = () => {
       setSnackbarOpen(true);
       return;
     }
+
+    // Check if start date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to beginning of day for fair comparison
+    const startDateCopy = new Date(startDate);
+    startDateCopy.setHours(0, 0, 0, 0);
     
-    const cacheKey = getCacheKey(startDate, endDate, selectedMetric);
+    if (startDateCopy < today) {
+      setError('Start date cannot be in the past');
+      setSnackbarOpen(true);
+      return;
+    }
+    
+    const cacheKey = getCacheKey(startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled);
     
     // Check cache first
     cleanupCache();
@@ -98,7 +116,11 @@ const TripPlannerPage = () => {
       const startDateStr = formatDate(startDate);
       const endDateStr = formatDate(endDate);
       
-      const result = await planTrip(startDateStr, endDateStr, selectedMetric);
+      // Prepare location and distance for API call
+      const locationForApi = distanceFilterEnabled && userLocation ? userLocation : null;
+      const distanceForApi = distanceFilterEnabled && userLocation ? maxDistance : null;
+      
+      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi);
       
       // Debug: Log the API response to understand its structure
       console.log('Plan Trip API Response:', result);
@@ -126,7 +148,7 @@ const TripPlannerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, selectedMetric]);
+  }, [startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled]);
   
   // Handle site click from map
   const handleSiteClick = (site) => {
@@ -139,6 +161,31 @@ const TripPlannerPage = () => {
   useEffect(() => {
     handlePlanTrip();
   }, [handlePlanTrip]);
+
+  // Sort sites based on selected sort option
+  const sortedSites = useMemo(() => {
+    if (!sites || sites.length === 0) return sites;
+    
+    const sitesCopy = [...sites];
+    
+    if (sortBy === 'distance' && distanceFilterEnabled) {
+      // Sort by distance (closest first), then by flyability as secondary sort
+      return sitesCopy.sort((a, b) => {
+        if (a.distance_km !== null && b.distance_km !== null) {
+          const distanceDiff = a.distance_km - b.distance_km;
+          if (Math.abs(distanceDiff) < 0.1) { // If distances are very close, sort by flyability
+            return b.average_flyability - a.average_flyability;
+          }
+          return distanceDiff;
+        }
+        // If either site doesn't have distance, sort by flyability
+        return b.average_flyability - a.average_flyability;
+      });
+    } else {
+      // Sort by flyability (default - highest first)
+      return sitesCopy.sort((a, b) => b.average_flyability - a.average_flyability);
+    }
+  }, [sites, sortBy, distanceFilterEnabled]);
   
   return (
     <Container maxWidth="lg" sx={{ py: 3, height: '100%', overflow: 'auto' }}>
@@ -148,6 +195,11 @@ const TripPlannerPage = () => {
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
           Select your travel dates to find the best paragliding sites with optimal flying conditions
+          {distanceFilterEnabled && userLocation && (
+            <span style={{ fontWeight: 'bold' }}>
+              {' '}within {maxDistance < 1000 ? `${maxDistance}km` : `${(maxDistance/1000).toFixed(1)}k km`} of your location
+            </span>
+          )}
         </Typography>
         
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
@@ -161,6 +213,7 @@ const TripPlannerPage = () => {
               loading={loading}
             />
           </Box>
+          
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
               Flight Quality
@@ -169,6 +222,17 @@ const TripPlannerPage = () => {
               metrics={METRICS}
               selectedMetric={selectedMetric}
               onMetricChange={setSelectedMetric}
+            />
+          </Box>
+          
+          <Box sx={{ minWidth: '280px' }}>
+            <DistanceFilter
+              userLocation={userLocation}
+              onLocationChange={setUserLocation}
+              maxDistance={maxDistance}
+              onMaxDistanceChange={setMaxDistance}
+              enabled={distanceFilterEnabled}
+              onEnabledChange={setDistanceFilterEnabled}
             />
           </Box>
         </Box>
@@ -192,16 +256,41 @@ const TripPlannerPage = () => {
             isVisible={true}
             maxSites={15}
             selectedMetric={selectedMetric}
+            userLocation={distanceFilterEnabled ? userLocation : null}
           />
         </Box>
       )}
 
       {!loading && sites.length > 0 && (
         <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Recommended Sites ({sortedSites.length})
+            </Typography>
+            
+            {distanceFilterEnabled && userLocation && (
+              <ButtonGroup size="small" variant="outlined">
+                <Button
+                  variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
+                  onClick={() => setSortBy('flyability')}
+                >
+                  Best Conditions
+                </Button>
+                <Button
+                  variant={sortBy === 'distance' ? 'contained' : 'outlined'}
+                  onClick={() => setSortBy('distance')}
+                >
+                  Closest
+                </Button>
+              </ButtonGroup>
+            )}
+          </Box>
+          
           <SiteList 
-            sites={sites} 
+            sites={sortedSites} 
             onSiteClick={handleSiteClick}
             selectedMetric={selectedMetric}
+            showRanking={true}
           />
         </Box>
       )}

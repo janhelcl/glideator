@@ -4,7 +4,7 @@ import { Launch as LaunchIcon } from '@mui/icons-material';
 import Sparkline from './Sparkline';
 import { getColorWithAlpha } from '../utils/colorUtils';
 
-const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0' }) => {
+const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0', showRanking = true }) => {
   const handleSiteClick = (site) => {
     // Open site details in new tab with selected metric
     const url = `/details/${site.site_id}?metric=${selectedMetric}`;
@@ -26,10 +26,6 @@ const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0' }) => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-        Recommended Sites ({sites.length})
-      </Typography>
-      
       {sites.map((site, index) => (
         <Paper
           key={site.site_id}
@@ -58,25 +54,42 @@ const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0' }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
               {/* Rank */}
-              <Typography
-                variant="h6"
-                sx={{
-                  minWidth: '24px',
-                  fontWeight: 'bold',
-                  color: 'primary.main'
-                }}
-              >
-                {index + 1}
-              </Typography>
+              {showRanking && (
+                <Typography
+                  variant="h6"
+                  sx={{
+                    minWidth: '24px',
+                    fontWeight: 'bold',
+                    color: 'primary.main'
+                  }}
+                >
+                  {index + 1}
+                </Typography>
+              )}
 
               {/* Site Name and Average */}
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                   {site.site_name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Avg: {Math.round(site.average_flyability * 100)}%
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Avg: {Math.round(site.average_flyability * 100)}%
+                  </Typography>
+                  {site.distance_km !== null && site.distance_km !== undefined && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        •
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {site.distance_km < 1000 
+                          ? `${Math.round(site.distance_km)}km` 
+                          : `${(site.distance_km / 1000).toFixed(1)}k km`
+                        } away
+                      </Typography>
+                    </>
+                  )}
+                </Box>
               </Box>
 
               {/* Sparkline */}

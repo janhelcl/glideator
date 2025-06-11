@@ -93,13 +93,25 @@ export const fetchSiteSpots = async (siteId) => {
 };
 
 // Plan trip - fetch recommended sites for date range
-export const planTrip = async (startDate, endDate, metric = 'XC0') => {
+export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/plan-trip`, {
+    const requestBody = {
       start_date: startDate,
       end_date: endDate,
       metric: metric
-    });
+    };
+
+    // Add location and distance parameters if provided
+    if (userLocation && userLocation.latitude && userLocation.longitude) {
+      requestBody.user_latitude = userLocation.latitude;
+      requestBody.user_longitude = userLocation.longitude;
+    }
+    
+    if (maxDistanceKm !== null && maxDistanceKm > 0) {
+      requestBody.max_distance_km = maxDistanceKm;
+    }
+
+    const response = await axios.post(`${API_BASE_URL}/plan-trip`, requestBody);
     return response.data;
   } catch (error) {
     console.error('Error planning trip:', error);

@@ -1,13 +1,40 @@
 import datetime
 import calendar
+import math
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Tuple, Literal
+from typing import List, Dict, Any, Tuple, Literal, Optional
 from collections import defaultdict
 
 from .. import schemas, crud, models # Ensure crud and models are imported
 
 
 TOP_N = 10
+
+
+def calculate_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points on Earth using the Haversine formula.
+    
+    Args:
+        lat1, lon1: Latitude and longitude of first point in decimal degrees
+        lat2, lon2: Latitude and longitude of second point in decimal degrees
+    
+    Returns:
+        Distance in kilometers
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of Earth in kilometers
+    r = 6371
+    
+    return c * r
 
 
 def get_flight_stats_attr_for_metric(metric: str) -> str:
@@ -37,7 +64,15 @@ def get_historical_prob(flight_stats: models.FlightStats, year: int, month: int,
     
     return (avg_flyable_days / days_in_month) if days_in_month > 0 else 0
 
-def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime.date, metric: str = 'XC0') -> List[schemas.SiteSuggestion]:
+def plan_trip_service(
+    db: Session, 
+    start_date: datetime.date, 
+    end_date: datetime.date, 
+    metric: str = 'XC0',
+    user_latitude: Optional[float] = None,
+    user_longitude: Optional[float] = None,
+    max_distance_km: Optional[float] = None
+) -> List[schemas.SiteSuggestion]:
     """
     Core logic to query forecasts and historical stats, aggregate data, and rank sites.
     """
@@ -109,15 +144,29 @@ def plan_trip_service(db: Session, start_date: datetime.date, end_date: datetime
     suggestions = []
     for site_id, data in site_data.items():
         if data['count'] > 0:
+            site_lat = site_lat_map.get(site_id, 0.0)
+            site_lon = site_lon_map.get(site_id, 0.0)
+            
+            # Calculate distance if user location is provided
+            distance_km = None
+            if user_latitude is not None and user_longitude is not None:
+                distance_km = calculate_distance_km(user_latitude, user_longitude, site_lat, site_lon)
+                
+                # Apply distance filtering if max distance is also provided
+                if max_distance_km is not None and max_distance_km > 0:
+                    if distance_km > max_distance_km:
+                        continue  # Skip sites beyond max distance
+            
             avg_flyability = data['total_prob'] / data['count']
             suggestions.append(
                 schemas.SiteSuggestion(
                     site_id=str(site_id),
                     site_name=site_name_map.get(site_id, f'Site ID: {site_id}'),
-                    latitude=site_lat_map.get(site_id, 0.0),
-                    longitude=site_lon_map.get(site_id, 0.0),
+                    latitude=site_lat,
+                    longitude=site_lon,
                     average_flyability=round(avg_flyability, 3),
-                    daily_probabilities=data['daily_probs']
+                    daily_probabilities=data['daily_probs'],
+                    distance_km=round(distance_km, 1) if distance_km is not None else None
                 )
             )
 
