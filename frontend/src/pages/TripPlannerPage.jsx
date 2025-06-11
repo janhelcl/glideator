@@ -316,7 +316,7 @@ const TripPlannerPage = () => {
             sites={sites}
             onSiteClick={handleSiteClick}
             isVisible={true}
-            maxSites={15}
+            maxSites={Math.min(sites.length, 50)}
             selectedMetric={selectedMetric}
             userLocation={distanceFilterEnabled ? userLocation : null}
           />

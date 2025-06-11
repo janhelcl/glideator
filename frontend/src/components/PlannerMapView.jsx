@@ -215,7 +215,7 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
     }}>
       {validSites.length > 0 ? (
         <MapContainer
-          key={`map-${validSites.length}`} // Force re-render when sites change
+          key={`map-${validSites.length}-${validSites[0]?.site_id || 'empty'}`} // Force re-render when sites change
           center={bounds ? undefined : defaultCenter}
           zoom={bounds ? undefined : defaultZoom}
           bounds={bounds || undefined}
