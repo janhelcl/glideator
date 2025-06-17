@@ -1,20 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Container, Typography, Alert, Snackbar, Button, ButtonGroup } from '@mui/material';
-import DateRangePicker from '../components/DateRangePicker';
+import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
-import StandaloneMetricControl from '../components/StandaloneMetricControl';
-import DistanceFilter from '../components/DistanceFilter';
-import AltitudeFilter from '../components/AltitudeFilter';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
+import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-// Available metrics (consistent with other pages)
-const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
 // Utility functions to replace date-fns
 const formatDate = (date) => {
@@ -22,38 +17,17 @@ const formatDate = (date) => {
   return date.toISOString().split('T')[0];
 };
 
-const addDays = (date, days) => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-};
-
-const getNextFriday = () => {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 5 = Friday
-  const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7; // If today is Friday, get next Friday
-  return addDays(today, daysUntilFriday);
-};
-
 const TripPlannerPage = () => {
-  const [startDate, setStartDate] = useState(() => {
-    // Default to next Friday
-    return getNextFriday();
+  // Initialize unified planner state with default values
+  const [plannerState, setPlannerState] = useState(() => {
+    const [defaultStart, defaultEnd] = getDefaultDateRange();
+    return {
+      ...DEFAULT_PLANNER_STATE,
+      dates: [defaultStart, defaultEnd]
+    };
   });
   
-  const [endDate, setEndDate] = useState(() => {
-    // Default to next Sunday (2 days after Friday)
-    return addDays(getNextFriday(), 2);
-  });
-  
-  const [selectedMetric, setSelectedMetric] = useState('XC0');
-  const [userLocation, setUserLocation] = useState(null);
-  const [maxDistance, setMaxDistance] = useState(200);
-  const [distanceFilterEnabled, setDistanceFilterEnabled] = useState(false);
-  const [altitudeRange, setAltitudeRange] = useState({ min: 0, max: 3000 });
-  const [altitudeFilterEnabled, setAltitudeFilterEnabled] = useState(false);
   const [sites, setSites] = useState([]);
-  const [sortBy, setSortBy] = useState('flyability'); // 'flyability' or 'distance'
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -64,10 +38,17 @@ const TripPlannerPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   
   // Generate cache key for requests
-  const getCacheKey = (start, end, metric, location, distance, distanceEnabled, altitude, altitudeEnabled) => {
-    const locationStr = distanceEnabled && location ? `${location.latitude.toFixed(3)}_${location.longitude.toFixed(3)}_${distance}` : 'no_distance';
-    const altitudeStr = altitudeEnabled ? `${altitude.min}_${altitude.max}` : 'no_altitude';
-    return `${formatDate(start)}_${formatDate(end)}_${metric}_${locationStr}_${altitudeStr}`;
+  const getCacheKey = (start, end, state) => {
+    const locationStr = state.distance.enabled && state.distance.coords 
+      ? `${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}` 
+      : 'no_distance';
+    const altitudeStr = state.altitude.enabled 
+      ? `${state.altitude.min}_${state.altitude.max}` 
+      : 'no_altitude';
+    const flightQualityStr = state.flightQuality.enabled 
+      ? state.flightQuality.selectedValues.join(',') 
+      : 'no_flight_quality';
+    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${locationStr}_${altitudeStr}_${flightQualityStr}`;
   };
   
   // Clean up expired cache entries
@@ -81,7 +62,9 @@ const TripPlannerPage = () => {
   };
   
   // Handle trip planning
-  const handlePlanTrip = useCallback(async () => {
+  const handlePlanTrip = useCallback(async (dateRange) => {
+    const [startDate, endDate] = dateRange;
+    
     if (!startDate || !endDate) {
       setError('Please select both start and end dates');
       setSnackbarOpen(true);
@@ -106,7 +89,7 @@ const TripPlannerPage = () => {
       return;
     }
     
-    const cacheKey = getCacheKey(startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled, altitudeRange, altitudeFilterEnabled);
+    const cacheKey = getCacheKey(startDate, endDate, plannerState);
     
     // Check cache first
     cleanupCache();
@@ -126,13 +109,13 @@ const TripPlannerPage = () => {
       const endDateStr = formatDate(endDate);
       
       // Prepare location and distance for API call
-      const locationForApi = distanceFilterEnabled && userLocation ? userLocation : null;
-      const distanceForApi = distanceFilterEnabled && userLocation ? maxDistance : null;
+      const locationForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null;
+      const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
       
       // Prepare altitude range for API call
-      const altitudeForApi = altitudeFilterEnabled ? altitudeRange : null;
+      const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
       
-      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10);
+      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10);
       
       // Debug: Log the API response to understand its structure
       console.log('Plan Trip API Response:', result);
@@ -151,7 +134,7 @@ const TripPlannerPage = () => {
       setTotalCount(result.total_count || 0);
       
       if (!result.sites || result.sites.length === 0) {
-        setError('No suitable sites found for the selected date range');
+        setError('No suitable sites found for the selected criteria');
         setSnackbarOpen(true);
       }
     } catch (err) {
@@ -162,12 +145,12 @@ const TripPlannerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled, altitudeRange, altitudeFilterEnabled]);
+  }, [plannerState]);
   
   // Handle site click from map
   const handleSiteClick = (site) => {
     // Open site details in new tab with selected metric
-    const url = `/details/${site.site_id}?metric=${selectedMetric}`;
+    const url = `/details/${site.site_id}?metric=${plannerState.selectedMetric}`;
     window.open(url, '_blank');
   };
 
@@ -179,17 +162,18 @@ const TripPlannerPage = () => {
     setError(null);
 
     try {
+      const [startDate, endDate] = plannerState.dates;
       const startDateStr = formatDate(startDate);
       const endDateStr = formatDate(endDate);
       
       // Prepare location and distance for API call
-      const locationForApi = distanceFilterEnabled && userLocation ? userLocation : null;
-      const distanceForApi = distanceFilterEnabled && userLocation ? maxDistance : null;
+      const locationForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null;
+      const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
       
       // Prepare altitude range for API call
-      const altitudeForApi = altitudeFilterEnabled ? altitudeRange : null;
+      const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
       
-      const result = await planTrip(startDateStr, endDateStr, selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10);
+      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10);
       
       // Append new sites to existing ones
       setSites(prevSites => [...prevSites, ...(result.sites || [])]);
@@ -203,12 +187,14 @@ const TripPlannerPage = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [startDate, endDate, selectedMetric, userLocation, maxDistance, distanceFilterEnabled, altitudeRange, altitudeFilterEnabled, sites.length, hasMore, loadingMore]);
+  }, [plannerState, sites.length, hasMore, loadingMore]);
   
   // Auto-search on initial load with default dates
   useEffect(() => {
-    handlePlanTrip();
-  }, [handlePlanTrip]);
+    if (plannerState.dates[0] && plannerState.dates[1]) {
+      handlePlanTrip(plannerState.dates);
+    }
+  }, [handlePlanTrip, plannerState.dates]);
 
   // Sort sites based on selected sort option
   const sortedSites = useMemo(() => {
@@ -216,7 +202,7 @@ const TripPlannerPage = () => {
     
     const sitesCopy = [...sites];
     
-    if (sortBy === 'distance' && distanceFilterEnabled) {
+    if (plannerState.sortBy === 'distance' && plannerState.distance.enabled) {
       // Sort by distance (closest first), then by flyability as secondary sort
       return sitesCopy.sort((a, b) => {
         if (a.distance_km !== null && b.distance_km !== null) {
@@ -233,7 +219,7 @@ const TripPlannerPage = () => {
       // Sort by flyability (default - highest first)
       return sitesCopy.sort((a, b) => b.average_flyability - a.average_flyability);
     }
-  }, [sites, sortBy, distanceFilterEnabled]);
+  }, [sites, plannerState.sortBy, plannerState.distance.enabled]);
   
   return (
     <Container maxWidth="lg" sx={{ py: 3, height: '100%', overflow: 'auto' }}>
@@ -242,62 +228,16 @@ const TripPlannerPage = () => {
           Plan a Trip
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Select your travel dates to find the best paragliding sites with optimal flying conditions
-          {distanceFilterEnabled && userLocation && (
-            <span style={{ fontWeight: 'bold' }}>
-              {' '}within {maxDistance < 1000 ? `${maxDistance}km` : `${(maxDistance/1000).toFixed(1)}k km`} of your location
-            </span>
-          )}
-          {altitudeFilterEnabled && (
-            <span style={{ fontWeight: 'bold' }}>
-              {' '}at {altitudeRange.min >= 1000 ? `${(altitudeRange.min/1000).toFixed(1)}k` : altitudeRange.min}m - {altitudeRange.max >= 1000 ? `${(altitudeRange.max/1000).toFixed(1)}k` : altitudeRange.max}m altitude
-            </span>
-          )}
+          Find the best paragliding sites for your next adventure
         </Typography>
         
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: 1, minWidth: '300px' }}>
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onSearch={handlePlanTrip}
-              loading={loading}
-            />
-          </Box>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-              Flight Quality
-            </Typography>
-            <StandaloneMetricControl
-              metrics={METRICS}
-              selectedMetric={selectedMetric}
-              onMetricChange={setSelectedMetric}
-            />
-          </Box>
-          
-          <Box sx={{ minWidth: '280px' }}>
-            <DistanceFilter
-              userLocation={userLocation}
-              onLocationChange={setUserLocation}
-              maxDistance={maxDistance}
-              onMaxDistanceChange={setMaxDistance}
-              enabled={distanceFilterEnabled}
-              onEnabledChange={setDistanceFilterEnabled}
-            />
-          </Box>
-          
-          <Box sx={{ minWidth: '280px' }}>
-            <AltitudeFilter
-              altitudeRange={altitudeRange}
-              onAltitudeRangeChange={setAltitudeRange}
-              enabled={altitudeFilterEnabled}
-              onEnabledChange={setAltitudeFilterEnabled}
-            />
-          </Box>
-        </Box>
+        {/* New Unified Controls */}
+        <TripPlannerControls
+          state={plannerState}
+          setState={setPlannerState}
+          onSubmit={handlePlanTrip}
+          loading={loading}
+        />
       </Box>
       
       {loading && (
@@ -306,41 +246,25 @@ const TripPlannerPage = () => {
         </Box>
       )}
       
-      {/* Map View */}
-      {!loading && sites.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Map View
-          </Typography>
-          <PlannerMapView
-            sites={sites}
-            onSiteClick={handleSiteClick}
-            isVisible={true}
-            maxSites={Math.min(sites.length, 50)}
-            selectedMetric={selectedMetric}
-            userLocation={distanceFilterEnabled ? userLocation : null}
-          />
-        </Box>
-      )}
-
+      {/* Results */}
       {!loading && sites.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Recommended Sites ({sortedSites.length}{totalCount > sortedSites.length ? ` of ${totalCount}` : ''})
+              Found {totalCount} sites
             </Typography>
             
-            {distanceFilterEnabled && userLocation && (
+            {plannerState.distance.enabled && plannerState.distance.coords && (
               <ButtonGroup size="small" variant="outlined">
                 <Button
-                  variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
-                  onClick={() => setSortBy('flyability')}
+                  variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
                 >
                   Best Conditions
                 </Button>
                 <Button
-                  variant={sortBy === 'distance' ? 'contained' : 'outlined'}
-                  onClick={() => setSortBy('distance')}
+                  variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
                 >
                   Closest
                 </Button>
@@ -348,14 +272,25 @@ const TripPlannerPage = () => {
             )}
           </Box>
           
-          <SiteList 
-            sites={sortedSites} 
-            onSiteClick={handleSiteClick}
-            selectedMetric={selectedMetric}
-            showRanking={true}
-          />
+          {plannerState.view === 'list' ? (
+            <SiteList 
+              sites={sortedSites} 
+              onSiteClick={handleSiteClick}
+              selectedMetric={plannerState.selectedMetric}
+              showRanking={true}
+            />
+          ) : (
+            <PlannerMapView
+              sites={sites}
+              onSiteClick={handleSiteClick}
+              isVisible={true}
+              maxSites={Math.min(sites.length, 50)}
+              selectedMetric={plannerState.selectedMetric}
+              userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
+            />
+          )}
           
-          {hasMore && (
+          {hasMore && plannerState.view === 'list' && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Button
                 variant="outlined"
