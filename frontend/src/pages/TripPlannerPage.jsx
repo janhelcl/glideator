@@ -6,6 +6,7 @@ import PlannerMapView from '../components/PlannerMapView';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
 import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
+import { useSearchParams } from 'react-router-dom';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
@@ -17,15 +18,70 @@ const formatDate = (date) => {
   return date.toISOString().split('T')[0];
 };
 
-const TripPlannerPage = () => {
-  // Initialize unified planner state with default values
-  const [plannerState, setPlannerState] = useState(() => {
+const getInitialStateFromURL = (searchParams) => {
+    const state = JSON.parse(JSON.stringify(DEFAULT_PLANNER_STATE));
     const [defaultStart, defaultEnd] = getDefaultDateRange();
-    return {
-      ...DEFAULT_PLANNER_STATE,
-      dates: [defaultStart, defaultEnd]
-    };
-  });
+    state.dates = [defaultStart, defaultEnd];
+
+    // Dates
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+    if (startDateParam && endDateParam) {
+        const sd = new Date(startDateParam);
+        const ed = new Date(endDateParam);
+        if (!isNaN(sd.getTime()) && !isNaN(ed.getTime())) {
+            state.dates = [sd, ed];
+        }
+    }
+
+    // Distance
+    if (searchParams.get('distEnabled') === 'true') {
+        state.distance.enabled = true;
+        state.distance.km = parseInt(searchParams.get('distKm'), 10) || state.distance.km;
+    } else if (searchParams.get('distEnabled') === 'false') {
+        state.distance.enabled = false;
+    }
+
+    // Altitude
+    if (searchParams.get('altEnabled') === 'false') {
+        state.altitude.enabled = false;
+    } else if (searchParams.get('altEnabled') === 'true') {
+        state.altitude.enabled = true;
+        state.altitude.min = parseInt(searchParams.get('altMin'), 10) ?? state.altitude.min;
+        state.altitude.max = parseInt(searchParams.get('altMax'), 10) ?? state.altitude.max;
+    }
+
+    // Flight Quality
+    if (searchParams.get('fqEnabled') === 'true') {
+        state.flightQuality.enabled = true;
+        const fqValues = searchParams.get('fqValues');
+        if (fqValues) {
+            state.flightQuality.selectedValues = fqValues.split(',');
+        }
+    } else if (searchParams.get('fqEnabled') === 'false') {
+        state.flightQuality.enabled = false;
+    }
+
+    // Metric
+    const metric = searchParams.get('metric');
+    if (metric) state.selectedMetric = metric;
+
+    // View
+    const view = searchParams.get('view');
+    if (view === 'list' || view === 'map') state.view = view;
+    
+    // SortBy
+    const sortBy = searchParams.get('sortBy');
+    if (sortBy === 'flyability' || sortBy === 'distance') state.sortBy = sortBy;
+
+    return state;
+};
+
+const TripPlannerPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize unified planner state with default values, potentially overridden by URL params
+  const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams));
   
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,6 +151,50 @@ const TripPlannerPage = () => {
       }
     }
   }, [userLocation, locationRequested]);
+
+  // Update URL search params when state changes
+  useEffect(() => {
+    const newParams = new URLSearchParams();
+    const { dates, distance, altitude, flightQuality, selectedMetric, view, sortBy } = plannerState;
+    const defaultState = DEFAULT_PLANNER_STATE;
+
+    // Dates are always present
+    newParams.set('startDate', formatDate(dates[0]));
+    newParams.set('endDate', formatDate(dates[1]));
+
+    // Distance - default enabled is false
+    if (distance.enabled) {
+        newParams.set('distEnabled', 'true');
+        if (distance.km !== defaultState.distance.km) {
+            newParams.set('distKm', distance.km);
+        }
+    }
+
+    // Altitude - default enabled is true
+    if (!altitude.enabled) {
+        newParams.set('altEnabled', 'false');
+    } else {
+        if (altitude.min !== defaultState.altitude.min) newParams.set('altMin', altitude.min);
+        if (altitude.max !== defaultState.altitude.max) newParams.set('altMax', altitude.max);
+    }
+
+    // Flight Quality - default enabled is false
+    if (flightQuality.enabled) {
+        newParams.set('fqEnabled', 'true');
+        if (flightQuality.selectedValues.join(',') !== defaultState.flightQuality.selectedValues.join(',')) {
+            newParams.set('fqValues', flightQuality.selectedValues.join(','));
+        }
+    }
+    
+    if (selectedMetric !== defaultState.selectedMetric) {
+         newParams.set('metric', selectedMetric);
+    }
+
+    if (view !== defaultState.view) newParams.set('view', view);
+    if (sortBy !== defaultState.sortBy) newParams.set('sortBy', sortBy);
+
+    setSearchParams(newParams, { replace: true });
+  }, [plannerState, setSearchParams]);
 
   // Function to request location permission
   const requestLocation = useCallback(() => {
