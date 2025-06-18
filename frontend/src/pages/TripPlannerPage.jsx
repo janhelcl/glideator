@@ -59,33 +59,28 @@ const getInitialStateFromURL = (searchParams) => {
         }
     }
 
-    // Flight Quality
-    if (searchParams.get('fqEnabled') === 'true') {
-        state.flightQuality.enabled = true;
-        const fqValues = searchParams.get('fqValues');
-        if (fqValues) {
-            state.flightQuality.selectedValues = fqValues.split(',');
-        }
-    } else if (searchParams.get('fqEnabled') === 'false') {
-        state.flightQuality.enabled = false;
-    }
-
-    // Metric
+    // Flight Quality & Metric
+    const fqEnabledParam = searchParams.get('fqEnabled');
     const metricParam = searchParams.get('metric');
+
     if (metricParam) {
+        // Metric from URL is source of truth for slider value
         state.selectedMetric = metricParam;
-        
-        // Find all metrics up to the one specified in the URL
         const metricIndex = AVAILABLE_METRICS.indexOf(metricParam);
         if (metricIndex > -1) {
             state.flightQuality.selectedValues = AVAILABLE_METRICS.slice(0, metricIndex + 1);
-
-            // If a metric is specified, flight quality filter should be enabled
-            // unless fqEnabled is explicitly 'false'.
-            if (searchParams.get('fqEnabled') !== 'false' && metricParam !== DEFAULT_PLANNER_STATE.selectedMetric) {
-                state.flightQuality.enabled = true;
-            }
         }
+    }
+    
+    // Enabled state logic: a non-default metric implies enabled, but fqEnabled param has final say.
+    if (metricParam && metricParam !== DEFAULT_PLANNER_STATE.selectedMetric) {
+        state.flightQuality.enabled = true;
+    }
+    if (fqEnabledParam === 'true') {
+        state.flightQuality.enabled = true;
+    }
+    if (fqEnabledParam === 'false') {
+        state.flightQuality.enabled = false;
     }
 
     // View
@@ -203,9 +198,6 @@ const TripPlannerPage = () => {
     // Flight Quality - default enabled is false
     if (flightQuality.enabled) {
         newParams.set('fqEnabled', 'true');
-        if (flightQuality.selectedValues.join(',') !== defaultState.flightQuality.selectedValues.join(',')) {
-            newParams.set('fqValues', flightQuality.selectedValues.join(','));
-        }
     }
     
     if (selectedMetric !== defaultState.selectedMetric) {
