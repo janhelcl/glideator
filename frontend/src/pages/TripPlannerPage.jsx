@@ -347,7 +347,14 @@ const TripPlannerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [plannerState, userLocation]);
+  }, [
+    plannerState.dates,
+    plannerState.selectedMetric,
+    plannerState.distance,
+    plannerState.altitude,
+    plannerState.flightQuality,
+    userLocation
+  ]);
   
   // Handle site click from map
   const handleSiteClick = (site) => {
