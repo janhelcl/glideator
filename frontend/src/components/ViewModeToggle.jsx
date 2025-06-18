@@ -27,9 +27,12 @@ const ViewModeToggle = ({
   return (
     <Box 
       sx={{ 
-        display: { xs: 'none', sm: 'flex' }, // Hidden on mobile
-        gap: 0.5,
-        alignItems: 'center'
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: '8px',
+        padding: '2px',
+        border: '1px solid #e0e0e0'
       }}
     >
       <Tooltip title="List View">
@@ -39,24 +42,22 @@ const ViewModeToggle = ({
           aria-pressed={currentView === 'list'}
           aria-label="Switch to list view"
           sx={{
-            width: 36,
-            height: 36,
-            backgroundColor: currentView === 'list' ? '#1677ff' : 'transparent',
-            color: currentView === 'list' ? 'white' : 'text.primary',
-            border: '1px solid',
-            borderColor: currentView === 'list' ? '#1677ff' : 'divider',
-            borderRadius: 1,
+            width: 32,
+            height: 32,
+            backgroundColor: currentView === 'list' ? 'white' : 'transparent',
+            color: currentView === 'list' ? '#1677ff' : 'text.secondary',
+            border: 'none',
+            borderRadius: '6px',
+            minWidth: 'auto',
+            boxShadow: currentView === 'list' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
             '&:hover': disabled ? {} : {
-              backgroundColor: currentView === 'list' ? '#1565c0' : 'action.hover',
-              borderColor: currentView === 'list' ? '#1565c0' : 'primary.main'
+              backgroundColor: currentView === 'list' ? 'white' : 'rgba(255,255,255,0.7)',
+              color: currentView === 'list' ? '#1677ff' : 'text.primary',
             },
-            '&:focus-visible': {
-              outline: '2px solid #1677ff',
-              outlineOffset: 1
-            }
+            transition: 'all 0.2s ease-in-out'
           }}
         >
-          <ListIcon sx={{ fontSize: '18px' }} />
+          <ListIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Tooltip>
 
@@ -67,24 +68,22 @@ const ViewModeToggle = ({
           aria-pressed={currentView === 'map'}
           aria-label="Switch to map view"
           sx={{
-            width: 36,
-            height: 36,
-            backgroundColor: currentView === 'map' ? '#1677ff' : 'transparent',
-            color: currentView === 'map' ? 'white' : 'text.primary',
-            border: '1px solid',
-            borderColor: currentView === 'map' ? '#1677ff' : 'divider',
-            borderRadius: 1,
+            width: 32,
+            height: 32,
+            backgroundColor: currentView === 'map' ? 'white' : 'transparent',
+            color: currentView === 'map' ? '#1677ff' : 'text.secondary',
+            border: 'none',
+            borderRadius: '6px',
+            minWidth: 'auto',
+            boxShadow: currentView === 'map' ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
             '&:hover': disabled ? {} : {
-              backgroundColor: currentView === 'map' ? '#1565c0' : 'action.hover',
-              borderColor: currentView === 'map' ? '#1565c0' : 'primary.main'
+              backgroundColor: currentView === 'map' ? 'white' : 'rgba(255,255,255,0.7)',
+              color: currentView === 'map' ? '#1677ff' : 'text.primary',
             },
-            '&:focus-visible': {
-              outline: '2px solid #1677ff',
-              outlineOffset: 1
-            }
+            transition: 'all 0.2s ease-in-out'
           }}
         >
-          <MapIcon sx={{ fontSize: '18px' }} />
+          <MapIcon sx={{ fontSize: '16px' }} />
         </IconButton>
       </Tooltip>
     </Box>

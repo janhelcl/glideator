@@ -6,7 +6,6 @@ import {
   TextField,
   Typography,
   Stack,
-  Divider,
   Slider,
   IconButton,
 } from '@mui/material';
