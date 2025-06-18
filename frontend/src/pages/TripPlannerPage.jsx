@@ -189,11 +189,27 @@ const TripPlannerPage = () => {
     }
   }, [plannerState, sites.length, hasMore, loadingMore]);
 
-  // Handle loading less sites (remove last 10)
+  // Handle loading less sites (round down to nearest batch of 10)
   const handleLoadLess = useCallback(() => {
     if (sites.length <= 10) return; // Don't go below initial 10 sites
     
-    setSites(prevSites => prevSites.slice(0, -10));
+    // If current count is not a multiple of 10, round down to nearest multiple
+    // If current count is already a multiple of 10, subtract 10
+    const remainder = sites.length % 10;
+    let targetCount;
+    
+    if (remainder === 0) {
+      // Already a multiple of 10, remove one full batch
+      targetCount = sites.length - 10;
+    } else {
+      // Has remainder, round down to nearest multiple of 10
+      targetCount = sites.length - remainder;
+    }
+    
+    // Ensure we don't go below 10
+    targetCount = Math.max(10, targetCount);
+    
+    setSites(prevSites => prevSites.slice(0, targetCount));
     setHasMore(true); // Since we removed sites, there might be more available
   }, [sites.length]);
   
