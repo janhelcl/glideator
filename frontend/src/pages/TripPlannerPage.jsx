@@ -192,6 +192,17 @@ const TripPlannerPage = () => {
       // Prepare altitude range for API call
       const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
       
+      // Debug: Log what we're sending to the API
+      console.log('API Call Parameters:', {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        metric: plannerState.selectedMetric,
+        location: locationForApi,
+        distance: distanceForApi,
+        altitude: altitudeForApi,
+        plannerState: plannerState
+      });
+      
       const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10);
       
       // Debug: Log the API response to understand its structure
@@ -251,6 +262,17 @@ const TripPlannerPage = () => {
       // Prepare altitude range for API call
       const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
       
+      // Debug: Log what we're sending to the API for load more
+      console.log('Load More API Call Parameters:', {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        metric: plannerState.selectedMetric,
+        location: locationForApi,
+        distance: distanceForApi,
+        altitude: altitudeForApi,
+        offset: sites.length
+      });
+      
       const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10);
       
       // Append new sites to existing ones
@@ -297,6 +319,24 @@ const TripPlannerPage = () => {
       handlePlanTrip(plannerState.dates);
     }
   }, [handlePlanTrip, plannerState.dates]);
+
+  // Re-search when filters change (but not on initial load)
+  useEffect(() => {
+    if (sites.length > 0) { // Only if we already have results
+      handlePlanTrip(plannerState.dates);
+    }
+  }, [
+    handlePlanTrip,
+    plannerState.altitude.enabled,
+    plannerState.altitude.min, 
+    plannerState.altitude.max,
+    plannerState.distance.enabled,
+    plannerState.distance.km,
+    plannerState.flightQuality.enabled,
+    plannerState.flightQuality.selectedValues,
+    plannerState.selectedMetric,
+    sites.length
+  ]);
 
   // Sort sites based on selected sort option
   const sortedSites = useMemo(() => {
