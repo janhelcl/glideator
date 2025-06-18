@@ -188,6 +188,14 @@ const TripPlannerPage = () => {
       setLoadingMore(false);
     }
   }, [plannerState, sites.length, hasMore, loadingMore]);
+
+  // Handle loading less sites (remove last 10)
+  const handleLoadLess = useCallback(() => {
+    if (sites.length <= 10) return; // Don't go below initial 10 sites
+    
+    setSites(prevSites => prevSites.slice(0, -10));
+    setHasMore(true); // Since we removed sites, there might be more available
+  }, [sites.length]);
   
   // Auto-search on initial load with default dates
   useEffect(() => {
@@ -290,17 +298,29 @@ const TripPlannerPage = () => {
             />
           )}
           
-          {hasMore && plannerState.view === 'list' && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                size="large"
-                sx={{ px: 4 }}
-              >
-                {loadingMore ? 'Loading...' : 'More'}
-              </Button>
+          {(sites.length > 10 || hasMore) && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+              {sites.length > 10 && (
+                <Button
+                  variant="outlined"
+                  onClick={handleLoadLess}
+                  size="large"
+                  sx={{ px: 4 }}
+                >
+                  Less
+                </Button>
+              )}
+              {hasMore && (
+                <Button
+                  variant="outlined"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  size="large"
+                  sx={{ px: 4 }}
+                >
+                  {loadingMore ? 'Loading...' : 'More'}
+                </Button>
+              )}
             </Box>
           )}
         </Box>
