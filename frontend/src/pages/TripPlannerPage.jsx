@@ -37,18 +37,27 @@ const TripPlannerPage = () => {
   // Error handling
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   
+  // Location detection for distance calculations
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationRequested, setLocationRequested] = useState(false);
+  
   // Generate cache key for requests
-  const getCacheKey = (start, end, state) => {
-    const locationStr = state.distance.enabled && state.distance.coords 
-      ? `${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}` 
-      : 'no_distance';
+  const getCacheKey = (start, end, state, userLoc) => {
+    // Include user location for distance calculation
+    const userLocationStr = userLoc 
+      ? `user_${userLoc.latitude.toFixed(3)}_${userLoc.longitude.toFixed(3)}`
+      : 'no_user_location';
+    // Include distance filter if enabled
+    const distanceFilterStr = state.distance.enabled && state.distance.coords 
+      ? `filter_${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}` 
+      : 'no_distance_filter';
     const altitudeStr = state.altitude.enabled 
       ? `${state.altitude.min}_${state.altitude.max}` 
       : 'no_altitude';
     const flightQualityStr = state.flightQuality.enabled 
       ? state.flightQuality.selectedValues.join(',') 
       : 'no_flight_quality';
-    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${locationStr}_${altitudeStr}_${flightQualityStr}`;
+    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${userLocationStr}_${distanceFilterStr}_${altitudeStr}_${flightQualityStr}`;
   };
   
   // Clean up expired cache entries
@@ -60,6 +69,73 @@ const TripPlannerPage = () => {
       }
     }
   };
+
+  // Auto-detect location on page load
+  useEffect(() => {
+    if (!userLocation && !locationRequested) {
+      setLocationRequested(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            });
+          },
+          (error) => {
+            console.log('Location detection failed:', error.message);
+            // Don't show error to user, just continue without location
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 300000 // 5 minutes
+          }
+        );
+      }
+    }
+  }, [userLocation, locationRequested]);
+
+  // Function to request location permission
+  const requestLocation = useCallback(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          let errorMessage = 'Unable to get location';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location permissions.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+            default:
+              errorMessage = 'An unknown error occurred while getting location.';
+              break;
+          }
+          setError(errorMessage);
+          setSnackbarOpen(true);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    } else {
+      setError('Geolocation is not supported by this browser');
+      setSnackbarOpen(true);
+    }
+  }, []);
   
   // Handle trip planning
   const handlePlanTrip = useCallback(async (dateRange) => {
@@ -89,7 +165,7 @@ const TripPlannerPage = () => {
       return;
     }
     
-    const cacheKey = getCacheKey(startDate, endDate, plannerState);
+    const cacheKey = getCacheKey(startDate, endDate, plannerState, userLocation);
     
     // Check cache first
     cleanupCache();
@@ -108,8 +184,9 @@ const TripPlannerPage = () => {
       const startDateStr = formatDate(startDate);
       const endDateStr = formatDate(endDate);
       
-      // Prepare location and distance for API call
-      const locationForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null;
+      // Always send location if available (for distance calculation)
+      const locationForApi = userLocation || (plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null);
+      // Only apply distance filter if distance filter is enabled
       const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
       
       // Prepare altitude range for API call
@@ -145,7 +222,7 @@ const TripPlannerPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [plannerState]);
+  }, [plannerState, userLocation]);
   
   // Handle site click from map
   const handleSiteClick = (site) => {
@@ -166,8 +243,9 @@ const TripPlannerPage = () => {
       const startDateStr = formatDate(startDate);
       const endDateStr = formatDate(endDate);
       
-      // Prepare location and distance for API call
-      const locationForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null;
+      // Always send location if available (for distance calculation)
+      const locationForApi = userLocation || (plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null);
+      // Only apply distance filter if distance filter is enabled
       const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
       
       // Prepare altitude range for API call
@@ -187,7 +265,7 @@ const TripPlannerPage = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [plannerState, sites.length, hasMore, loadingMore]);
+  }, [plannerState, sites.length, hasMore, loadingMore, userLocation]);
 
   // Handle loading less sites (round down to nearest batch of 10)
   const handleLoadLess = useCallback(() => {
@@ -226,7 +304,7 @@ const TripPlannerPage = () => {
     
     const sitesCopy = [...sites];
     
-    if (plannerState.sortBy === 'distance' && plannerState.distance.enabled) {
+    if (plannerState.sortBy === 'distance') {
       // Sort by distance (closest first), then by flyability as secondary sort
       return sitesCopy.sort((a, b) => {
         if (a.distance_km !== null && b.distance_km !== null) {
@@ -243,7 +321,7 @@ const TripPlannerPage = () => {
       // Sort by flyability (default - highest first)
       return sitesCopy.sort((a, b) => b.average_flyability - a.average_flyability);
     }
-  }, [sites, plannerState.sortBy, plannerState.distance.enabled]);
+  }, [sites, plannerState.sortBy]);
   
   return (
     <Container maxWidth="lg" sx={{ py: 3, height: '100%', overflow: 'auto' }}>
@@ -316,20 +394,25 @@ const TripPlannerPage = () => {
                       } 
                     }}
                   >
-                    <Button
-                      variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                      onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
-                    >
-                      Best Conditions
-                    </Button>
-                    {plannerState.distance.enabled && plannerState.distance.coords && (
-                      <Button
-                        variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
-                        onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
-                      >
-                        Closest
-                      </Button>
-                    )}
+                                      <Button
+                    variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                    onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                  >
+                    Best Conditions
+                  </Button>
+                  <Button
+                    variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                    onClick={() => {
+                      if (!userLocation) {
+                        // Prompt for location if not available
+                        requestLocation();
+                      } else {
+                        setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                      }
+                    }}
+                  >
+                    Closest
+                  </Button>
                   </ButtonGroup>
                 </Box>
               )}
@@ -353,20 +436,25 @@ const TripPlannerPage = () => {
                     } 
                   }}
                 >
-                  <Button
-                    variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                    onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
-                  >
-                    Best
-                  </Button>
-                  {plannerState.distance.enabled && plannerState.distance.coords && (
-                    <Button
-                      variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
-                      onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
-                    >
-                      Closest
-                    </Button>
-                  )}
+                                  <Button
+                  variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                >
+                  Best
+                </Button>
+                <Button
+                  variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    if (!userLocation) {
+                      // Prompt for location if not available
+                      requestLocation();
+                    } else {
+                      setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                    }
+                  }}
+                >
+                  Closest
+                </Button>
                 </ButtonGroup>
               </Box>
             )}
