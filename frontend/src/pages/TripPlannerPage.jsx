@@ -273,26 +273,102 @@ const TripPlannerPage = () => {
       {/* Results */}
       {!loading && sites.length > 0 && (
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Showing {sites.length} of {totalCount} sites
-            </Typography>
+          <Box sx={{ mb: 2 }}>
+            {/* Title row */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              mb: { xs: 1, sm: 0 }
+            }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                }}
+              >
+                Showing {sites.length} of {totalCount} sites
+              </Typography>
+              
+              {/* Sort buttons - only show on desktop */}
+              {plannerState.view === 'list' && (
+                <Box sx={{ 
+                  display: { xs: 'none', sm: 'flex' },
+                  alignItems: 'center', 
+                  gap: 1
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    color="text.secondary" 
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    Sort by:
+                  </Typography>
+                  <ButtonGroup 
+                    size="small" 
+                    variant="outlined" 
+                    sx={{ 
+                      '& .MuiButton-root': { 
+                        fontSize: '0.75rem', 
+                        px: 1.5, 
+                        py: 0.5
+                      } 
+                    }}
+                  >
+                    <Button
+                      variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                      onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                    >
+                      Best Conditions
+                    </Button>
+                    {plannerState.distance.enabled && plannerState.distance.coords && (
+                      <Button
+                        variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                        onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
+                      >
+                        Closest
+                      </Button>
+                    )}
+                  </ButtonGroup>
+                </Box>
+              )}
+            </Box>
             
-            {plannerState.distance.enabled && plannerState.distance.coords && (
-              <ButtonGroup size="small" variant="outlined">
-                <Button
-                  variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+            {/* Sort buttons on mobile - below title, left aligned */}
+            {plannerState.view === 'list' && (
+              <Box sx={{ 
+                display: { xs: 'flex', sm: 'none' },
+                alignItems: 'center', 
+                gap: 0.5
+              }}>
+                <ButtonGroup 
+                  size="small" 
+                  variant="outlined" 
+                  sx={{ 
+                    '& .MuiButton-root': { 
+                      fontSize: '0.7rem', 
+                      px: 1, 
+                      py: 0.25
+                    } 
+                  }}
                 >
-                  Best Conditions
-                </Button>
-                <Button
-                  variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
-                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
-                >
-                  Closest
-                </Button>
-              </ButtonGroup>
+                  <Button
+                    variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                    onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                  >
+                    Best
+                  </Button>
+                  {plannerState.distance.enabled && plannerState.distance.coords && (
+                    <Button
+                      variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                      onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'distance' }))}
+                    >
+                      Closest
+                    </Button>
+                  )}
+                </ButtonGroup>
+              </Box>
             )}
           </Box>
           
