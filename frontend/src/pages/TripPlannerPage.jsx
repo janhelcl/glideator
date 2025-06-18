@@ -5,7 +5,7 @@ import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
-import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
+import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '../types/ui-state';
 import { useSearchParams } from 'react-router-dom';
 
 // Cache for API requests (5 minutes)
@@ -63,8 +63,22 @@ const getInitialStateFromURL = (searchParams) => {
     }
 
     // Metric
-    const metric = searchParams.get('metric');
-    if (metric) state.selectedMetric = metric;
+    const metricParam = searchParams.get('metric');
+    if (metricParam) {
+        state.selectedMetric = metricParam;
+        
+        // Find all metrics up to the one specified in the URL
+        const metricIndex = AVAILABLE_METRICS.indexOf(metricParam);
+        if (metricIndex > -1) {
+            state.flightQuality.selectedValues = AVAILABLE_METRICS.slice(0, metricIndex + 1);
+
+            // If a metric is specified, flight quality filter should be enabled
+            // unless fqEnabled is explicitly 'false'.
+            if (searchParams.get('fqEnabled') !== 'false' && metricParam !== DEFAULT_PLANNER_STATE.selectedMetric) {
+                state.flightQuality.enabled = true;
+            }
+        }
+    }
 
     // View
     const view = searchParams.get('view');
@@ -435,7 +449,6 @@ const TripPlannerPage = () => {
     plannerState.flightQuality.enabled,
     plannerState.flightQuality.selectedValues,
     plannerState.selectedMetric,
-    sites.length
   ]);
 
   // Sort sites based on selected sort option
