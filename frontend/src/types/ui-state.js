@@ -16,7 +16,7 @@ export const DEFAULT_PLANNER_STATE = {
   
   // Altitude filter
   altitude: {
-    enabled: false,
+    enabled: true,
     min: 0,
     max: 2500
   },
