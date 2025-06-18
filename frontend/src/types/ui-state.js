@@ -18,7 +18,7 @@ export const DEFAULT_PLANNER_STATE = {
   altitude: {
     enabled: false,
     min: 0,
-    max: 3000
+    max: 2500
   },
   
   // Flight quality filter

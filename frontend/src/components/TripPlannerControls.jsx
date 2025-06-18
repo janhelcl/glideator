@@ -16,7 +16,6 @@ import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SocialDistanceIcon from '@mui/icons-material/SocialDistance';
 import FilterHdrIcon from '@mui/icons-material/FilterHdr';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
@@ -30,15 +29,14 @@ const MetricStyleControl = ({
   subtitle, 
   enabled, 
   children, 
-  onToggle 
+  onToggle,
+  showDisableButton = true
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClick = () => {
     setIsOpen(true);
-    if (!enabled) {
-      onToggle(true);
-    }
+    // Don't automatically enable - let user control the state via the Enable/Disable buttons
   };
 
   return (
@@ -48,19 +46,19 @@ const MetricStyleControl = ({
         <IconButton
           onClick={handleClick}
           sx={{
-            backgroundColor: enabled ? 'rgba(22, 119, 255, 0.1)' : 'white',
-            border: `1px solid ${enabled ? '#1677ff' : '#ddd'}`,
+            backgroundColor: 'white',
+            border: '1px solid #ddd',
             borderRadius: '4px',
             padding: '6px',
             boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
             width: '32px',
             height: '32px',
             '&:hover': {
-              backgroundColor: enabled ? 'rgba(22, 119, 255, 0.2)' : '#f5f5f5',
+              backgroundColor: '#f5f5f5',
             },
           }}
         >
-          <Icon fontSize="small" color={enabled ? 'primary' : 'action'} />
+          <Icon fontSize="small" color="action" />
         </IconButton>
       </Box>
       
@@ -115,12 +113,12 @@ const MetricStyleControl = ({
               {children}
             </Box>
             
-            {enabled && (
+            {enabled && showDisableButton && (
               <Button 
                 size="small" 
                 onClick={() => {
                   onToggle(false);
-                  setIsOpen(false);
+                  // Don't close the modal, just disable the content
                 }}
                 sx={{ 
                   fontSize: '0.6rem', 
@@ -129,6 +127,22 @@ const MetricStyleControl = ({
                 }}
               >
                 Disable
+              </Button>
+            )}
+            
+            {!enabled && showDisableButton && (
+              <Button 
+                size="small" 
+                onClick={() => {
+                  onToggle(true);
+                }}
+                sx={{ 
+                  fontSize: '0.6rem', 
+                  padding: '2px 6px',
+                  minWidth: 'auto'
+                }}
+              >
+                Enable
               </Button>
             )}
             
@@ -203,6 +217,7 @@ const FlightQualityMetricControl = ({
       subtitle="(XC Points)"
       enabled={enabled}
       onToggle={onToggle}
+      showDisableButton={false}
     >
       <Slider
         orientation="vertical"
@@ -257,6 +272,13 @@ const DistanceMetricControl = ({
     setLocalDistance(distanceState.km);
   }, [distanceState.km]);
 
+  // Automatically try to get location when filter is enabled and no coords exist
+  useEffect(() => {
+    if (distanceState.enabled && !distanceState.coords && !isDetectingLocation) {
+      onDetectLocation();
+    }
+  }, [distanceState.enabled, distanceState.coords, isDetectingLocation, onDetectLocation]);
+
   const marks = useMemo(() => [
     { value: 10, label: '10' },
     { value: 100, label: '100' },
@@ -273,25 +295,34 @@ const DistanceMetricControl = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <MetricStyleControl
         icon={SocialDistanceIcon}
-        title="Distance from"
-        subtitle="Location (km)"
+        title="Distance"
+        subtitle="(km)"
         enabled={distanceState.enabled}
         onToggle={onToggle}
+        showDisableButton={true}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={onDetectLocation}
-            disabled={isDetectingLocation}
-            sx={{ 
-              fontSize: '0.6rem',
-              padding: '2px',
-              minHeight: '20px',
-              backgroundColor: distanceState.coords ? 'rgba(22, 119, 255, 0.1)' : 'transparent'
-            }}
-          >
-            <MyLocationIcon fontSize="small" />
-          </IconButton>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {!distanceState.coords && distanceState.enabled && (
+            <Typography variant="caption" sx={{ 
+              fontSize: '0.6rem', 
+              textAlign: 'center', 
+              color: isDetectingLocation ? 'text.secondary' : 'error.main',
+              marginBottom: '8px'
+            }}>
+              {isDetectingLocation ? 'Getting location...' : 'Location access needed'}
+            </Typography>
+          )}
+          
+          {!distanceState.enabled && (
+            <Typography variant="caption" sx={{ 
+              fontSize: '0.6rem', 
+              textAlign: 'center', 
+              color: 'text.secondary',
+              marginBottom: '8px'
+            }}>
+              Filter is disabled
+            </Typography>
+          )}
           
           <Slider
             orientation="vertical"
@@ -302,10 +333,10 @@ const DistanceMetricControl = ({
             max={1000}
             step={10}
             marks={marks}
-            disabled={!distanceState.coords}
+            disabled={!distanceState.coords || !distanceState.enabled}
             valueLabelDisplay="off"
             sx={{
-              height: '70%',
+              height: distanceState.coords ? 'calc(100% - 20px)' : 'calc(100% - 40px)',
               marginTop: '8px',
               '& .MuiSlider-markLabel': {
                 transform: 'translateX(10px) translateY(50%)',
@@ -352,10 +383,11 @@ const AltitudeMetricControl = ({
 
   const marks = useMemo(() => [
     { value: 0, label: '0' },
+    { value: 500, label: '0.5k' },
     { value: 1000, label: '1k' },
+    { value: 1500, label: '1.5k' },
     { value: 2000, label: '2k' },
-    { value: 3000, label: '3k' },
-    { value: 4000, label: '4k' }
+    { value: 2500, label: '2.5k' }
   ], []);
 
   const formatAltitude = (altitude) => {
@@ -366,24 +398,25 @@ const AltitudeMetricControl = ({
   return (
     <MetricStyleControl
       icon={FilterHdrIcon}
-      title="Site Altitude"
-      subtitle="Range (m)"
+      title="Altitude"
+      subtitle="(m)"
       enabled={altitudeState.enabled}
       onToggle={onToggle}
+      showDisableButton={false}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Slider
           orientation="vertical"
           value={localAltitude}
           onChange={(e, val) => setLocalAltitude(val)}
           onChangeCommitted={(e, val) => onAltitudeChange(val)}
           min={0}
-          max={4000}
+          max={2500}
           step={100}
           marks={marks}
           valueLabelDisplay="off"
           sx={{
-            height: '70%',
+            height: 'calc(100% - 20px)',
             marginTop: '8px',
             '& .MuiSlider-markLabel': {
               transform: 'translateX(10px) translateY(50%)',
@@ -405,7 +438,7 @@ const AltitudeMetricControl = ({
           }}
         />
         
-        <Typography variant="caption" sx={{ fontSize: '0.6rem', textAlign: 'center' }}>
+        <Typography variant="caption" sx={{ fontSize: '0.6rem', textAlign: 'center', marginTop: '4px' }}>
           {formatAltitude(localAltitude[0])} - {formatAltitude(localAltitude[1])}
         </Typography>
       </Box>
