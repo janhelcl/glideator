@@ -275,7 +275,7 @@ const TripPlannerPage = () => {
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Found {totalCount} sites
+              Showing {sites.length} of {totalCount} sites
             </Typography>
             
             {plannerState.distance.enabled && plannerState.distance.coords && (
@@ -308,7 +308,7 @@ const TripPlannerPage = () => {
               sites={sites}
               onSiteClick={handleSiteClick}
               isVisible={true}
-              maxSites={Math.min(sites.length, 50)}
+              maxSites={sites.length}
               selectedMetric={plannerState.selectedMetric}
               userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
             />
