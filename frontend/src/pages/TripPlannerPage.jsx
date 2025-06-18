@@ -43,12 +43,20 @@ const getInitialStateFromURL = (searchParams) => {
     }
 
     // Altitude
-    if (searchParams.get('altEnabled') === 'false') {
+    const altEnabledParam = searchParams.get('altEnabled');
+    if (altEnabledParam === 'false') {
         state.altitude.enabled = false;
-    } else if (searchParams.get('altEnabled') === 'true') {
+    } else {
+        // Altitude is enabled by default, or if altEnabled=true
         state.altitude.enabled = true;
-        state.altitude.min = parseInt(searchParams.get('altMin'), 10) ?? state.altitude.min;
-        state.altitude.max = parseInt(searchParams.get('altMax'), 10) ?? state.altitude.max;
+        const altMin = parseInt(searchParams.get('altMin'), 10);
+        const altMax = parseInt(searchParams.get('altMax'), 10);
+        if (!isNaN(altMin)) {
+            state.altitude.min = altMin;
+        }
+        if (!isNaN(altMax)) {
+            state.altitude.max = altMax;
+        }
     }
 
     // Flight Quality
