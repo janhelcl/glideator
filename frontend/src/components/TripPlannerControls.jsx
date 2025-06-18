@@ -452,9 +452,7 @@ const AltitudeMetricControl = ({
  */
 const TripPlannerControls = ({
   state = DEFAULT_PLANNER_STATE,
-  setState,
-  onSubmit,
-  loading = false
+  setState
 }) => {
   const [dateRange, setDateRange] = useState(() => {
     const [defaultStart, defaultEnd] = getDefaultDateRange();
@@ -496,15 +494,7 @@ const TripPlannerControls = ({
     setState({ ...state, dates: newRange });
   };
 
-  const handleSubmit = () => {
-    if (dateRange[0] && dateRange[1] && onSubmit) {
-      onSubmit(dateRange);
-    }
-  };
 
-  const isSubmitEnabled = useMemo(() => {
-    return dateRange[0] && dateRange[1] && !loading;
-  }, [dateRange, loading]);
 
   const handleDistanceToggle = (enabled) => {
     setState(prev => ({
@@ -640,23 +630,9 @@ const TripPlannerControls = ({
               onAltitudeChange={handleAltitudeChange}
               onToggle={handleAltitudeToggle}
             />
-        </Stack>
-        
-        <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' } }}/>
-        
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={!isSubmitEnabled}
-            sx={{ px: 3, height: 40 }}
-          >
-            {loading ? 'Planning...' : 'GO'}
-          </Button>
           <ViewModeToggle
             currentView={state.view}
             onViewChange={handleViewModeChange}
-            disabled={loading}
           />
         </Stack>
       </Box>
