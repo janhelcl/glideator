@@ -100,6 +100,10 @@ const TripPlannerPage = () => {
   // Initialize unified planner state with default values, potentially overridden by URL params
   const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams));
   
+  // Separate UI states (client-side only, don't trigger API calls)
+  const [sortBy, setSortBy] = useState(plannerState.sortBy);
+  const [view, setView] = useState(plannerState.view);
+  
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -172,7 +176,7 @@ const TripPlannerPage = () => {
   // Update URL search params when state changes
   useEffect(() => {
     const newParams = new URLSearchParams();
-    const { dates, distance, altitude, flightQuality, selectedMetric, view, sortBy } = plannerState;
+    const { dates, distance, altitude, flightQuality, selectedMetric } = plannerState;
     const defaultState = DEFAULT_PLANNER_STATE;
 
     // Dates are always present
@@ -208,7 +212,7 @@ const TripPlannerPage = () => {
     if (sortBy !== defaultState.sortBy) newParams.set('sortBy', sortBy);
 
     setSearchParams(newParams, { replace: true });
-  }, [plannerState, setSearchParams]);
+  }, [plannerState, sortBy, view, setSearchParams]);
 
   // Function to request location permission
   const requestLocation = useCallback(() => {
@@ -454,7 +458,6 @@ const TripPlannerPage = () => {
     plannerState.flightQuality.selectedValues,
     plannerState.selectedMetric,
     plannerState.dates,
-    sites.length,
   ]);
 
   // Sort sites based on selected sort option
@@ -463,7 +466,7 @@ const TripPlannerPage = () => {
     
     const sitesCopy = [...sites];
     
-    if (plannerState.sortBy === 'distance') {
+    if (sortBy === 'distance') {
       // Sort by distance (closest first), then by flyability as secondary sort
       return sitesCopy.sort((a, b) => {
         if (a.distance_km !== null && b.distance_km !== null) {
@@ -480,7 +483,7 @@ const TripPlannerPage = () => {
       // Sort by flyability (default - highest first)
       return sitesCopy.sort((a, b) => b.average_flyability - a.average_flyability);
     }
-  }, [sites, plannerState.sortBy]);
+  }, [sites, sortBy]);
   
   return (
     <Box sx={{ 
@@ -508,8 +511,9 @@ const TripPlannerPage = () => {
           <Box sx={{ mb: 4 }}>
             {/* New Unified Controls */}
             <TripPlannerControls
-              state={plannerState}
+              state={{ ...plannerState, view }}
               setState={setPlannerState}
+              onViewChange={setView}
               onSubmit={handlePlanTrip}
               loading={loading}
             />
@@ -538,7 +542,7 @@ const TripPlannerPage = () => {
                     </Typography>
                   
                   {/* Sort buttons - only show on desktop */}
-                  {plannerState.view === 'list' && (
+                  {view === 'list' && (
                     <Box sx={{ 
                       display: { xs: 'none', sm: 'flex' },
                       alignItems: 'center', 
@@ -563,19 +567,19 @@ const TripPlannerPage = () => {
                         }}
                       >
                         <Button
-                          variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                          onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                          variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
+                          onClick={() => setSortBy('flyability')}
                         >
                           Best Conditions
                         </Button>
                         <Button
-                          variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                          variant={sortBy === 'distance' ? 'contained' : 'outlined'}
                           onClick={() => {
                             if (!userLocation) {
                               // Prompt for location if not available
                               requestLocation();
                             } else {
-                              setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                              setSortBy('distance');
                             }
                           }}
                         >
@@ -587,7 +591,7 @@ const TripPlannerPage = () => {
                 </Box>
                 
                 {/* Sort buttons on mobile - below title, left aligned */}
-                {plannerState.view === 'list' && (
+                {view === 'list' && (
                   <Box sx={{ 
                     display: { xs: 'flex', sm: 'none' },
                     alignItems: 'center', 
@@ -605,19 +609,19 @@ const TripPlannerPage = () => {
                       }}
                     >
                       <Button
-                        variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                        onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                        variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
+                        onClick={() => setSortBy('flyability')}
                       >
                         Best
                       </Button>
                       <Button
-                        variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                        variant={sortBy === 'distance' ? 'contained' : 'outlined'}
                         onClick={() => {
                           if (!userLocation) {
                             // Prompt for location if not available
                             requestLocation();
                           } else {
-                            setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                            setSortBy('distance');
                           }
                         }}
                       >
@@ -629,7 +633,7 @@ const TripPlannerPage = () => {
               </Box>
               )}
               
-              {plannerState.view === 'list' ? (
+              {view === 'list' ? (
                 sites.length > 0 ? (
                   <SiteList 
                     sites={sortedSites} 
@@ -644,10 +648,10 @@ const TripPlannerPage = () => {
                 ) : null
               ) : (
                 <PlannerMapView
-                  sites={sites}
+                  sites={sortedSites}
                   onSiteClick={handleSiteClick}
                   isVisible={true}
-                  maxSites={sites.length}
+                  maxSites={sortedSites.length}
                   selectedMetric={plannerState.selectedMetric}
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
                   loading={loading && sites.length === 0}

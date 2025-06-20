@@ -458,7 +458,8 @@ const AltitudeMetricControl = ({
  */
 const TripPlannerControls = ({
   state = DEFAULT_PLANNER_STATE,
-  setState
+  setState,
+  onViewChange
 }) => {
   const [dateRange, setDateRange] = useState(() => {
     const [defaultStart, defaultEnd] = getDefaultDateRange();
@@ -569,7 +570,11 @@ const TripPlannerControls = ({
   };
 
   const handleViewModeChange = (view) => {
-    setState({ ...state, view });
+    if (onViewChange) {
+      onViewChange(view);
+    } else {
+      setState({ ...state, view });
+    }
   };
 
   return (
@@ -622,26 +627,26 @@ const TripPlannerControls = ({
           gap: 2,
           justifyContent: { xs: 'space-between', md: 'flex-end' }
         }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <FlightQualityMetricControl
-                selectedValues={state.flightQuality.selectedValues}
-                onSelectionChange={handleFlightQualityChange}
-                enabled={state.flightQuality.enabled}
-                onToggle={handleFlightQualityToggle}
-              />
-            <DistanceMetricControl
-                distanceState={state.distance}
-                onDistanceChange={handleDistanceChange}
-                onToggle={handleDistanceToggle}
-                onDetectLocation={handleLocationDetect}
-                isDetectingLocation={isDetectingLocation}
-                locationError={locationError}
-              />
-            <AltitudeMetricControl
-                altitudeState={state.altitude}
-                onAltitudeChange={handleAltitudeChange}
-                onToggle={handleAltitudeToggle}
-              />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FlightQualityMetricControl
+              selectedValues={state.flightQuality.selectedValues}
+              onSelectionChange={handleFlightQualityChange}
+              enabled={state.flightQuality.enabled}
+              onToggle={handleFlightQualityToggle}
+            />
+          <DistanceMetricControl
+              distanceState={state.distance}
+              onDistanceChange={handleDistanceChange}
+              onToggle={handleDistanceToggle}
+              onDetectLocation={handleLocationDetect}
+              isDetectingLocation={isDetectingLocation}
+              locationError={locationError}
+            />
+          <AltitudeMetricControl
+              altitudeState={state.altitude}
+              onAltitudeChange={handleAltitudeChange}
+              onToggle={handleAltitudeToggle}
+            />
           </Stack>
           
           <ViewModeToggle
