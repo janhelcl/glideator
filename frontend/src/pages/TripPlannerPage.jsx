@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Container, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
+import { Box, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
 import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
@@ -252,8 +252,10 @@ const TripPlannerPage = () => {
   }, []);
   
   // Handle trip planning
-  const handlePlanTrip = useCallback(async (dateRange) => {
-    const [startDate, endDate] = dateRange;
+  const handlePlanTrip = useCallback(async (dates) => {
+    cleanupCache();
+    
+    const [startDate, endDate] = dates;
     
     if (!startDate || !endDate) {
       setError('Please select both start and end dates');
@@ -282,7 +284,6 @@ const TripPlannerPage = () => {
     const cacheKey = getCacheKey(startDate, endDate, plannerState, userLocation);
     
     // Check cache first
-    cleanupCache();
     const cachedResult = REQUEST_CACHE.get(cacheKey);
     if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
       setSites(cachedResult.data.sites || []);
@@ -348,12 +349,8 @@ const TripPlannerPage = () => {
       setLoading(false);
     }
   }, [
-    plannerState.dates,
-    plannerState.selectedMetric,
-    plannerState.distance,
-    plannerState.altitude,
-    plannerState.flightQuality,
-    userLocation
+    userLocation,
+    plannerState
   ]);
   
   // Handle site click from map
@@ -456,6 +453,8 @@ const TripPlannerPage = () => {
     plannerState.flightQuality.enabled,
     plannerState.flightQuality.selectedValues,
     plannerState.selectedMetric,
+    plannerState.dates,
+    sites.length,
   ]);
 
   // Sort sites based on selected sort option
