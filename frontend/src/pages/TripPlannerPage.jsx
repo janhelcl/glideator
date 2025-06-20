@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Box, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
 import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
@@ -442,16 +442,17 @@ const TripPlannerPage = () => {
     }
   }, [handlePlanTrip, plannerState.dates]);
 
-  // Re-search when filters change (but not on initial load)
-  useEffect(() => {
-    if (sites.length > 0) { // Only if we already have results
-      handlePlanTrip(plannerState.dates);
-    }
+  // Re-search when filters (not site count) change
+  const filtersSignature = useMemo(() => {
+    return JSON.stringify({
+      altitude: plannerState.altitude,
+      distance: { enabled: plannerState.distance.enabled, km: plannerState.distance.km },
+      flightQuality: { enabled: plannerState.flightQuality.enabled, values: plannerState.flightQuality.selectedValues },
+      metric: plannerState.selectedMetric,
+      dates: plannerState.dates,
+    });
   }, [
-    handlePlanTrip,
-    plannerState.altitude.enabled,
-    plannerState.altitude.min, 
-    plannerState.altitude.max,
+    plannerState.altitude,
     plannerState.distance.enabled,
     plannerState.distance.km,
     plannerState.flightQuality.enabled,
@@ -459,6 +460,18 @@ const TripPlannerPage = () => {
     plannerState.selectedMetric,
     plannerState.dates,
   ]);
+
+  const prevFilterSigRef = useRef(filtersSignature);
+
+  useEffect(() => {
+    if (sites.length === 0) return; // Nothing to refresh yet
+
+    if (prevFilterSigRef.current !== filtersSignature) {
+      // Filters changed – refresh data
+      handlePlanTrip(plannerState.dates);
+      prevFilterSigRef.current = filtersSignature;
+    }
+  }, [filtersSignature, sites.length, handlePlanTrip, plannerState.dates]);
 
   // Sort sites based on selected sort option
   const sortedSites = useMemo(() => {
