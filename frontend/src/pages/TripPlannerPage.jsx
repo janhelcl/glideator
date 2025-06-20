@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Container, Typography, Alert, Snackbar, Button, ButtonGroup } from '@mui/material';
+import { Box, Container, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
 import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
@@ -484,212 +484,221 @@ const TripPlannerPage = () => {
   }, [sites, plannerState.sortBy]);
   
   return (
-    <Container maxWidth="lg" sx={{ py: 3, height: '100%', overflow: 'auto' }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 'bold' }}>
-          Plan a Trip
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Find the best paragliding sites for your next adventure
-        </Typography>
-        
-        {/* New Unified Controls */}
-        <TripPlannerControls
-          state={plannerState}
-          setState={setPlannerState}
-          onSubmit={handlePlanTrip}
-          loading={loading}
-        />
-      </Box>
-      
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <LoadingSpinner />
-        </Box>
-      )}
-      
-      {/* Results */}
-      {!loading && sites.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ mb: 2 }}>
-            {/* Title row */}
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              mb: { xs: 1, sm: 0 }
-            }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: { xs: '1.1rem', sm: '1.25rem' }
-                }}
-              >
-                Showing {sites.length} of {totalCount} sites
-              </Typography>
-              
-              {/* Sort buttons - only show on desktop */}
-              {plannerState.view === 'list' && (
+    <Box sx={{ 
+      maxWidth: '1200px',
+      margin: '0 auto',
+      p: 2,
+      minHeight: '100%',  // Ensure it takes full height if content is short
+    }}>
+      <Paper elevation={2}>
+        <Box sx={{ p: 3 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Plan a Trip
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Find the best paragliding sites for your next adventure
+            </Typography>
+            
+            {/* New Unified Controls */}
+            <TripPlannerControls
+              state={plannerState}
+              setState={setPlannerState}
+              onSubmit={handlePlanTrip}
+              loading={loading}
+            />
+          </Box>
+          
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <LoadingSpinner />
+            </Box>
+          )}
+          
+          {/* Results */}
+          {!loading && sites.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
+                {/* Title row */}
                 <Box sx={{ 
-                  display: { xs: 'none', sm: 'flex' },
-                  alignItems: 'center', 
-                  gap: 1
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mb: { xs: 1, sm: 0 }
                 }}>
                   <Typography 
-                    variant="caption" 
-                    color="text.secondary" 
-                    sx={{ fontSize: '0.75rem' }}
-                  >
-                    Sort by:
-                  </Typography>
-                  <ButtonGroup 
-                    size="small" 
-                    variant="outlined" 
+                    variant="h6" 
                     sx={{ 
-                      '& .MuiButton-root': { 
-                        fontSize: '0.75rem', 
-                        px: 1.5, 
-                        py: 0.5
-                      } 
+                      fontWeight: 'bold',
+                      fontSize: { xs: '1.1rem', sm: '1.25rem' }
                     }}
                   >
-                                      <Button
-                    variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                    onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
-                  >
-                    Best Conditions
-                  </Button>
-                  <Button
-                    variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
-                    onClick={() => {
-                      if (!userLocation) {
-                        // Prompt for location if not available
-                        requestLocation();
-                      } else {
-                        setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
-                      }
-                    }}
-                  >
-                    Closest
-                  </Button>
-                  </ButtonGroup>
+                    Showing {sites.length} of {totalCount} sites
+                  </Typography>
+                  
+                  {/* Sort buttons - only show on desktop */}
+                  {plannerState.view === 'list' && (
+                    <Box sx={{ 
+                      display: { xs: 'none', sm: 'flex' },
+                      alignItems: 'center', 
+                      gap: 1
+                    }}>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary" 
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        Sort by:
+                      </Typography>
+                      <ButtonGroup 
+                        size="small" 
+                        variant="outlined" 
+                        sx={{ 
+                          '& .MuiButton-root': { 
+                            fontSize: '0.75rem', 
+                            px: 1.5, 
+                            py: 0.5
+                          } 
+                        }}
+                      >
+                        <Button
+                          variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                          onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                        >
+                          Best Conditions
+                        </Button>
+                        <Button
+                          variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                          onClick={() => {
+                            if (!userLocation) {
+                              // Prompt for location if not available
+                              requestLocation();
+                            } else {
+                              setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                            }
+                          }}
+                        >
+                          Closest
+                        </Button>
+                      </ButtonGroup>
+                    </Box>
+                  )}
+                </Box>
+                
+                {/* Sort buttons on mobile - below title, left aligned */}
+                {plannerState.view === 'list' && (
+                  <Box sx={{ 
+                    display: { xs: 'flex', sm: 'none' },
+                    alignItems: 'center', 
+                    gap: 0.5
+                  }}>
+                    <ButtonGroup 
+                      size="small" 
+                      variant="outlined" 
+                      sx={{ 
+                        '& .MuiButton-root': { 
+                          fontSize: '0.7rem', 
+                          px: 1, 
+                          py: 0.25
+                        } 
+                      }}
+                    >
+                      <Button
+                        variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
+                        onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
+                      >
+                        Best
+                      </Button>
+                      <Button
+                        variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
+                        onClick={() => {
+                          if (!userLocation) {
+                            // Prompt for location if not available
+                            requestLocation();
+                          } else {
+                            setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
+                          }
+                        }}
+                      >
+                        Closest
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
+                )}
+              </Box>
+              
+              {plannerState.view === 'list' ? (
+                <SiteList 
+                  sites={sortedSites} 
+                  onSiteClick={handleSiteClick}
+                  selectedMetric={plannerState.selectedMetric}
+                  showRanking={true}
+                />
+              ) : (
+                <PlannerMapView
+                  sites={sites}
+                  onSiteClick={handleSiteClick}
+                  isVisible={true}
+                  maxSites={sites.length}
+                  selectedMetric={plannerState.selectedMetric}
+                  userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
+                />
+              )}
+              
+              {(sites.length > 10 || hasMore) && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
+                  {sites.length > 10 && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleLoadLess}
+                      size="large"
+                      sx={{ px: 4 }}
+                    >
+                      Less
+                    </Button>
+                  )}
+                  {hasMore && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      size="large"
+                      sx={{ px: 4 }}
+                    >
+                      {loadingMore ? 'Loading...' : 'More'}
+                    </Button>
+                  )}
                 </Box>
               )}
             </Box>
-            
-            {/* Sort buttons on mobile - below title, left aligned */}
-            {plannerState.view === 'list' && (
-              <Box sx={{ 
-                display: { xs: 'flex', sm: 'none' },
-                alignItems: 'center', 
-                gap: 0.5
-              }}>
-                <ButtonGroup 
-                  size="small" 
-                  variant="outlined" 
-                  sx={{ 
-                    '& .MuiButton-root': { 
-                      fontSize: '0.7rem', 
-                      px: 1, 
-                      py: 0.25
-                    } 
-                  }}
-                >
-                                  <Button
-                  variant={plannerState.sortBy === 'flyability' ? 'contained' : 'outlined'}
-                  onClick={() => setPlannerState(prev => ({ ...prev, sortBy: 'flyability' }))}
-                >
-                  Best
-                </Button>
-                <Button
-                  variant={plannerState.sortBy === 'distance' ? 'contained' : 'outlined'}
-                  onClick={() => {
-                    if (!userLocation) {
-                      // Prompt for location if not available
-                      requestLocation();
-                    } else {
-                      setPlannerState(prev => ({ ...prev, sortBy: 'distance' }));
-                    }
-                  }}
-                >
-                  Closest
-                </Button>
-                </ButtonGroup>
-              </Box>
-            )}
-          </Box>
-          
-          {plannerState.view === 'list' ? (
-            <SiteList 
-              sites={sortedSites} 
-              onSiteClick={handleSiteClick}
-              selectedMetric={plannerState.selectedMetric}
-              showRanking={true}
-            />
-          ) : (
-            <PlannerMapView
-              sites={sites}
-              onSiteClick={handleSiteClick}
-              isVisible={true}
-              maxSites={sites.length}
-              selectedMetric={plannerState.selectedMetric}
-              userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
-            />
           )}
           
-          {(sites.length > 10 || hasMore) && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
-              {sites.length > 10 && (
-                <Button
-                  variant="outlined"
-                  onClick={handleLoadLess}
-                  size="large"
-                  sx={{ px: 4 }}
-                >
-                  Less
-                </Button>
-              )}
-              {hasMore && (
-                <Button
-                  variant="outlined"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  size="large"
-                  sx={{ px: 4 }}
-                >
-                  {loadingMore ? 'Loading...' : 'More'}
-                </Button>
-              )}
+          {!loading && sites.length === 0 && !error && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="text.secondary">
+                Select dates and click GO to find the best flying sites
+              </Typography>
             </Box>
           )}
+          
+          {/* Error Snackbar */}
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={() => setSnackbarOpen(false)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert 
+              onClose={() => setSnackbarOpen(false)} 
+              severity="error" 
+              sx={{ width: '100%' }}
+            >
+              {error}
+            </Alert>
+          </Snackbar>
         </Box>
-      )}
-      
-      {!loading && sites.length === 0 && !error && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="h6" color="text.secondary">
-            Select dates and click GO to find the best flying sites
-          </Typography>
-        </Box>
-      )}
-      
-      {/* Error Snackbar */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
-          severity="error" 
-          sx={{ width: '100%' }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
-    </Container>
+      </Paper>
+    </Box>
   );
 };
 
