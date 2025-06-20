@@ -492,14 +492,21 @@ const TripPlannerPage = () => {
     }}>
       <Paper elevation={2}>
         <Box sx={{ p: 3 }}>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" component="h1" sx={{ mb: 1, fontWeight: 'bold' }}>
+          {/* Page title with logo */}
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
               Plan a Trip
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Find the best paragliding sites for your next adventure
-            </Typography>
-            
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img 
+                src="/logo192.png" 
+                alt="Glideator Logo" 
+                style={{ height: '60px', width: 'auto' }} 
+              />
+            </Box>
+          </Box>
+          
+          <Box sx={{ mb: 4 }}>
             {/* New Unified Controls */}
             <TripPlannerControls
               state={plannerState}
