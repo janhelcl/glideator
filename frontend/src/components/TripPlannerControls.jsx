@@ -616,31 +616,39 @@ const TripPlannerControls = ({
           />
         </Box>
 
-        <Stack direction="row" spacing={1} alignItems="center">
-          <FlightQualityMetricControl
-              selectedValues={state.flightQuality.selectedValues}
-              onSelectionChange={handleFlightQualityChange}
-              enabled={state.flightQuality.enabled}
-              onToggle={handleFlightQualityToggle}
-            />
-          <DistanceMetricControl
-              distanceState={state.distance}
-              onDistanceChange={handleDistanceChange}
-              onToggle={handleDistanceToggle}
-              onDetectLocation={handleLocationDetect}
-              isDetectingLocation={isDetectingLocation}
-              locationError={locationError}
-            />
-          <AltitudeMetricControl
-              altitudeState={state.altitude}
-              onAltitudeChange={handleAltitudeChange}
-              onToggle={handleAltitudeToggle}
-            />
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          justifyContent: { xs: 'space-between', md: 'flex-end' }
+        }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <FlightQualityMetricControl
+                selectedValues={state.flightQuality.selectedValues}
+                onSelectionChange={handleFlightQualityChange}
+                enabled={state.flightQuality.enabled}
+                onToggle={handleFlightQualityToggle}
+              />
+            <DistanceMetricControl
+                distanceState={state.distance}
+                onDistanceChange={handleDistanceChange}
+                onToggle={handleDistanceToggle}
+                onDetectLocation={handleLocationDetect}
+                isDetectingLocation={isDetectingLocation}
+                locationError={locationError}
+              />
+            <AltitudeMetricControl
+                altitudeState={state.altitude}
+                onAltitudeChange={handleAltitudeChange}
+                onToggle={handleAltitudeToggle}
+              />
+          </Stack>
+          
           <ViewModeToggle
             currentView={state.view}
             onViewChange={handleViewModeChange}
           />
-        </Stack>
+        </Box>
       </Box>
     </Card>
   );
