@@ -509,32 +509,27 @@ const TripPlannerPage = () => {
             />
           </Box>
           
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <LoadingSpinner />
-            </Box>
-          )}
-          
           {/* Results */}
-          {!loading && sites.length > 0 && (
+          {(loading || sites.length > 0) && (
             <Box sx={{ mb: 2 }}>
-              <Box sx={{ mb: 2 }}>
-                {/* Title row */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  mb: { xs: 1, sm: 0 }
-                }}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontWeight: 'bold',
-                      fontSize: { xs: '1.1rem', sm: '1.25rem' }
-                    }}
-                  >
-                    Showing {sites.length} of {totalCount} sites
-                  </Typography>
+              {sites.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  {/* Title row */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    mb: { xs: 1, sm: 0 }
+                  }}>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                      }}
+                    >
+                      Showing {sites.length} of {totalCount} sites
+                    </Typography>
                   
                   {/* Sort buttons - only show on desktop */}
                   {plannerState.view === 'list' && (
@@ -626,14 +621,21 @@ const TripPlannerPage = () => {
                   </Box>
                 )}
               </Box>
+              )}
               
               {plannerState.view === 'list' ? (
-                <SiteList 
-                  sites={sortedSites} 
-                  onSiteClick={handleSiteClick}
-                  selectedMetric={plannerState.selectedMetric}
-                  showRanking={true}
-                />
+                sites.length > 0 ? (
+                  <SiteList 
+                    sites={sortedSites} 
+                    onSiteClick={handleSiteClick}
+                    selectedMetric={plannerState.selectedMetric}
+                    showRanking={true}
+                  />
+                ) : loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                    <LoadingSpinner />
+                  </Box>
+                ) : null
               ) : (
                 <PlannerMapView
                   sites={sites}
@@ -642,10 +644,11 @@ const TripPlannerPage = () => {
                   maxSites={sites.length}
                   selectedMetric={plannerState.selectedMetric}
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
+                  loading={loading && sites.length === 0}
                 />
               )}
               
-              {(sites.length > 10 || hasMore) && (
+              {sites.length > 0 && (sites.length > 10 || hasMore) && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
                   {sites.length > 10 && (
                     <Button

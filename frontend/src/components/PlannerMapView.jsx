@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
@@ -9,6 +9,7 @@ import LayersIcon from '@mui/icons-material/Layers';
 import { getColor } from '../utils/colorUtils';
 import Sparkline from './Sparkline';
 import PreventLeafletControl from './PreventLeafletControl';
+import LoadingSpinner from './LoadingSpinner';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -19,9 +20,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selectedMetric = 'XC0', userLocation = null }) => {
+const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selectedMetric = 'XC0', userLocation = null, loading = false }) => {
   const mapRef = useRef(null);
   const [mapType, setMapType] = useState('basic');
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const previousBoundsRef = useRef(null);
 
   // Validate and filter sites with valid coordinates
   const validSites = useMemo(() => {
@@ -174,12 +177,24 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
 
   // Calculate bounds to fit all markers with validation
   const bounds = useMemo(() => {
-    if (validSites.length === 0) return null;
+    if (validSites.length === 0) {
+      // If loading and we have previous bounds, keep them
+      if (loading && previousBoundsRef.current) {
+        return previousBoundsRef.current;
+      }
+      return null;
+    }
     
     const latitudes = validSites.map(site => parseFloat(site.latitude)).filter(lat => !isNaN(lat));
     const longitudes = validSites.map(site => parseFloat(site.longitude)).filter(lng => !isNaN(lng));
     
-    if (latitudes.length === 0 || longitudes.length === 0) return null;
+    if (latitudes.length === 0 || longitudes.length === 0) {
+      // If loading and we have previous bounds, keep them
+      if (loading && previousBoundsRef.current) {
+        return previousBoundsRef.current;
+      }
+      return null;
+    }
     
     const minLat = Math.min(...latitudes);
     const maxLat = Math.max(...latitudes);
@@ -188,18 +203,44 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
     
     // Ensure we have valid bounds
     if (isNaN(minLat) || isNaN(maxLat) || isNaN(minLng) || isNaN(maxLng)) {
+      // If loading and we have previous bounds, keep them
+      if (loading && previousBoundsRef.current) {
+        return previousBoundsRef.current;
+      }
       return null;
     }
     
-    return [
+    const newBounds = [
       [minLat, minLng],
       [maxLat, maxLng]
     ];
-  }, [validSites]);
+    
+    // Store the new bounds for future use
+    previousBoundsRef.current = newBounds;
+    
+    return newBounds;
+  }, [validSites, loading]);
 
   // Default center and zoom if no valid bounds
   const defaultCenter = [46.0569, 14.5058]; // Slovenia approximate center
   const defaultZoom = 8;
+  
+  // Effect to update map bounds when new data arrives
+  useEffect(() => {
+    if (mapRef.current && bounds && !loading && validSites.length > 0) {
+      // Fit bounds to new data after loading is complete
+      setTimeout(() => {
+        mapRef.current?.fitBounds(bounds, { padding: [20, 20] });
+      }, 100);
+    }
+  }, [bounds, loading, validSites.length]);
+  
+  // Track initialization
+  useEffect(() => {
+    if (validSites.length > 0 && !hasInitialized) {
+      setHasInitialized(true);
+    }
+  }, [validSites.length, hasInitialized]);
 
   if (!isVisible) {
     return null;
@@ -211,13 +252,13 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
       height: '40vh',
       width: '100%',
       transition: 'height 0.3s ease',
-      borderTop: '1px solid #ddd'
+      borderTop: '1px solid #ddd',
+      position: 'relative'
     }}>
-      {validSites.length > 0 ? (
+      {(validSites.length > 0 || loading) ? (
         <MapContainer
-          key={`map-${validSites.length}-${validSites[0]?.site_id || 'empty'}`} // Force re-render when sites change
-          center={bounds ? undefined : defaultCenter}
-          zoom={bounds ? undefined : defaultZoom}
+          center={!hasInitialized && !bounds ? defaultCenter : undefined}
+          zoom={!hasInitialized && !bounds ? defaultZoom : undefined}
           bounds={bounds || undefined}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
@@ -281,7 +322,30 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
           color: '#666',
           border: '1px solid #ddd'
         }}>
-          No valid sites to display on map
+          {loading ? (
+            <LoadingSpinner />
+          ) : (
+            'No valid sites to display on map'
+          )}
+        </div>
+      )}
+      
+      {/* Loading overlay */}
+      {loading && validSites.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          pointerEvents: 'none'
+        }}>
+          <LoadingSpinner />
         </div>
       )}
     </div>
