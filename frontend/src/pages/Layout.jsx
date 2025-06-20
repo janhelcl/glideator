@@ -54,20 +54,18 @@ const Layout = () => {
         }}
       >
         <Toolbar>
-          <Typography
-            variant="h6"
-            component="a"
-            href="/"
+          <Button
+            component={RouterLink}
+            to="/"
             sx={{
               color: 'white',
-              textDecoration: 'none',
               '&:hover': {
-                color: 'black',
+                backgroundColor: 'rgba(255,255,255,0.1)',
               },
             }}
           >
             Home
-          </Typography>
+          </Button>
           
           <Button
             component={RouterLink}
