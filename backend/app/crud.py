@@ -192,3 +192,39 @@ def create_site(db: Session, site: schemas.SiteBase):
     db.commit()
     db.refresh(db_site)
     return db_site
+
+# --- Trip Planning CRUD Functions ---
+
+def get_predictions_for_range(
+    db: Session, 
+    start_date: date, 
+    end_date: date, 
+    metric: str = 'XC0' # Default to XC0 as per MVP spec
+) -> List[models.Prediction]:
+    """
+    Retrieves predictions for a specific metric within a given date range for all sites.
+    
+    NOTE: This currently fetches predictions based on the 'metric' column.
+    If the schema changes to have XC0, XC50 etc as direct columns, this needs adjustment.
+    """
+    return db.query(models.Prediction).filter(
+        models.Prediction.date >= start_date,
+        models.Prediction.date <= end_date,
+        models.Prediction.metric == metric # Assuming Prediction model has 'metric' and 'value' columns
+    ).all()
+
+def get_sites_by_ids(db: Session, site_ids: List[int]) -> List[models.Site]:
+    """
+    Retrieves site details (specifically ID and name) for a list of site IDs.
+    """
+    if not site_ids:
+        return []
+    return db.query(models.Site).filter(
+        models.Site.site_id.in_(site_ids)
+    ).all()
+
+def get_all_flight_stats(db: Session) -> List[models.FlightStats]:
+    """
+    Retrieves all flight statistics for all sites.
+    """
+    return db.query(models.FlightStats).all()

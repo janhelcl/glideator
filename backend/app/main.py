@@ -6,7 +6,7 @@ from kombu.exceptions import OperationalError
 
 from fastapi import FastAPI, HTTPException
 from .database import engine, Base, SessionLocal
-from .routers import sites
+from .routers import sites, trip_planning
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
@@ -42,6 +42,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(sites.router)
+app.include_router(trip_planning.router, tags=["Trip Planning"])
 
 # Configure CORS
 app.add_middleware(

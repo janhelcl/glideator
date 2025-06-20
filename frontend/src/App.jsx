@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Details from './pages/Details';
 import Declined from './pages/Declined';
 import NotFound from './pages/NotFound';
+import TripPlannerPage from './pages/TripPlannerPage';
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
         <Route path="/declined" element={<Declined />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="trip-planner" element={<TripPlannerPage />} />
           <Route path="details/:siteId" element={<Details />} />
           {/* Redirect old format URLs to new format */}
           <Route path="*" element={<NotFound />} />

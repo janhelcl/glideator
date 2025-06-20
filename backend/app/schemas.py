@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Json
-from typing import List, Optional
+from pydantic import BaseModel, Json, Field
+from typing import List, Optional, Literal
 from datetime import date, datetime
 
 class PredictionBase(BaseModel):
@@ -125,3 +125,35 @@ class SiteInfoCreate(SiteInfoBase):
 class SiteInfo(SiteInfoBase):
     class Config:
         from_attributes = True
+
+class TripPlanRequest(BaseModel):
+    start_date: date
+    end_date: date
+    metric: Literal['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'] = Field(default='XC0', description="Metric to use for trip planning")
+    user_latitude: Optional[float] = Field(default=None, description="User's latitude for distance filtering")
+    user_longitude: Optional[float] = Field(default=None, description="User's longitude for distance filtering")
+    max_distance_km: Optional[float] = Field(default=None, description="Maximum distance from user location in kilometers")
+    min_altitude_m: Optional[int] = Field(default=None, description="Minimum altitude in meters")
+    max_altitude_m: Optional[int] = Field(default=None, description="Maximum altitude in meters")
+    offset: Optional[int] = Field(default=0, description="Number of sites to skip for pagination")
+    limit: Optional[int] = Field(default=10, description="Maximum number of sites to return")
+
+class DailyProbability(BaseModel):
+    date: date
+    probability: float
+    source: Literal['forecast', 'historical']
+
+class SiteSuggestion(BaseModel):
+    site_name: str
+    average_flyability: float # Based on XC0
+    site_id: str
+    latitude: float
+    longitude: float
+    altitude: int
+    daily_probabilities: List[DailyProbability]
+    distance_km: Optional[float] = Field(default=None, description="Distance from user location in kilometers")
+
+class TripPlanResponse(BaseModel):
+    sites: List[SiteSuggestion]
+    total_count: int
+    has_more: bool
