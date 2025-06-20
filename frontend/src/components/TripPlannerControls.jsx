@@ -312,7 +312,7 @@ const DistanceMetricControl = ({
             <Typography variant="caption" sx={{ 
               fontSize: '0.6rem', 
               textAlign: 'center', 
-              color: isDetectingLocation ? 'text.secondary' : 'error.main',
+              color: 'text.secondary',
               marginBottom: '8px'
             }}>
               {isDetectingLocation ? 'Getting location...' : 'Location access needed'}
