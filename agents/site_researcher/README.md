@@ -112,8 +112,3 @@ The agent is implemented with [LangGraph](https://github.com/langchain-ai/langgr
 2. **`google.api_core.errors.PermissionDenied`** – ensure your Google API key has the Generative AI API enabled.
 3. **Database connection errors** – double-check the `.env` values and connectivity to Postgres.
 4. **UnicodeEncodeError when writing** – the script opens the file with `utf-8`; use compatible terminals / shells.
-
----
-
-## License
-This component inherits Glideator’s overall license. See the project root `LICENSE` file. 
