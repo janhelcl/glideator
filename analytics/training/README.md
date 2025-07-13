@@ -209,7 +209,7 @@ Multiple regularization techniques:
 ### Basic Training
 ```python
 import training.training as training
-from net.net.net import ExpandedGlideatorNet
+from net.net import ExpandedGlideatorNet
 import torch
 
 # Load fitted scalers created in `fit_scalers.ipynb`
