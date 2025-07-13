@@ -11,22 +11,22 @@ This library provides the core machine learning model for predicting paragliding
 The problem is framed as a multi-label classification task. Given a set of features, the model predicts the probability of a flight exceeding several predefined distance thresholds.
 
 Let:
-- \(s\) be a specific launch site from a set of all sites \(S\), with a unique integer identifier \(id_s\).
-- \(d\) be a specific date.
-- \(E\) be a learnable embedding matrix that maps each site identifier \(id_s\) to a dense vector \(e_s = E(id_s)\). This vector captures latent characteristics of the launch site not present in the explicit features.
-- \(X_s\) be a vector of static numerical features for site \(s\) (e.g., elevation, aspect).
-- \(X_d\) be a vector of features for date \(d\) (e.g., day of year, weekend indicator).
-- \(X_w(s, d, t)\) be a vector of weather features from the GFS model for site \(s\) on date \(d\) at a specific forecast time \(t\) (e.g., 9:00, 12:00, 15:00).
-- \(T = \{t_1, t_2, ..., t_k\}\) be the set of XC distance thresholds (e.g., {0km, 10km, ..., 100km}).
-- \(Y_k\) be a binary random variable where \(Y_k = 1\) if the flight distance exceeds threshold \(t_k\), and 0 otherwise.
+- $s$ be a specific launch site from a set of all sites $S$, with a unique integer identifier $id_s$.
+- $d$ be a specific date.
+- $E$ be a learnable embedding matrix that maps each site identifier $id_s$ to a dense vector $e_s = E(id_s)$. This vector captures latent characteristics of the launch site not present in the explicit features.
+- $X_s$ be a vector of static numerical features for site $s$ (e.g., elevation, aspect).
+- $X_d$ be a vector of features for date $d$ (e.g., day of year, weekend indicator).
+- $X_w(s, d, t)$ be a vector of weather features from the GFS model for site $s$ on date $d$ at a specific forecast time $t$ (e.g., 9:00, 12:00, 15:00).
+- $T = \{t_1, t_2, ..., t_k\}$ be the set of XC distance thresholds (e.g., {0km, 10km, ..., 100km}).
+- $Y_k$ be a binary random variable where $Y_k = 1$ if the flight distance exceeds threshold $t_k$, and 0 otherwise.
 
-The objective is to learn a function \(f\) that models the conditional probability for each threshold \(t_k \in T\):
+The objective is to learn a function $f$ that models the conditional probability for each threshold $t_k \in T$:
 
-\[
+```math
 P(Y_k = 1 | e_s, X_s, X_d, X_w(s, d, t_9), X_w(s, d, t_{12}), X_w(s, d, t_{15}))
-\]
+```
 
-The model \(f\), implemented by `ExpandedGlideatorNet`, takes the concatenation of the embedding vector \(e_s\) and the other feature vectors as input. It then outputs a vector of probabilities \(\hat{p} = (\hat{p}_1, \hat{p}_2, ..., \hat{p}_k)\), where each \(\hat{p}_k\) is the predicted probability for the corresponding threshold \(t_k\).
+The model $f$, implemented by `ExpandedGlideatorNet`, takes the concatenation of the embedding vector $e_s$ and the other feature vectors as input. It then outputs a vector of probabilities $\hat{p} = (\hat{p}_1, \hat{p}_2, ..., \hat{p}_k)$, where each $\hat{p}_k$ is the predicted probability for the corresponding threshold $t_k$.
 
 ## Key Features
 
