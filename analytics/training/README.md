@@ -209,47 +209,70 @@ Multiple regularization techniques:
 ### Basic Training
 ```python
 import training.training as training
-import net.net as net
+from net.net.net import ExpandedGlideatorNet
+import torch
 
-# Create data loaders
+# Load fitted scalers created in `fit_scalers.ipynb`
+weather_scaler = torch.load("training/models/weather_scaler.pth")
+site_scaler = torch.load("training/models/site_scaler.pth")
+num_launches = 250  # replace with `len(unique_site_ids)`
+
+# Create data loaders (see `train_new.ipynb` for the full workflow)
 train_loader, val_loader = training.create_dataloaders(
     train_path="training/train_data",
     val_path="training/val_data",
-    batch_size=2048,
+    batch_size=512,
     num_workers=8
 )
 
 # Run training experiment
 model_info = training.run_experiment(
-    model_class=net.FlightPredictor,
-    model_params={'input_size': 64, 'hidden_size': 128},
-    learning_rate=0.001,
+    model_class=ExpandedGlideatorNet,
+    model_params={
+        "weather_scaler": weather_scaler,
+        "site_scaler": site_scaler,
+        "num_launches": num_launches,
+        "deep_hidden_units": [128, 64],
+        "cross_layers": 2,
+        "site_embedding_dim": 16,
+    },
+    learning_rate=1e-3,
     l1_lambda=1e-9,
     l2_lambda=1e-9,
+    monotonicity_lambda=1e-9,
     train_loader=train_loader,
     val_loader=val_loader,
-    num_epochs=50
+    num_epochs=30,
+    patience=5,
 )
 ```
 
 ### Hyperparameter Search
 ```python
-# Define search space
+# Define search space (see `grid_search.ipynb` for a notebook implementation)
 search_space = {
-    'hidden_size': [64, 128, 256],
-    'learning_rate': [0.0001, 0.001, 0.01],
-    'l1_lambda': [1e-9, 1e-6, 1e-3],
-    'l2_lambda': [1e-9, 1e-6, 1e-3]
+    "deep_hidden_units": [[128, 64], [256, 128]],
+    "cross_layers": [1, 2, 3],
+    "site_embedding_dim": [8, 16],
+    "learning_rate": [1e-3, 5e-4, 1e-4],
+    "l1_lambda": [1e-9, 1e-6],
+    "l2_lambda": [1e-9, 1e-6],
 }
 
 # Run search
 results = training.perform_hyperparameter_search(
-    model_class=net.FlightPredictor,
+    model_class=ExpandedGlideatorNet,
     train_loader=train_loader,
     val_loader=val_loader,
     search_space=search_space,
-    fixed_params={'input_size': 64},
-    n_iter=50
+    fixed_params={
+        "weather_scaler": weather_scaler,
+        "site_scaler": site_scaler,
+        "num_launches": num_launches,
+        "prediction_head_type": "multilabel",
+        "num_targets": 11,
+    },
+    n_iter=30,
 )
 ```
 
