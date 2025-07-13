@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 from google.genai import Client
 
 
-import prompts
-import utils
-import schemas
+from . import prompts
+from . import utils
+from . import schemas
 
 
 load_dotenv()

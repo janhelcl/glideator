@@ -2,8 +2,8 @@ from langgraph.graph import START, END
 from langgraph.graph import StateGraph
 from langgraph.pregel import RetryPolicy
 
-import schemas
-import nodes
+from . import schemas
+from . import nodes
 
 # TODO: split into two graphs:
 #  - one for acquiring information about the site
