@@ -8,6 +8,8 @@ import {
   Stack,
   Slider,
   IconButton,
+  Autocomplete,
+  Chip,
 } from '@mui/material';
 import ViewModeToggle from './ViewModeToggle';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -15,6 +17,8 @@ import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SocialDistanceIcon from '@mui/icons-material/SocialDistance';
 import FilterHdrIcon from '@mui/icons-material/FilterHdr';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import { fetchAllTags } from '../api';
 
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
 
@@ -453,6 +457,64 @@ const AltitudeMetricControl = ({
 };
 
 /**
+ * Tags Control - searchable multi-select with chips
+ */
+const TagsMetricControl = ({ selectedTags, onSelectionChange }) => {
+  const [allTags, setAllTags] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const POPULAR_TAGS = useMemo(() => ['car', 'shuttle', 'lift', 'Alps', 'Pyrenees', 'Apennines'], []);
+
+  const ensureTagsLoaded = useCallback(async () => {
+    if (allTags.length > 0 || loading) return;
+    setLoading(true);
+    try {
+      const tags = await fetchAllTags(2);
+      // Order: specified popular tags first (in given order), then the rest alphabetically
+      const popularSet = new Set(POPULAR_TAGS);
+      const popularInData = POPULAR_TAGS.filter(t => tags.includes(t));
+      const rest = tags.filter(t => !popularSet.has(t)).sort((a, b) => a.localeCompare(b));
+      setAllTags([...popularInData, ...rest]);
+    } catch (e) {
+      // silent fail
+    } finally {
+      setLoading(false);
+    }
+  }, [allTags.length, loading]);
+
+  const filterOptions = useCallback((options, { inputValue }) => {
+    if (!inputValue) return options;
+    const q = inputValue.toLowerCase();
+    return options.filter(opt => opt.toLowerCase().includes(q));
+  }, []);
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 240 }}>
+      <LocalOfferIcon fontSize="small" color="action" />
+      <Autocomplete
+        multiple
+        options={allTags}
+        value={selectedTags}
+        onChange={(e, val) => onSelectionChange(val)}
+        onOpen={ensureTagsLoaded}
+        filterOptions={filterOptions}
+        filterSelectedOptions
+        loading={loading}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip variant="outlined" size="small" label={option} {...getTagProps({ index })} />
+          ))
+        }
+        renderInput={(params) => (
+          <TextField {...params} size="small" label="Tags" placeholder={loading ? 'Loading…' : 'Filter by tags'} onFocus={ensureTagsLoaded} />
+        )}
+        sx={{ minWidth: 220 }}
+      />
+    </Box>
+  );
+};
+
+/**
  * Unified Trip Planner Controls Component
  * Consolidates all user-editable inputs for the Plan a Trip page
  */
@@ -646,6 +708,10 @@ const TripPlannerControls = ({
               altitudeState={state.altitude}
               onAltitudeChange={handleAltitudeChange}
               onToggle={handleAltitudeToggle}
+            />
+            <TagsMetricControl
+              selectedTags={state.tags || []}
+              onSelectionChange={(tags) => setState(prev => ({ ...prev, tags }))}
             />
           </Stack>
           

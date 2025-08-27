@@ -95,6 +95,13 @@ def get_site_tags(site_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
     return crud.get_tags_by_site_id(db, site_id)
 
+@router.get("/tags", response_model=List[str])
+def list_all_tags(min_sites: int = Query(2, ge=1), db: Session = Depends(get_db)):
+    """Returns the list of tags across all sites, filtered by min_sites usage."""
+    if min_sites and min_sites > 1:
+        return crud.get_tags_with_min_sites(db, min_sites=min_sites)
+    return crud.get_all_unique_tags(db)
+
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(
     site_id: int,

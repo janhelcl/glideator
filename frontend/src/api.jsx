@@ -92,8 +92,19 @@ export const fetchSiteSpots = async (siteId) => {
   }
 };
 
+// Fetch all unique tags
+export const fetchAllTags = async (minSites = 2) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sites/tags`, { params: { min_sites: minSites } });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tags:', error);
+    throw error;
+  }
+};
+
 // Plan trip - fetch recommended sites for date range
-export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null, altitudeRange = null, offset = 0, limit = 10) => {
+export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation = null, maxDistanceKm = null, altitudeRange = null, offset = 0, limit = 10, requiredTags = null) => {
   try {
     const requestBody = {
       start_date: startDate,
@@ -121,6 +132,10 @@ export const planTrip = async (startDate, endDate, metric = 'XC0', userLocation 
       if (altitudeRange.max !== null && altitudeRange.max >= 0) {
         requestBody.max_altitude_m = altitudeRange.max;
       }
+    }
+
+    if (requiredTags && Array.isArray(requiredTags) && requiredTags.length > 0) {
+      requestBody.required_tags = requiredTags;
     }
 
     const response = await axios.post(`${API_BASE_URL}/plan-trip`, requestBody);

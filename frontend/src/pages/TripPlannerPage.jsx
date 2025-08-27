@@ -91,6 +91,12 @@ const getInitialStateFromURL = (searchParams) => {
     const sortBy = searchParams.get('sortBy');
     if (sortBy === 'flyability' || sortBy === 'distance') state.sortBy = sortBy;
 
+    // Tags
+    const tagsParam = searchParams.get('tags');
+    if (tagsParam) {
+        state.tags = tagsParam.split(',').filter(Boolean);
+    }
+
     return state;
 };
 
@@ -134,7 +140,8 @@ const TripPlannerPage = () => {
     const flightQualityStr = state.flightQuality.enabled 
       ? state.flightQuality.selectedValues.join(',') 
       : 'no_flight_quality';
-    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${userLocationStr}_${distanceFilterStr}_${altitudeStr}_${flightQualityStr}`;
+    const tagsStr = (state.tags && state.tags.length > 0) ? state.tags.join(',') : 'no_tags';
+    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${userLocationStr}_${distanceFilterStr}_${altitudeStr}_${flightQualityStr}_${tagsStr}`;
   };
   
   // Clean up expired cache entries
@@ -176,7 +183,7 @@ const TripPlannerPage = () => {
   // Update URL search params when state changes
   useEffect(() => {
     const newParams = new URLSearchParams();
-    const { dates, distance, altitude, flightQuality, selectedMetric } = plannerState;
+    const { dates, distance, altitude, flightQuality, selectedMetric, tags } = plannerState;
     const defaultState = DEFAULT_PLANNER_STATE;
 
     // Dates are always present
@@ -210,6 +217,11 @@ const TripPlannerPage = () => {
 
     if (view !== defaultState.view) newParams.set('view', view);
     if (sortBy !== defaultState.sortBy) newParams.set('sortBy', sortBy);
+
+    // Tags
+    if (tags && tags.length > 0) {
+      newParams.set('tags', tags.join(','));
+    }
 
     setSearchParams(newParams, { replace: true });
   }, [plannerState, sortBy, view, setSearchParams]);
@@ -319,10 +331,11 @@ const TripPlannerPage = () => {
         location: locationForApi,
         distance: distanceForApi,
         altitude: altitudeForApi,
+        tags: plannerState.tags,
         plannerState: plannerState
       });
       
-      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10);
+      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10, plannerState.tags);
       
       // Debug: Log the API response to understand its structure
       console.log('Plan Trip API Response:', result);
@@ -392,10 +405,11 @@ const TripPlannerPage = () => {
         location: locationForApi,
         distance: distanceForApi,
         altitude: altitudeForApi,
+        tags: plannerState.tags,
         offset: sites.length
       });
       
-      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10);
+      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10, plannerState.tags);
       
       // Append new sites to existing ones
       setSites(prevSites => [...prevSites, ...(result.sites || [])]);
@@ -450,6 +464,7 @@ const TripPlannerPage = () => {
       flightQuality: { enabled: plannerState.flightQuality.enabled, values: plannerState.flightQuality.selectedValues },
       metric: plannerState.selectedMetric,
       dates: plannerState.dates,
+      tags: plannerState.tags,
     });
   }, [
     plannerState.altitude,
@@ -459,6 +474,7 @@ const TripPlannerPage = () => {
     plannerState.flightQuality.selectedValues,
     plannerState.selectedMetric,
     plannerState.dates,
+    plannerState.tags,
   ]);
 
   const prevFilterSigRef = useRef(filtersSignature);

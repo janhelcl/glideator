@@ -34,7 +34,10 @@ export const DEFAULT_PLANNER_STATE = {
   selectedMetric: 'XC0',
   
   // Sort preference
-  sortBy: 'flyability' // 'flyability' | 'distance'
+  sortBy: 'flyability', // 'flyability' | 'distance'
+
+  // Tag filter
+  tags: [] // array of selected tag strings
 };
 
 /**

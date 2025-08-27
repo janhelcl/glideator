@@ -44,6 +44,7 @@ app = FastAPI(
 # Include routers
 app.include_router(sites.router)
 app.include_router(trip_planning.router, tags=["Trip Planning"])
+# Tags endpoint moved under sites router
 
 # Configure CORS
 app.add_middleware(

@@ -49,6 +49,7 @@ def plan_trip_endpoint(
         max_distance_km=request.max_distance_km,
         min_altitude_m=request.min_altitude_m,
         max_altitude_m=request.max_altitude_m,
+        required_tags=request.required_tags,
         offset=request.offset,
         limit=request.limit
     )

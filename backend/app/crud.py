@@ -56,6 +56,20 @@ def replace_site_tags(db: Session, site_id: int, tags: List[str]):
         db.add(db_tag)
     db.commit()
 
+def get_all_unique_tags(db: Session) -> List[str]:
+    """Return all unique tag strings across sites."""
+    return [row[0] for row in db.query(models.SiteTag.tag).distinct().order_by(models.SiteTag.tag.asc()).all()]
+
+def get_tags_with_min_sites(db: Session, min_sites: int = 2) -> List[str]:
+    """Return tags that are used by at least min_sites distinct sites."""
+    q = (
+        db.query(models.SiteTag.tag)
+        .group_by(models.SiteTag.tag)
+        .having(func.count(func.distinct(models.SiteTag.site_id)) >= min_sites)
+        .order_by(models.SiteTag.tag.asc())
+    )
+    return [row[0] for row in q.all()]
+
 def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
     Retrieves predictions based on site_id, and optionally filters by date and metric.

@@ -71,6 +71,7 @@ def plan_trip_service(
     max_distance_km: Optional[float] = None,
     min_altitude_m: Optional[int] = None,
     max_altitude_m: Optional[int] = None,
+    required_tags: Optional[List[str]] = None,
     offset: int = 0,
     limit: int = 10
 ) -> schemas.TripPlanResponse:
@@ -149,6 +150,11 @@ def plan_trip_service(
             site_lat = site_lat_map.get(site_id, 0.0)
             site_lon = site_lon_map.get(site_id, 0.0)
             site_altitude = site_altitude_map.get(site_id, 0)
+            # Apply tag filter (logical AND) if required_tags provided
+            if required_tags:
+                site_tags = set(crud.get_tags_by_site_id(db, site_id))
+                if not set(required_tags).issubset(site_tags):
+                    continue
             
             # Apply altitude filtering if provided
             if min_altitude_m is not None and site_altitude < min_altitude_m:
