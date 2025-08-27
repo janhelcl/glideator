@@ -34,7 +34,7 @@ def official_website_finder(state):
         contents=prompt,
         config={
             "tools": [{"google_search": {}}],
-            "temperature": 1.0,
+            "temperature": 0,
             "response_schema": list[schemas.SiteURL]
         }
     )
@@ -56,7 +56,7 @@ def risk_researcher(state):
         contents=prompt,
         config={
             "tools": [{"google_search": {}}],
-            "temperature": 1.0,
+            "temperature": 0,
         }
     )
     if not response.text:
@@ -75,7 +75,7 @@ def overview_researcher(state):
         contents=prompt,
         config={
             "tools": [{"google_search": {}}],
-            "temperature": 1.0,
+            "temperature": 0,
         }
     )
     if not response.text:
@@ -99,7 +99,7 @@ def access_researcher(state):
         contents=prompt,
         config={
             "tools": [{"google_search": {}}],
-            "temperature": 1.0,
+            "temperature": 0,
         }
     )
     if not response.text:
@@ -118,7 +118,7 @@ def skill_level_extractor(state):
         model="gemini-2.5-pro",
         contents=prompt,
         config={
-            "temperature": 1.0,
+            "temperature": 0,
             "response_schema": schemas.SkillLevel
         }
     )
@@ -140,7 +140,7 @@ def tag_extractor(state):
         model="gemini-2.5-pro",
         contents=prompt,
         config={
-            "temperature": 1.0,
+            "temperature": 0,
             "response_schema": schemas.Tags
         }
     )
@@ -161,7 +161,7 @@ def copywriter(state):
         model="gemini-2.5-pro",
         contents=prompt,
         config={
-            "temperature": 1.0,
+            "temperature": 0,
         }
     )
     return {"description": response.text.replace("```html", "").replace("```", "")}

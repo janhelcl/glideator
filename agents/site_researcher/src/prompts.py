@@ -42,10 +42,10 @@ Site: $site_name
 """)
 
 
-risk_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on risk and limitations associated with "$site_name" and synthesize it into a verifiable text artifact.
+risk_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on risk and limitations associated with a given site and synthesize it into a verifiable text artifact.
 
 Instructions:
-- Only include risks directly related to the site ($site_name).
+- Only include risks directly related to the site.
 - Do NOT include general risks of paragliding.
 - Do NOT list particular incidents. 
 - Typical risks include but are not limited to:
@@ -66,15 +66,15 @@ Instructions:
 - Only include the information found in the search results, don't make up any information.
 
 Research risks for:
-$site_name
+$site_name ($country)
 """
 )
 
 
-overview_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on the general overview of "$site_name" and synthesize it into a verifiable text artifact.
+overview_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on the general overview of a given site and synthesize it into a verifiable text artifact.
 
 Instructions:
-- Only include information directly related to the site ($site_name).
+- Only include information directly related to the site.
 - Do NOT include general information about paragliding.
 - Do NOT include information about tandem flights. Only include info relevant for licensed pilots.
 - Typical information includes but is not limited to:
@@ -85,14 +85,14 @@ Instructions:
     - Skill level required to fly at the site 
                                             
 Research overview for:
-$site_name
+$site_name ($country)
 """)
 
 
-access_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on access to "$site_name" and synthesize it into a verifiable text artifact.
+access_researcher_instructions = Template("""Conduct targeted Google Searches to gather the most recent, credible information on access to a given site and synthesize it into a verifiable text artifact.
 
 Instructions:
-- Only include information directly related to the site ($site_name).
+- Only include information directly related to the site.
 - Do NOT include general information about paragliding.
 - Typical information includes but is not limited to:
     - How to get to the takeoff
@@ -103,7 +103,7 @@ Instructions:
     - Any other permits or requirements for flying at the site
                                           
 Research access for:
-$site_name
+$site_name ($country)
 """)
 
 
