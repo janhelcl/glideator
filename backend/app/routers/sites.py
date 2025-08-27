@@ -82,10 +82,18 @@ def read_predictions(
         latitude=site.latitude,
         longitude=site.longitude,
         site_id=site.site_id,
-        predictions=predictions_list
+        predictions=predictions_list,
+        tags=crud.get_tags_by_site_id(db, site_id)
     )
     
     return [site_response]  # Return as a list to match the expected response_model
+
+@router.get("/{site_id}/tags", response_model=List[str])
+def get_site_tags(site_id: int, db: Session = Depends(get_db)):
+    site = crud.get_site(db, site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
+    return crud.get_tags_by_site_id(db, site_id)
 
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
 def read_forecast(

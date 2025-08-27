@@ -84,3 +84,12 @@ class SiteInfo(Base):
     
     # Relationship with Site
     site = relationship("Site", backref="site_info")
+
+class SiteTag(Base):
+    __tablename__ = 'site_tags'
+    
+    site_id = Column(Integer, ForeignKey('sites.site_id'), primary_key=True)
+    tag = Column(String, primary_key=True)
+    
+    # Relationship with Site
+    site = relationship("Site", backref="site_tags")

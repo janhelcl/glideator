@@ -39,6 +39,7 @@ class SiteResponse(BaseModel):
     longitude: float
     site_id: int
     predictions: List[PredictionValues]
+    tags: List[str] = []
 
     class Config:
         orm_mode = True
@@ -123,6 +124,17 @@ class SiteInfoCreate(SiteInfoBase):
     pass
 
 class SiteInfo(SiteInfoBase):
+    class Config:
+        from_attributes = True
+
+class SiteTagBase(BaseModel):
+    site_id: int
+    tag: str
+
+class SiteTagCreate(SiteTagBase):
+    pass
+
+class SiteTag(SiteTagBase):
     class Config:
         from_attributes = True
 

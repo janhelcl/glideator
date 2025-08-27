@@ -1,0 +1,248 @@
+{"site_id": 1, "text": "```json\n[\n  \"flats\",\n  \"official\",\n  \"Raná\"\n]\n```"}
+{"site_id": 2, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Beskids\",\n  \"Třinec\",\n  \"Javorový\"\n]\n```"}
+{"site_id": 3, "text": "```json\n[\n  \"car\",\n  \"official\",\n  \"flats\",\n  \"Kozákov\",\n  \"Bohemian Paradise\",\n  \"Turnov\",\n  \"Semily\"\n]\n```"}
+{"site_id": 4, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Krkonoše\",\n  \"Janské Lázně\",\n  \"Černá hora\"\n]\n```"}
+{"site_id": 5, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Krupka\",\n  \"Ore Mountains\",\n  \"Komáří vížka\"\n]\n```"}
+{"site_id": 6, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Šumava\",\n  \"Sušice\"\n]\n```"}
+{"site_id": 7, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Beskydy\",\n  \"Ondřejník\"\n]\n```"}
+{"site_id": 8, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Plzen\",\n  \"Klatovy\",\n  \"soaring ridge\",\n  \"unofficial\",\n  \"Orlova\"\n]\n```"}
+{"site_id": 9, "text": "```json\n[\n  \"official\",\n  \"flats\",\n  \"Uhřínov\",\n  \"Hrabůvka\"\n]\n```"}
+{"site_id": 10, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"jeviněves\",\n  \"mělník\"\n]\n```"}
+{"site_id": 11, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Králický Sněžník\",\n  \"Dolní Morava\"\n]\n```"}
+{"site_id": 12, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Krkonoše\",\n  \"Harrachov\",\n  \"Čertova hora\"\n]\n```"}
+{"site_id": 13, "text": "```json\n[\n  \"car\",\n  \"official\",\n  \"Zvičina\",\n  \"Třebihošť\",\n  \"Královéhradecký\"\n]\n```"}
+{"site_id": 14, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"soaring ridge\",\n  \"unofficial\",\n  \"Řevničov\",\n  \"Central Bohemia\"\n]\n```"}
+{"site_id": 15, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Beskydy\",\n  \"Velký Javorník\",\n  \"Frenštát pod Radhoštěm\",\n  \"Veřovice\"\n]\n```"}
+{"site_id": 16, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"unofficial\",\n  \"Jizera Mountains\",\n  \"Zásada\",\n  \"Liberec\"\n]\n```"}
+{"site_id": 17, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"soaring ridge\",\n  \"official\",\n  \"Srbce\",\n  \"Pardubice\"\n]\n```"}
+{"site_id": 18, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Švihov\",\n  \"Plzeňský kraj\"\n]\n```"}
+{"site_id": 19, "text": "```json\n[\n  \"flats\",\n  \"soaring ridge\",\n  \"unofficial\",\n  \"Suchomasty\",\n  \"Český kras\"\n]\n```"}
+{"site_id": 20, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Šumava\",\n  \"Sušice\"\n]\n```"}
+{"site_id": 21, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Rašovka\",\n  \"Liberec\",\n  \"Ještěd\"\n]\n```"}
+{"site_id": 22, "text": "```json\n[\n  \"flats\",\n  \"unofficial\",\n  \"Cukrák\",\n  \"Jíloviště\",\n  \"Prague\",\n  \"Central Bohemia\"\n]\n```"}
+{"site_id": 23, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"brna\",\n  \"ceske stredohori\"\n]\n```"}
+{"site_id": 24, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Straník\",\n  \"Žilina\"\n]\n```"}
+{"site_id": 25, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Donovaly\",\n  \"Veľká Fatra\",\n  \"Staré Hory\"\n]\n```"}
+{"site_id": 26, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"White Carpathians\",\n  \"Horná Súča\"\n]\n```"}
+{"site_id": 27, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Sľubica\",\n  \"Košice\",\n  \"High Tatras\",\n  \"Low Tatras\",\n  \"Poprad\"\n]\n```"}
+{"site_id": 28, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Mala Fatra\",\n  \"Martin\"\n]\n```"}
+{"site_id": 29, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"unofficial\",\n  \"Little Carpathians\",\n  \"Orešany\",\n  \"Slepý Vrch\"\n]\n```"}
+{"site_id": 30, "text": "```json\n[\n  \"mountains\",\n  \"unofficial\",\n  \"White Carpathians\",\n  \"Velký Lopeník\"\n]\n```"}
+{"site_id": 31, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Slopovo\",\n  \"Klenovec\"\n]\n```"}
+{"site_id": 32, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Kubínska hoľa\",\n  \"Orava\",\n  \"Oravská Magura\",\n  \"Malá Fatra\",\n  \"Dolný Kubín\"\n]\n```"}
+{"site_id": 33, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Podkonice\",\n  \"Banská Bystrica\"\n]\n```"}
+{"site_id": 34, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Emberger Alm\",\n  \"Greifenburg\",\n  \"Drau Valley\",\n  \"Kreuzeckgruppe\"\n]\n```"}
+{"site_id": 35, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bischling\",\n  \"Werfenweng\",\n  \"Tennengebirge\"\n]\n```"}
+{"site_id": 36, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Schöckl\",\n  \"Graz\",\n  \"Sankt Radegund\"\n]\n```"}
+{"site_id": 37, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gutenstein Alps\",\n  \"Vienna\",\n  \"Hohe Wand\"\n]\n```"}
+{"site_id": 38, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Kössen\",\n  \"Kaiserwinkl\",\n  \"Tyrol\",\n  \"Unterberghorn\",\n  \"Kitzbüheler Alps\"\n]\n```"}
+{"site_id": 39, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gaisberg\",\n  \"Salzburg\"\n]\n```"}
+{"site_id": 40, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gerlitzen\",\n  \"Carinthia\",\n  \"Ossiacher See\",\n  \"Annenheim\"\n]\n```"}
+{"site_id": 41, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bezau\",\n  \"Bregenzerwald\"\n]\n```"}
+{"site_id": 42, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Stubai Valley\",\n  \"Neustift\",\n  \"Elfer\",\n  \"Innsbruck\"\n]\n```"}
+{"site_id": 43, "text": "```json\n[\n  \"official\",\n  \"mountains\",\n  \"Alps\",\n  \"Styria\",\n  \"Stubenberg\",\n  \"Kulm\",\n  \"Fischbacher Alps\"\n]\n```"}
+{"site_id": 44, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Stubai Valley\",\n  \"Fulpmes\",\n  \"Innsbruck\"\n]\n```"}
+{"site_id": 45, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Hinterstoder\",\n  \"Totes Gebirge\",\n  \"Pyhrn-Priel\"\n]\n```"}
+{"site_id": 46, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Radsberg\",\n  \"Klagenfurt\",\n  \"Carinthia\",\n  \"Sattnitz\"\n]\n```"}
+{"site_id": 47, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Ternberg\",\n  \"Upper Austria\"\n]\n```"}
+{"site_id": 48, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Vorarlberg\",\n  \"Schnifis\"\n]\n```"}
+{"site_id": 49, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gelderkogel\",\n  \"Fladnitz\",\n  \"Teichalm\",\n  \"Almenland\",\n  \"Styria\"\n]\n```"}
+{"site_id": 50, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gmunden\",\n  \"Salzkammergut\",\n  \"Grünberg\"\n]\n```"}
+{"site_id": 51, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Salzkammergut\",\n  \"St. Gilgen\",\n  \"Zwölferhorn\",\n  \"Wolfgangsee\"\n]\n```"}
+{"site_id": 52, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Muckenkogel\",\n  \"Lilienfeld\",\n  \"Prealps\"\n]\n```"}
+{"site_id": 53, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Kitzbühel Alps\",\n  \"Tyrol\",\n  \"Hohe Salve\",\n  \"Söll\",\n  \"Hopfgarten\"\n]\n```"}
+{"site_id": 54, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Schmittenhöhe\",\n  \"Zell am See\",\n  \"Pinzgau\",\n  \"Kaprun\"\n]\n```"}
+{"site_id": 55, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Stoderzinken\",\n  \"Dachstein\",\n  \"Ennstal\",\n  \"Styria\",\n  \"Gröbming\"\n]\n```"}
+{"site_id": 56, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Zillertal Alps\",\n  \"Zillertal\",\n  \"Mayrhofen\",\n  \"Penken\"\n]\n```"}
+{"site_id": 57, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Salzkammergut\",\n  \"Feuerkogel\",\n  \"Ebensee\",\n  \"Traunsee\"\n]\n```"}
+{"site_id": 58, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Kalkalpen\",\n  \"Upper Austria\",\n  \"Micheldorf\"\n]\n```"}
+{"site_id": 59, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Kitzbühel Alps\",\n  \"Westendorf\",\n  \"Choralpe\",\n  \"Brixental\"\n]\n```"}
+{"site_id": 60, "text": "```json\n[\n  \"car\",\n  \"official\",\n  \"flats\",\n  \"Marsbach\",\n  \"Donautal\",\n  \"Upper Austria\"\n]\n```"}
+{"site_id": 61, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Fulseck\",\n  \"Dorfgastein\",\n  \"Gastein Valley\"\n]\n```"}
+{"site_id": 62, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Zillertal\",\n  \"Tyrol\",\n  \"Fügen\",\n  \"Mayrhofen\",\n  \"Zell am Ziller\"\n]\n```"}
+{"site_id": 63, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Leoben\",\n  \"Präbichl\"\n]\n```"}
+{"site_id": 64, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Lienz\",\n  \"East Tyrol\",\n  \"Hohe Tauern\",\n  \"Drau Valley\"\n]\n```"}
+{"site_id": 65, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Schoberstein\",\n  \"Upper Austria\",\n  \"Kalkalpen\",\n  \"Ternberg\",\n  \"Molln\"\n]\n```"}
+{"site_id": 66, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Obertilliach\",\n  \"Tyrol\",\n  \"Lienz Dolomites\",\n  \"Carnic Alps\"\n]\n```"}
+{"site_id": 67, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Kitzbühel Alps\",\n  \"Tyrol\",\n  \"Wildschönau\",\n  \"Niederau\"\n]\n```"}
+{"site_id": 68, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Brauneck\",\n  \"Lenggries\",\n  \"Bavaria\",\n  \"Karwendel\",\n  \"Isar Valley\"\n]\n```"}
+{"site_id": 69, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bavarian Alps\",\n  \"Tegernsee\",\n  \"Wallberg\"\n]\n```"}
+{"site_id": 70, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Hochries\",\n  \"Chiemgau\",\n  \"Bavarian Prealps\",\n  \"Samerberg\"\n]\n```"}
+{"site_id": 71, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Harz\",\n  \"Goslar\",\n  \"Rammelsberg\"\n]\n```"}
+{"site_id": 72, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Bavarian Forest\",\n  \"Osser\",\n  \"Lam\"\n]\n```"}
+{"site_id": 73, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Tegelberg\",\n  \"Ammergau Alps\",\n  \"Bavaria\",\n  \"Schwangau\",\n  \"Neuschwanstein\"\n]\n```"}
+{"site_id": 74, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Garmisch-Partenkirchen\"\n]\n```"}
+{"site_id": 75, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Bavarian Forest\",\n  \"Deggendorf\"\n]\n```"}
+{"site_id": 76, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Beskidy\",\n  \"Szczyrk\"\n]\n```"}
+{"site_id": 77, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Beskidy\",\n  \"Żar\"\n]\n```"}
+{"site_id": 78, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Sudetes\",\n  \"Jatki\",\n  \"Mieroszów\"\n]\n```"}
+{"site_id": 79, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"soaring ridge\",\n  \"official\",\n  \"Beskid Wyspowy\",\n  \"Mszana Dolna\"\n]\n```"}
+{"site_id": 80, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Beskid Wyspowy\",\n  \"Ciecien\",\n  \"Wisniowa\"\n]\n```"}
+{"site_id": 81, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Andrzejowka\",\n  \"Suche Mountains\",\n  \"Sudetes\"\n]\n```"}
+{"site_id": 82, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Fiesch\",\n  \"Aletsch\",\n  \"Rhône valley\"\n]\n```"}
+{"site_id": 83, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Weissenstein\",\n  \"Solothurn\"\n]\n```"}
+{"site_id": 84, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Brunni\",\n  \"Engelberg\"\n]\n```"}
+{"site_id": 85, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bernese Oberland\",\n  \"Interlaken\",\n  \"Beatenberg\"\n]\n```"}
+{"site_id": 86, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Grindelwald\",\n  \"Bernese Alps\",\n  \"Jungfrau\"\n]\n```"}
+{"site_id": 87, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Entlebuch\",\n  \"Emmental\",\n  \"Marbach\"\n]\n```"}
+{"site_id": 88, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Valais\",\n  \"Vercorin\"\n]\n```"}
+{"site_id": 89, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Niesen\",\n  \"Bernese Oberland\"\n]\n```"}
+{"site_id": 90, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Appenzell\",\n  \"Alpstein\",\n  \"Ebenalp\",\n  \"Wasserauen\"\n]\n```"}
+{"site_id": 91, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Zugerberg\",\n  \"Lake Zug\",\n  \"Zug\"\n]\n```"}
+{"site_id": 92, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Verbier\",\n  \"Combins\",\n  \"Le Châble\"\n]\n```"}
+{"site_id": 93, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Fanas\",\n  \"Prättigau\"\n]\n```"}
+{"site_id": 94, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Cimetta\",\n  \"Locarno\",\n  \"Lake Maggiore\",\n  \"Ticino\"\n]\n```"}
+{"site_id": 95, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Aletsch Arena\",\n  \"Valais\",\n  \"Goms\"\n]\n```"}
+{"site_id": 96, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bernese Alps\",\n  \"Stockhorn\",\n  \"Mentschelen\",\n  \"Blumenstein\"\n]\n```"}
+{"site_id": 97, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"alps\",\n  \"bernese oberland\",\n  \"lenk\",\n  \"simmental\"\n]\n```"}
+{"site_id": 98, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Engadine\",\n  \"Scuol\",\n  \"Motta Naluns\"\n]\n```"}
+{"site_id": 99, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Vounetz\",\n  \"Gruyère\",\n  \"Charmey\",\n  \"Pre-Alps\"\n]\n```"}
+{"site_id": 100, "text": "```json\n[\n  \"lift\",\n  \"flats\",\n  \"official\",\n  \"Uetliberg\",\n  \"Zurich\",\n  \"Albiskette\"\n]\n```"}
+{"site_id": 101, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Mythen\",\n  \"Schwyz\",\n  \"Prealps\"\n]\n```"}
+{"site_id": 102, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Alp Scheidegg\",\n  \"Kleine Scheidegg\",\n  \"Zurich Oberland\",\n  \"Jungfrau\",\n  \"Grindelwald\"\n]\n```"}
+{"site_id": 103, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Solothurn\",\n  \"Matzendorf\"\n]\n```"}
+{"site_id": 104, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Crap Sogn Gion\",\n  \"Flims Laax Falera\",\n  \"Graubünden\",\n  \"Flims\",\n  \"Laax\",\n  \"Falera\"\n]\n```"}
+{"site_id": 105, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Braunwald\",\n  \"Glarus\",\n  \"Linthal\"\n]\n```"}
+{"site_id": 106, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Jura\"\n]\n```"}
+{"site_id": 107, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Engelberg Valley\",\n  \"Wolfenschiessen\"\n]\n```"}
+{"site_id": 108, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Mauborget\",\n  \"Yverdon-les-Bains\"\n]\n```"}
+{"site_id": 109, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Surselva\",\n  \"Disentis\",\n  \"Graubünden\"\n]\n```"}
+{"site_id": 110, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Ticino\",\n  \"Bellinzona\",\n  \"Mornera\"\n]\n```"}
+{"site_id": 111, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bernese Oberland\",\n  \"Adelboden\",\n  \"Tschentenalp\"\n]\n```"}
+{"site_id": 112, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Monte Tamaro\",\n  \"Ticino\",\n  \"Lugano\"\n]\n```"}
+{"site_id": 113, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"kronberg\",\n  \"appenzell\",\n  \"alpstein\"\n]\n```"}
+{"site_id": 114, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"lake lucerne\",\n  \"emmetten\",\n  \"niederbauen\",\n  \"nidwalden\"\n]\n```"}
+{"site_id": 115, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Prealps\",\n  \"Pléiades\",\n  \"Lake Geneva\",\n  \"Blonay\"\n]\n```"}
+{"site_id": 116, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Grandvillard\",\n  \"Gruyère\",\n  \"Prealps\"\n]\n```"}
+{"site_id": 117, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Vaud\",\n  \"Baulmes\",\n  \"Le Suchet\"\n]\n```"}
+{"site_id": 118, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Pizol\",\n  \"St. Gallen\",\n  \"Bad Ragaz\",\n  \"Wangs\",\n  \"Rhine Valley\"\n]\n```"}
+{"site_id": 119, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Basel\",\n  \"Hohwacht\"\n]\n```"}
+{"site_id": 120, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Carì\",\n  \"Leventina Valley\",\n  \"Ticino\"\n]\n```"}
+{"site_id": 121, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Niederhorn\",\n  \"Interlaken\",\n  \"Bernese Oberland\",\n  \"Beatenberg\"\n]\n```"}
+{"site_id": 122, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Villeneuve\",\n  \"Lake Geneva\",\n  \"Rochers de Naye\"\n]\n```"}
+{"site_id": 123, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Hüsliberg\",\n  \"Lake Zurich\",\n  \"Glarus\"\n]\n```"}
+{"site_id": 124, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Engelberg valley\",\n  \"Wolfenschiessen\",\n  \"Brändlen\"\n]\n```"}
+{"site_id": 125, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Thal\",\n  \"Balsthal\"\n]\n```"}
+{"site_id": 126, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"unofficial\",\n  \"Alps\",\n  \"Gstaad\",\n  \"Saanenland\",\n  \"Wispile\"\n]\n```"}
+{"site_id": 127, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Emmental\",\n  \"Rütiberg\",\n  \"Bisehoger\",\n  \"Bern\"\n]\n```"}
+{"site_id": 128, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Chasseral\",\n  \"Corgémont\"\n]\n```"}
+{"site_id": 129, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Lauterbrunnen\",\n  \"Mürren\",\n  \"Stechelberg\",\n  \"Jungfrau\",\n  \"Schildgrat\"\n]\n```"}
+{"site_id": 130, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Ticino\",\n  \"Lugano\",\n  \"Monte Lema\"\n]\n```"}
+{"site_id": 131, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Davos\",\n  \"Graubünden\",\n  \"Jakobshorn\"\n]\n```"}
+{"site_id": 132, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bernese Oberland\",\n  \"Interlaken\",\n  \"Schynige Platte\"\n]\n```"}
+{"site_id": 133, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bassano\",\n  \"Monte Grappa\",\n  \"Veneto\"\n]\n```"}
+{"site_id": 134, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Cornizzolo\",\n  \"Suello\",\n  \"Lake Lecco\"\n]\n```"}
+{"site_id": 135, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"flats\",\n  \"official\",\n  \"Alps\",\n  \"Meduno\",\n  \"Monte Valinis\",\n  \"Friuli\"\n]\n```"}
+{"site_id": 136, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"official\",\n  \"Norma\",\n  \"Rome\"\n]\n```"}
+{"site_id": 137, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Julian Alps\",\n  \"Gemona\",\n  \"Friuli\"\n]\n```"}
+{"site_id": 138, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"santa elisabetta\",\n  \"piedmont\",\n  \"canavese\",\n  \"cuorgne\"\n]\n```"}
+{"site_id": 139, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Cavallaria\",\n  \"Piedmont\"\n]\n```"}
+{"site_id": 140, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Dolomites\",\n  \"Col Rodella\",\n  \"Val di Fassa\",\n  \"Campitello di Fassa\",\n  \"Canazei\"\n]\n```"}
+{"site_id": 141, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Laveno\",\n  \"Lake Maggiore\",\n  \"Sasso del Ferro\"\n]\n```"}
+{"site_id": 142, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Feltre\",\n  \"Monte Avena\",\n  \"Dolomites\",\n  \"Venetian Prealps\"\n]\n```"}
+{"site_id": 143, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Revine\",\n  \"Revine Lago\",\n  \"Treviso\",\n  \"Prealps\"\n]\n```"}
+{"site_id": 144, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Lagorai\",\n  \"Valsugana\",\n  \"Levico Terme\",\n  \"Trentino\"\n]\n```"}
+{"site_id": 145, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Orobie Alps\",\n  \"Seriana Valley\",\n  \"Gandino\",\n  \"Monte Farno\"\n]\n```"}
+{"site_id": 146, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Apennines\",\n  \"Monte Caio\",\n  \"Schia\",\n  \"Parma\"\n]\n```"}
+{"site_id": 147, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Dolomites\",\n  \"Alpago\",\n  \"Belluno\",\n  \"Monte Dolada\"\n]\n```"}
+{"site_id": 148, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"flats\",\n  \"official\",\n  \"Poggio Bustone\",\n  \"Rieti\"\n]\n```"}
+{"site_id": 149, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Sibillini\",\n  \"Umbria\",\n  \"Castelluccio\"\n]\n```"}
+{"site_id": 150, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Piossasco\",\n  \"Monte San Giorgio\",\n  \"Turin\"\n]\n```"}
+{"site_id": 151, "text": "```json\n[\n  \"official\",\n  \"mountains\",\n  \"Alps\",\n  \"Lake Garda\",\n  \"Monte Belpo\"\n]\n```"}
+{"site_id": 153, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Speikboden\",\n  \"Ahrntal\",\n  \"South Tyrol\",\n  \"Zillertal Alps\",\n  \"Sand in Taufers\"\n]\n```"}
+{"site_id": 154, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Monte Maddalena\",\n  \"Brescia\",\n  \"Lombardy\"\n]\n```"}
+{"site_id": 155, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Dolomites\",\n  \"South Tyrol\",\n  \"Pustertal\",\n  \"Bruneck\",\n  \"Kronplatz\"\n]\n```"}
+{"site_id": 156, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Monte Cucco\",\n  \"Apennines\",\n  \"Umbria\",\n  \"Perugia\"\n]\n```"}
+{"site_id": 157, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Sale Marasino\",\n  \"Lake Iseo\"\n]\n```"}
+{"site_id": 158, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Tivoli\",\n  \"Lazio\",\n  \"Monte Ripoli\"\n]\n```"}
+{"site_id": 159, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Monte Alpo\",\n  \"Lake Idro\",\n  \"Idroland\",\n  \"Storo\",\n  \"Trentino\"\n]\n```"}
+{"site_id": 160, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Apennines\",\n  \"Val di Comino\",\n  \"San Donato\",\n  \"Forca dAcero\"\n]\n```"}
+{"site_id": 161, "text": "```json\n[\n  \"shuttle\",\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"caltrano\",\n  \"vicenza\",\n  \"venetian prealps\"\n]\n```"}
+{"site_id": 162, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bernadia\",\n  \"Tarcento\",\n  \"Friuli\"\n]\n```"}
+{"site_id": 163, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Monte Baldo\",\n  \"Lake Garda\",\n  \"Malcesine\"\n]\n```"}
+{"site_id": 164, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"monte baldo\",\n  \"malcesine\",\n  \"caprino veronese\"\n]\n```"}
+{"site_id": 165, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Rocca Canavese\",\n  \"Turin\",\n  \"Canavese\"\n]\n```"}
+{"site_id": 166, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Vigezzo Valley\",\n  \"Piana di Vigezzo\",\n  \"Santa Maria Maggiore\",\n  \"Cima Trubbio\"\n]\n```"}
+{"site_id": 168, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Giumello\",\n  \"Valsassina\",\n  \"Lake Como\",\n  \"Lombardy\",\n  \"Monte Muggio\",\n  \"Taceno\"\n]\n```"}
+{"site_id": 169, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Liretta\",\n  \"Maira Valley\",\n  \"Villar San Costanzo\",\n  \"Cuneo\"\n]\n```"}
+{"site_id": 170, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Orobic Alps\",\n  \"Lombardy\",\n  \"Valcava\",\n  \"Caprino Bergamasco\"\n]\n```"}
+{"site_id": 171, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Dolomites\",\n  \"Monte Cavallo\",\n  \"Aviano\"\n]\n```"}
+{"site_id": 172, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Cecima\",\n  \"Oltrepò Pavese\",\n  \"Monte Penola\",\n  \"Milan\"\n]\n```"}
+{"site_id": 173, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Apennines\",\n  \"Pratomagno\",\n  \"Reggello\",\n  \"Florence\"\n]\n```"}
+{"site_id": 174, "text": "```json\n[\n  \"mountains\",\n  \"coastal\",\n  \"official\",\n  \"Abruzzo\",\n  \"Morrone\",\n  \"Majella\",\n  \"Tocco da Casauria\",\n  \"Pescara\"\n]\n```"}
+{"site_id": 175, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"unofficial\",\n  \"coastal\",\n  \"Ligurian Apennines\",\n  \"Liguria\",\n  \"Genoa\",\n  \"Orero\"\n]\n```"}
+{"site_id": 176, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Apennines\",\n  \"Monfestino\",\n  \"Serramazzoni\"\n]\n```"}
+{"site_id": 177, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Monte Tovo\",\n  \"Valsesia\",\n  \"Piedmont\"\n]\n```"}
+{"site_id": 178, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Val della Torre\",\n  \"Turin\",\n  \"Piedmont\",\n  \"Monte Rosselli\"\n]\n```"}
+{"site_id": 179, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Pennine Alps\",\n  \"Biella\",\n  \"Sordevolo\",\n  \"Valle Elvo\"\n]\n```"}
+{"site_id": 180, "text": "```json\n[\n  \"lift\",\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Sarntal Alps\",\n  \"South Tyrol\",\n  \"Passeiertal\",\n  \"Meran\",\n  \"Hirzer\"\n]\n```"}
+{"site_id": 181, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Alpi Orobie\",\n  \"Bergamo\",\n  \"Ganda\",\n  \"Monte Rena\"\n]\n```"}
+{"site_id": 182, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Julian Alps\",\n  \"Soča Valley\",\n  \"Tolmin\"\n]\n```"}
+{"site_id": 183, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"alps\",\n  \"trnovo plateau\",\n  \"vipava valley\",\n  \"nova gorica\"\n]\n```"}
+{"site_id": 184, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Stol\",\n  \"Julian Alps\",\n  \"Soča Valley\",\n  \"Kobarid\"\n]\n```"}
+{"site_id": 185, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Annecy\",\n  \"Forclaz\"\n]\n```"}
+{"site_id": 186, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Chartreuse\",\n  \"Isère\",\n  \"Grésivaudan\",\n  \"Saint Hilaire\"\n]\n```"}
+{"site_id": 187, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"St. André\",\n  \"Le Chalvet\",\n  \"Alpes-de-Haute-Provence\"\n]\n```"}
+{"site_id": 188, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Annecy\",\n  \"Haute-Savoie\"\n]\n```"}
+{"site_id": 189, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"coastal\",\n  \"official\",\n  \"Alps\",\n  \"Gourdon\",\n  \"Maritime Alps\",\n  \"Nice\"\n]\n```"}
+{"site_id": 190, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Vosges\",\n  \"Markstein\",\n  \"Alsace\"\n]\n```"}
+{"site_id": 191, "text": "```json\n[\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Chamonix\",\n  \"Mont Blanc\"\n]\n```"}
+{"site_id": 192, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Savoie\",\n  \"Bauges\",\n  \"Combe de Savoie\",\n  \"Saint-Jean-de-la-Porte\"\n]\n```"}
+{"site_id": 193, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Hautes-Alpes\",\n  \"Ecrins\",\n  \"Vallouise\",\n  \"Puy Aillaud\"\n]\n```"}
+{"site_id": 194, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Plaine Joux\",\n  \"Haute-Savoie\",\n  \"Mont Blanc\",\n  \"Passy\"\n]\n```"}
+{"site_id": 195, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"aravis\",\n  \"le grand-bornand\",\n  \"haute-savoie\"\n]\n```"}
+{"site_id": 196, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Samoens\",\n  \"Haute-Savoie\",\n  \"Giffre\",\n  \"Grand Massif\"\n]\n```"}
+{"site_id": 197, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Millau\",\n  \"Grands Causses\"\n]\n```"}
+{"site_id": 198, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Chabre\",\n  \"Laragne\",\n  \"Hautes-Alpes\"\n]\n```"}
+{"site_id": 199, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"mountains\",\n  \"coastal\",\n  \"official\",\n  \"Alps\",\n  \"Pyrenees\",\n  \"Montclar\",\n  \"Alpes-de-Haute-Provence\",\n  \"Savoie\",\n  \"Aravis\",\n  \"Maurienne\",\n  \"Ariège\",\n  \"Basque coast\"\n]\n```"}
+{"site_id": 200, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Salève\",\n  \"Geneva\"\n]\n```"}
+{"site_id": 201, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"St. Vincent Les Forts\",\n  \"Serre-Ponçon\",\n  \"Ubaye\"\n]\n```"}
+{"site_id": 202, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Hautes-Pyrénées\",\n  \"Val Louron\",\n  \"Loudenvielle\"\n]\n```"}
+{"site_id": 203, "text": "```json\n[\n  \"lift\",\n  \"mountains\",\n  \"official\",\n  \"chaine des puys\",\n  \"clermont-ferrand\",\n  \"puy de dome\"\n]\n```"}
+{"site_id": 204, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Vosges\"\n]\n```"}
+{"site_id": 205, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Arbas\",\n  \"Haute-Garonne\"\n]\n```"}
+{"site_id": 206, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Suisse Normande\",\n  \"Normandy\",\n  \"Clécy\"\n]\n```"}
+{"site_id": 207, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Gréolières\",\n  \"Cheiron\",\n  \"Alpes-Maritimes\"\n]\n```"}
+{"site_id": 208, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"coastal\",\n  \"official\",\n  \"Pyrenees\",\n  \"Basque Country\",\n  \"Baigura\"\n]\n```"}
+{"site_id": 209, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Mieussy\",\n  \"Haute-Savoie\",\n  \"Sommand\"\n]\n```"}
+{"site_id": 210, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Jura\",\n  \"Franche-Comté\",\n  \"Salins-les-Bains\",\n  \"Mont Poupet\"\n]\n```"}
+{"site_id": 211, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Semnoz\",\n  \"Annecy\",\n  \"Bauges\"\n]\n```"}
+{"site_id": 212, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Ardennes\",\n  \"Revin\"\n]\n```"}
+{"site_id": 213, "text": "```json\n[\n  \"car\",\n  \"lift\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Belledonne\",\n  \"Allevard\",\n  \"Isère\"\n]\n```"}
+{"site_id": 214, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Drôme\",\n  \"Séderon\",\n  \"Baronnies\"\n]\n```"}
+{"site_id": 215, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Hautes-Pyrénées\",\n  \"Val d'Azun\"\n]\n```"}
+{"site_id": 216, "text": "```json\n[\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Cerdagne\",\n  \"Targasonne\",\n  \"Pic des Mauroux\",\n  \"Pyrénées-Orientales\"\n]\n```"}
+{"site_id": 217, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Aiguebelette\",\n  \"Savoie\",\n  \"Chartreuse\",\n  \"Épine\"\n]\n```"}
+{"site_id": 218, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Alps\",\n  \"Bauges\",\n  \"Chambéry\",\n  \"Savoie\",\n  \"Pragondran\"\n]\n```"}
+{"site_id": 219, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"soaring ridge\",\n  \"unofficial\",\n  \"Alps\",\n  \"Hautes-Alpes\",\n  \"Gap\",\n  \"Pic de Charance\",\n  \"Ecrins\"\n]\n```"}
+{"site_id": 220, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Accous\",\n  \"Aspe Valley\"\n]\n```"}
+{"site_id": 221, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Algodonales\",\n  \"Sierra de Lijar\",\n  \"Andalusia\"\n]\n```"}
+{"site_id": 222, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Sierra Nevada\",\n  \"Granada\",\n  \"Cenes\"\n]\n```"}
+{"site_id": 223, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Sierra de Villafranca\",\n  \"Piedrahita\"\n]\n```"}
+{"site_id": 224, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Pegalajar\",\n  \"Jaén\",\n  \"Andalusia\"\n]\n```"}
+{"site_id": 225, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Castejón de Sos\",\n  \"Benasque\"\n]\n```"}
+{"site_id": 226, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"sierra de grazalema\",\n  \"el bosque\",\n  \"cadiz\"\n]\n```"}
+{"site_id": 227, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Loja\",\n  \"Sierra de Loja\"\n]\n```"}
+{"site_id": 228, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"Pedro Bernardo\",\n  \"Sierra de Gredos\",\n  \"Tiétar Valley\"\n]\n```"}
+{"site_id": 229, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Villar de Arzobispo\",\n  \"Valencia\"\n]\n```"}
+{"site_id": 230, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Castellón\",\n  \"Figueroles\"\n]\n```"}
+{"site_id": 231, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"flats\",\n  \"official\",\n  \"Montellano\",\n  \"Seville\",\n  \"Andalusia\",\n  \"Algodonales\"\n]\n```"}
+{"site_id": 232, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"coastal\",\n  \"unofficial\",\n  \"Palomaret\",\n  \"Agost\",\n  \"Alicante\"\n]\n```"}
+{"site_id": 233, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Bizkaia\",\n  \"Gorbea\",\n  \"Orozco\"\n]\n```"}
+{"site_id": 234, "text": "```json\n[\n  \"car\",\n  \"shuttle\",\n  \"mountains\",\n  \"official\",\n  \"El Yelmo\",\n  \"Sierra de Segura\",\n  \"Sierras de Cazorla\",\n  \"Jaén\"\n]\n```"}
+{"site_id": 235, "text": "```json\n[\n  \"car\",\n  \"coastal\",\n  \"official\",\n  \"Mallorca\",\n  \"Alcúdia\",\n  \"Puig de Sant Martí\"\n]\n```"}
+{"site_id": 236, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Sierra de Leyre\",\n  \"Navarra\",\n  \"Lumbier\"\n]\n```"}
+{"site_id": 237, "text": "```json\n[\n  \"car\",\n  \"coastal\",\n  \"flats\",\n  \"soaring ridge\",\n  \"official\",\n  \"Basque Country\",\n  \"Zestoa\",\n  \"Endoia\",\n  \"Bay of Biscay\"\n]\n```"}
+{"site_id": 238, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Pyrenees\",\n  \"Loarre\",\n  \"Huesca\",\n  \"Aragon\"\n]\n```"}
+{"site_id": 239, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Serra do Larouco\",\n  \"Montalegre\",\n  \"Peneda-Gerês\"\n]\n```"}
+{"site_id": 240, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Serra da Estrela\",\n  \"Linhares\"\n]\n```"}
+{"site_id": 241, "text": "```json\n[\n  \"car\",\n  \"mountains\",\n  \"official\",\n  \"Manteigas\",\n  \"Serra da Estrela\"\n]\n```"}
+{"site_id": 242, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Budapest\",\n  \"Hármashatár-hegy\",\n  \"Óbuda\"\n]\n```"}
+{"site_id": 243, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"soaring ridge\",\n  \"unofficial\",\n  \"Csolnok\",\n  \"Mókus-hegy\",\n  \"Budapest\"\n]\n```"}
+{"site_id": 244, "text": "```json\n[\n  \"official\",\n  \"flats\",\n  \"Csobánc\",\n  \"Balaton Uplands\",\n  \"Lake Balaton\"\n]\n```"}
+{"site_id": 245, "text": "```json\n[\n  \"official\",\n  \"mountains\",\n  \"Gerecse\",\n  \"Vértesszőlős\"\n]\n```"}
+{"site_id": 246, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Eger\",\n  \"Nagy-Eged\"\n]\n```"}
+{"site_id": 247, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Csákberény\",\n  \"Vértes\"\n]\n```"}
+{"site_id": 248, "text": "```json\n[\n  \"mountains\",\n  \"official\",\n  \"Mátra\",\n  \"Pásztó\",\n  \"Nyikom\"\n]\n```"}
+{"site_id": 249, "text": "```json\n[\n  \"official\",\n  \"flats\",\n  \"Sárhegy\",\n  \"Gyöngyös\"\n]\n```"}
+{"site_id": 250, "text": "```json\n[\n  \"car\",\n  \"flats\",\n  \"official\",\n  \"Tardos\",\n  \"Gorba-teto\"\n]\n```"}

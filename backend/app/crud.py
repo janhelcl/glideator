@@ -46,6 +46,16 @@ def get_site_list(db: Session):
     """
     return db.query(models.Site.site_id, models.Site.name).all()
 
+def get_tags_by_site_id(db: Session, site_id: int) -> List[str]:
+    return [row.tag for row in db.query(models.SiteTag).filter(models.SiteTag.site_id == site_id).all()]
+
+def replace_site_tags(db: Session, site_id: int, tags: List[str]):
+    db.query(models.SiteTag).filter(models.SiteTag.site_id == site_id).delete()
+    for t in tags:
+        db_tag = models.SiteTag(site_id=site_id, tag=t)
+        db.add(db_tag)
+    db.commit()
+
 def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
     Retrieves predictions based on site_id, and optionally filters by date and metric.
@@ -139,7 +149,8 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
             latitude=site.latitude,
             longitude=site.longitude,
             site_id=site.site_id,
-            predictions=predictions_list
+            predictions=predictions_list,
+            tags=get_tags_by_site_id(db, site.site_id)
         )
         result.append(site_response)
 
