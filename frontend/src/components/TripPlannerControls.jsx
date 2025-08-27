@@ -480,7 +480,7 @@ const TagsMetricControl = ({ selectedTags, onSelectionChange }) => {
     } finally {
       setLoading(false);
     }
-  }, [allTags.length, loading]);
+  }, [allTags.length, loading, POPULAR_TAGS]);
 
   const filterOptions = useCallback((options, { inputValue }) => {
     if (!inputValue) return options;
@@ -687,33 +687,36 @@ const TripPlannerControls = ({
           display: 'flex',
           alignItems: 'center',
           gap: 2,
+          flexWrap: 'wrap',
           justifyContent: { xs: 'space-between', md: 'flex-end' }
         }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <FlightQualityMetricControl
-              selectedValues={state.flightQuality.selectedValues}
-              onSelectionChange={handleFlightQualityChange}
-              enabled={state.flightQuality.enabled}
-              onToggle={handleFlightQualityToggle}
-            />
-          <DistanceMetricControl
-              distanceState={state.distance}
-              onDistanceChange={handleDistanceChange}
-              onToggle={handleDistanceToggle}
-              onDetectLocation={handleLocationDetect}
-              isDetectingLocation={isDetectingLocation}
-              locationError={locationError}
-            />
-          <AltitudeMetricControl
-              altitudeState={state.altitude}
-              onAltitudeChange={handleAltitudeChange}
-              onToggle={handleAltitudeToggle}
-            />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <FlightQualityMetricControl
+                selectedValues={state.flightQuality.selectedValues}
+                onSelectionChange={handleFlightQualityChange}
+                enabled={state.flightQuality.enabled}
+                onToggle={handleFlightQualityToggle}
+              />
+            <DistanceMetricControl
+                distanceState={state.distance}
+                onDistanceChange={handleDistanceChange}
+                onToggle={handleDistanceToggle}
+                onDetectLocation={handleLocationDetect}
+                isDetectingLocation={isDetectingLocation}
+                locationError={locationError}
+              />
+            <AltitudeMetricControl
+                altitudeState={state.altitude}
+                onAltitudeChange={handleAltitudeChange}
+                onToggle={handleAltitudeToggle}
+              />
+          </Stack>
+          <Box sx={{ flexBasis: { xs: '100%', md: 'auto' }, flexGrow: { xs: 1, md: 0 }, mt: { xs: 1, md: 0 } }}>
             <TagsMetricControl
               selectedTags={state.tags || []}
               onSelectionChange={(tags) => setState(prev => ({ ...prev, tags }))}
             />
-          </Stack>
+          </Box>
           
           <ViewModeToggle
             currentView={state.view}
