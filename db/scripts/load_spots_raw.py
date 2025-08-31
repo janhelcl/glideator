@@ -1,7 +1,7 @@
 """
-Load paragliding spot data from spots.csv into a PostgreSQL database.
+Load paragliding spot data from CSV files into a PostgreSQL database.
 
-This script reads the spots.csv file containing paragliding spot information and inserts the data into a PostgreSQL database.
+This script reads CSV files containing paragliding spot information and inserts the data into a PostgreSQL database.
 It handles duplicate entries based on a unique identifier and logs any errors encountered during the process.
 
 Usage:
@@ -30,7 +30,7 @@ from psycopg2 import sql, extras
 
 # Constants
 SCHEMA = 'source'
-TABLE = 'spots'
+TABLE = 'spots_raw'
 
 def setup_logging(log_file=None):
     """
@@ -42,14 +42,10 @@ def setup_logging(log_file=None):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
-    # Clear any existing handlers to avoid duplicates
-    if logger.handlers:
-        logger.handlers.clear()
-    
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     
     # Console handler
-    ch = logging.StreamHandler(sys.stdout)
+    ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
@@ -89,15 +85,18 @@ def load_data_to_db(csv_file, db_config):
             CREATE SCHEMA IF NOT EXISTS {SCHEMA};
             
             CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
-                spot_id INTEGER PRIMARY KEY,
+                spot_id SERIAL PRIMARY KEY,
+                full_name TEXT NOT NULL,
                 name TEXT NOT NULL,
+                description TEXT,
                 latitude FLOAT,
                 longitude FLOAT,
-                altitude INTEGER,
-                type VARCHAR(50),
+                spot_type VARCHAR(50),
+                takeoff_type VARCHAR(50),
+                hg BOOLEAN,
                 wind_direction VARCHAR(50),
-                site_id INTEGER,
-                UNIQUE(spot_id)
+                altitude INTEGER,
+                UNIQUE(full_name, latitude, longitude)  -- Assuming combination as unique identifier
             );
         """)
         cursor.execute(create_table_query)
@@ -120,25 +119,29 @@ def load_data_to_db(csv_file, db_config):
             reader = csv.DictReader(f)
             for row_number, row in enumerate(reader, start=2):  # Starting at 2 to account for header
                 try:
-                    # Extract and clean data from spots.csv format
-                    spot_id = int(row['spot_id']) if row['spot_id'] else None
-                    name = row['name'].strip() if row['name'] else None
+                    # Extract and clean data
+                    full_name = row['full_name'].strip()
+                    name = row['name'].strip()
+                    description = row['description'].strip()
                     latitude = float(row['latitude']) if row['latitude'] else None
                     longitude = float(row['longitude']) if row['longitude'] else None
-                    altitude = int(row['altitude']) if row['altitude'] else None
-                    spot_type = row['type'].strip() if row['type'] else None
+                    spot_type = row['spot_type'].strip() if row['spot_type'] else None
+                    takeoff_type = row['takeoff_type'].strip() if row['takeoff_type'] else None
+                    hg = row['hg'].strip().lower() == 'true' if row['hg'] else False
                     wind_direction = row['wind_direction'].strip() if row['wind_direction'] else None
-                    site_id = int(row['site_id']) if row['site_id'] else None
+                    altitude = int(row['altitude']) if row['altitude'] else None
 
                     data_to_insert.append((
-                        spot_id,
+                        full_name,
                         name,
+                        description,
                         latitude,
                         longitude,
-                        altitude,
                         spot_type,
+                        takeoff_type,
+                        hg,
                         wind_direction,
-                        site_id
+                        altitude
                     ))
                     rows_processed += 1
                 except Exception as e:
@@ -163,17 +166,10 @@ def load_data_to_db(csv_file, db_config):
     try:
         insert_query = sql.SQL(f"""
             INSERT INTO {SCHEMA}.{TABLE} (
-                spot_id, name, latitude, longitude, altitude, 
-                type, wind_direction, site_id
+                full_name, name, description, latitude, longitude, 
+                spot_type, takeoff_type, hg, wind_direction, altitude
             ) VALUES %s
-            ON CONFLICT (spot_id) DO UPDATE SET
-                name = EXCLUDED.name,
-                latitude = EXCLUDED.latitude,
-                longitude = EXCLUDED.longitude,
-                altitude = EXCLUDED.altitude,
-                type = EXCLUDED.type,
-                wind_direction = EXCLUDED.wind_direction,
-                site_id = EXCLUDED.site_id;
+            ON CONFLICT (full_name, latitude, longitude) DO NOTHING;
         """)
         extras.execute_values(
             cursor, insert_query.as_string(conn), data_to_insert, template=None, page_size=100
