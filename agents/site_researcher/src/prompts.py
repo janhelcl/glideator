@@ -38,7 +38,7 @@ Site: Dune du Pyla
 ]
 ```
 
-Site: $site_name
+Site: $site_details
 """)
 
 
@@ -66,7 +66,7 @@ Instructions:
 - Only include the information found in the search results, don't make up any information.
 
 Research risks for:
-$site_name ($country)
+$site_details
 """
 )
 
@@ -85,7 +85,7 @@ Instructions:
     - Skill level required to fly at the site 
                                             
 Research overview for:
-$site_name ($country)
+$site_details
 """)
 
 
@@ -103,7 +103,7 @@ Instructions:
     - Any other permits or requirements for flying at the site
                                           
 Research access for:
-$site_name ($country)
+$site_details
 """)
 
 
@@ -130,7 +130,7 @@ Format:
     - "skill_level" (string) - the skill level required to fly at the site (Beginner, Intermediate, Expert)
     - "skill_level_description" (string) - One or two sentences summarizing specific skills needed and relevant site features. State these authoritatively withnout menitioning the source.
 
-Site: $site_name
+Site: $site_details
 Site information:
 $reports
 """)
@@ -157,7 +157,7 @@ Format:
 - Your response should be a JSON object that is a list of strings.
 - Each string in the list should be a tag.
 
-Site: $site_name
+Site: $site_details
 Site information:
 $reports
 """
@@ -180,7 +180,7 @@ Format:
 - A well formated HTML article.
 - Return just the HTML article, no other text.
 
-Site: $site_name
+Site: $site_details
 Site information:
 $reports
 """

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple
 
 try:
@@ -42,7 +44,11 @@ def submit_batch_and_download_raw(
     The file is uploaded, the batch is created, then polled until completion.
     The result file is downloaded and split into JSON objects.
     """
-    tmp_file = f"{job_name}_input.jsonl"
+    # Ensure batch_requests directory exists
+    batch_requests_dir = Path("batch_requests")
+    batch_requests_dir.mkdir(exist_ok=True)
+    
+    tmp_file = batch_requests_dir / f"{job_name}_input.jsonl"
     logger.info("Submitting batch '%s' with %d requests", job_name, len(requests))
     with open(tmp_file, "w", encoding="utf-8") as f:
         for req in requests:
@@ -51,7 +57,7 @@ def submit_batch_and_download_raw(
 
     uploaded_file = client.files.upload(
         file=tmp_file,
-        config=types.UploadFileConfig(display_name=tmp_file, mime_type=upload_mime_type)
+        config=types.UploadFileConfig(display_name=str(tmp_file), mime_type=upload_mime_type)
     )
     logger.debug("Uploaded file id: %s", getattr(uploaded_file, "name", "<unknown>"))
 

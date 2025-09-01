@@ -5,6 +5,9 @@ from typing import Any, Callable, Dict, List, Sequence
 
 import pandas as pd
 from string import Template
+from sqlalchemy.engine import Engine
+
+from .utils import format_site_details
 
 
 def _load_site_id_to_text_map(jsonl_path: str) -> Dict[int, str]:
@@ -31,6 +34,7 @@ def make_build_tag_extractor_requests(
     access_jsonl_path: str,
     risk_jsonl_path: str,
     prompt_template: Template,
+    engine: Engine,
 ) -> Callable[[Sequence[int]], List[dict]]:
     """Create a request builder for the tag_extractor template.
 
@@ -49,7 +53,7 @@ def make_build_tag_extractor_requests(
         requests: List[dict] = []
         for _, row in subset.iterrows():
             site_id = int(row["site_id"])  # type: ignore[arg-type]
-            site_name = row["name"]
+            site_details = format_site_details(row["name"], row["country"], engine)
 
             report_segments: List[str] = []
             overview_text = overview_map.get(site_id)
@@ -63,7 +67,7 @@ def make_build_tag_extractor_requests(
                 report_segments.append("Risks:\n" + risk_text)
 
             reports = "\n\n".join(report_segments).strip()
-            prompt_text = prompt_template.safe_substitute(site_name=site_name, reports=reports)
+            prompt_text = prompt_template.safe_substitute(site_details=site_details, reports=reports)
 
             requests.append({
                 "key": site_id,
@@ -80,7 +84,7 @@ def make_build_tag_extractor_requests(
     return build_requests
 
 
-def build_requests_for_site_ids(site_ids: list[int], sites_df: pd.DataFrame, prompt_template: Template) -> list[dict]:
+def build_requests_for_site_ids(site_ids: list[int], sites_df: pd.DataFrame, prompt_template: Template, engine: Engine) -> list[dict]:
     subset = sites_df[sites_df["site_id"].isin(site_ids)].copy()
     subset = subset.sort_values("site_id")
     return [
@@ -89,7 +93,9 @@ def build_requests_for_site_ids(site_ids: list[int], sites_df: pd.DataFrame, pro
             "request": {
                 "contents": [{
                     "parts": [{
-                        "text": prompt_template.safe_substitute(site_name=row["name"], country=row["country"]) 
+                        "text": prompt_template.safe_substitute(
+                            site_details=format_site_details(row["name"], row["country"], engine)
+                        ) 
                     }],
                     "role": "user",
                 }],
