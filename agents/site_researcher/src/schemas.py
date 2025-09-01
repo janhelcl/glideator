@@ -19,6 +19,7 @@ class Tags(BaseModel):
 
 class OverallState(TypedDict):
     site_name: str
+    site_details: str
     risk_report: str
     overview_report: str
     access_report: str

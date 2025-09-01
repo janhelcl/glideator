@@ -26,7 +26,7 @@ def official_website_finder(state):
     """LangGraph node that finds links to official websites of the paragliding site.
     """
     prompt = prompts.official_website_finder_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         current_date=utils.get_current_date()
     )
     response = genai_client.models.generate_content(
@@ -48,7 +48,7 @@ def official_website_finder(state):
 def risk_researcher(state):
     """LangGraph node that researches risks for a given site."""
     prompt = prompts.risk_researcher_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         current_date=utils.get_current_date()
     )
     response = genai_client.models.generate_content(
@@ -67,7 +67,7 @@ def risk_researcher(state):
 def overview_researcher(state):
     """LangGraph node that researches an overview of a given site."""
     prompt = prompts.overview_researcher_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         current_date=utils.get_current_date()
     )
     response = genai_client.models.generate_content(
@@ -91,7 +91,7 @@ def concatenate_reports(state):
 def access_researcher(state):
     """LangGraph node that researches access to a given site."""
     prompt = prompts.access_researcher_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         current_date=utils.get_current_date()
     )
     response = genai_client.models.generate_content(
@@ -111,7 +111,7 @@ def skill_level_extractor(state):
     """LangGraph node that extracts the skill level required to fly at a given site.
     """
     prompt = prompts.skill_level_extractor_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         reports=state["full_report"]
     )
     response = genai_client.models.generate_content(
@@ -133,7 +133,7 @@ def tag_extractor(state):
     """LangGraph node that extracts tags from the site information.
     """
     prompt = prompts.tag_extractor_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         reports=state["full_report"]
     )
     response = genai_client.models.generate_content(
@@ -153,7 +153,7 @@ def tag_extractor(state):
 def copywriter(state):
     """LangGraph node that generates a description of the site."""
     prompt = prompts.copywriter_instructions.safe_substitute(
-        site_name=state["site_name"],
+        site_details=state["site_details"],
         current_date=utils.get_current_date(),
         reports=state["full_report"]
     )
