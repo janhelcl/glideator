@@ -192,3 +192,7 @@ yarn-error.log*
 
 # Cursor IDE
 .cursor/
+
+# Site researcher batch processing
+agents/site_researcher/batch_requests/
+agents/site_researcher/batch_results/
