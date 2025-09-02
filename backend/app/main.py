@@ -5,7 +5,7 @@ from kombu import Connection
 from kombu.exceptions import OperationalError
 
 from fastapi import FastAPI, HTTPException
-from .database import engine, sync_engine, Base, AsyncSessionLocal
+from .database import engine, sync_engine, Base, AsyncSessionLocal, SessionLocal
 from .routers import sites, trip_planning
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -68,24 +68,27 @@ async def startup_db_client():
         if force_load:
             logger.info("FORCE_INITIAL_DATA_LOAD is true. Loading initial data...")
             
-            # Use async session for data loading
-            async with AsyncSessionLocal() as db:
+            # Use sync session for data loading (startup operation)
+            db = SessionLocal()
+            try:
                 logger.info("Loading sites data...")
-                await load_sites_from_csv(db, 'sites.csv')
+                load_sites_from_csv(db, 'sites.csv')
                 
                 logger.info("Loading flight stats data...")
-                await load_flight_stats_from_csv(db)
+                load_flight_stats_from_csv(db)
                 
                 logger.info("Loading spots data...")
-                await load_spots_from_csv(db)
+                load_spots_from_csv(db)
                 
                 logger.info("Loading sites info data...")
-                await load_sites_info_from_jsonl(db)
+                load_sites_info_from_jsonl(db)
 
                 logger.info("Loading site tags data...")
-                await load_tags_from_jsonl(db)
+                load_tags_from_jsonl(db)
 
                 logger.info("Initial data loading complete.")
+            finally:
+                db.close()
         else:
             logger.info("FORCE_INITIAL_DATA_LOAD is not set to true. Skipping initial data loading.")
 

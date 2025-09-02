@@ -61,6 +61,14 @@ async def replace_site_tags(db: AsyncSession, site_id: int, tags: List[str]):
         db.add(db_tag)
     await db.commit()
 
+def replace_site_tags_sync(db, site_id: int, tags: List[str]):
+    """Synchronous version for data loading during startup"""
+    db.query(models.SiteTag).filter(models.SiteTag.site_id == site_id).delete()
+    for t in tags:
+        db_tag = models.SiteTag(site_id=site_id, tag=t)
+        db.add(db_tag)
+    db.commit()
+
 async def get_all_unique_tags(db: AsyncSession) -> List[str]:
     """Return all unique tag strings across sites."""
     result = await db.execute(select(models.SiteTag.tag).distinct().order_by(models.SiteTag.tag.asc()))
@@ -209,6 +217,14 @@ async def create_flight_stats(db: AsyncSession, flight_stats: schemas.FlightStat
     await db.refresh(db_flight_stats)
     return db_flight_stats
 
+def create_flight_stats_sync(db, flight_stats: schemas.FlightStatsCreate):
+    """Synchronous version for data loading during startup"""
+    db_flight_stats = models.FlightStats(**flight_stats.dict())
+    db.add(db_flight_stats)
+    db.commit()
+    db.refresh(db_flight_stats)
+    return db_flight_stats
+
 async def get_flight_stats_by_site_id(db: AsyncSession, site_id: int):
     result = await db.execute(select(models.FlightStats).filter(
         models.FlightStats.site_id == site_id
@@ -230,11 +246,27 @@ async def create_spot(db: AsyncSession, spot: schemas.SpotCreate):
     await db.refresh(db_spot)
     return db_spot
 
+def create_spot_sync(db, spot: schemas.SpotCreate):
+    """Synchronous version for data loading during startup"""
+    db_spot = models.Spot(**spot.dict())
+    db.add(db_spot)
+    db.commit()
+    db.refresh(db_spot)
+    return db_spot
+
 async def create_site_info(db: AsyncSession, site_info: schemas.SiteInfoCreate):
     db_site_info = models.SiteInfo(**site_info.dict())
     db.add(db_site_info)
     await db.commit()
     await db.refresh(db_site_info)
+    return db_site_info
+
+def create_site_info_sync(db, site_info: schemas.SiteInfoCreate):
+    """Synchronous version for data loading during startup"""
+    db_site_info = models.SiteInfo(**site_info.dict())
+    db.add(db_site_info)
+    db.commit()
+    db.refresh(db_site_info)
     return db_site_info
 
 async def get_site_info(db: AsyncSession, site_id: int):
@@ -246,6 +278,14 @@ async def create_site(db: AsyncSession, site: schemas.SiteBase):
     db.add(db_site)
     await db.commit()
     await db.refresh(db_site)
+    return db_site
+
+def create_site_sync(db, site: schemas.SiteBase):
+    """Synchronous version for data loading during startup"""
+    db_site = models.Site(**site.dict())
+    db.add(db_site)
+    db.commit()
+    db.refresh(db_site)
     return db_site
 
 # --- Trip Planning CRUD Functions ---

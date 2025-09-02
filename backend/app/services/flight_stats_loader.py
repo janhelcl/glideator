@@ -2,18 +2,17 @@ import csv
 import os
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete
+from sqlalchemy.orm import Session
 
 from .. import crud, schemas, models
 
 logger = logging.getLogger(__name__)
 
-async def load_flight_stats_from_csv(db: AsyncSession, file_path: str = "app/data/flight_stats.csv"):
+def load_flight_stats_from_csv(db: Session, file_path: str = "app/data/flight_stats.csv"):
     # Delete all existing flight stats first
     logger.info("Deleting all existing flight stats")
-    await db.execute(delete(models.FlightStats))
-    await db.commit()
+    db.query(models.FlightStats).delete()
+    db.commit()
     
     logger.info(f"Loading flight stats from {file_path}")
     with open(file_path, 'r') as f:
@@ -34,7 +33,7 @@ async def load_flight_stats_from_csv(db: AsyncSession, file_path: str = "app/dat
                 avg_days_over_90=float(row['avg_days_over_90']),
                 avg_days_over_100=float(row['avg_days_over_100']),
             )
-            await crud.create_flight_stats(db, flight_stats)
+            crud.create_flight_stats_sync(db, flight_stats)
     
-    await db.commit()
+    db.commit()
     logger.info("Flight stats loaded successfully")
