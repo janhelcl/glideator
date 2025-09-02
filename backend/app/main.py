@@ -3,6 +3,7 @@ import time
 import os
 from kombu import Connection
 from kombu.exceptions import OperationalError
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from .database import engine, sync_engine, Base, AsyncSessionLocal, SessionLocal
@@ -15,6 +16,7 @@ from .services.spots_loader import load_spots_from_csv
 from .services.sites_info_loader import load_sites_info_from_jsonl
 from .services.tags_loader import load_tags_from_jsonl
 from .celery_app import celery, simple_test_task
+from .mcp import mcp
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +29,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with AsyncExitStack() as stack:
+        # Start MCP Streamable HTTP session manager
+        await stack.enter_async_context(mcp.session_manager.run())
+        yield
+
 # Create database tables
 async def setup_database():
     logger.info("Creating database tables...")
@@ -38,12 +48,14 @@ app = FastAPI(
     title="Glideator API",
     description="API for recommending paragliding sites based on weather forecasts.",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 # Include routers
 app.include_router(sites.router)
 app.include_router(trip_planning.router, tags=["Trip Planning"])
-# Tags endpoint moved under sites router
+
+app.mount("/", mcp.streamable_http_app())
 
 # Configure CORS
 app.add_middleware(
