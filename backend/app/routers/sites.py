@@ -2,12 +2,12 @@ import json
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, List, Optional
 from datetime import date
 
 from .. import schemas, crud
-from ..database import SessionLocal
+from ..database import AsyncSessionLocal
 
 router = APIRouter(
     prefix="/sites",
@@ -15,42 +15,39 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
 
 @router.get("/list", response_model=List[schemas.SiteListItem])
-def read_site_list(db: Session = Depends(get_db)):
+async def read_site_list(db: AsyncSession = Depends(get_db)):
     """
     Retrieves a list of all site names and their IDs.
     """
-    sites = crud.get_site_list(db)
+    sites = await crud.get_site_list(db)
     return sites
 
 @router.get("/", response_model=List[schemas.SiteResponse])
-def read_sites(
+async def read_sites(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    sites = crud.get_sites_with_predictions(db, skip=skip, limit=limit)
+    sites = await crud.get_sites_with_predictions(db, skip=skip, limit=limit)
     return sites
 
 @router.get("/{site_id}/predictions", response_model=List[schemas.SiteResponse])
-def read_predictions(
+async def read_predictions(
     site_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     date: Optional[date] = None,
     metric: Optional[str] = None
 ):
-    site = crud.get_site(db, site_id)
+    site = await crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
 
-    predictions = crud.get_predictions(db, site_id, date, metric)
+    predictions = await crud.get_predictions(db, site_id, date, metric)
     
     # Group predictions by date
     predictions_by_date = defaultdict(lambda: {'metrics': {}, 'computed_at': None, 'gfs_forecast_at': None})
@@ -83,36 +80,36 @@ def read_predictions(
         longitude=site.longitude,
         site_id=site.site_id,
         predictions=predictions_list,
-        tags=crud.get_tags_by_site_id(db, site_id)
+        tags=await crud.get_tags_by_site_id(db, site_id)
     )
     
     return [site_response]  # Return as a list to match the expected response_model
 
 @router.get("/{site_id}/tags", response_model=List[str])
-def get_site_tags(site_id: int, db: Session = Depends(get_db)):
-    site = crud.get_site(db, site_id)
+async def get_site_tags(site_id: int, db: AsyncSession = Depends(get_db)):
+    site = await crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
-    return crud.get_tags_by_site_id(db, site_id)
+    return await crud.get_tags_by_site_id(db, site_id)
 
 @router.get("/tags", response_model=List[str])
-def list_all_tags(min_sites: int = Query(2, ge=1), db: Session = Depends(get_db)):
+async def list_all_tags(min_sites: int = Query(2, ge=1), db: AsyncSession = Depends(get_db)):
     """Returns the list of tags across all sites, filtered by min_sites usage."""
     if min_sites and min_sites > 1:
-        return crud.get_tags_with_min_sites(db, min_sites=min_sites)
-    return crud.get_all_unique_tags(db)
+        return await crud.get_tags_with_min_sites(db, min_sites=min_sites)
+    return await crud.get_all_unique_tags(db)
 
 @router.get("/{site_id}/forecast", response_model=schemas.Forecast)
-def read_forecast(
+async def read_forecast(
     site_id: int,
     query_date: date = Query(..., description="Date of the forecast"),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    site = crud.get_site(db, site_id)
+    site = await crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
     
-    forecast = crud.get_forecast(db, query_date, site.lat_gfs, site.lon_gfs)
+    forecast = await crud.get_forecast(db, query_date, site.lat_gfs, site.lon_gfs)
     if not forecast:
         raise HTTPException(status_code=404, detail="Forecast not found")
     
@@ -124,11 +121,11 @@ def read_forecast(
     return forecast
 
 @router.get("/{site_id}/flight_stats", response_model=Dict[int, List[float]])
-def get_flight_stats(site_id: int, db: Session = Depends(get_db)):
+async def get_flight_stats(site_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get flight stats data for a specific site organized by temperature thresholds
     """
-    flight_stats = crud.get_flight_stats_by_site_id(db, site_id)
+    flight_stats = await crud.get_flight_stats_by_site_id(db, site_id)
     
     if not flight_stats:
         raise HTTPException(status_code=404, detail=f"Flight stats not found for site {site_id}")
@@ -156,33 +153,33 @@ def get_flight_stats(site_id: int, db: Session = Depends(get_db)):
     return result
 
 @router.get("/{site_id}/spots", response_model=List[schemas.Spot], summary="Get Spots for Site")
-def get_spots_for_site(site_id: int, db: Session = Depends(get_db)):
+async def get_spots_for_site(site_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get all takeoff and landing spots for a specific site
     """
     # Check if site exists
-    site = crud.get_site(db, site_id)
+    site = await crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
     
     # Get all spots for the site
-    spots = crud.get_spots_by_site_id(db, site_id)
+    spots = await crud.get_spots_by_site_id(db, site_id)
     
     # If no spots found, return empty list (not 404)
     return spots
 
 @router.get("/{site_id}/info", response_model=schemas.SiteInfo, summary="Get Site Info")
-def get_site_info(site_id: int, db: Session = Depends(get_db)):
+async def get_site_info(site_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get detailed information about a specific site including description, facilities, access, etc.
     """
     # Check if site exists
-    site = crud.get_site(db, site_id)
+    site = await crud.get_site(db, site_id)
     if not site:
         raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
     
     # Get site info
-    site_info = crud.get_site_info(db, site_id)
+    site_info = await crud.get_site_info(db, site_id)
     if not site_info:
         raise HTTPException(status_code=404, detail=f"Site info not found for site {site_id}")
     

@@ -5,7 +5,7 @@ from kombu import Connection
 from kombu.exceptions import OperationalError
 
 from fastapi import FastAPI, HTTPException
-from .database import engine, Base, SessionLocal
+from .database import engine, sync_engine, Base, AsyncSessionLocal
 from .routers import sites, trip_planning
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,12 +28,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Create database tables
-def setup_database():
+async def setup_database():
     logger.info("Creating database tables...")
-    Base.metadata.create_all(bind=engine)
+    # Create tables using sync engine for simplicity during setup
+    Base.metadata.create_all(bind=sync_engine)
     logger.info("Database tables created successfully")
-
-setup_database()
 
 app = FastAPI(
     title="Glideator API",
@@ -57,33 +56,38 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def startup_db_client():
+async def startup_db_client():
     logger.info("Starting up...")
-    db = SessionLocal()
+    
+    # Setup database first
+    await setup_database()
+    
     try:
         # Check environment variable to decide whether to load initial data
         force_load = os.getenv("FORCE_INITIAL_DATA_LOAD", "false").lower() == "true"
         if force_load:
             logger.info("FORCE_INITIAL_DATA_LOAD is true. Loading initial data...")
             
-            logger.info("Loading sites data...")
-            load_sites_from_csv(db, 'sites.csv')
-            
-            logger.info("Loading flight stats data...")
-            load_flight_stats_from_csv(db)
-            
-            logger.info("Loading spots data...")
-            load_spots_from_csv(db)
-            
-            logger.info("Loading sites info data...")
-            load_sites_info_from_jsonl(db)
+            # Use async session for data loading
+            async with AsyncSessionLocal() as db:
+                logger.info("Loading sites data...")
+                await load_sites_from_csv(db, 'sites.csv')
+                
+                logger.info("Loading flight stats data...")
+                await load_flight_stats_from_csv(db)
+                
+                logger.info("Loading spots data...")
+                await load_spots_from_csv(db)
+                
+                logger.info("Loading sites info data...")
+                await load_sites_info_from_jsonl(db)
 
-            logger.info("Loading site tags data...")
-            load_tags_from_jsonl(db)
+                logger.info("Loading site tags data...")
+                await load_tags_from_jsonl(db)
 
-            logger.info("Initial data loading complete.")
+                logger.info("Initial data loading complete.")
         else:
-             logger.info("FORCE_INITIAL_DATA_LOAD is not set to true. Skipping initial data loading.")
+            logger.info("FORCE_INITIAL_DATA_LOAD is not set to true. Skipping initial data loading.")
 
         # Wait for Broker (Redis) to be ready
         retry_count = 0
@@ -127,9 +131,6 @@ def startup_db_client():
         logger.info("Data loading and task submission sequence completed.") # Modified log
     except Exception as e:
         logger.error(f"Error during startup sequence: {str(e)}", exc_info=True) # Add traceback logging
-    finally:
-        db.close()
-        logger.info("Database session closed.")
 
 # Test endpoint for Celery
 @app.get("/test-celery/{message}")

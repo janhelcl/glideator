@@ -1,7 +1,7 @@
 import datetime
 import calendar
 import math
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Tuple, Literal, Optional
 from collections import defaultdict
 
@@ -61,8 +61,8 @@ def get_historical_prob(flight_stats: models.FlightStats, year: int, month: int,
     
     return (avg_flyable_days / days_in_month) if days_in_month > 0 else 0
 
-def plan_trip_service(
-    db: Session, 
+async def plan_trip_service(
+    db: AsyncSession, 
     start_date: datetime.date, 
     end_date: datetime.date, 
     metric: str = 'XC0',
@@ -88,12 +88,12 @@ def plan_trip_service(
     
     predictions = []
     if forecast_start_date <= forecast_end_date:
-        predictions = crud.get_predictions_for_range(
+        predictions = await crud.get_predictions_for_range(
             db, start_date=forecast_start_date, end_date=forecast_end_date, metric=metric
         )
 
-    all_flight_stats = crud.get_all_flight_stats(db)
-    all_sites = crud.get_sites(db, skip=0, limit=1000)  # Get all sites with coordinates
+    all_flight_stats = await crud.get_all_flight_stats(db)
+    all_sites = await crud.get_sites(db, skip=0, limit=1000)  # Get all sites with coordinates
 
     if not all_sites:
         return []
@@ -152,7 +152,7 @@ def plan_trip_service(
             site_altitude = site_altitude_map.get(site_id, 0)
             # Apply tag filter (logical AND) if required_tags provided
             if required_tags:
-                site_tags = set(crud.get_tags_by_site_id(db, site_id))
+                site_tags = set(await crud.get_tags_by_site_id(db, site_id))
                 if not set(required_tags).issubset(site_tags):
                     continue
             

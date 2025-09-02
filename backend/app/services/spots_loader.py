@@ -2,17 +2,18 @@ import csv
 import os
 import logging
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete
 
 from .. import crud, schemas, models
 
 logger = logging.getLogger(__name__)
 
-def load_spots_from_csv(db: Session, file_path: str = "app/data/spots.csv"):
+async def load_spots_from_csv(db: AsyncSession, file_path: str = "app/data/spots.csv"):
     # Delete all existing spots first
     logger.info("Deleting all existing spots")
-    db.query(models.Spot).delete()
-    db.commit()
+    await db.execute(delete(models.Spot))
+    await db.commit()
     
     logger.info(f"Loading spots from {file_path}")
     with open(file_path, 'r') as f:
@@ -28,7 +29,7 @@ def load_spots_from_csv(db: Session, file_path: str = "app/data/spots.csv"):
                 wind_direction=row['wind_direction'] if row['wind_direction'] else None,
                 site_id=int(row['site_id'])
             )
-            crud.create_spot(db, spot)
+            await crud.create_spot(db, spot)
     
-    db.commit()
+    await db.commit()
     logger.info("Spots loaded successfully")

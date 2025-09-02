@@ -14,7 +14,7 @@ h11==0.14.0
 idna==3.10
 kombu==5.4.2
 prompt_toolkit==3.0.48
-psycopg2-binary==2.9.9
+asyncpg==0.29.0
 pydantic==2.9.2
 pydantic_core==2.23.4
 python-dateutil==2.9.0.post0

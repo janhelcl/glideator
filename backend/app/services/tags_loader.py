@@ -3,7 +3,7 @@ import os
 import logging
 from typing import List, Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud
 
@@ -53,7 +53,7 @@ def _parse_tags_field(raw: Any) -> List[str]:
     # Unknown shape
     return []
 
-def load_tags_from_jsonl(db: Session, filename: str = 'tags.jsonl'):
+async def load_tags_from_jsonl(db: AsyncSession, filename: str = 'tags.jsonl'):
     jsonl_path = os.path.join(os.path.dirname(__file__), '..', 'data', filename)
     logger.info(f"Loading site tags from {jsonl_path}")
 
@@ -86,7 +86,7 @@ def load_tags_from_jsonl(db: Session, filename: str = 'tags.jsonl'):
                 raw_tags = data.get('text')
             tags = _parse_tags_field(raw_tags)
 
-            crud.replace_site_tags(db, site_id, tags)
+            await crud.replace_site_tags(db, site_id, tags)
             loaded += 1
             if tags:
                 non_empty += 1

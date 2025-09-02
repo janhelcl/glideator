@@ -1,27 +1,24 @@
 import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from .. import schemas # Removed crud, models imports (handled by service)
-from ..database import SessionLocal
+from ..database import AsyncSessionLocal
 from ..services import trip_planner_service # Import the service
 
 router = APIRouter()
 
 # Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
 @router.post("/plan-trip", response_model=schemas.TripPlanResponse)
-def plan_trip_endpoint(
+async def plan_trip_endpoint(
     request: schemas.TripPlanRequest,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Suggests the best individual sites based on aggregated flyability forecast 
@@ -39,7 +36,7 @@ def plan_trip_endpoint(
 
     
     # Call Core Logic Service function
-    response = trip_planner_service.plan_trip_service(
+    response = await trip_planner_service.plan_trip_service(
         db=db, 
         start_date=request.start_date, 
         end_date=request.end_date,

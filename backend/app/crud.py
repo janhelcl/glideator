@@ -1,24 +1,27 @@
-from sqlalchemy.orm import Session, selectinload, with_loader_criteria
-from sqlalchemy import and_, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, with_loader_criteria
+from sqlalchemy import and_, func, select, delete
 from collections import defaultdict
 from . import models, schemas
 from typing import Optional, List
 from datetime import date, datetime
 
-def get_site(db: Session, site_id: int):
-    return db.query(models.Site).filter(models.Site.site_id == site_id).first()
+async def get_site(db: AsyncSession, site_id: int):
+    result = await db.execute(select(models.Site).filter(models.Site.site_id == site_id))
+    return result.scalar_one_or_none()
 
-def get_site_by_name(db: Session, name: str):
-    return db.query(models.Site).filter(models.Site.name == name).first()
+async def get_site_by_name(db: AsyncSession, name: str):
+    result = await db.execute(select(models.Site).filter(models.Site.name == name))
+    return result.scalar_one_or_none()
 
-def get_sites(
-    db: Session, 
+async def get_sites(
+    db: AsyncSession, 
     skip: int = 0, 
     limit: int = 100, 
     metric: Optional[str] = None, 
     date: Optional[date] = None
 ):
-    query = db.query(models.Site)
+    query = select(models.Site)
     
     if metric and date:
         query = query.options(
@@ -37,44 +40,48 @@ def get_sites(
             )
         ).distinct()
     
-    sites = query.offset(skip).limit(limit).all()
-    return sites
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
 
-def get_site_list(db: Session):
+async def get_site_list(db: AsyncSession):
     """
     Retrieves a list of all sites with their IDs and names.
     """
-    return db.query(models.Site.site_id, models.Site.name).all()
+    result = await db.execute(select(models.Site.site_id, models.Site.name))
+    return result.all()
 
-def get_tags_by_site_id(db: Session, site_id: int) -> List[str]:
-    return [row.tag for row in db.query(models.SiteTag).filter(models.SiteTag.site_id == site_id).all()]
+async def get_tags_by_site_id(db: AsyncSession, site_id: int) -> List[str]:
+    result = await db.execute(select(models.SiteTag).filter(models.SiteTag.site_id == site_id))
+    return [row.tag for row in result.scalars().all()]
 
-def replace_site_tags(db: Session, site_id: int, tags: List[str]):
-    db.query(models.SiteTag).filter(models.SiteTag.site_id == site_id).delete()
+async def replace_site_tags(db: AsyncSession, site_id: int, tags: List[str]):
+    await db.execute(delete(models.SiteTag).where(models.SiteTag.site_id == site_id))
     for t in tags:
         db_tag = models.SiteTag(site_id=site_id, tag=t)
         db.add(db_tag)
-    db.commit()
+    await db.commit()
 
-def get_all_unique_tags(db: Session) -> List[str]:
+async def get_all_unique_tags(db: AsyncSession) -> List[str]:
     """Return all unique tag strings across sites."""
-    return [row[0] for row in db.query(models.SiteTag.tag).distinct().order_by(models.SiteTag.tag.asc()).all()]
+    result = await db.execute(select(models.SiteTag.tag).distinct().order_by(models.SiteTag.tag.asc()))
+    return [row[0] for row in result.all()]
 
-def get_tags_with_min_sites(db: Session, min_sites: int = 2) -> List[str]:
+async def get_tags_with_min_sites(db: AsyncSession, min_sites: int = 2) -> List[str]:
     """Return tags that are used by at least min_sites distinct sites."""
     q = (
-        db.query(models.SiteTag.tag)
+        select(models.SiteTag.tag)
         .group_by(models.SiteTag.tag)
         .having(func.count(func.distinct(models.SiteTag.site_id)) >= min_sites)
         .order_by(models.SiteTag.tag.asc())
     )
-    return [row[0] for row in q.all()]
+    result = await db.execute(q)
+    return [row[0] for row in result.all()]
 
-def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
+async def get_predictions(db: AsyncSession, site_id: int, query_date: Optional[date] = None, metric: Optional[str] = None):
     """
     Retrieves predictions based on site_id, and optionally filters by date and metric.
     """
-    query = db.query(models.Prediction).filter(models.Prediction.site_id == site_id)
+    query = select(models.Prediction).filter(models.Prediction.site_id == site_id)
     
     if query_date:
         query = query.filter(models.Prediction.date == query_date)
@@ -82,53 +89,60 @@ def get_predictions(db: Session, site_id: int, query_date: Optional[date] = None
     if metric:
         query = query.filter(models.Prediction.metric == metric)
     
-    return query.all()
+    result = await db.execute(query)
+    return result.scalars().all()
 
-def create_prediction(db: Session, prediction: schemas.PredictionCreate):
+async def create_prediction(db: AsyncSession, prediction: schemas.PredictionCreate):
     db_prediction = models.Prediction(**prediction.dict())
     db.add(db_prediction)
-    db.commit()
-    db.refresh(db_prediction)
+    await db.commit()
+    await db.refresh(db_prediction)
     return db_prediction
 
-def get_latest_gfs_forecast(db: Session) -> Optional[datetime]:
+async def get_latest_gfs_forecast(db: AsyncSession) -> Optional[datetime]:
     """
     Retrieves the latest gfs_forecast_at timestamp from predictions.
     """
-    latest_prediction = db.query(models.Prediction).order_by(models.Prediction.gfs_forecast_at.desc()).first()
+    result = await db.execute(select(models.Prediction).order_by(models.Prediction.gfs_forecast_at.desc()))
+    latest_prediction = result.scalar_one_or_none()
     return latest_prediction.gfs_forecast_at if latest_prediction else None
 
-def create_forecast(db: Session, forecast: schemas.ForecastCreate):
+async def create_forecast(db: AsyncSession, forecast: schemas.ForecastCreate):
     db_forecast = models.Forecast(**forecast.dict())
     db.add(db_forecast)
-    db.commit()
-    db.refresh(db_forecast)
+    await db.commit()
+    await db.refresh(db_forecast)
     return db_forecast
 
-def get_forecasts_by_date(db: Session, query_date: date) -> List[models.Forecast]:
-    return db.query(models.Forecast).filter(models.Forecast.date == query_date).all()
+async def get_forecasts_by_date(db: AsyncSession, query_date: date) -> List[models.Forecast]:
+    result = await db.execute(select(models.Forecast).filter(models.Forecast.date == query_date))
+    return result.scalars().all()
 
-def get_forecast(db: Session, query_date: date, lat_gfs: float, lon_gfs: float) -> Optional[models.Forecast]:
-    return db.query(models.Forecast).filter(
+async def get_forecast(db: AsyncSession, query_date: date, lat_gfs: float, lon_gfs: float) -> Optional[models.Forecast]:
+    result = await db.execute(select(models.Forecast).filter(
         models.Forecast.date == query_date,
         models.Forecast.lat_gfs == lat_gfs,
         models.Forecast.lon_gfs == lon_gfs
-    ).first()
+    ))
+    return result.scalar_one_or_none()
 
-def delete_forecasts_by_date(db: Session, query_date: date):
-    db.query(models.Forecast).filter(models.Forecast.date == query_date).delete()
-    db.commit()
+async def delete_forecasts_by_date(db: AsyncSession, query_date: date):
+    await db.execute(delete(models.Forecast).where(models.Forecast.date == query_date))
+    await db.commit()
 
-def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
-    sites = db.query(models.Site).offset(skip).limit(limit).all()
+async def get_sites_with_predictions(db: AsyncSession, skip: int = 0, limit: int = 100):
+    result = await db.execute(select(models.Site).offset(skip).limit(limit))
+    sites = result.scalars().all()
+    site_ids = [site.site_id for site in sites]
+    
     site_predictions = defaultdict(lambda: defaultdict(dict))  # Changed to dict instead of list
 
-    predictions = (
-        db.query(models.Prediction)
-        .filter(models.Prediction.site_id.in_([site.site_id for site in sites]))
+    predictions_result = await db.execute(
+        select(models.Prediction)
+        .filter(models.Prediction.site_id.in_(site_ids))
         .order_by(models.Prediction.date, models.Prediction.metric)
-        .all()
     )
+    predictions = predictions_result.scalars().all()
 
     # Store predictions by site_id and date
     for pred in predictions:
@@ -140,7 +154,18 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
             }
         site_predictions[pred.site_id][pred.date]['metrics'][pred.metric] = pred.value
 
-    result = []
+    # Batch load all tags for all sites in a single query
+    tags_result = await db.execute(
+        select(models.SiteTag).filter(models.SiteTag.site_id.in_(site_ids))
+    )
+    all_tags = tags_result.scalars().all()
+    
+    # Group tags by site_id
+    site_tags = defaultdict(list)
+    for tag in all_tags:
+        site_tags[tag.site_id].append(tag.tag)
+
+    result_list = []
     for site in sites:
         predictions_list = []
         for pred_date in sorted(site_predictions[site.site_id].keys()):
@@ -164,67 +189,73 @@ def get_sites_with_predictions(db: Session, skip: int = 0, limit: int = 100):
             longitude=site.longitude,
             site_id=site.site_id,
             predictions=predictions_list,
-            tags=get_tags_by_site_id(db, site.site_id)
+            tags=site_tags[site.site_id]  # Get tags from batch-loaded dict
         )
-        result.append(site_response)
+        result_list.append(site_response)
 
-    return result
+    return result_list
 
-def get_flight_stats(db: Session, site_id: int, month: int):
-    return db.query(models.FlightStats).filter(
+async def get_flight_stats(db: AsyncSession, site_id: int, month: int):
+    result = await db.execute(select(models.FlightStats).filter(
         models.FlightStats.site_id == site_id,
         models.FlightStats.month == month
-    ).first()
+    ))
+    return result.scalar_one_or_none()
 
-def create_flight_stats(db: Session, flight_stats: schemas.FlightStatsCreate):
+async def create_flight_stats(db: AsyncSession, flight_stats: schemas.FlightStatsCreate):
     db_flight_stats = models.FlightStats(**flight_stats.dict())
     db.add(db_flight_stats)
-    db.commit()
-    db.refresh(db_flight_stats)
+    await db.commit()
+    await db.refresh(db_flight_stats)
     return db_flight_stats
 
-def get_flight_stats_by_site_id(db: Session, site_id: int):
-    return db.query(models.FlightStats).filter(
+async def get_flight_stats_by_site_id(db: AsyncSession, site_id: int):
+    result = await db.execute(select(models.FlightStats).filter(
         models.FlightStats.site_id == site_id
-    ).order_by(models.FlightStats.month).all()
+    ).order_by(models.FlightStats.month))
+    return result.scalars().all()
 
-def get_spot(db: Session, spot_id: int):
-    return db.query(models.Spot).filter(models.Spot.spot_id == spot_id).first()
+async def get_spot(db: AsyncSession, spot_id: int):
+    result = await db.execute(select(models.Spot).filter(models.Spot.spot_id == spot_id))
+    return result.scalar_one_or_none()
 
-def get_spots_by_site_id(db: Session, site_id: int):
-    return db.query(models.Spot).filter(models.Spot.site_id == site_id).all()
+async def get_spots_by_site_id(db: AsyncSession, site_id: int):
+    result = await db.execute(select(models.Spot).filter(models.Spot.site_id == site_id))
+    return result.scalars().all()
 
-def create_spot(db: Session, spot: schemas.SpotCreate):
+async def create_spot(db: AsyncSession, spot: schemas.SpotCreate):
     db_spot = models.Spot(**spot.dict())
     db.add(db_spot)
-    db.commit()
-    db.refresh(db_spot)
+    await db.commit()
+    await db.refresh(db_spot)
     return db_spot
 
-def create_site_info(db: Session, site_info: schemas.SiteInfoCreate):
+async def create_site_info(db: AsyncSession, site_info: schemas.SiteInfoCreate):
     db_site_info = models.SiteInfo(**site_info.dict())
     db.add(db_site_info)
-    db.commit()
-    db.refresh(db_site_info)
+    await db.commit()
+    await db.refresh(db_site_info)
     return db_site_info
 
-def get_site_info(db: Session, site_id: int):
-    return db.query(models.SiteInfo).filter(models.SiteInfo.site_id == site_id).first()
+async def get_site_info(db: AsyncSession, site_id: int):
+    result = await db.execute(select(models.SiteInfo).filter(models.SiteInfo.site_id == site_id))
+    return result.scalar_one_or_none()
 
-def create_site(db: Session, site: schemas.SiteBase):
+async def create_site(db: AsyncSession, site: schemas.SiteBase):
     db_site = models.Site(**site.dict())
     db.add(db_site)
-    db.commit()
-    db.refresh(db_site)
+    await db.commit()
+    await db.refresh(db_site)
     return db_site
 
 # --- Trip Planning CRUD Functions ---
 
-def get_predictions_for_range(
-    db: Session, 
+async def get_predictions_for_range(
+    db: AsyncSession, 
     start_date: date, 
     end_date: date, 
-    metric: str = 'XC0' # Default to XC0 as per MVP spec
+    site_ids: Optional[List[int]] = None,
+    metric: Optional[str] = None
 ) -> List[models.Prediction]:
     """
     Retrieves predictions for a specific metric within a given date range for all sites.
@@ -232,24 +263,32 @@ def get_predictions_for_range(
     NOTE: This currently fetches predictions based on the 'metric' column.
     If the schema changes to have XC0, XC50 etc as direct columns, this needs adjustment.
     """
-    return db.query(models.Prediction).filter(
+    query = select(models.Prediction).filter(
         models.Prediction.date >= start_date,
-        models.Prediction.date <= end_date,
-        models.Prediction.metric == metric # Assuming Prediction model has 'metric' and 'value' columns
-    ).all()
+        models.Prediction.date <= end_date
+    )
+    
+    if site_ids:
+        query = query.filter(models.Prediction.site_id.in_(site_ids))
+    
+    if metric:
+        query = query.filter(models.Prediction.metric == metric)
+    
+    result = await db.execute(query)
+    return result.scalars().all()
 
-def get_sites_by_ids(db: Session, site_ids: List[int]) -> List[models.Site]:
+async def get_sites_by_ids(db: AsyncSession, site_ids: List[int]) -> List[models.Site]:
     """
     Retrieves site details (specifically ID and name) for a list of site IDs.
     """
     if not site_ids:
         return []
-    return db.query(models.Site).filter(
-        models.Site.site_id.in_(site_ids)
-    ).all()
+    result = await db.execute(select(models.Site).filter(models.Site.site_id.in_(site_ids)))
+    return result.scalars().all()
 
-def get_all_flight_stats(db: Session) -> List[models.FlightStats]:
+async def get_all_flight_stats(db: AsyncSession) -> List[models.FlightStats]:
     """
     Retrieves all flight statistics for all sites.
     """
-    return db.query(models.FlightStats).all()
+    result = await db.execute(select(models.FlightStats))
+    return result.scalars().all()

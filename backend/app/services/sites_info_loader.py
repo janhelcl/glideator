@@ -1,16 +1,17 @@
 import json
 import os
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete
 from .. import crud, schemas, models
 
 logger = logging.getLogger(__name__)
 
-def load_sites_info_from_jsonl(db: Session):
+async def load_sites_info_from_jsonl(db: AsyncSession):
     # Delete all existing site info first
     logger.info("Deleting all existing site info")
-    db.query(models.SiteInfo).delete()
-    db.commit()
+    await db.execute(delete(models.SiteInfo))
+    await db.commit()
     
     jsonl_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'sites_info.jsonl')
     logger.info(f"Loading sites info from {jsonl_path}")
@@ -26,7 +27,7 @@ def load_sites_info_from_jsonl(db: Session):
                 "html": data["html"]
             }
             site_info = schemas.SiteInfoCreate(**site_info_data)
-            crud.create_site_info(db, site_info)
+            await crud.create_site_info(db, site_info)
     
-    db.commit()
+    await db.commit()
     logger.info("Sites info loaded successfully") 
