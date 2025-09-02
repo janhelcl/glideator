@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload, with_loader_criteria
 from sqlalchemy import and_, func, select, delete
 from collections import defaultdict
 from . import models, schemas
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import date, datetime
 
 async def get_site(db: AsyncSession, site_id: int):
@@ -53,6 +53,26 @@ async def get_site_list(db: AsyncSession):
 async def get_tags_by_site_id(db: AsyncSession, site_id: int) -> List[str]:
     result = await db.execute(select(models.SiteTag).filter(models.SiteTag.site_id == site_id))
     return [row.tag for row in result.scalars().all()]
+
+async def get_tags_by_site_ids(db: AsyncSession, site_ids: List[int]) -> Dict[int, List[str]]:
+    """
+    Bulk load tags for multiple sites to avoid N+1 query problem.
+    Returns a dictionary mapping site_id to list of tags.
+    """
+    if not site_ids:
+        return {}
+    
+    result = await db.execute(
+        select(models.SiteTag).filter(models.SiteTag.site_id.in_(site_ids))
+    )
+    all_tags = result.scalars().all()
+    
+    # Group tags by site_id
+    site_tags = defaultdict(list)
+    for tag in all_tags:
+        site_tags[tag.site_id].append(tag.tag)
+    
+    return dict(site_tags)
 
 async def replace_site_tags(db: AsyncSession, site_id: int, tags: List[str]):
     await db.execute(delete(models.SiteTag).where(models.SiteTag.site_id == site_id))

@@ -144,6 +144,12 @@ async def plan_trip_service(
 
     # --- 4. Format and Rank Results ---
     
+    # Bulk load all tags if needed (to avoid N+1 query problem)
+    site_tags_map = {}
+    if required_tags:
+        site_ids_with_data = [site_id for site_id, data in site_data.items() if data['count'] > 0]
+        site_tags_map = await crud.get_tags_by_site_ids(db, site_ids_with_data)
+    
     suggestions = []
     for site_id, data in site_data.items():
         if data['count'] > 0:
@@ -152,7 +158,7 @@ async def plan_trip_service(
             site_altitude = site_altitude_map.get(site_id, 0)
             # Apply tag filter (logical AND) if required_tags provided
             if required_tags:
-                site_tags = set(await crud.get_tags_by_site_id(db, site_id))
+                site_tags = set(site_tags_map.get(site_id, []))
                 if not set(required_tags).issubset(site_tags):
                     continue
             
