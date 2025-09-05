@@ -44,7 +44,6 @@ class AutoGenAgent:
         """
         self.config = config
         self.agent: Optional[AssistantAgent] = None
-        self.tools: List[Any] = []
         self._initialized = False
     
     async def initialize(self) -> None:
@@ -64,11 +63,6 @@ class AutoGenAgent:
             server_params = StreamableHttpServerParams(
                 url=self.config.mcp_server_url,
             )
-            
-            # # Get tools from MCP server
-            # logger.info(f"Connecting to MCP server at {self.config.mcp_server_url}")
-            # self.tools = await mcp_server_tools(server)
-            # logger.info(f"Loaded {len(self.tools)} tools from MCP server")
             
             # Create OpenAI model client
             model = OpenAIChatCompletionClient(
@@ -159,13 +153,12 @@ class AutoGenAgent:
             return False
     
     def get_tools_info(self) -> Dict[str, Any]:
-        """Get information about available tools.
+        """Get information about the agent configuration.
         
         Returns:
-            Dict containing tools information.
+            Dict containing agent information.
         """
         return {
-            "total_tools": len(self.tools),
             "initialized": self._initialized,
             "agent_name": self.config.agent_name,
             "model": self.config.openai_model,
@@ -235,7 +228,7 @@ class AgentManager:
         """
         return {
             "ready": self.agent.is_initialized(),
-            "tools_info": self.agent.get_tools_info(),
+            "agent_info": self.agent.get_tools_info(),
             "config": {
                 "model": self.config.openai_model,
                 "agent_name": self.config.agent_name,

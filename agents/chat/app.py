@@ -128,10 +128,9 @@ class AutoGenChatApp:
         try:
             status = self.agent_manager.get_status()
             if status["ready"]:
-                tools_count = status["tools_info"]["total_tools"]
                 model = status["config"]["model"]
                 agent_name = status["config"]["agent_name"]
-                return f"✅ Ready | Agent: {agent_name} | Model: {model} | Tools: {tools_count}"
+                return f"✅ Ready | Agent: {agent_name} | Model: {model} | MCP: Connected"
             else:
                 return "⚠️ Agent not ready"
         except Exception as e:
