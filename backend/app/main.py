@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with AsyncExitStack() as stack:
+        # Setup database and load initial data
+        startup_logic()
         # Start MCP Streamable HTTP session manager
         await stack.enter_async_context(mcp.session_manager.run())
         yield
@@ -44,31 +46,8 @@ def setup_database():
     Base.metadata.create_all(bind=sync_engine)
     logger.info("Database tables created successfully")
 
-app = FastAPI(
-    title="Glideator API",
-    description="API for recommending paragliding sites based on weather forecasts.",
-    version="1.0.0",
-    lifespan=lifespan
-)
-
-# Include routers
-app.include_router(sites.router)
-app.include_router(trip_planning.router, tags=["Trip Planning"])
-
-app.mount("/", mcp.streamable_http_app())
-
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Update with your frontend URL in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-async def startup_db_client():
+# Startup logic moved from deprecated on_event to lifespan
+def startup_logic():
     logger.info("Starting up...")
     
     # Setup database first
@@ -99,6 +78,9 @@ async def startup_db_client():
                 load_tags_from_jsonl(db)
 
                 logger.info("Initial data loading complete.")
+            except Exception as e:
+                logger.error(f"Error during initial data loading: {e}")
+                raise e
             finally:
                 db.close()
         else:
@@ -146,6 +128,30 @@ async def startup_db_client():
         logger.info("Data loading and task submission sequence completed.") # Modified log
     except Exception as e:
         logger.error(f"Error during startup sequence: {str(e)}", exc_info=True) # Add traceback logging
+
+app = FastAPI(
+    title="Glideator API",
+    description="API for recommending paragliding sites based on weather forecasts.",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Include routers
+app.include_router(sites.router)
+app.include_router(trip_planning.router, tags=["Trip Planning"])
+
+app.mount("/", mcp.streamable_http_app())
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Update with your frontend URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 # Test endpoint for Celery
 @app.get("/test-celery/{message}")
