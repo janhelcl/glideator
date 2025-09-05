@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
         yield
 
 # Create database tables
-async def setup_database():
+def setup_database():
     logger.info("Creating database tables...")
     # Create tables using sync engine for simplicity during setup
     Base.metadata.create_all(bind=sync_engine)
@@ -72,7 +72,7 @@ async def startup_db_client():
     logger.info("Starting up...")
     
     # Setup database first
-    await setup_database()
+    setup_database()
     
     try:
         # Check environment variable to decide whether to load initial data
