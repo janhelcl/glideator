@@ -1,0 +1,5 @@
+python-dotenv>=1.1.1,<2.0.0
+autogen-ext[mcp]>=0.7.4,<0.8.0
+autogen-agentchat>=0.7.4,<0.8.0
+autogen-ext[openai]>=0.7.4,<0.8.0
+gradio>=5.44.1,<6.0.0
