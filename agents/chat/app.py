@@ -9,6 +9,7 @@ import sys
 from typing import List, Tuple, Optional, Dict
 
 import gradio as gr
+from gradio import ChatMessage
 from dotenv import load_dotenv
 
 from config import load_config, AppConfig
@@ -57,43 +58,161 @@ class AutoGenChatApp:
             logger.error(f"Application initialization failed: {str(e)}")
             raise
     
-    async def chat_handler(self, message: str, history: List[Dict[str, str]]) -> Tuple[str, List[Dict[str, str]]]:
+    async def chat_handler(self, message: str, history: List[ChatMessage]) -> Tuple[str, List[ChatMessage]]:
         """Handle chat messages from the Gradio interface.
         
         Args:
             message: User message.
-            history: Chat history (list of message dictionaries with 'role' and 'content' keys).
+            history: Chat history (list of ChatMessage objects).
             
         Returns:
             Tuple of (empty_string, updated_history) - empty string clears input, updated history for chat display.
         """
         if not self._initialized:
             error_response = "❌ Application not initialized. Please restart the application."
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": error_response})
+            history.append(ChatMessage(role="user", content=message))
+            history.append(ChatMessage(role="assistant", content=error_response))
             return "", history
         
         try:
+            # Add user message to history
+            history.append(ChatMessage(role="user", content=message))
+            
             # Process the message through the agent
             response = await self.agent_manager.process_message(message)
             
             if response.success:
-                reply = response.content
+                # Add tool calls and intermediate steps as separate messages with metadata
+                if response.tool_calls:
+                    for tool_call in response.tool_calls:
+                        history.append(ChatMessage(
+                            role="assistant",
+                            content=tool_call["content"],
+                            metadata={
+                                "title": f"🔧 Tool Call: {tool_call['name']}",
+                                "status": "done"
+                            }
+                        ))
+                
+                if response.intermediate_steps:
+                    for step in response.intermediate_steps:
+                        history.append(ChatMessage(
+                            role="assistant",
+                            content=step["content"],
+                            metadata={
+                                "title": f"🧠 Thinking: {step['source']}",
+                                "status": "done"
+                            }
+                        ))
+                
+                # Add the main response
+                history.append(ChatMessage(role="assistant", content=response.content))
+                logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
+                
             else:
-                reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
-            
-            # Add to chat history using the new message format
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": reply})
-            logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {reply[:50]}...")
+                error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
+                history.append(ChatMessage(role="assistant", content=error_reply))
             
         except Exception as e:
             error_reply = f"❌ Unexpected error: {str(e)}"
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": error_reply})
+            history.append(ChatMessage(role="assistant", content=error_reply))
             logger.error(f"Unexpected error in chat handler: {str(e)}")
         
         return "", history
+    
+    async def chat_handler_stream(self, message: str, history: List[ChatMessage]) -> List[ChatMessage]:
+        """Handle chat messages with streaming for real-time tool usage display.
+        
+        Args:
+            message: User message.
+            history: Chat history (list of ChatMessage objects).
+            
+        Yields:
+            List[ChatMessage]: Updated history with streaming responses.
+        """
+        if not self._initialized:
+            error_response = "❌ Application not initialized. Please restart the application."
+            history.append(ChatMessage(role="user", content=message))
+            history.append(ChatMessage(role="assistant", content=error_response))
+            yield history
+            return
+        
+        try:
+            # Add user message to history
+            history.append(ChatMessage(role="user", content=message))
+            yield history
+            
+            # Process the message through the agent with streaming
+            tool_messages = {}
+            step_messages = {}
+            
+            async for response in self.agent_manager.process_message_stream(message):
+                if response.success:
+                    # Add tool calls with "pending" status first, then update to "done"
+                    if response.tool_calls:
+                        for i, tool_call in enumerate(response.tool_calls):
+                            tool_key = f"tool_{len(history)}_{i}"
+                            if tool_key not in tool_messages:
+                                # Add new tool call with pending status
+                                tool_msg = ChatMessage(
+                                    role="assistant",
+                                    content=tool_call["content"],
+                                    metadata={
+                                        "title": f"🔧 Tool Call: {tool_call['name']}",
+                                        "status": "pending"
+                                    }
+                                )
+                                history.append(tool_msg)
+                                tool_messages[tool_key] = len(history) - 1
+                                yield history
+                            else:
+                                # Update existing tool call to done status
+                                idx = tool_messages[tool_key]
+                                history[idx] = ChatMessage(
+                                    role="assistant",
+                                    content=tool_call["content"],
+                                    metadata={
+                                        "title": f"🔧 Tool Call: {tool_call['name']}",
+                                        "status": "done"
+                                    }
+                                )
+                                yield history
+                    
+                    # Add intermediate steps
+                    if response.intermediate_steps:
+                        for i, step in enumerate(response.intermediate_steps):
+                            step_key = f"step_{len(history)}_{i}"
+                            if step_key not in step_messages:
+                                step_msg = ChatMessage(
+                                    role="assistant",
+                                    content=step["content"],
+                                    metadata={
+                                        "title": f"🧠 Thinking: {step['source']}",
+                                        "status": "done"
+                                    }
+                                )
+                                history.append(step_msg)
+                                step_messages[step_key] = len(history) - 1
+                                yield history
+                    
+                    # Add final response if content is not empty
+                    if response.content:
+                        history.append(ChatMessage(role="assistant", content=response.content))
+                        logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
+                        yield history
+                        break
+                        
+                else:
+                    error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
+                    history.append(ChatMessage(role="assistant", content=error_reply))
+                    yield history
+                    break
+            
+        except Exception as e:
+            error_reply = f"❌ Unexpected error: {str(e)}"
+            history.append(ChatMessage(role="assistant", content=error_reply))
+            logger.error(f"Unexpected error in streaming chat handler: {str(e)}")
+            yield history
     
     async def reset_handler(self) -> gr.update:
         """Handle conversation reset requests.

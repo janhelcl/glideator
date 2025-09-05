@@ -31,6 +31,8 @@ class ChatResponse:
     content: str
     error: Optional[str] = None
     success: bool = True
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    intermediate_steps: Optional[List[Dict[str, Any]]] = None
 
 
 class AutoGenAgent:
@@ -88,6 +90,102 @@ class AutoGenAgent:
             self._initialized = False
             raise Exception(f"Agent initialization failed: {str(e)}")
     
+    async def chat_stream(self, message: str):
+        """Process a chat message and yield intermediate responses in real-time.
+        
+        Args:
+            message: User message to process.
+            
+        Yields:
+            ChatResponse: Intermediate responses including tool calls and thinking steps.
+        """
+        if not self._initialized or not self.agent:
+            yield ChatResponse(
+                content="",
+                error="Agent not initialized. Please restart the application.",
+                success=False
+            )
+            return
+        
+        try:
+            logger.info(f"Processing message with streaming: {message[:100]}...")
+            
+            # Run the agent with the user message
+            result = await self.agent.run(task=message)
+            
+            # Process messages and yield intermediate results
+            seen_messages = 0
+            
+            while seen_messages < len(result.messages):
+                new_messages = result.messages[seen_messages:]
+                tool_calls = []
+                intermediate_steps = []
+                
+                for msg in new_messages:
+                    if hasattr(msg, 'source') and hasattr(msg, 'content'):
+                        content_str = str(msg.content)
+                        
+                        # Detect tool calls by looking for common patterns and message types
+                        is_tool_call = (
+                            'tool_call' in content_str.lower() or 
+                            'calling' in content_str.lower() or
+                            'function' in content_str.lower() or
+                            'mcp' in content_str.lower() or
+                            hasattr(msg, 'tool_calls') or
+                            str(type(msg)).lower().find('tool') != -1
+                        )
+                        
+                        if is_tool_call:
+                            
+                            tool_calls.append({
+                                "name": getattr(msg, 'source', 'unknown'),
+                                "content": content_str,
+                                "type": "tool_call"
+                            })
+                        
+                        # Check for intermediate thinking steps
+                        elif (msg.source != self.config.agent_name and 
+                              msg.source != 'user'):
+                            
+                            intermediate_steps.append({
+                                "source": msg.source,
+                                "content": content_str,
+                                "type": "intermediate"
+                            })
+                
+                # Yield intermediate results if any
+                if tool_calls or intermediate_steps:
+                    yield ChatResponse(
+                        content="",
+                        tool_calls=tool_calls if tool_calls else None,
+                        intermediate_steps=intermediate_steps if intermediate_steps else None
+                    )
+                
+                seen_messages = len(result.messages)
+                await asyncio.sleep(0.1)  # Small delay for real-time feel
+            
+            # Extract final response from all messages
+            reply = ""
+            for msg in reversed(result.messages):
+                if isinstance(msg, TextMessage) and hasattr(msg, 'source') and msg.source == self.agent.name:
+                    reply = msg.content
+                    break
+            
+            if not reply:
+                reply = "I'm sorry, I couldn't process your request."
+                
+            # Yield final response
+            yield ChatResponse(content=reply)
+            
+        except Exception as e:
+            error_msg = f"Error processing message: {str(e)}"
+            logger.error(error_msg)
+            yield ChatResponse(
+                content="",
+                error=error_msg,
+                success=False
+            )
+
     async def chat(self, message: str) -> ChatResponse:
         """Process a chat message and return the agent's response.
         
@@ -110,18 +208,62 @@ class AutoGenAgent:
             # Run the agent with the user message
             result = await self.agent.run(task=message)
             
-            # Extract the agent's reply from the messages
+            # Process all messages to extract tool calls and intermediate steps
             reply = ""
-            for m in reversed(result.messages):
-                if isinstance(m, TextMessage) and m.source == self.agent.name:
-                    reply = m.content
-                    break
+            tool_calls = []
+            intermediate_steps = []
+            
+            for i, msg in enumerate(result.messages):
+                logger.debug(f"Message {i}: {type(msg)} from {getattr(msg, 'source', 'unknown')}: {str(msg)[:100]}...")
+                
+                if hasattr(msg, 'source'):
+                    # Check if this is a tool call or tool response
+                    if hasattr(msg, 'content'):
+                        content_str = str(msg.content)
+                        
+                        # Detect tool calls by looking for common patterns and message types
+                        is_tool_call = (
+                            'tool_call' in content_str.lower() or 
+                            'calling' in content_str.lower() or
+                            'function' in content_str.lower() or
+                            'mcp' in content_str.lower() or
+                            hasattr(msg, 'tool_calls') or
+                            str(type(msg)).lower().find('tool') != -1
+                        )
+                        
+                        if is_tool_call:
+                            tool_calls.append({
+                                "name": getattr(msg, 'source', 'unknown'),
+                                "content": content_str,
+                                "type": "tool_call"
+                            })
+                        
+                        # Check for intermediate thinking steps
+                        elif (msg.source != self.config.agent_name and 
+                              msg.source != 'user'):
+                            
+                            intermediate_steps.append({
+                                "source": msg.source,
+                                "content": content_str,
+                                "type": "intermediate"
+                            })
+                
+                # Extract final reply from the agent
+                if (isinstance(msg, TextMessage) and 
+                    hasattr(msg, 'source') and 
+                    msg.source == self.agent.name):
+                    reply = msg.content
             
             if not reply:
                 reply = "I'm sorry, I couldn't process your request."
                 
-            logger.info("Message processed successfully")
-            return ChatResponse(content=reply)
+            logger.info(f"Message processed successfully. Tool calls: {len(tool_calls)}, Steps: {len(intermediate_steps)}")
+            
+            return ChatResponse(
+                content=reply,
+                tool_calls=tool_calls if tool_calls else None,
+                intermediate_steps=intermediate_steps if intermediate_steps else None
+            )
             
         except Exception as e:
             error_msg = f"Error processing message: {str(e)}"
@@ -211,6 +353,26 @@ class AgentManager:
             )
         
         return await self.agent.chat(message.strip())
+    
+    async def process_message_stream(self, message: str):
+        """Process a user message through the agent with streaming.
+        
+        Args:
+            message: User message to process.
+            
+        Yields:
+            ChatResponse: Streaming responses including intermediate steps.
+        """
+        if not message or not message.strip():
+            yield ChatResponse(
+                content="",
+                error="Please enter a message.",
+                success=False
+            )
+            return
+        
+        async for response in self.agent.chat_stream(message.strip()):
+            yield response
     
     async def reset_conversation(self) -> bool:
         """Reset the agent's conversation state.
