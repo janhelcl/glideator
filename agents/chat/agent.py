@@ -77,9 +77,9 @@ class AutoGenAgent:
                     name=self.config.agent_name,
                     model_client=model,
                     workbench=mcp,
-                    # tools=self.tools,
                     system_message=self.config.agent_system_message,
-                    reflect_on_tool_use=True
+                    reflect_on_tool_use=True,
+                    max_tool_iterations=self.config.max_tool_iterations
                 )
             
             self._initialized = True

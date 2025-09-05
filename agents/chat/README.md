@@ -62,6 +62,9 @@ OPENAI_MODEL=gpt-4o-mini
 # MCP server settings
 MCP_SERVER_URL=http://127.0.0.1:8000/mcp
 
+# Agent settings
+MAX_TOOL_ITERATIONS=10
+
 # Gradio interface settings
 GRADIO_SERVER_HOST=127.0.0.1
 GRADIO_SERVER_PORT=7863

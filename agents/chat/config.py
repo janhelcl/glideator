@@ -20,23 +20,24 @@ class AppConfig:
     
     # OpenAI settings
     openai_api_key: str
-    openai_model: str = "gpt-4o-mini"
+    openai_model: str
     
     # MCP server settings
-    mcp_server_url: str = "http://127.0.0.1:8000/mcp"
+    mcp_server_url: str
     
     # Gradio interface settings
-    gradio_host: str = "127.0.0.1"
-    gradio_port: int = 7863
-    gradio_share: bool = False
+    gradio_host: str
+    gradio_port: int
+    gradio_share: bool
     
     # Agent settings
-    agent_name: str = "assistant"
-    agent_system_message: str = "You are a helpful AI assistant with access to various tools."
+    agent_name: str
+    agent_system_message: str
+    max_tool_iterations: int
     
     # UI settings
-    chat_height: int = 500
-    app_title: str = "AutoGen Chat Application"
+    chat_height: int
+    app_title: str
     
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -75,6 +76,7 @@ class AppConfig:
                 "AGENT_SYSTEM_MESSAGE", 
                 "You are a helpful AI assistant with access to various tools."
             ),
+            max_tool_iterations=int(os.getenv("MAX_TOOL_ITERATIONS", "10")),
             
             # UI settings
             chat_height=int(os.getenv("CHAT_HEIGHT", "500")),
@@ -98,6 +100,9 @@ class AppConfig:
             
         if self.chat_height < 200:
             raise ValueError("Chat height must be at least 200 pixels")
+            
+        if self.max_tool_iterations < 1:
+            raise ValueError("Max tool iterations must be at least 1")
 
 
 def load_config() -> AppConfig:
