@@ -15,7 +15,8 @@ from autogen_core import CancellationToken
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_ext.tools.mcp import (
     StreamableHttpServerParams,
-    mcp_server_tools,
+    # mcp_server_tools,
+    McpWorkbench
 )
 
 from config import AppConfig
@@ -60,29 +61,30 @@ class AutoGenAgent:
             logger.info("Initializing AutoGen agent...")
             
             # Set up MCP server connection
-            server = StreamableHttpServerParams(
+            server_params = StreamableHttpServerParams(
                 url=self.config.mcp_server_url,
             )
             
-            # Get tools from MCP server
-            logger.info(f"Connecting to MCP server at {self.config.mcp_server_url}")
-            self.tools = await mcp_server_tools(server)
-            logger.info(f"Loaded {len(self.tools)} tools from MCP server")
+            # # Get tools from MCP server
+            # logger.info(f"Connecting to MCP server at {self.config.mcp_server_url}")
+            # self.tools = await mcp_server_tools(server)
+            # logger.info(f"Loaded {len(self.tools)} tools from MCP server")
             
             # Create OpenAI model client
             model = OpenAIChatCompletionClient(
                 model=self.config.openai_model,
                 api_key=self.config.openai_api_key
             )
-            
+            async with McpWorkbench(server_params) as mcp:
             # Create the assistant agent
-            self.agent = AssistantAgent(
-                name=self.config.agent_name,
-                model_client=model,
-                tools=self.tools,
-                system_message=self.config.agent_system_message,
-                reflect_on_tool_use=True
-            )
+                self.agent = AssistantAgent(
+                    name=self.config.agent_name,
+                    model_client=model,
+                    workbench=mcp,
+                    # tools=self.tools,
+                    system_message=self.config.agent_system_message,
+                    reflect_on_tool_use=True
+                )
             
             self._initialized = True
             logger.info("Agent initialized successfully")
