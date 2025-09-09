@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 def load_sites_from_csv(db: Session, csv_filename: str):
     # Delete dependent data first to avoid foreign key constraint violations
     logger.info("Deleting existing dependent data (FlightStats, Spot, Prediction, SiteInfo, SiteTag)")
-    db.query(models.FlightStats).delete() 
+    db.query(models.FlightStats).delete()
     db.query(models.Spot).delete()
-    db.query(models.Prediction).delete() # Assuming Prediction references Site
-    db.query(models.SiteInfo).delete() # Assuming SiteInfo references Site
-    db.query(models.SiteTag).delete() # Delete tags referencing Site
+    db.query(models.Prediction).delete()
+    db.query(models.SiteInfo).delete()
+    db.query(models.SiteTag).delete()
     # Now delete the sites themselves
     logger.info("Deleting all existing sites")
     db.query(models.Site).delete()
@@ -38,7 +38,7 @@ def load_sites_from_csv(db: Session, csv_filename: str):
                 lat_gfs=float(row['lat_gfs']),
                 lon_gfs=float(row['lon_gfs'])
             )
-            crud.create_site(db, site)
+            crud.create_site_sync(db, site)
     
     db.commit()
     logger.info("Sites loaded successfully")

@@ -33,7 +33,7 @@ def load_flight_stats_from_csv(db: Session, file_path: str = "app/data/flight_st
                 avg_days_over_90=float(row['avg_days_over_90']),
                 avg_days_over_100=float(row['avg_days_over_100']),
             )
-            crud.create_flight_stats(db, flight_stats)
+            crud.create_flight_stats_sync(db, flight_stats)
     
     db.commit()
     logger.info("Flight stats loaded successfully")

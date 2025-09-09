@@ -28,7 +28,7 @@ def load_spots_from_csv(db: Session, file_path: str = "app/data/spots.csv"):
                 wind_direction=row['wind_direction'] if row['wind_direction'] else None,
                 site_id=int(row['site_id'])
             )
-            crud.create_spot(db, spot)
+            crud.create_spot_sync(db, spot)
     
     db.commit()
     logger.info("Spots loaded successfully")

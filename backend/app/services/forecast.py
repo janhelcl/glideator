@@ -7,7 +7,8 @@ import json
 import torch
 import numpy as np
 import pandas as pd
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import delete
 
 from .. import crud, schemas, models
 import gfs.fetch
@@ -43,7 +44,7 @@ SITE_ID = 'site_id'
 DATE_FEATURES = ['weekend', 'year', 'day_of_year_sin', 'day_of_year_cos']
 
 
-def process_forecasts(db: Session, forecasts):
+async def process_forecasts(db: AsyncSession, forecasts):
     # reconstruct dfs
     forecasts = [
         pd.DataFrame.from_records(forecast).set_index(['lat', 'lon'])
@@ -62,13 +63,13 @@ def process_forecasts(db: Session, forecasts):
     run = joined_forecasts['run_12'].iloc[0]
     gfs_forecast_at = datetime(year=date.year, month=date.month, day=date.day, hour=run)
     # score and save
-    get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
-    process_and_save_forecasts(db, joined_forecasts, computed_at, gfs_forecast_at)
-    db.commit() # commit both together
+    await get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
+    await process_and_save_forecasts(db, joined_forecasts, computed_at, gfs_forecast_at)
+    await db.commit() # commit both together
 
 
-def fetch_sites(db: Session):
-    sites = crud.get_sites(db, limit=1000)
+async def fetch_sites(db: AsyncSession):
+    sites = await crud.get_sites(db, limit=1000)
     sites_df = pd.DataFrame([
         {
             'site_id': site.site_id,
@@ -109,12 +110,11 @@ def join_forecasts(forecasts):
     return joined
 
 
-def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at):
+async def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at):
     # prepare data
     sites = (
-        fetch_sites(db)
-        .set_index(['lat_gfs', 'lon_gfs'])
-    )
+        await fetch_sites(db)
+    ).set_index(['lat_gfs', 'lon_gfs'])
     full_data = preprocessing.add_date_features(joined_forecasts.join(sites), date_col='ref_time')
     # score
     predictions = net.io.score(
@@ -137,14 +137,18 @@ def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_forecast_at)
             computed_at=computed_at,
             gfs_forecast_at=gfs_forecast_at
         )
-        # Delete existing prediction if any
-        existing_prediction = crud.get_predictions(db, site_id, pred_date, metric)
-        if existing_prediction:
-            db.delete(existing_prediction[0])
+        # Delete existing predictions if any
+        await db.execute(
+            delete(models.Prediction).where(
+                models.Prediction.site_id == site_id,
+                models.Prediction.date == pred_date,
+                models.Prediction.metric == metric
+            )
+        )
         # Create new prediction
-        crud.create_prediction(db, prediction)
+        await crud.create_prediction(db, prediction)
 
-def process_and_save_forecasts(db: Session, joined_forecasts, computed_at, gfs_forecast_at):
+async def process_and_save_forecasts(db: AsyncSession, joined_forecasts, computed_at, gfs_forecast_at):
     joined_forecasts = joined_forecasts.reset_index()
     forecasts = []
     for _, row in joined_forecasts.iterrows():
@@ -161,13 +165,13 @@ def process_and_save_forecasts(db: Session, joined_forecasts, computed_at, gfs_f
         forecasts.append(forecast)
     
     # Delete existing forecasts for the same date
-    crud.delete_forecasts_by_date(db, forecasts[0].date)
+    await crud.delete_forecasts_by_date(db, forecasts[0].date)
     
     # Create new forecasts
     for forecast in forecasts:
-        crud.create_forecast(db, forecast)
+        await crud.create_forecast(db, forecast)
     
-    db.commit()
+    await db.commit()
 
 def forecast_to_dict(row, suffix=''):
     geo_iso_cols = [f'geopotential_height_{int(lvl)}hpa_m{suffix}' for lvl in HPA_LVLS]

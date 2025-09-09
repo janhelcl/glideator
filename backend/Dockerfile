@@ -9,8 +9,8 @@ COPY requirements.txt .
 COPY packages/ ./packages/
 
 RUN pip install --upgrade pip
-RUN pip install --timeout=10000 --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu ./packages/*.whl
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --timeout=10000 --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu ./packages/*.whl
 
 # Copy project
 COPY . .

@@ -29,6 +29,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=rpc://
+      #- SQL_ECHO=true  # Enable SQL logging in development
       #- FORCE_INITIAL_DATA_LOAD=true
     depends_on:
       rabbitmq:
@@ -76,6 +77,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=rpc://
+      #- SQL_ECHO=true  # Enable SQL logging in development
     depends_on:
       rabbitmq:
         condition: service_healthy

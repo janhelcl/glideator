@@ -86,7 +86,7 @@ def load_tags_from_jsonl(db: Session, filename: str = 'tags.jsonl'):
                 raw_tags = data.get('text')
             tags = _parse_tags_field(raw_tags)
 
-            crud.replace_site_tags(db, site_id, tags)
+            crud.replace_site_tags_sync(db, site_id, tags)
             loaded += 1
             if tags:
                 non_empty += 1

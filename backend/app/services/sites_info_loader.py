@@ -26,7 +26,7 @@ def load_sites_info_from_jsonl(db: Session):
                 "html": data["html"]
             }
             site_info = schemas.SiteInfoCreate(**site_info_data)
-            crud.create_site_info(db, site_info)
+            crud.create_site_info_sync(db, site_info)
     
     db.commit()
     logger.info("Sites info loaded successfully") 
