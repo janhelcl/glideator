@@ -69,7 +69,8 @@ class AutoGenAgent:
             # Create OpenAI model client
             model = OpenAIChatCompletionClient(
                 model=self.config.openai_model,
-                api_key=self.config.openai_api_key
+                api_key=self.config.openai_api_key,
+                parallel_tool_calls=self.config.parallel_tool_calls
             )
             async with McpWorkbench(server_params) as mcp:
             # Create the assistant agent
