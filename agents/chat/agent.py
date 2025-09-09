@@ -221,115 +221,7 @@ class AutoGenAgent:
                 success=False
             )
 
-    async def chat(self, message: str) -> ChatResponse:
-        """Process a chat message and return the agent's response.
-        
-        Args:
-            message: User message to process.
-            
-        Returns:
-            ChatResponse: The agent's response or error information.
-        """
-        if not self._initialized or not self.agent:
-            return ChatResponse(
-                content="",
-                error="Agent not initialized. Please restart the application.",
-                success=False
-            )
-        
-        try:
-            logger.info(f"Processing message: {message[:100]}...")
-            
-            # Run the agent with the user message
-            result = await self.agent.run(task=message)
-            
-            # Process all messages to extract tool calls and intermediate steps
-            reply = ""
-            tool_calls = []
-            intermediate_steps = []
-            
-            for i, msg in enumerate(result.messages):
-                logger.debug(f"Message {i}: {type(msg)} from {getattr(msg, 'source', 'unknown')}: {str(msg)[:100]}...")
-                
-                # Direct FunctionCall
-                if isinstance(msg, FunctionCall):
-                    try:
-                        pretty_args = json.dumps(json.loads(msg.arguments), indent=2, ensure_ascii=False)
-                    except Exception:
-                        pretty_args = str(msg.arguments)
-                    tool_calls.append({
-                        "name": msg.name,
-                        "content": f"**Tool:** {msg.name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
-                        "type": "tool_call"
-                    })
-                # Messages with list content possibly containing FunctionCall/FunctionExecutionResult items
-                elif hasattr(msg, 'content') and isinstance(getattr(msg, 'content'), list):
-                    for item in msg.content:
-                        if isinstance(item, FunctionCall) or (hasattr(item, 'name') and hasattr(item, 'arguments')):
-                            name = getattr(item, 'name', 'unknown')
-                            args_val = getattr(item, 'arguments', '')
-                            try:
-                                pretty_args = json.dumps(json.loads(args_val), indent=2, ensure_ascii=False)
-                            except Exception:
-                                pretty_args = str(args_val)
-                            tool_calls.append({
-                                "name": name,
-                                "content": f"**Tool:** {name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
-                                "type": "tool_call"
-                            })
-                        elif isinstance(item, FunctionExecutionResult) or (
-                            hasattr(item, 'name') and hasattr(item, 'content') and hasattr(item, 'is_error')
-                        ):
-                            tool_results.append({
-                                "name": getattr(item, 'name', 'unknown'),
-                                "content": str(getattr(item, 'content', '')),
-                                "is_error": bool(getattr(item, 'is_error', False)),
-                                "type": "tool_result"
-                            })
-                
-                # Direct FunctionExecutionResult
-                if isinstance(msg, FunctionExecutionResult):
-                    tool_results.append({
-                        "name": msg.name,
-                        "content": str(msg.content),
-                        "is_error": bool(msg.is_error),
-                        "type": "tool_result"
-                    })
-
-                # Other messages: intermediate or assistant text
-                if hasattr(msg, 'source') and hasattr(msg, 'content'):
-                    content_str = str(msg.content)
-                    if (msg.source != self.config.agent_name and msg.source != 'user'):
-                        intermediate_steps.append({
-                            "source": msg.source,
-                            "content": content_str,
-                            "type": "intermediate"
-                        })
-                    if (isinstance(msg, TextMessage) and 
-                        hasattr(msg, 'source') and 
-                        msg.source == self.agent.name):
-                        reply = msg.content
-            
-            if not reply:
-                reply = "I'm sorry, I couldn't process your request."
-                
-            logger.info(f"Message processed successfully. Tool calls: {len(tool_calls)}, Steps: {len(intermediate_steps)}")
-            
-            return ChatResponse(
-                content=reply,
-                tool_calls=tool_calls if tool_calls else None,
-                tool_results=tool_results if 'tool_results' in locals() and tool_results else None,
-                intermediate_steps=intermediate_steps if intermediate_steps else None
-            )
-            
-        except Exception as e:
-            error_msg = f"Error processing message: {str(e)}"
-            logger.error(error_msg)
-            return ChatResponse(
-                content="",
-                error=error_msg,
-                success=False
-            )
+    # Removed non-streaming chat method in favor of streaming-only flow
     
     async def reset(self) -> bool:
         """Reset the agent's conversation state.
@@ -393,23 +285,7 @@ class AgentManager:
         """
         await self.agent.initialize()
     
-    async def process_message(self, message: str) -> ChatResponse:
-        """Process a user message through the agent.
-        
-        Args:
-            message: User message to process.
-            
-        Returns:
-            ChatResponse: The agent's response.
-        """
-        if not message or not message.strip():
-            return ChatResponse(
-                content="",
-                error="Please enter a message.",
-                success=False
-            )
-        
-        return await self.agent.chat(message.strip())
+    # Removed non-streaming process_message in favor of streaming-only flow
     
     async def process_message_stream(self, message: str):
         """Process a user message through the agent with streaming.
