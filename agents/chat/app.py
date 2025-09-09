@@ -6,7 +6,7 @@ This module contains the Gradio web interface and main application logic.
 import asyncio
 import logging
 import sys
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, AsyncGenerator
 
 import gradio as gr
 from gradio import ChatMessage
@@ -120,7 +120,7 @@ class AutoGenChatApp:
         
         return "", history
     
-    async def chat_handler_stream(self, message: str, history: List[ChatMessage]) -> List[ChatMessage]:
+    async def chat_handler_stream(self, message: str, history: List[ChatMessage]) -> AsyncGenerator[Tuple[str, List[ChatMessage]], None]:
         """Handle chat messages with streaming for real-time tool usage display.
         
         Args:
@@ -128,19 +128,20 @@ class AutoGenChatApp:
             history: Chat history (list of ChatMessage objects).
             
         Yields:
-            List[ChatMessage]: Updated history with streaming responses.
+            Tuple[str, List[ChatMessage]]: Cleared input and updated history.
         """
         if not self._initialized:
             error_response = "❌ Application not initialized. Please restart the application."
             history.append(ChatMessage(role="user", content=message))
             history.append(ChatMessage(role="assistant", content=error_response))
-            yield history
+            yield "", history
             return
         
         try:
             # Add user message to history
             history.append(ChatMessage(role="user", content=message))
-            yield history
+            # Immediately display the user's message and clear the input
+            yield "", history
             
             # Process the message through the agent with streaming
             tool_messages = {}
@@ -164,7 +165,7 @@ class AutoGenChatApp:
                                 )
                                 history.append(tool_msg)
                                 tool_messages[tool_key] = len(history) - 1
-                                yield history
+                                yield "", history
                             else:
                                 # Update existing tool call to done status
                                 idx = tool_messages[tool_key]
@@ -176,7 +177,7 @@ class AutoGenChatApp:
                                         "status": "done"
                                     }
                                 )
-                                yield history
+                                yield "", history
                     
                     # Add intermediate steps
                     if response.intermediate_steps:
@@ -193,26 +194,26 @@ class AutoGenChatApp:
                                 )
                                 history.append(step_msg)
                                 step_messages[step_key] = len(history) - 1
-                                yield history
+                                yield "", history
                     
                     # Add final response if content is not empty
                     if response.content:
                         history.append(ChatMessage(role="assistant", content=response.content))
                         logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
-                        yield history
+                        yield "", history
                         break
                         
                 else:
                     error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
                     history.append(ChatMessage(role="assistant", content=error_reply))
-                    yield history
+                    yield "", history
                     break
             
         except Exception as e:
             error_reply = f"❌ Unexpected error: {str(e)}"
             history.append(ChatMessage(role="assistant", content=error_reply))
             logger.error(f"Unexpected error in streaming chat handler: {str(e)}")
-            yield history
+            yield "", history
     
     async def reset_handler(self) -> gr.update:
         """Handle conversation reset requests.
@@ -355,7 +356,7 @@ class AutoGenChatApp:
             
             # Event handlers
             message_input.submit(
-                fn=self.chat_handler,
+                fn=self.chat_handler_stream,
                 inputs=[message_input, chatbot],
                 outputs=[message_input, chatbot],
                 queue=True
