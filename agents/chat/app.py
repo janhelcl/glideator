@@ -94,6 +94,18 @@ class AutoGenChatApp:
                             }
                         ))
                 
+                # Add tool results (function execution results)
+                if hasattr(response, "tool_results") and response.tool_results:
+                    for result in response.tool_results:
+                        history.append(ChatMessage(
+                            role="assistant",
+                            content=str(result["content"]),
+                            metadata={
+                                "title": f"📦 Tool Result: {result['name']}",
+                                "status": "done"
+                            }
+                        ))
+                
                 if response.intermediate_steps:
                     for step in response.intermediate_steps:
                         history.append(ChatMessage(
@@ -146,6 +158,7 @@ class AutoGenChatApp:
             # Process the message through the agent with streaming
             tool_messages = {}
             step_messages = {}
+            result_messages = {}
             
             async for response in self.agent_manager.process_message_stream(message):
                 if response.success:
@@ -182,6 +195,23 @@ class AutoGenChatApp:
                                 )
                                 history.append(step_msg)
                                 step_messages[step_key] = len(history) - 1
+                                yield "", history
+                    
+                    # Add tool results as closed accordions immediately
+                    if hasattr(response, "tool_results") and response.tool_results:
+                        for i, result in enumerate(response.tool_results):
+                            result_key = f"result_{len(history)}_{i}"
+                            if result_key not in result_messages:
+                                result_msg = ChatMessage(
+                                    role="assistant",
+                                    content=str(result["content"]),
+                                    metadata={
+                                        "title": f"📦 Tool Result: {result['name']}",
+                                        "status": "done"
+                                    }
+                                )
+                                history.append(result_msg)
+                                result_messages[result_key] = len(history) - 1
                                 yield "", history
                     
                     # Add final response if content is not empty

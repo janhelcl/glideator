@@ -5,13 +5,15 @@ separated from the UI components.
 """
 
 import asyncio
+import json
 import logging
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
-from autogen_core import CancellationToken
+from autogen_core import CancellationToken, FunctionCall
+from autogen_core.models import FunctionExecutionResult, FunctionExecutionResultMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_ext.tools.mcp import (
     StreamableHttpServerParams,
@@ -32,6 +34,7 @@ class ChatResponse:
     error: Optional[str] = None
     success: bool = True
     tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_results: Optional[List[Dict[str, Any]]] = None
     intermediate_steps: Optional[List[Dict[str, Any]]] = None
 
 
@@ -118,46 +121,88 @@ class AutoGenAgent:
                 events = event if isinstance(event, list) else [event]
 
                 tool_calls = []
+                tool_results = []
                 intermediate_steps = []
 
                 for msg in events:
+                    # Direct FunctionCall object
+                    if isinstance(msg, FunctionCall):
+                        pretty_args = None
+                        try:
+                            pretty_args = json.dumps(json.loads(msg.arguments), indent=2, ensure_ascii=False)
+                        except Exception:
+                            pretty_args = str(msg.arguments)
+                        tool_calls.append({
+                            "name": msg.name,
+                            "content": f"**Tool:** {msg.name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
+                            "type": "tool_call"
+                        })
+                    # Messages whose content is a list that may include FunctionCall-like items
+                    elif hasattr(msg, 'content') and isinstance(getattr(msg, 'content'), list):
+                        for item in msg.content:
+                            if isinstance(item, FunctionCall) or (hasattr(item, 'name') and hasattr(item, 'arguments')):
+                                name = getattr(item, 'name', 'unknown')
+                                args_val = getattr(item, 'arguments', '')
+                                try:
+                                    pretty_args = json.dumps(json.loads(args_val), indent=2, ensure_ascii=False)
+                                except Exception:
+                                    pretty_args = str(args_val)
+                                tool_calls.append({
+                                    "name": name,
+                                    "content": f"**Tool:** {name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
+                                    "type": "tool_call"
+                                })
+                            # Detect FunctionExecutionResult-like items
+                            elif isinstance(item, FunctionExecutionResult) or (
+                                hasattr(item, 'name') and hasattr(item, 'content') and hasattr(item, 'is_error')
+                            ):
+                                name = getattr(item, 'name', 'unknown')
+                                content_val = getattr(item, 'content', '')
+                                is_error = bool(getattr(item, 'is_error', False))
+                                tool_results.append({
+                                    "name": name,
+                                    "content": str(content_val),
+                                    "is_error": is_error,
+                                    "type": "tool_result"
+                                })
+                    # Direct FunctionExecutionResult or wrapper message
+                    elif isinstance(msg, FunctionExecutionResult):
+                        tool_results.append({
+                            "name": msg.name,
+                            "content": str(msg.content),
+                            "is_error": bool(msg.is_error),
+                            "type": "tool_result"
+                        })
+                    elif isinstance(msg, FunctionExecutionResultMessage) and isinstance(getattr(msg, 'content', None), list):
+                        for item in msg.content:
+                            if isinstance(item, FunctionExecutionResult) or (
+                                hasattr(item, 'name') and hasattr(item, 'content')
+                            ):
+                                tool_results.append({
+                                    "name": getattr(item, 'name', 'unknown'),
+                                    "content": str(getattr(item, 'content', '')),
+                                    "is_error": bool(getattr(item, 'is_error', False)),
+                                    "type": "tool_result"
+                                })
+                    
+                    # Other messages: treat as intermediate or assistant text
                     if hasattr(msg, 'source') and hasattr(msg, 'content'):
                         content_str = str(msg.content)
-
-                        # Detect tool calls by looking for common patterns and message types
-                        is_tool_call = (
-                            'tool_call' in content_str.lower() or
-                            'calling' in content_str.lower() or
-                            'function' in content_str.lower() or
-                            'mcp' in content_str.lower() or
-                            hasattr(msg, 'tool_calls') or
-                            str(type(msg)).lower().find('tool') != -1
-                        )
-
-                        if is_tool_call:
-                            tool_calls.append({
-                                "name": getattr(msg, 'source', 'unknown'),
-                                "content": content_str,
-                                "type": "tool_call"
-                            })
-
-                        # Intermediate thinking/tool progress from non-user, non-assistant sources
-                        elif (msg.source != self.config.agent_name and msg.source != 'user'):
+                        if (msg.source != self.config.agent_name and msg.source != 'user'):
                             intermediate_steps.append({
                                 "source": msg.source,
                                 "content": content_str,
                                 "type": "intermediate"
                             })
-
-                        # Capture the latest assistant reply (final content will be yielded after stream ends)
                         if isinstance(msg, TextMessage) and msg.source == self.agent.name:
                             reply = msg.content
 
                 # Yield intermediate updates immediately
-                if tool_calls or intermediate_steps:
+                if tool_calls or tool_results or intermediate_steps:
                     yield ChatResponse(
                         content="",
                         tool_calls=tool_calls if tool_calls else None,
+                        tool_results=tool_results if tool_results else None,
                         intermediate_steps=intermediate_steps if intermediate_steps else None
                     )
 
@@ -206,43 +251,64 @@ class AutoGenAgent:
             for i, msg in enumerate(result.messages):
                 logger.debug(f"Message {i}: {type(msg)} from {getattr(msg, 'source', 'unknown')}: {str(msg)[:100]}...")
                 
-                if hasattr(msg, 'source'):
-                    # Check if this is a tool call or tool response
-                    if hasattr(msg, 'content'):
-                        content_str = str(msg.content)
-                        
-                        # Detect tool calls by looking for common patterns and message types
-                        is_tool_call = (
-                            'tool_call' in content_str.lower() or 
-                            'calling' in content_str.lower() or
-                            'function' in content_str.lower() or
-                            'mcp' in content_str.lower() or
-                            hasattr(msg, 'tool_calls') or
-                            str(type(msg)).lower().find('tool') != -1
-                        )
-                        
-                        if is_tool_call:
+                # Direct FunctionCall
+                if isinstance(msg, FunctionCall):
+                    try:
+                        pretty_args = json.dumps(json.loads(msg.arguments), indent=2, ensure_ascii=False)
+                    except Exception:
+                        pretty_args = str(msg.arguments)
+                    tool_calls.append({
+                        "name": msg.name,
+                        "content": f"**Tool:** {msg.name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
+                        "type": "tool_call"
+                    })
+                # Messages with list content possibly containing FunctionCall/FunctionExecutionResult items
+                elif hasattr(msg, 'content') and isinstance(getattr(msg, 'content'), list):
+                    for item in msg.content:
+                        if isinstance(item, FunctionCall) or (hasattr(item, 'name') and hasattr(item, 'arguments')):
+                            name = getattr(item, 'name', 'unknown')
+                            args_val = getattr(item, 'arguments', '')
+                            try:
+                                pretty_args = json.dumps(json.loads(args_val), indent=2, ensure_ascii=False)
+                            except Exception:
+                                pretty_args = str(args_val)
                             tool_calls.append({
-                                "name": getattr(msg, 'source', 'unknown'),
-                                "content": content_str,
+                                "name": name,
+                                "content": f"**Tool:** {name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
                                 "type": "tool_call"
                             })
-                        
-                        # Check for intermediate thinking steps
-                        elif (msg.source != self.config.agent_name and 
-                              msg.source != 'user'):
-                            
-                            intermediate_steps.append({
-                                "source": msg.source,
-                                "content": content_str,
-                                "type": "intermediate"
+                        elif isinstance(item, FunctionExecutionResult) or (
+                            hasattr(item, 'name') and hasattr(item, 'content') and hasattr(item, 'is_error')
+                        ):
+                            tool_results.append({
+                                "name": getattr(item, 'name', 'unknown'),
+                                "content": str(getattr(item, 'content', '')),
+                                "is_error": bool(getattr(item, 'is_error', False)),
+                                "type": "tool_result"
                             })
                 
-                # Extract final reply from the agent
-                if (isinstance(msg, TextMessage) and 
-                    hasattr(msg, 'source') and 
-                    msg.source == self.agent.name):
-                    reply = msg.content
+                # Direct FunctionExecutionResult
+                if isinstance(msg, FunctionExecutionResult):
+                    tool_results.append({
+                        "name": msg.name,
+                        "content": str(msg.content),
+                        "is_error": bool(msg.is_error),
+                        "type": "tool_result"
+                    })
+
+                # Other messages: intermediate or assistant text
+                if hasattr(msg, 'source') and hasattr(msg, 'content'):
+                    content_str = str(msg.content)
+                    if (msg.source != self.config.agent_name and msg.source != 'user'):
+                        intermediate_steps.append({
+                            "source": msg.source,
+                            "content": content_str,
+                            "type": "intermediate"
+                        })
+                    if (isinstance(msg, TextMessage) and 
+                        hasattr(msg, 'source') and 
+                        msg.source == self.agent.name):
+                        reply = msg.content
             
             if not reply:
                 reply = "I'm sorry, I couldn't process your request."
@@ -252,6 +318,7 @@ class AutoGenAgent:
             return ChatResponse(
                 content=reply,
                 tool_calls=tool_calls if tool_calls else None,
+                tool_results=tool_results if 'tool_results' in locals() and tool_results else None,
                 intermediate_steps=intermediate_steps if intermediate_steps else None
             )
             
