@@ -149,27 +149,13 @@ class AutoGenChatApp:
             
             async for response in self.agent_manager.process_message_stream(message):
                 if response.success:
-                    # Add tool calls with "pending" status first, then update to "done"
+                    # Add tool calls as "done" so they appear closed by default
                     if response.tool_calls:
                         for i, tool_call in enumerate(response.tool_calls):
                             tool_key = f"tool_{len(history)}_{i}"
                             if tool_key not in tool_messages:
-                                # Add new tool call with pending status
+                                # Add new tool call with done status (closed by default)
                                 tool_msg = ChatMessage(
-                                    role="assistant",
-                                    content=tool_call["content"],
-                                    metadata={
-                                        "title": f"🔧 Tool Call: {tool_call['name']}",
-                                        "status": "pending"
-                                    }
-                                )
-                                history.append(tool_msg)
-                                tool_messages[tool_key] = len(history) - 1
-                                yield "", history
-                            else:
-                                # Update existing tool call to done status
-                                idx = tool_messages[tool_key]
-                                history[idx] = ChatMessage(
                                     role="assistant",
                                     content=tool_call["content"],
                                     metadata={
@@ -177,6 +163,8 @@ class AutoGenChatApp:
                                         "status": "done"
                                     }
                                 )
+                                history.append(tool_msg)
+                                tool_messages[tool_key] = len(history) - 1
                                 yield "", history
                     
                     # Add intermediate steps
