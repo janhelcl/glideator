@@ -131,9 +131,8 @@ async def get_latest_gfs_forecast(db: AsyncSession) -> Optional[datetime]:
     """
     Retrieves the latest gfs_forecast_at timestamp from predictions.
     """
-    result = await db.execute(select(models.Prediction).order_by(models.Prediction.gfs_forecast_at.desc()))
-    latest_prediction = result.scalar_one_or_none()
-    return latest_prediction.gfs_forecast_at if latest_prediction else None
+    result = await db.execute(select(func.max(models.Prediction.gfs_forecast_at)))
+    return result.scalar_one_or_none()
 
 async def create_forecast(db: AsyncSession, forecast: schemas.ForecastCreate):
     db_forecast = models.Forecast(**forecast.dict())
