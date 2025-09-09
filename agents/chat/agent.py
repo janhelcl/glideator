@@ -110,72 +110,61 @@ class AutoGenAgent:
         
         try:
             logger.info(f"Processing message with streaming: {message[:100]}...")
-            
-            # Run the agent with the user message
-            result = await self.agent.run(task=message)
-            
-            # Process messages and yield intermediate results
-            seen_messages = 0
-            
-            while seen_messages < len(result.messages):
-                new_messages = result.messages[seen_messages:]
+
+            # Use the agent's streaming API so events are available immediately
+            reply: str = ""
+            async for event in self.agent.run_stream(task=message):
+                # Normalize event(s) to a list of messages
+                events = event if isinstance(event, list) else [event]
+
                 tool_calls = []
                 intermediate_steps = []
-                
-                for msg in new_messages:
+
+                for msg in events:
                     if hasattr(msg, 'source') and hasattr(msg, 'content'):
                         content_str = str(msg.content)
-                        
+
                         # Detect tool calls by looking for common patterns and message types
                         is_tool_call = (
-                            'tool_call' in content_str.lower() or 
+                            'tool_call' in content_str.lower() or
                             'calling' in content_str.lower() or
                             'function' in content_str.lower() or
                             'mcp' in content_str.lower() or
                             hasattr(msg, 'tool_calls') or
                             str(type(msg)).lower().find('tool') != -1
                         )
-                        
+
                         if is_tool_call:
-                            
                             tool_calls.append({
                                 "name": getattr(msg, 'source', 'unknown'),
                                 "content": content_str,
                                 "type": "tool_call"
                             })
-                        
-                        # Check for intermediate thinking steps
-                        elif (msg.source != self.config.agent_name and 
-                              msg.source != 'user'):
-                            
+
+                        # Intermediate thinking/tool progress from non-user, non-assistant sources
+                        elif (msg.source != self.config.agent_name and msg.source != 'user'):
                             intermediate_steps.append({
                                 "source": msg.source,
                                 "content": content_str,
                                 "type": "intermediate"
                             })
-                
-                # Yield intermediate results if any
+
+                        # Capture the latest assistant reply (final content will be yielded after stream ends)
+                        if isinstance(msg, TextMessage) and msg.source == self.agent.name:
+                            reply = msg.content
+
+                # Yield intermediate updates immediately
                 if tool_calls or intermediate_steps:
                     yield ChatResponse(
                         content="",
                         tool_calls=tool_calls if tool_calls else None,
                         intermediate_steps=intermediate_steps if intermediate_steps else None
                     )
-                
-                seen_messages = len(result.messages)
-                await asyncio.sleep(0.1)  # Small delay for real-time feel
-            
-            # Extract final response from all messages
-            reply = ""
-            for msg in reversed(result.messages):
-                if isinstance(msg, TextMessage) and hasattr(msg, 'source') and msg.source == self.agent.name:
-                    reply = msg.content
-                    break
-            
+
+            # After the stream ends, yield the final assistant content
             if not reply:
                 reply = "I'm sorry, I couldn't process your request."
-                
-            # Yield final response
+
             yield ChatResponse(content=reply)
             
         except Exception as e:
