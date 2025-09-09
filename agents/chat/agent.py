@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.messages import TextMessage
+from autogen_agentchat.messages import TextMessage, ModelClientStreamingChunkEvent
 from autogen_core import CancellationToken, FunctionCall
 from autogen_core.models import FunctionExecutionResult, FunctionExecutionResultMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
@@ -83,7 +83,8 @@ class AutoGenAgent:
                     workbench=mcp,
                     system_message=self.config.agent_system_message,
                     reflect_on_tool_use=True,
-                    max_tool_iterations=self.config.max_tool_iterations
+                    max_tool_iterations=self.config.max_tool_iterations,
+                    model_client_stream=True
                 )
             
             self._initialized = True
@@ -116,6 +117,8 @@ class AutoGenAgent:
 
             # Use the agent's streaming API so events are available immediately
             reply: str = ""
+            accumulated_text: str = ""
+            last_emitted_text: str = ""
             async for event in self.agent.run_stream(task=message):
                 # Normalize event(s) to a list of messages
                 events = event if isinstance(event, list) else [event]
@@ -125,6 +128,16 @@ class AutoGenAgent:
                 intermediate_steps = []
 
                 for msg in events:
+                    # Token chunks from the model client (if enabled)
+                    if isinstance(msg, ModelClientStreamingChunkEvent) and getattr(msg, 'source', None) == self.agent.name:
+                        try:
+                            chunk = str(getattr(msg, 'content', ''))
+                        except Exception:
+                            chunk = ""
+                        if chunk:
+                            accumulated_text += chunk
+                        # Continue to next message to avoid misclassifying chunk as intermediate
+                        continue
                     # Direct FunctionCall object
                     if isinstance(msg, FunctionCall):
                         pretty_args = None
@@ -195,7 +208,7 @@ class AutoGenAgent:
                                 "type": "intermediate"
                             })
                         if isinstance(msg, TextMessage) and msg.source == self.agent.name:
-                            reply = msg.content
+                            reply = str(msg.content)
 
                 # Yield intermediate updates immediately
                 if tool_calls or tool_results or intermediate_steps:
@@ -206,11 +219,16 @@ class AutoGenAgent:
                         intermediate_steps=intermediate_steps if intermediate_steps else None
                     )
 
-            # After the stream ends, yield the final assistant content
-            if not reply:
-                reply = "I'm sorry, I couldn't process your request."
+                # Stream assistant text progressively when updated
+                current_text = accumulated_text or reply
+                if current_text and current_text != last_emitted_text:
+                    last_emitted_text = current_text
+                    yield ChatResponse(content=current_text)
 
-            yield ChatResponse(content=reply)
+            # After the stream ends, yield final content only if none was streamed
+            if last_emitted_text == "":
+                final_text = accumulated_text or reply or "I'm sorry, I couldn't process your request."
+                yield ChatResponse(content=final_text)
             
         except Exception as e:
             error_msg = f"Error processing message: {str(e)}"

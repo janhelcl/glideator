@@ -86,6 +86,7 @@ class AutoGenChatApp:
             tool_messages = {}
             step_messages = {}
             result_messages = {}
+            assistant_idx: Optional[int] = None
             
             async for response in self.agent_manager.process_message_stream(message):
                 if response.success:
@@ -141,12 +142,14 @@ class AutoGenChatApp:
                                 result_messages[result_key] = len(history) - 1
                                 yield "", history
                     
-                    # Add final response if content is not empty
+                    # Stream assistant tokens: append once, then update progressively
                     if response.content:
-                        history.append(ChatMessage(role="assistant", content=response.content))
-                        logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
+                        if assistant_idx is None:
+                            history.append(ChatMessage(role="assistant", content=response.content))
+                            assistant_idx = len(history) - 1
+                        else:
+                            history[assistant_idx] = ChatMessage(role="assistant", content=response.content)
                         yield "", history
-                        break
                         
                 else:
                     error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
