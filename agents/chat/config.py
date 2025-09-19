@@ -34,7 +34,7 @@ class AppConfig:
     agent_name: str
     agent_system_message: str
     max_tool_iterations: int
-    
+    parallel_tool_calls: bool
     # UI settings
     chat_height: int
     app_title: str
@@ -63,7 +63,7 @@ class AppConfig:
             openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             
             # MCP server settings  
-            mcp_server_url=os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000/mcp"),
+            mcp_server_url=os.getenv("MCP_SERVER_URL", "https://www.parra-glideator.com/mcp"), # "http://127.0.0.1:8000/mcp"
             
             # Gradio interface settings
             gradio_host=os.getenv("GRADIO_SERVER_HOST", "127.0.0.1"),
@@ -77,7 +77,7 @@ class AppConfig:
                 "You are a helpful AI assistant with access to various tools."
             ),
             max_tool_iterations=int(os.getenv("MAX_TOOL_ITERATIONS", "10")),
-            
+            parallel_tool_calls=os.getenv("PARALLEL_TOOL_CALLS", "false").lower() == "true",
             # UI settings
             chat_height=int(os.getenv("CHAT_HEIGHT", "500")),
             app_title=os.getenv("APP_TITLE", "AutoGen Chat Application"),

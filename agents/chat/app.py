@@ -6,7 +6,7 @@ This module contains the Gradio web interface and main application logic.
 import asyncio
 import logging
 import sys
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, AsyncGenerator
 
 import gradio as gr
 from gradio import ChatMessage
@@ -58,69 +58,8 @@ class AutoGenChatApp:
             logger.error(f"Application initialization failed: {str(e)}")
             raise
     
-    async def chat_handler(self, message: str, history: List[ChatMessage]) -> Tuple[str, List[ChatMessage]]:
-        """Handle chat messages from the Gradio interface.
-        
-        Args:
-            message: User message.
-            history: Chat history (list of ChatMessage objects).
-            
-        Returns:
-            Tuple of (empty_string, updated_history) - empty string clears input, updated history for chat display.
-        """
-        if not self._initialized:
-            error_response = "❌ Application not initialized. Please restart the application."
-            history.append(ChatMessage(role="user", content=message))
-            history.append(ChatMessage(role="assistant", content=error_response))
-            return "", history
-        
-        try:
-            # Add user message to history
-            history.append(ChatMessage(role="user", content=message))
-            
-            # Process the message through the agent
-            response = await self.agent_manager.process_message(message)
-            
-            if response.success:
-                # Add tool calls and intermediate steps as separate messages with metadata
-                if response.tool_calls:
-                    for tool_call in response.tool_calls:
-                        history.append(ChatMessage(
-                            role="assistant",
-                            content=tool_call["content"],
-                            metadata={
-                                "title": f"🔧 Tool Call: {tool_call['name']}",
-                                "status": "done"
-                            }
-                        ))
-                
-                if response.intermediate_steps:
-                    for step in response.intermediate_steps:
-                        history.append(ChatMessage(
-                            role="assistant",
-                            content=step["content"],
-                            metadata={
-                                "title": f"🧠 Thinking: {step['source']}",
-                                "status": "done"
-                            }
-                        ))
-                
-                # Add the main response
-                history.append(ChatMessage(role="assistant", content=response.content))
-                logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
-                
-            else:
-                error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
-                history.append(ChatMessage(role="assistant", content=error_reply))
-            
-        except Exception as e:
-            error_reply = f"❌ Unexpected error: {str(e)}"
-            history.append(ChatMessage(role="assistant", content=error_reply))
-            logger.error(f"Unexpected error in chat handler: {str(e)}")
-        
-        return "", history
     
-    async def chat_handler_stream(self, message: str, history: List[ChatMessage]) -> List[ChatMessage]:
+    async def chat_handler_stream(self, message: str, history: List[ChatMessage]) -> AsyncGenerator[Tuple[str, List[ChatMessage]], None]:
         """Handle chat messages with streaming for real-time tool usage display.
         
         Args:
@@ -128,47 +67,36 @@ class AutoGenChatApp:
             history: Chat history (list of ChatMessage objects).
             
         Yields:
-            List[ChatMessage]: Updated history with streaming responses.
+            Tuple[str, List[ChatMessage]]: Cleared input and updated history.
         """
         if not self._initialized:
             error_response = "❌ Application not initialized. Please restart the application."
             history.append(ChatMessage(role="user", content=message))
             history.append(ChatMessage(role="assistant", content=error_response))
-            yield history
+            yield "", history
             return
         
         try:
             # Add user message to history
             history.append(ChatMessage(role="user", content=message))
-            yield history
+            # Immediately display the user's message and clear the input
+            yield "", history
             
             # Process the message through the agent with streaming
             tool_messages = {}
             step_messages = {}
+            result_messages = {}
+            assistant_idx: Optional[int] = None
             
             async for response in self.agent_manager.process_message_stream(message):
                 if response.success:
-                    # Add tool calls with "pending" status first, then update to "done"
+                    # Add tool calls as "done" so they appear closed by default
                     if response.tool_calls:
                         for i, tool_call in enumerate(response.tool_calls):
                             tool_key = f"tool_{len(history)}_{i}"
                             if tool_key not in tool_messages:
-                                # Add new tool call with pending status
+                                # Add new tool call with done status (closed by default)
                                 tool_msg = ChatMessage(
-                                    role="assistant",
-                                    content=tool_call["content"],
-                                    metadata={
-                                        "title": f"🔧 Tool Call: {tool_call['name']}",
-                                        "status": "pending"
-                                    }
-                                )
-                                history.append(tool_msg)
-                                tool_messages[tool_key] = len(history) - 1
-                                yield history
-                            else:
-                                # Update existing tool call to done status
-                                idx = tool_messages[tool_key]
-                                history[idx] = ChatMessage(
                                     role="assistant",
                                     content=tool_call["content"],
                                     metadata={
@@ -176,7 +104,9 @@ class AutoGenChatApp:
                                         "status": "done"
                                     }
                                 )
-                                yield history
+                                history.append(tool_msg)
+                                tool_messages[tool_key] = len(history) - 1
+                                yield "", history
                     
                     # Add intermediate steps
                     if response.intermediate_steps:
@@ -193,26 +123,45 @@ class AutoGenChatApp:
                                 )
                                 history.append(step_msg)
                                 step_messages[step_key] = len(history) - 1
-                                yield history
+                                yield "", history
                     
-                    # Add final response if content is not empty
+                    # Add tool results as closed accordions immediately
+                    if hasattr(response, "tool_results") and response.tool_results:
+                        for i, result in enumerate(response.tool_results):
+                            result_key = f"result_{len(history)}_{i}"
+                            if result_key not in result_messages:
+                                result_msg = ChatMessage(
+                                    role="assistant",
+                                    content=str(result["content"]),
+                                    metadata={
+                                        "title": f"📦 Tool Result: {result['name']}",
+                                        "status": "done"
+                                    }
+                                )
+                                history.append(result_msg)
+                                result_messages[result_key] = len(history) - 1
+                                yield "", history
+                    
+                    # Stream assistant tokens: append once, then update progressively
                     if response.content:
-                        history.append(ChatMessage(role="assistant", content=response.content))
-                        logger.info(f"Chat exchange completed - User: {message[:50]}... | Agent: {response.content[:50]}...")
-                        yield history
-                        break
+                        if assistant_idx is None:
+                            history.append(ChatMessage(role="assistant", content=response.content))
+                            assistant_idx = len(history) - 1
+                        else:
+                            history[assistant_idx] = ChatMessage(role="assistant", content=response.content)
+                        yield "", history
                         
                 else:
                     error_reply = f"❌ Error: {response.error or 'Unknown error occurred'}"
                     history.append(ChatMessage(role="assistant", content=error_reply))
-                    yield history
+                    yield "", history
                     break
             
         except Exception as e:
             error_reply = f"❌ Unexpected error: {str(e)}"
             history.append(ChatMessage(role="assistant", content=error_reply))
             logger.error(f"Unexpected error in streaming chat handler: {str(e)}")
-            yield history
+            yield "", history
     
     async def reset_handler(self) -> gr.update:
         """Handle conversation reset requests.
@@ -355,7 +304,7 @@ class AutoGenChatApp:
             
             # Event handlers
             message_input.submit(
-                fn=self.chat_handler,
+                fn=self.chat_handler_stream,
                 inputs=[message_input, chatbot],
                 outputs=[message_input, chatbot],
                 queue=True

@@ -30,7 +30,7 @@ The project is currently in **public beta** and available at [parra-glideator.co
 agents/      Autonomous LangGraph agents (e.g. Site Researcher)
 analytics/   Notebooks, datasets, training pipeline
 art/         Brand assets (Parra-Glideator!)
-backend/     FastAPI API, Celery workers, Docker
+backend/     FastAPI API, MCP server, Celery workers, Docker
 db/          dbt project building the analytics warehouse
 frontend/    React + Leaflet single-page app
 gfs/         Library for downloading & flattening NOAA GFS data
@@ -53,6 +53,7 @@ $ docker-compose -f backend/docker-compose.dev.yml up --build
 
 * API docs: <http://localhost:8000/docs>  
 * Frontend: <http://localhost:3000>
+* MCP Server <http://localhost:8000/mcp>
 
 ### Individual Services
 
@@ -71,7 +72,7 @@ Each core component can be run on its own. Follow the dedicated README in the co
 
 ## Key Components
 
-* **Backend** (`backend/`) – FastAPI, PostgreSQL, Celery, RabbitMQ.
+* **Backend** (`backend/`) – FastAPI, MCP server, PostgreSQL, Celery, RabbitMQ.
 * **Frontend** (`frontend/`) – React 18, Material-UI, React-Leaflet, D3.
 * **Warehouse** (`db/`) – Postgres + dbt (staging & mart models).
 * **ML Library** (`net/`) – Neural Networks implemented in PyTorch.
@@ -79,6 +80,7 @@ Each core component can be run on its own. Follow the dedicated README in the co
 * **Weather** (`gfs/`) – Fetches & processes NOAA GFS GRIB2 files.
 * **Scrapers** (`scrapers/`) – Flight & site data collection with Scrapy.
 * **Agents** (`agents/site_researcher/`) – LangGraph agent enriching site metadata.
+* **MCP Integration** – Model Context Protocol server enabling AI assistants to access paragliding data through structured tools for site information, weather forecasts, trip planning, and more.
 
 ---
 

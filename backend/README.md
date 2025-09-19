@@ -12,6 +12,7 @@ A brief description of the backend service for the Glideator project, built with
 ## Core Technologies
 
 - **Framework:** FastAPI
+- **MCP Server:** Model Context Protocol server (FastMCP)
 - **Database:** PostgreSQL (using SQLAlchemy and psycopg2)
 - **Background Tasks:** Celery (with RabbitMQ as broker)
 - **Web Server:** Uvicorn
@@ -104,3 +105,16 @@ This project uses Celery (`app.celery_app`) for background tasks, with RabbitMQ 
 Since this project uses FastAPI, interactive API documentation (Swagger UI) is automatically available when the application is running. Access it at:
 
 `http://localhost:8000/docs`
+
+## MCP Server
+
+The backend includes a Model Context Protocol (MCP) server that enables AI assistants to interact with Glideator's paragliding data through structured tools. The MCP server provides access to:
+
+- **Site Discovery**: List all available paragliding sites
+- **Site Information**: Get detailed site descriptions, facilities, and safety information
+- **Weather Forecasts**: Access ML-powered flying predictions based on weather forecasts
+- **Historical Statistics**: Retrieve seasonal flying patterns and statistics
+- **Takeoff/Landing Data**: Get coordinates and details for launch and landing spots
+- **Trip Planning**: Find optimal sites for specific date ranges with customizable filters
+
+`http://localhost:8000/mcp`

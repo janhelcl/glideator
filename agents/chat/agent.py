@@ -5,13 +5,15 @@ separated from the UI components.
 """
 
 import asyncio
+import json
 import logging
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.messages import TextMessage
-from autogen_core import CancellationToken
+from autogen_agentchat.messages import TextMessage, ModelClientStreamingChunkEvent
+from autogen_core import CancellationToken, FunctionCall
+from autogen_core.models import FunctionExecutionResult, FunctionExecutionResultMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_ext.tools.mcp import (
     StreamableHttpServerParams,
@@ -32,6 +34,7 @@ class ChatResponse:
     error: Optional[str] = None
     success: bool = True
     tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_results: Optional[List[Dict[str, Any]]] = None
     intermediate_steps: Optional[List[Dict[str, Any]]] = None
 
 
@@ -69,7 +72,8 @@ class AutoGenAgent:
             # Create OpenAI model client
             model = OpenAIChatCompletionClient(
                 model=self.config.openai_model,
-                api_key=self.config.openai_api_key
+                api_key=self.config.openai_api_key,
+                parallel_tool_calls=self.config.parallel_tool_calls
             )
             async with McpWorkbench(server_params) as mcp:
             # Create the assistant agent
@@ -79,7 +83,8 @@ class AutoGenAgent:
                     workbench=mcp,
                     system_message=self.config.agent_system_message,
                     reflect_on_tool_use=True,
-                    max_tool_iterations=self.config.max_tool_iterations
+                    max_tool_iterations=self.config.max_tool_iterations,
+                    model_client_stream=True
                 )
             
             self._initialized = True
@@ -109,73 +114,121 @@ class AutoGenAgent:
         
         try:
             logger.info(f"Processing message with streaming: {message[:100]}...")
-            
-            # Run the agent with the user message
-            result = await self.agent.run(task=message)
-            
-            # Process messages and yield intermediate results
-            seen_messages = 0
-            
-            while seen_messages < len(result.messages):
-                new_messages = result.messages[seen_messages:]
+
+            # Use the agent's streaming API so events are available immediately
+            reply: str = ""
+            accumulated_text: str = ""
+            last_emitted_text: str = ""
+            async for event in self.agent.run_stream(task=message):
+                # Normalize event(s) to a list of messages
+                events = event if isinstance(event, list) else [event]
+
                 tool_calls = []
+                tool_results = []
                 intermediate_steps = []
-                
-                for msg in new_messages:
+
+                for msg in events:
+                    # Token chunks from the model client (if enabled)
+                    if isinstance(msg, ModelClientStreamingChunkEvent) and getattr(msg, 'source', None) == self.agent.name:
+                        try:
+                            chunk = str(getattr(msg, 'content', ''))
+                        except Exception:
+                            chunk = ""
+                        if chunk:
+                            accumulated_text += chunk
+                        # Continue to next message to avoid misclassifying chunk as intermediate
+                        continue
+                    # Direct FunctionCall object
+                    if isinstance(msg, FunctionCall):
+                        pretty_args = None
+                        try:
+                            pretty_args = json.dumps(json.loads(msg.arguments), indent=2, ensure_ascii=False)
+                        except Exception:
+                            pretty_args = str(msg.arguments)
+                        tool_calls.append({
+                            "name": msg.name,
+                            "content": f"**Tool:** {msg.name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
+                            "type": "tool_call"
+                        })
+                    # Messages whose content is a list that may include FunctionCall-like items
+                    elif hasattr(msg, 'content') and isinstance(getattr(msg, 'content'), list):
+                        for item in msg.content:
+                            if isinstance(item, FunctionCall) or (hasattr(item, 'name') and hasattr(item, 'arguments')):
+                                name = getattr(item, 'name', 'unknown')
+                                args_val = getattr(item, 'arguments', '')
+                                try:
+                                    pretty_args = json.dumps(json.loads(args_val), indent=2, ensure_ascii=False)
+                                except Exception:
+                                    pretty_args = str(args_val)
+                                tool_calls.append({
+                                    "name": name,
+                                    "content": f"**Tool:** {name}\n\n**Arguments:**\n```json\n{pretty_args}\n```",
+                                    "type": "tool_call"
+                                })
+                            # Detect FunctionExecutionResult-like items
+                            elif isinstance(item, FunctionExecutionResult) or (
+                                hasattr(item, 'name') and hasattr(item, 'content') and hasattr(item, 'is_error')
+                            ):
+                                name = getattr(item, 'name', 'unknown')
+                                content_val = getattr(item, 'content', '')
+                                is_error = bool(getattr(item, 'is_error', False))
+                                tool_results.append({
+                                    "name": name,
+                                    "content": str(content_val),
+                                    "is_error": is_error,
+                                    "type": "tool_result"
+                                })
+                    # Direct FunctionExecutionResult or wrapper message
+                    elif isinstance(msg, FunctionExecutionResult):
+                        tool_results.append({
+                            "name": msg.name,
+                            "content": str(msg.content),
+                            "is_error": bool(msg.is_error),
+                            "type": "tool_result"
+                        })
+                    elif isinstance(msg, FunctionExecutionResultMessage) and isinstance(getattr(msg, 'content', None), list):
+                        for item in msg.content:
+                            if isinstance(item, FunctionExecutionResult) or (
+                                hasattr(item, 'name') and hasattr(item, 'content')
+                            ):
+                                tool_results.append({
+                                    "name": getattr(item, 'name', 'unknown'),
+                                    "content": str(getattr(item, 'content', '')),
+                                    "is_error": bool(getattr(item, 'is_error', False)),
+                                    "type": "tool_result"
+                                })
+                    
+                    # Other messages: treat as intermediate or assistant text
                     if hasattr(msg, 'source') and hasattr(msg, 'content'):
                         content_str = str(msg.content)
-                        
-                        # Detect tool calls by looking for common patterns and message types
-                        is_tool_call = (
-                            'tool_call' in content_str.lower() or 
-                            'calling' in content_str.lower() or
-                            'function' in content_str.lower() or
-                            'mcp' in content_str.lower() or
-                            hasattr(msg, 'tool_calls') or
-                            str(type(msg)).lower().find('tool') != -1
-                        )
-                        
-                        if is_tool_call:
-                            
-                            tool_calls.append({
-                                "name": getattr(msg, 'source', 'unknown'),
-                                "content": content_str,
-                                "type": "tool_call"
-                            })
-                        
-                        # Check for intermediate thinking steps
-                        elif (msg.source != self.config.agent_name and 
-                              msg.source != 'user'):
-                            
+                        if (msg.source != self.config.agent_name and msg.source != 'user'):
                             intermediate_steps.append({
                                 "source": msg.source,
                                 "content": content_str,
                                 "type": "intermediate"
                             })
-                
-                # Yield intermediate results if any
-                if tool_calls or intermediate_steps:
+                        if isinstance(msg, TextMessage) and msg.source == self.agent.name:
+                            reply = str(msg.content)
+
+                # Yield intermediate updates immediately
+                if tool_calls or tool_results or intermediate_steps:
                     yield ChatResponse(
                         content="",
                         tool_calls=tool_calls if tool_calls else None,
+                        tool_results=tool_results if tool_results else None,
                         intermediate_steps=intermediate_steps if intermediate_steps else None
                     )
-                
-                seen_messages = len(result.messages)
-                await asyncio.sleep(0.1)  # Small delay for real-time feel
-            
-            # Extract final response from all messages
-            reply = ""
-            for msg in reversed(result.messages):
-                if isinstance(msg, TextMessage) and hasattr(msg, 'source') and msg.source == self.agent.name:
-                    reply = msg.content
-                    break
-            
-            if not reply:
-                reply = "I'm sorry, I couldn't process your request."
-                
-            # Yield final response
-            yield ChatResponse(content=reply)
+
+                # Stream assistant text progressively when updated
+                current_text = accumulated_text or reply
+                if current_text and current_text != last_emitted_text:
+                    last_emitted_text = current_text
+                    yield ChatResponse(content=current_text)
+
+            # After the stream ends, yield final content only if none was streamed
+            if last_emitted_text == "":
+                final_text = accumulated_text or reply or "I'm sorry, I couldn't process your request."
+                yield ChatResponse(content=final_text)
             
         except Exception as e:
             error_msg = f"Error processing message: {str(e)}"
@@ -186,93 +239,7 @@ class AutoGenAgent:
                 success=False
             )
 
-    async def chat(self, message: str) -> ChatResponse:
-        """Process a chat message and return the agent's response.
-        
-        Args:
-            message: User message to process.
-            
-        Returns:
-            ChatResponse: The agent's response or error information.
-        """
-        if not self._initialized or not self.agent:
-            return ChatResponse(
-                content="",
-                error="Agent not initialized. Please restart the application.",
-                success=False
-            )
-        
-        try:
-            logger.info(f"Processing message: {message[:100]}...")
-            
-            # Run the agent with the user message
-            result = await self.agent.run(task=message)
-            
-            # Process all messages to extract tool calls and intermediate steps
-            reply = ""
-            tool_calls = []
-            intermediate_steps = []
-            
-            for i, msg in enumerate(result.messages):
-                logger.debug(f"Message {i}: {type(msg)} from {getattr(msg, 'source', 'unknown')}: {str(msg)[:100]}...")
-                
-                if hasattr(msg, 'source'):
-                    # Check if this is a tool call or tool response
-                    if hasattr(msg, 'content'):
-                        content_str = str(msg.content)
-                        
-                        # Detect tool calls by looking for common patterns and message types
-                        is_tool_call = (
-                            'tool_call' in content_str.lower() or 
-                            'calling' in content_str.lower() or
-                            'function' in content_str.lower() or
-                            'mcp' in content_str.lower() or
-                            hasattr(msg, 'tool_calls') or
-                            str(type(msg)).lower().find('tool') != -1
-                        )
-                        
-                        if is_tool_call:
-                            tool_calls.append({
-                                "name": getattr(msg, 'source', 'unknown'),
-                                "content": content_str,
-                                "type": "tool_call"
-                            })
-                        
-                        # Check for intermediate thinking steps
-                        elif (msg.source != self.config.agent_name and 
-                              msg.source != 'user'):
-                            
-                            intermediate_steps.append({
-                                "source": msg.source,
-                                "content": content_str,
-                                "type": "intermediate"
-                            })
-                
-                # Extract final reply from the agent
-                if (isinstance(msg, TextMessage) and 
-                    hasattr(msg, 'source') and 
-                    msg.source == self.agent.name):
-                    reply = msg.content
-            
-            if not reply:
-                reply = "I'm sorry, I couldn't process your request."
-                
-            logger.info(f"Message processed successfully. Tool calls: {len(tool_calls)}, Steps: {len(intermediate_steps)}")
-            
-            return ChatResponse(
-                content=reply,
-                tool_calls=tool_calls if tool_calls else None,
-                intermediate_steps=intermediate_steps if intermediate_steps else None
-            )
-            
-        except Exception as e:
-            error_msg = f"Error processing message: {str(e)}"
-            logger.error(error_msg)
-            return ChatResponse(
-                content="",
-                error=error_msg,
-                success=False
-            )
+    # Removed non-streaming chat method in favor of streaming-only flow
     
     async def reset(self) -> bool:
         """Reset the agent's conversation state.
@@ -336,23 +303,7 @@ class AgentManager:
         """
         await self.agent.initialize()
     
-    async def process_message(self, message: str) -> ChatResponse:
-        """Process a user message through the agent.
-        
-        Args:
-            message: User message to process.
-            
-        Returns:
-            ChatResponse: The agent's response.
-        """
-        if not message or not message.strip():
-            return ChatResponse(
-                content="",
-                error="Please enter a message.",
-                success=False
-            )
-        
-        return await self.agent.chat(message.strip())
+    # Removed non-streaming process_message in favor of streaming-only flow
     
     async def process_message_stream(self, message: str):
         """Process a user message through the agent with streaming.
