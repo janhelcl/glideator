@@ -197,8 +197,7 @@ class AutoGenChatApp:
             status = self.agent_manager.get_status()
             if status["ready"]:
                 model = status["config"]["model"]
-                agent_name = status["config"]["agent_name"]
-                return f"✅ Ready | Agent: {agent_name} | Model: {model} | MCP: Connected"
+                return f"✅ Ready | Model: {model} | MCP: Connected"
             else:
                 return "⚠️ Agent not ready"
         except Exception as e:
@@ -230,13 +229,13 @@ class AutoGenChatApp:
         """
         
         with gr.Blocks(
-            title=self.config.app_title,
+            title="Parra-Glideator Chat",
             theme=gr.themes.Soft(),
             css=css
         ) as interface:
             # Header
             gr.Markdown(
-                f"# {self.config.app_title}\n"
+                f"# Parra-Glideator Chat\n"
                 f"Powered by AutoGen agents with MCP tools integration"
             )
             
@@ -286,7 +285,6 @@ class AutoGenChatApp:
                 gr.Markdown(f"""
                 ### Configuration
                 - **Model**: {self.config.openai_model}
-                - **Agent**: {self.config.agent_name}
                 - **MCP Server**: {self.config.mcp_server_url}
                 
                 ### Features

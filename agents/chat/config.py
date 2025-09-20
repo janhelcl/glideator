@@ -7,11 +7,53 @@ and default values for the application.
 import os
 from typing import Optional
 from dataclasses import dataclass
+from datetime import datetime
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
+
+
+def load_system_prompt() -> str:
+    """Load the system prompt from the markdown file and inject current date.
+    
+    Returns:
+        str: The system prompt content with current date included.
+        
+    Raises:
+        FileNotFoundError: If the prompt file is not found.
+        IOError: If there's an error reading the file.
+    """
+    prompt_file_path = os.path.join(
+        os.path.dirname(__file__), 
+        "prompts", 
+        "parra_glideator_system_prompt.md"
+    )
+    
+    try:
+        with open(prompt_file_path, "r", encoding="utf-8") as f:
+            prompt_content = f.read().strip()
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"System prompt file not found at {prompt_file_path}. "
+            "Please ensure the file exists."
+        )
+    except IOError as e:
+        raise IOError(f"Error reading system prompt file: {str(e)}")
+    
+    # Add current date information
+    current_date = datetime.now()
+    date_info = f"""
+
+## Current Context
+**Today's Date**: {current_date.strftime("%A, %B %d, %Y")} ({current_date.strftime("%Y-%m-%d")})
+**Current Time**: {current_date.strftime("%H:%M")} (local time)
+
+*Note: Weather forecasts are typically available for the next 7 days from today. Historical statistics show patterns across multiple years of flight data.*
+"""
+    
+    return prompt_content + date_info
 
 
 @dataclass
@@ -37,7 +79,6 @@ class AppConfig:
     parallel_tool_calls: bool
     # UI settings
     chat_height: int
-    app_title: str
     
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -71,16 +112,12 @@ class AppConfig:
             gradio_share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
             
             # Agent settings
-            agent_name=os.getenv("AGENT_NAME", "assistant"),
-            agent_system_message=os.getenv(
-                "AGENT_SYSTEM_MESSAGE", 
-                "You are a helpful AI assistant with access to various tools."
-            ),
+            agent_name=os.getenv("AGENT_NAME", "ParraGlideator"),
+            agent_system_message=os.getenv("AGENT_SYSTEM_MESSAGE", load_system_prompt()),
             max_tool_iterations=int(os.getenv("MAX_TOOL_ITERATIONS", "10")),
             parallel_tool_calls=os.getenv("PARALLEL_TOOL_CALLS", "false").lower() == "true",
             # UI settings
             chat_height=int(os.getenv("CHAT_HEIGHT", "500")),
-            app_title=os.getenv("APP_TITLE", "AutoGen Chat Application"),
         )
 
     def validate(self) -> None:
