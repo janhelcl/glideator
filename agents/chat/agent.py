@@ -21,7 +21,7 @@ from autogen_ext.tools.mcp import (
     McpWorkbench
 )
 
-from config import AppConfig
+from config import AppConfig, load_prompt_by_name
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -325,6 +325,51 @@ class AgentManager:
         async for response in self.agent.chat_stream(message.strip()):
             yield response
     
+    async def update_model_and_prompt(self, model: Optional[str], prompt_name: Optional[str]) -> bool:
+        """Update runtime model and system prompt, reinitializing the agent.
+        
+        Args:
+            model: New model name (must be in available list) or None to keep current.
+            prompt_name: New prompt base filename (without extension) or None to keep current.
+        
+        Returns:
+            True if update succeeded and agent reinitialized, else False.
+        """
+        try:
+            new_model = self.config.openai_model
+            new_prompt_name = self.config.agent_system_prompt_name
+            # Validate and apply model
+            if model and model != new_model:
+                if self.config.available_models and model not in self.config.available_models:
+                    logger.warning(f"Requested model '{model}' is not in available_models")
+                    return False
+                new_model = model
+            # Validate and apply prompt
+            if prompt_name and prompt_name != new_prompt_name:
+                if self.config.available_prompts and prompt_name not in self.config.available_prompts:
+                    logger.warning(f"Requested prompt '{prompt_name}' is not in available_prompts")
+                    return False
+                new_prompt_name = prompt_name
+
+            # If no effective change, nothing to do
+            if new_model == self.config.openai_model and new_prompt_name == self.config.agent_system_prompt_name:
+                return True
+
+            # Mutate config
+            self.config.openai_model = new_model
+            self.config.agent_system_prompt_name = new_prompt_name
+            # Always reload the system message from name to ensure freshness
+            self.config.agent_system_message = load_prompt_by_name(new_prompt_name)
+
+            # Recreate agent with updated config
+            new_agent = AutoGenAgent(self.config)
+            await new_agent.initialize()
+            self.agent = new_agent
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update model/prompt: {str(e)}")
+            return False
+    
     async def reset_conversation(self) -> bool:
         """Reset the agent's conversation state.
         
@@ -345,6 +390,7 @@ class AgentManager:
             "config": {
                 "model": self.config.openai_model,
                 "agent_name": self.config.agent_name,
-                "mcp_server": self.config.mcp_server_url
+                "mcp_server": self.config.mcp_server_url,
+                "prompt_name": getattr(self.config, "agent_system_prompt_name", "")
             }
         }

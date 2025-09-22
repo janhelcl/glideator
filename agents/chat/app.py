@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 from config import load_config, AppConfig
 from agent import AgentManager, ChatResponse
+from tracing import setup_tracing
 
 # Set up logging
 logging.basicConfig(
@@ -197,8 +198,11 @@ class AutoGenChatApp:
             status = self.agent_manager.get_status()
             if status["ready"]:
                 model = status["config"]["model"]
-                agent_name = status["config"]["agent_name"]
-                return f"✅ Ready | Agent: {agent_name} | Model: {model} | MCP: Connected"
+                prompt = status["config"].get("prompt_name") or getattr(self.config, "agent_system_prompt_name", "")
+                if prompt:
+                    return f"✅ Ready | Model: {model} | Prompt: {prompt} | MCP: Connected"
+                else:
+                    return f"✅ Ready | Model: {model} | MCP: Connected"
             else:
                 return "⚠️ Agent not ready"
         except Exception as e:
@@ -227,16 +231,31 @@ class AutoGenChatApp:
             border-radius: 4px;
             margin-bottom: 10px;
         }
+        .settings-panel {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.9em;
+        }
+        .settings-panel .gradio-dropdown, 
+        .settings-panel .gr-dropdown,
+        .settings-panel .wrap {
+            margin-bottom: 8px;
+        }
+        .settings-panel .gr-button {
+            width: 100%;
+        }
         """
         
         with gr.Blocks(
-            title=self.config.app_title,
+            title="Parra-Glideator Chat",
             theme=gr.themes.Soft(),
             css=css
         ) as interface:
             # Header
             gr.Markdown(
-                f"# {self.config.app_title}\n"
+                f"# Parra-Glideator Chat\n"
                 f"Powered by AutoGen agents with MCP tools integration"
             )
             
@@ -250,7 +269,7 @@ class AutoGenChatApp:
             
             # Main chat interface
             with gr.Row():
-                with gr.Column(scale=1):
+                with gr.Column(scale=3):
                     chatbot = gr.Chatbot(
                         value=[],
                         label="Chat History",
@@ -280,13 +299,30 @@ class AutoGenChatApp:
                             variant="secondary",
                             scale=1
                         )
+                with gr.Column(scale=1, min_width=260, elem_classes=["settings-panel"]):
+                    # Settings: model and prompt selectors
+                    model_dropdown = gr.Dropdown(
+                        choices=self.config.available_models or [self.config.openai_model],
+                        value=self.config.openai_model,
+                        label="Model",
+                        allow_custom_value=False,
+                        container=False
+                    )
+                    prompt_dropdown = gr.Dropdown(
+                        choices=self.config.available_prompts or [self.config.agent_system_prompt_name],
+                        value=self.config.agent_system_prompt_name,
+                        label="System Prompt",
+                        allow_custom_value=False,
+                        container=False
+                    )
+                    apply_settings_btn = gr.Button("✅ Apply Settings", variant="primary")
             
             # Information section
             with gr.Accordion("ℹ️ Information", open=False):
                 gr.Markdown(f"""
                 ### Configuration
                 - **Model**: {self.config.openai_model}
-                - **Agent**: {self.config.agent_name}
+                - **Prompt**: {self.config.agent_system_prompt_name}
                 - **MCP Server**: {self.config.mcp_server_url}
                 
                 ### Features
@@ -320,6 +356,21 @@ class AutoGenChatApp:
                 fn=lambda: self.get_status_info(),
                 outputs=status_display,
                 queue=False
+            )
+
+            async def _apply_settings(model, prompt_name):
+                ok = await self.agent_manager.update_model_and_prompt(model, prompt_name)
+                if ok:
+                    # Update local config snapshot
+                    self.config.openai_model = model
+                    self.config.agent_system_prompt_name = prompt_name
+                    return [gr.update(value=self.get_status_info()), gr.update(value=[]) ]
+                return [gr.update(value=f"❌ Failed to apply settings: see logs"), gr.update()]
+
+            apply_settings_btn.click(
+                fn=_apply_settings,
+                inputs=[model_dropdown, prompt_dropdown],
+                outputs=[status_display, chatbot]
             )
             
             # Initialize status on load
@@ -366,6 +417,22 @@ async def main():
         logger.info("Loading configuration...")
         config = load_config()
         logger.info("Configuration loaded successfully")
+        
+        # Set up tracing if enabled
+        if config.tracing_enabled:
+            logger.info("Setting up tracing...")
+            tracing_success = setup_tracing(
+                service_name=config.tracing_service_name,
+                otlp_endpoint=config.tracing_otlp_endpoint,
+                console_output=config.tracing_console_output,
+                disabled=False
+            )
+            if tracing_success:
+                logger.info("Tracing setup completed")
+            else:
+                logger.warning("Tracing setup failed, continuing without tracing")
+        else:
+            logger.info("Tracing is disabled")
         
         # Create and initialize the application
         app = AutoGenChatApp(config)
