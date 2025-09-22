@@ -119,7 +119,7 @@ class AppConfig:
             )
         
         # Parse available models (comma-separated) and ensure current model is present
-        default_models = "gpt-4o-mini,gpt-4o"
+        default_models = "gpt-4o-mini,gpt-4o,gpt-5-nano,gpt-5-mini,gpt-5"
         available_models = [m.strip() for m in os.getenv("AVAILABLE_MODELS", default_models).split(",") if m.strip()]
         openai_model_env = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         if openai_model_env not in available_models:
@@ -127,7 +127,7 @@ class AppConfig:
 
         # Prompts list from directory
         available_prompts = list_available_prompts()
-        default_prompt_name = os.getenv("AGENT_SYSTEM_PROMPT_NAME", "parra_glideator_system_prompt")
+        default_prompt_name = os.getenv("AGENT_SYSTEM_PROMPT_NAME", "parraglideator_neutral")
         if available_prompts and default_prompt_name not in available_prompts:
             # If the specified default isn't found, fall back to first available
             default_prompt_name = available_prompts[0]

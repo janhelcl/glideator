@@ -197,7 +197,11 @@ class AutoGenChatApp:
             status = self.agent_manager.get_status()
             if status["ready"]:
                 model = status["config"]["model"]
-                return f"✅ Ready | Model: {model} | MCP: Connected"
+                prompt = status["config"].get("prompt_name") or getattr(self.config, "agent_system_prompt_name", "")
+                if prompt:
+                    return f"✅ Ready | Model: {model} | Prompt: {prompt} | MCP: Connected"
+                else:
+                    return f"✅ Ready | Model: {model} | MCP: Connected"
             else:
                 return "⚠️ Agent not ready"
         except Exception as e:
