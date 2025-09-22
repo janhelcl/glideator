@@ -6,7 +6,7 @@ authors = [
     {name = "Jan Helcl"}
 ]
 package-mode = false
-requires-python = ">=3.13"
+requires-python = ">=3.10,<4"
 dependencies = [
     "python-dotenv (>=1.1.1,<2.0.0)",
     "jupyterlab (>=4.4.6,<5.0.0)",
@@ -14,6 +14,9 @@ dependencies = [
     "autogen-agentchat (>=0.7.4,<0.8.0)",
     "autogen-ext[openai] (>=0.7.4,<0.8.0)",
     "gradio (>=5.44.1,<6.0.0)",
+    "opentelemetry-sdk (>=1.20.0,<2.0.0)",
+    "opentelemetry-exporter-otlp-proto-grpc (>=1.20.0,<2.0.0)",
+    "opentelemetry-instrumentation-openai (>=0.40.0,<1.0.0)",
 ]
 [tool.poetry]
 package-mode = false

@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 from config import load_config, AppConfig
 from agent import AgentManager, ChatResponse
+from tracing import setup_tracing
 
 # Set up logging
 logging.basicConfig(
@@ -416,6 +417,22 @@ async def main():
         logger.info("Loading configuration...")
         config = load_config()
         logger.info("Configuration loaded successfully")
+        
+        # Set up tracing if enabled
+        if config.tracing_enabled:
+            logger.info("Setting up tracing...")
+            tracing_success = setup_tracing(
+                service_name=config.tracing_service_name,
+                otlp_endpoint=config.tracing_otlp_endpoint,
+                console_output=config.tracing_console_output,
+                disabled=False
+            )
+            if tracing_success:
+                logger.info("Tracing setup completed")
+            else:
+                logger.warning("Tracing setup failed, continuing without tracing")
+        else:
+            logger.info("Tracing is disabled")
         
         # Create and initialize the application
         app = AutoGenChatApp(config)

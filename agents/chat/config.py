@@ -100,6 +100,12 @@ class AppConfig:
     # UI settings
     chat_height: int
     
+    # Tracing settings
+    tracing_enabled: bool
+    tracing_otlp_endpoint: str
+    tracing_console_output: bool
+    tracing_service_name: str
+    
     @classmethod
     def from_env(cls) -> "AppConfig":
         """Create configuration from environment variables.
@@ -155,6 +161,12 @@ class AppConfig:
             available_prompts=available_prompts,
             # UI settings
             chat_height=int(os.getenv("CHAT_HEIGHT", "500")),
+            
+            # Tracing settings
+            tracing_enabled=os.getenv("TRACING_ENABLED", "false").lower() == "true",
+            tracing_otlp_endpoint=os.getenv("TRACING_OTLP_ENDPOINT", "http://localhost:4317"),
+            tracing_console_output=os.getenv("TRACING_CONSOLE_OUTPUT", "false").lower() == "true",
+            tracing_service_name=os.getenv("TRACING_SERVICE_NAME", "parra-glideator-chat"),
         )
 
     def validate(self) -> None:
