@@ -35,11 +35,7 @@ This chat application serves as a test client for the Parra-Glideator MCP server
    ```
 
 2. **Install dependencies:**
-   ```bash
-   # Using pip
-   pip install -r requirements.txt
-   
-   # Or using poetry (if you have the pyproject.toml)
+   ```bash 
    poetry install
    ```
 
