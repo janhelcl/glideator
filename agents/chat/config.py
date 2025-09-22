@@ -5,7 +5,7 @@ and default values for the application.
 """
 
 import os
-from typing import Optional
+from typing import Optional, List
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -15,33 +15,43 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def load_system_prompt() -> str:
-    """Load the system prompt from the markdown file and inject current date.
+def _prompts_dir() -> str:
+    return os.path.join(os.path.dirname(__file__), "prompts")
+
+
+def list_available_prompts() -> List[str]:
+    """List available prompt names (without extension) from the prompts directory."""
+    directory = _prompts_dir()
+    if not os.path.isdir(directory):
+        return []
+    names: List[str] = []
+    for fname in os.listdir(directory):
+        if fname.lower().endswith(".md"):
+            names.append(os.path.splitext(fname)[0])
+    names.sort()
+    return names
+
+
+def load_prompt_by_name(name: str) -> str:
+    """Load a system prompt by its base filename (without extension) and inject current date.
+    
+    Args:
+        name: Base filename of the prompt (without .md)
     
     Returns:
-        str: The system prompt content with current date included.
-        
-    Raises:
-        FileNotFoundError: If the prompt file is not found.
-        IOError: If there's an error reading the file.
+        The prompt content with current date context appended.
     """
-    prompt_file_path = os.path.join(
-        os.path.dirname(__file__), 
-        "prompts", 
-        "parra_glideator_system_prompt.md"
-    )
-    
+    prompt_file_path = os.path.join(_prompts_dir(), f"{name}.md")
     try:
         with open(prompt_file_path, "r", encoding="utf-8") as f:
             prompt_content = f.read().strip()
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"System prompt file not found at {prompt_file_path}. "
-            "Please ensure the file exists."
+            f"System prompt file not found at {prompt_file_path}. Please ensure the file exists."
         )
     except IOError as e:
         raise IOError(f"Error reading system prompt file: {str(e)}")
-    
+
     # Add current date information
     current_date = datetime.now()
     date_info = f"""
@@ -52,8 +62,14 @@ def load_system_prompt() -> str:
 
 *Note: Weather forecasts are typically available for the next 7 days from today. Historical statistics show patterns across multiple years of flight data.*
 """
-    
+
     return prompt_content + date_info
+
+
+def load_system_prompt() -> str:
+    """Backward-compatible loader for the default system prompt file."""
+    # Default to the original file name without extension
+    return load_prompt_by_name("parra_glideator_system_prompt")
 
 
 @dataclass
@@ -74,9 +90,13 @@ class AppConfig:
     
     # Agent settings
     agent_name: str
+    agent_system_prompt_name: str
     agent_system_message: str
     max_tool_iterations: int
     parallel_tool_calls: bool
+    # Selection lists
+    available_models: List[str]
+    available_prompts: List[str]
     # UI settings
     chat_height: int
     
@@ -98,10 +118,24 @@ class AppConfig:
                 "Please set it in your .env file or environment."
             )
         
+        # Parse available models (comma-separated) and ensure current model is present
+        default_models = "gpt-4o-mini,gpt-4o"
+        available_models = [m.strip() for m in os.getenv("AVAILABLE_MODELS", default_models).split(",") if m.strip()]
+        openai_model_env = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        if openai_model_env not in available_models:
+            available_models.append(openai_model_env)
+
+        # Prompts list from directory
+        available_prompts = list_available_prompts()
+        default_prompt_name = os.getenv("AGENT_SYSTEM_PROMPT_NAME", "parra_glideator_system_prompt")
+        if available_prompts and default_prompt_name not in available_prompts:
+            # If the specified default isn't found, fall back to first available
+            default_prompt_name = available_prompts[0]
+
         return cls(
             # OpenAI settings
             openai_api_key=openai_api_key,
-            openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            openai_model=openai_model_env,
             
             # MCP server settings  
             mcp_server_url=os.getenv("MCP_SERVER_URL", "https://www.parra-glideator.com/mcp"), # "http://127.0.0.1:8000/mcp"
@@ -113,9 +147,12 @@ class AppConfig:
             
             # Agent settings
             agent_name=os.getenv("AGENT_NAME", "ParraGlideator"),
-            agent_system_message=os.getenv("AGENT_SYSTEM_MESSAGE", load_system_prompt()),
+            agent_system_prompt_name=default_prompt_name,
+            agent_system_message=os.getenv("AGENT_SYSTEM_MESSAGE", load_prompt_by_name(default_prompt_name) if default_prompt_name else load_system_prompt()),
             max_tool_iterations=int(os.getenv("MAX_TOOL_ITERATIONS", "10")),
             parallel_tool_calls=os.getenv("PARALLEL_TOOL_CALLS", "false").lower() == "true",
+            available_models=available_models,
+            available_prompts=available_prompts,
             # UI settings
             chat_height=int(os.getenv("CHAT_HEIGHT", "500")),
         )
