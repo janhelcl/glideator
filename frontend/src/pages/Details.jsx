@@ -555,6 +555,29 @@ const Details = () => {
               `https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=pts&filter[point]=${siteData[0]?.longitude}+${siteData[0]?.latitude}&filter[radius]=5000`
             ]
           })}</script>
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://parra-glideator.com/"
+              },
+              ...(siteInfo?.country ? [{
+                "@type": "ListItem",
+                "position": 2,
+                "name": siteInfo.country,
+                "item": `https://parra-glideator.com/country/${siteInfo.country.toLowerCase().replace(/\s+/g, '-')}`
+              }] : []),
+              {
+                "@type": "ListItem",
+                "position": siteInfo?.country ? 3 : 2,
+                "name": siteInfo?.site_name || siteData[0]?.name
+              }
+            ]
+          })}</script>
         </Helmet>
       )}
       {error ? (
