@@ -537,7 +537,7 @@ const Details = () => {
           <meta name="twitter:card" content="summary_large_image" />
           <script type="application/ld+json">{JSON.stringify({
             "@context": "https://schema.org",
-            "@type": ["Place", "SportsActivityLocation"],
+            "@type": "SportsActivityLocation",
             "name": siteInfo?.site_name || siteData[0]?.name,
             "description": "Paragliding site with forecasts, seasonality, and site map.",
             "sport": "Paragliding",
