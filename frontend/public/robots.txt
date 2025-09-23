@@ -3,3 +3,4 @@ User-agent: *
 Disallow: /api/
 Disallow: /mcp
 Allow: /
+Sitemap: https://parra-glideator.com/sitemap.xml
