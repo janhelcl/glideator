@@ -190,6 +190,14 @@ const Home = () => {
         <meta property="og:description" content="Plan paragliding trips with site forecasts and activity." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Parra-Glideator",
+          "url": "https://parra-glideator.com/",
+          "description": "Paragliding site forecasts and trip planning.",
+          "inLanguage": "en"
+        })}</script>
       </Helmet>
       {/* Wrap main content in Suspense to handle loading state */}
       <Suspense fallback={
