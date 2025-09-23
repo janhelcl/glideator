@@ -530,6 +530,15 @@ const TripPlannerPage = () => {
         <meta property="og:description" content="Find the best paragliding sites for your dates and preferences." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "Parra-Glideator Trip Planner",
+          "url": "https://parra-glideator.com/trip-planner",
+          "applicationCategory": "SportsApplication",
+          "operatingSystem": "Web",
+          "about": "Paragliding trip planning"
+        })}</script>
       </Helmet>
       <Paper elevation={2}>
         <Box sx={{ p: 3 }}>

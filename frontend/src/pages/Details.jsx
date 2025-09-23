@@ -537,13 +537,24 @@ const Details = () => {
           <meta name="twitter:card" content="summary_large_image" />
           <script type="application/ld+json">{JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Place",
+            "@type": ["Place", "SportsActivityLocation"],
             "name": siteInfo?.site_name || siteData[0]?.name,
+            "description": "Paragliding site with forecasts, seasonality, and site map.",
+            "sport": "Paragliding",
             "geo": {
               "@type": "GeoCoordinates",
               "latitude": siteData[0]?.latitude,
               "longitude": siteData[0]?.longitude
-            }
+            },
+            "hasMap": `https://maps.google.com/?q=${siteData[0]?.latitude},${siteData[0]?.longitude}`,
+            "sameAs": [
+              `https://windy.com/${siteData[0]?.latitude}/${siteData[0]?.longitude}?${siteData[0]?.latitude},${siteData[0]?.longitude},11`,
+              `http://www.xcmeteo.net/cs?p=${siteData[0]?.longitude}x${siteData[0]?.latitude}`,
+              `https://www.windguru.cz/map/?lat=${siteData[0]?.latitude}&lon=${siteData[0]?.longitude}&zoom=11`,
+              `https://www.windguru.cz/map/station?lat=${siteData[0]?.latitude}&lon=${siteData[0]?.longitude}&zoom=11`,
+              `https://thermal.kk7.ch/#${siteData[0]?.latitude},${siteData[0]?.longitude},11`,
+              `https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=pts&filter[point]=${siteData[0]?.longitude}+${siteData[0]?.latitude}&filter[radius]=5000`
+            ]
           })}</script>
         </Helmet>
       )}
