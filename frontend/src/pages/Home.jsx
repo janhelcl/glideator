@@ -187,7 +187,7 @@ const Home = () => {
         <meta name="description" content="Find the best paragliding sites by date and flyability. Plan trips with real forecasts and historical activity." />
         <link rel="canonical" href={window.location.origin + '/'} />
         <meta property="og:title" content="Parra-Glideator" />
-        <meta property="og:description" content="Plan paragliding trips with site forecasts and activity." />
+        <meta property="og:description" content="Plan your next paragliding adventure with Parra-Glideator." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify({
