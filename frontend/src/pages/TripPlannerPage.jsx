@@ -529,10 +529,7 @@ const TripPlannerPage = () => {
         <meta property="og:title" content="Plan a Paragliding Trip" />
         <meta property="og:description" content="Find the best paragliding sites for your dates and preferences." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://parra-glideator.com/trip-planner" />
-        <meta property="og:image" content="https://parra-glideator.com/logo512.png" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://parra-glideator.com/logo512.png" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebApplication",
