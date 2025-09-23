@@ -8,6 +8,7 @@ import { Box } from '@mui/material';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { createSitesResource } from '../utils/suspenseResource';
+import { Helmet } from 'react-helmet-async';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -181,6 +182,15 @@ const Home = () => {
       height: '100%',
       overflow: 'hidden'
     }}>
+      <Helmet>
+        <title>Parra-Glideator – Paragliding site forecasts and trip planning</title>
+        <meta name="description" content="Find the best paragliding sites by date and flyability. Plan trips with real forecasts and historical activity." />
+        <link rel="canonical" href={window.location.origin + '/'} />
+        <meta property="og:title" content="Parra-Glideator" />
+        <meta property="og:description" content="Plan paragliding trips with site forecasts and activity." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
       {/* Wrap main content in Suspense to handle loading state */}
       <Suspense fallback={
         <Box display="flex" justifyContent="center" alignItems="center" height="100%">

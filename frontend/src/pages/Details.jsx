@@ -24,6 +24,7 @@ import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
 import SearchRecs from '../components/SearchRecs';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { Helmet } from 'react-helmet-async';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -525,6 +526,27 @@ const Details = () => {
       p: 2,
       minHeight: '100%',  // Ensure it takes full height if content is short
     }}>
+      {siteData && siteData.length > 0 && (
+        <Helmet>
+          <title>{`${siteInfo?.site_name || siteData[0]?.name} – Parra-Glideator`}</title>
+          <meta name="description" content={`Forecasts, seasonality and map for ${siteInfo?.site_name || siteData[0]?.name}. Plan flights with Glideator metrics.`} />
+          <link rel="canonical" href={window.location.origin + `/details/${siteId}`} />
+          <meta property="og:title" content={`${siteInfo?.site_name || siteData[0]?.name} – Parra-Glideator`} />
+          <meta property="og:description" content={`Paragliding forecasts and info for ${siteInfo?.site_name || siteData[0]?.name}.`} />
+          <meta property="og:type" content="article" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Place",
+            "name": siteInfo?.site_name || siteData[0]?.name,
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": siteData[0]?.latitude,
+              "longitude": siteData[0]?.longitude
+            }
+          })}</script>
+        </Helmet>
+      )}
       {error ? (
         <Typography color="error" variant="h6" align="center" my={4}>
           {error}
