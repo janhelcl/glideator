@@ -534,10 +534,13 @@ const Details = () => {
           <meta property="og:title" content={`${siteInfo?.site_name || siteData[0]?.name} – Parra-Glideator`} />
           <meta property="og:description" content={`Paragliding forecasts and info for ${siteInfo?.site_name || siteData[0]?.name}.`} />
           <meta property="og:type" content="article" />
+          <meta property="og:url" content={`https://parra-glideator.com/details/${siteId}`} />
+          <meta property="og:image" content="https://parra-glideator.com/logo512.png" />
           <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:image" content="https://parra-glideator.com/logo512.png" />
           <script type="application/ld+json">{JSON.stringify({
             "@context": "https://schema.org",
-            "@type": ["Place", "SportsActivityLocation"],
+            "@type": "SportsActivityLocation",
             "name": siteInfo?.site_name || siteData[0]?.name,
             "description": "Paragliding site with forecasts, seasonality, and site map.",
             "sport": "Paragliding",
