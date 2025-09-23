@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
 import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '../types/ui-state';
 import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
@@ -521,6 +522,15 @@ const TripPlannerPage = () => {
       p: 2,
       minHeight: '100%',  // Ensure it takes full height if content is short
     }}>
+      <Helmet>
+        <title>Plan a Trip – Parra-Glideator</title>
+        <meta name="description" content="Plan your paragliding trip by dates, distance, altitude, tags and flyability metrics. Discover top sites near you." />
+        <link rel="canonical" href={window.location.origin + '/trip-planner'} />
+        <meta property="og:title" content="Plan a Paragliding Trip" />
+        <meta property="og:description" content="Find the best paragliding sites for your dates and preferences." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
       <Paper elevation={2}>
         <Box sx={{ p: 3 }}>
           {/* Page title with logo */}
