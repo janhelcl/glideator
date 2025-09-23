@@ -28,7 +28,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       #- SQL_ECHO=true  # Enable SQL logging in development
-      - FORCE_INITIAL_DATA_LOAD=true
+      #- FORCE_INITIAL_DATA_LOAD=true
     depends_on:
       redis:
         condition: service_healthy
