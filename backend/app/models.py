@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, JSON, Boolean
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
+
+class User(Base):
+    __tablename__ = 'users'
+
+    user_id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    is_active = Column(Boolean, nullable=False, server_default='true')
+    role = Column(String, nullable=False, server_default='user')
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
 class Site(Base):
     __tablename__ = 'sites'
