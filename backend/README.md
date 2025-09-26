@@ -106,6 +106,28 @@ Since this project uses FastAPI, interactive API documentation (Swagger UI) is a
 
 `http://localhost:8000/docs`
 
+## Database Migrations (Alembic)
+
+This project uses Alembic for schema migrations.
+
+Common commands:
+
+```bash
+pip install -r requirements.txt
+
+# Create the database and run migrations
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/glideator
+alembic -c alembic.ini upgrade head
+
+# Create a new revision (example)
+alembic -c alembic.ini revision -m "add users and favorites"
+
+# Apply latest migrations
+alembic -c alembic.ini upgrade head
+```
+
+In production on Render, migrations are executed during deploy/startup.
+
 ## MCP Server
 
 The backend includes a Model Context Protocol (MCP) server that enables AI assistants to interact with Glideator's paragliding data through structured tools. The MCP server provides access to:

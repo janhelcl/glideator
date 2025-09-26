@@ -1,13 +1,14 @@
 import logging
 import time
 import os
+from sqlalchemy import text
 from kombu import Connection
 from kombu.exceptions import OperationalError
 from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from .database import engine, sync_engine, Base, AsyncSessionLocal, SessionLocal
-from .routers import sites, trip_planning
+from .database import AsyncSessionLocal, SessionLocal
+from .routers import sites, trip_planning, auth
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
@@ -15,7 +16,7 @@ from .services.flight_stats_loader import load_flight_stats_from_csv
 from .services.spots_loader import load_spots_from_csv
 from .services.sites_info_loader import load_sites_info_from_jsonl
 from .services.tags_loader import load_tags_from_jsonl
-from .celery_app import celery, simple_test_task
+from .celery_client import celery
 from .mcp import mcp
 
 # Configure logging
@@ -39,19 +40,10 @@ async def lifespan(app: FastAPI):
         await stack.enter_async_context(mcp.session_manager.run())
         yield
 
-# Create database tables
-def setup_database():
-    logger.info("Creating database tables...")
-    # Create tables using sync engine for simplicity during setup
-    Base.metadata.create_all(bind=sync_engine)
-    logger.info("Database tables created successfully")
 
 # Startup logic moved from deprecated on_event to lifespan
 def startup_logic():
     logger.info("Starting up...")
-    
-    # Setup database first
-    setup_database()
     
     try:
         # Check environment variable to decide whether to load initial data
@@ -139,6 +131,7 @@ app = FastAPI(
 # Include routers
 app.include_router(sites.router)
 app.include_router(trip_planning.router, tags=["Trip Planning"])
+app.include_router(auth.router)
 
 app.mount("/", mcp.streamable_http_app())
 
@@ -151,6 +144,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+async def healthcheck():
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Healthcheck failed: {e}")
+        raise HTTPException(status_code=503, detail="unhealthy")
 
 
 # Test endpoint for Celery
@@ -159,7 +161,7 @@ async def test_celery_task_endpoint(message: str):
     logger.info(f"WEB SERVICE: Received request for /test-celery/{message}")
     try:
         logger.info(f"WEB SERVICE: Attempting to send simple_test_task with message: {message}")
-        task_result = simple_test_task.delay(message)
+        task_result = celery.send_task('app.celery_app.simple_test_task', args=[message])
         logger.info(f"WEB SERVICE: simple_test_task sent. Task ID: {task_result.id}")
         return {"message": "Test task sent", "task_id": task_result.id}
     except Exception as e:

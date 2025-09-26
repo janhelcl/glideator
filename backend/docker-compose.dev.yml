@@ -18,7 +18,9 @@ services:
     command: npm start
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.web
     ports:
       - "8000:8000" # Expose backend port for direct access (/docs)
     volumes:
@@ -34,8 +36,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Consider adding --reload for FastAPI hot-reloading in development
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+    # Run migrations before starting the app; enable reload for development
+    command: sh -lc "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   postgres:
     image: postgres:16
@@ -65,7 +67,9 @@ services:
       retries: 5
 
   celery-worker-beat: # Renamed from celery-worker
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     volumes:
       - .:/app
     environment:
@@ -78,7 +82,7 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Add -B flag to run beat alongside the worker
+    # Start worker and beat; rely on web to run Alembic migrations
     command: celery -A app.celery_app worker -B --loglevel=info 
 
 volumes:
