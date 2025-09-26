@@ -34,8 +34,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Consider adding --reload for FastAPI hot-reloading in development
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
+    # Run migrations before starting the app; enable reload for development
+    command: sh -lc "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   postgres:
     image: postgres:16
@@ -78,8 +78,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Add -B flag to run beat alongside the worker
-    command: celery -A app.celery_app worker -B --loglevel=info 
+    # Ensure DB schema is up-to-date before starting worker/beat
+    command: sh -lc "alembic -c alembic.ini upgrade head && celery -A app.celery_app worker -B --loglevel=info"
 
 volumes:
   postgres_dev_data: # Separate named volume for development database 

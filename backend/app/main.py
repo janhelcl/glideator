@@ -1,12 +1,13 @@
 import logging
 import time
 import os
+from sqlalchemy import text
 from kombu import Connection
 from kombu.exceptions import OperationalError
 from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from .database import engine, sync_engine, Base, AsyncSessionLocal, SessionLocal
+from .database import AsyncSessionLocal, SessionLocal
 from .routers import sites, trip_planning
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -39,19 +40,10 @@ async def lifespan(app: FastAPI):
         await stack.enter_async_context(mcp.session_manager.run())
         yield
 
-# Create database tables
-def setup_database():
-    logger.info("Creating database tables...")
-    # Create tables using sync engine for simplicity during setup
-    Base.metadata.create_all(bind=sync_engine)
-    logger.info("Database tables created successfully")
 
 # Startup logic moved from deprecated on_event to lifespan
 def startup_logic():
     logger.info("Starting up...")
-    
-    # Setup database first
-    setup_database()
     
     try:
         # Check environment variable to decide whether to load initial data
@@ -151,6 +143,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+async def healthcheck():
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Healthcheck failed: {e}")
+        raise HTTPException(status_code=503, detail="unhealthy")
 
 
 # Test endpoint for Celery
