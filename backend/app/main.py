@@ -16,7 +16,7 @@ from .services.flight_stats_loader import load_flight_stats_from_csv
 from .services.spots_loader import load_spots_from_csv
 from .services.sites_info_loader import load_sites_info_from_jsonl
 from .services.tags_loader import load_tags_from_jsonl
-from .celery_app import celery, simple_test_task
+from .celery_client import celery
 from .mcp import mcp
 
 # Configure logging
@@ -161,7 +161,7 @@ async def test_celery_task_endpoint(message: str):
     logger.info(f"WEB SERVICE: Received request for /test-celery/{message}")
     try:
         logger.info(f"WEB SERVICE: Attempting to send simple_test_task with message: {message}")
-        task_result = simple_test_task.delay(message)
+        task_result = celery.send_task('app.celery_app.simple_test_task', args=[message])
         logger.info(f"WEB SERVICE: simple_test_task sent. Task ID: {task_result.id}")
         return {"message": "Test task sent", "task_id": task_result.id}
     except Exception as e:

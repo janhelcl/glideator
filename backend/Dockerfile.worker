@@ -1,0 +1,17 @@
+# Worker image (Celery + ML deps)
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements-worker.txt ./requirements-worker.txt
+COPY packages/ ./packages/
+
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements-worker.txt \
+ && pip install --timeout=10000 --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu ./packages/*.whl
+
+COPY . .
+
+CMD ["celery", "-A", "app.celery_app", "worker", "-B", "--loglevel=info"]
+
+

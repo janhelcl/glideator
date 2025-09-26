@@ -18,7 +18,9 @@ services:
     command: npm start
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.web
     ports:
       - "8000:8000" # Expose backend port for direct access (/docs)
     volumes:
@@ -65,7 +67,9 @@ services:
       retries: 5
 
   celery-worker-beat: # Renamed from celery-worker
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     volumes:
       - .:/app
     environment:
