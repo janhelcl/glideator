@@ -78,8 +78,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Ensure DB schema is up-to-date before starting worker/beat
-    command: sh -lc "alembic -c alembic.ini upgrade head && celery -A app.celery_app worker -B --loglevel=info"
+    # Start worker and beat; rely on web to run Alembic migrations
+    command: celery -A app.celery_app worker -B --loglevel=info 
 
 volumes:
   postgres_dev_data: # Separate named volume for development database 

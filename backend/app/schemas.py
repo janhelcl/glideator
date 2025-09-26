@@ -170,3 +170,26 @@ class TripPlanResponse(BaseModel):
     sites: List[SiteSuggestion]
     total_count: int
     has_more: bool
+
+# --- Auth Schemas ---
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserOut(BaseModel):
+    user_id: int
+    email: str
+    is_active: bool
+    role: str
+
+    class Config:
+        from_attributes = True
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

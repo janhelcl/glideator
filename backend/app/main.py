@@ -8,7 +8,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
-from .routers import sites, trip_planning
+from .routers import sites, trip_planning, auth
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
@@ -131,6 +131,7 @@ app = FastAPI(
 # Include routers
 app.include_router(sites.router)
 app.include_router(trip_planning.router, tags=["Trip Planning"])
+app.include_router(auth.router)
 
 app.mount("/", mcp.streamable_http_app())
 
