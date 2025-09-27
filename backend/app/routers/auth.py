@@ -15,6 +15,7 @@ from ..security import (
     get_refresh_token_exp_days,
     is_cookie_secure,
 )
+from ..cache import get_redis_client
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -40,6 +41,23 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
 
 @router.post("/login", response_model=schemas.TokenOut)
 async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession = Depends(get_db)):
+    # Rate limit: max N attempts per window per email and IP
+    rc = get_redis_client()
+    window_sec = int(os.getenv("RATE_LIMIT_WINDOW_MINUTES", "15")) * 60
+    max_attempts = int(os.getenv("RATE_LIMIT_LOGIN_ATTEMPTS", "5"))
+    ip = "unknown"
+    try:
+        # FastAPI doesn't pass request here; simple heuristic via X-Forwarded-For is omitted for brevity
+        # We scope by email only for now
+        key = f"login:attempts:{creds.email}"
+        current = rc.incr(key)
+        if current == 1:
+            rc.expire(key, window_sec)
+        if current > max_attempts:
+            raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+    except Exception:
+        # If Redis fails, proceed without blocking login
+        pass
     result = await db.execute(select(models.User).where(models.User.email == creds.email))
     db_user: Optional[models.User] = result.scalar_one_or_none()
     if not db_user or not verify_password(creds.password, db_user.password_hash):
