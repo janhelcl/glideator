@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, Response, Request, Header
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
@@ -84,7 +85,7 @@ def get_current_user_from_token(token: str, db: AsyncSession) -> models.User:
 
 
 @router.get("/me", response_model=schemas.UserOut)
-async def me(authorization: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+async def me(authorization: Optional[str] = Header(default=None), db: AsyncSession = Depends(get_db)):
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
     token = authorization.split(" ", 1)[1]

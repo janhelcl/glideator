@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 from typing import Optional
 
 from jose import jwt
@@ -30,6 +31,7 @@ def create_access_token(subject: str, expires_minutes: int = 15) -> str:
         "sub": subject,
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=expires_minutes),
+        "jti": uuid.uuid4().hex,
     }
     return jwt.encode(to_encode, get_jwt_secret(), algorithm="HS256")
 
