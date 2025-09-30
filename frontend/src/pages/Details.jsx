@@ -25,6 +25,9 @@ import SiteMap from '../components/SiteMap';
 import SearchRecs from '../components/SearchRecs';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Helmet } from 'react-helmet-async';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { useAuth } from '../context/AuthContext';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -519,6 +522,8 @@ const Details = () => {
     );
   };
 
+  const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -591,17 +596,21 @@ const Details = () => {
       ) : (
         <Paper elevation={2}>
           {/* Site title displayed above tabs */}
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5">
-              {siteInfo?.site_name || siteData[0]?.name}
+          <Box sx={{ p: isSmallScreen ? 1 : 3 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {siteData[0]?.name || 'Site Details'}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <img 
-                src="/logo192.png" 
-                alt="Glideator Logo" 
-                style={{ height: '60px', width: 'auto' }} 
-              />
-            </Box>
+            {isAuthenticated && (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={isFavorite(Number(siteId)) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                onClick={() => toggleFavoriteSite(Number(siteId))}
+                sx={{ mb: 2 }}
+              >
+                {isFavorite(Number(siteId)) ? 'Favorited' : 'Add to Favorites'}
+              </Button>
+            )}
           </Box>
           
           {/* Tabs navigation */}

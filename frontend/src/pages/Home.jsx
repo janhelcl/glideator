@@ -4,11 +4,14 @@ import DateBoxesPlaceholder from '../components/DateBoxesPlaceholder';
 import ErrorBoundary from '../components/ErrorBoundary';
 import MapView from '../components/MapView';
 import { fetchSites } from '../api';
-import { Box } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { createSitesResource } from '../utils/suspenseResource';
 import { Helmet } from 'react-helmet-async';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { useAuth } from '../context/AuthContext';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -28,6 +31,7 @@ const Home = () => {
   const { selectedSite } = useOutletContext();
   const markerRefs = useRef({});
   const mapRef = useRef();
+  const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
 
   // Read site data using the resource. This will suspend if data is not ready.
   const allSitesData = sitesResource.read();

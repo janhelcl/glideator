@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Box, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
+import { Box, Typography, Alert, Snackbar, Button, ButtonGroup, Paper, IconButton } from '@mui/material';
 import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
@@ -8,6 +8,9 @@ import { planTrip } from '../api';
 import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '../types/ui-state';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { useAuth } from '../context/AuthContext';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
@@ -515,6 +518,8 @@ const TripPlannerPage = () => {
     }
   }, [sites, sortBy]);
   
+  const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -688,6 +693,9 @@ const TripPlannerPage = () => {
                     onSiteClick={handleSiteClick}
                     selectedMetric={plannerState.selectedMetric}
                     showRanking={true}
+                    isAuthenticated={isAuthenticated}
+                    toggleFavoriteSite={toggleFavoriteSite}
+                    isFavorite={isFavorite}
                   />
                 ) : loading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -703,6 +711,9 @@ const TripPlannerPage = () => {
                   selectedMetric={plannerState.selectedMetric}
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
                   loading={loading && sites.length === 0}
+                  isAuthenticated={isAuthenticated}
+                  toggleFavoriteSite={toggleFavoriteSite}
+                  isFavorite={isFavorite}
                 />
               )}
               

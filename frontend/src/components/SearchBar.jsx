@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Autocomplete, Box } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const SearchBar = ({ sites, onSiteSelect }) => {
   const [options, setOptions] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated, isFavorite } = useAuth();
 
   useEffect(() => {
     // Transform sites into options format, sorting by site_id first
@@ -15,7 +18,8 @@ const SearchBar = ({ sites, onSiteSelect }) => {
 
     const siteOptions = sortedSites.map(site => ({
       label: `${site.name} (${site.site_id})`,
-      site: site
+      site,
+      favorite: isFavorite(site.site_id),
     }));
     setOptions(siteOptions);
   }, [sites]);
@@ -60,6 +64,14 @@ const SearchBar = ({ sites, onSiteSelect }) => {
               },
             }}
           />
+        )}
+        renderOption={(props, option) => (
+          <li {...props}>
+            {isAuthenticated && option.favorite && (
+              <FavoriteIcon fontSize="small" color="error" sx={{ mr: 1 }} />
+            )}
+            {option.label}
+          </li>
         )}
       />
     </Box>

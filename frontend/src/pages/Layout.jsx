@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Box, Button } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { AppBar, Toolbar, Typography, Box, Button, IconButton, Menu, MenuItem } from '@mui/material';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
 import useDisclaimer from '../hooks/useDisclaimer';
 import { fetchSitesList } from '../api';  // Reverted back to fetchSitesList
+import { useAuth } from '../context/AuthContext';
 
 const Layout = () => {
   // This state and function will be passed down to components that need it
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
   const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
+  const { isAuthenticated, logout, user } = useAuth();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const navigate = useNavigate();
 
   // Update these values
   const headerHeight = '64px';
@@ -34,6 +39,20 @@ const Layout = () => {
 
     loadSites();
   }, []);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleMenuClose();
+    navigate('/');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -85,6 +104,51 @@ const Layout = () => {
             sites={sites}  // Pass the actual sites data
             onSiteSelect={setSelectedSite}
           />
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          {isAuthenticated ? (
+            <>
+              <Button
+                component={RouterLink}
+                to="/favorites"
+                sx={{ color: 'white', mr: 1 }}
+              >
+                Favorites
+              </Button>
+              <IconButton color="inherit" onClick={handleMenuOpen} size="large">
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem disabled>{user?.email}</MenuItem>
+                <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
+                  Profile
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <>
+              <Button
+                component={RouterLink}
+                to="/login"
+                sx={{ color: 'white', ml: 2 }}
+              >
+                Log In
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/register"
+                sx={{ color: 'white', ml: 1, border: '1px solid white' }}
+              >
+                Register
+              </Button>
+            </>
+          )}
         </Toolbar>
       </AppBar>
 
