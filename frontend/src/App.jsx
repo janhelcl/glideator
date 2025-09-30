@@ -6,21 +6,23 @@ import Details from './pages/Details';
 import Declined from './pages/Declined';
 import NotFound from './pages/NotFound';
 import TripPlannerPage from './pages/TripPlannerPage';
+import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/declined" element={<Declined />} />
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="trip-planner" element={<TripPlannerPage />} />
-          <Route path="details/:siteId" element={<Details />} />
-          {/* Redirect old format URLs to new format */}
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/declined" element={<Declined />} />
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="trip-planner" element={<TripPlannerPage />} />
+            <Route path="details/:siteId" element={<Details />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 
