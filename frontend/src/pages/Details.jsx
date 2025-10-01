@@ -28,6 +28,8 @@ import { Helmet } from 'react-helmet-async';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '../context/AuthContext';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -597,20 +599,26 @@ const Details = () => {
         <Paper elevation={2}>
           {/* Site title displayed above tabs */}
           <Box sx={{ p: isSmallScreen ? 1 : 3 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {siteData[0]?.name || 'Site Details'}
-            </Typography>
-            {isAuthenticated && (
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={isFavorite(Number(siteId)) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                onClick={() => toggleFavoriteSite(Number(siteId))}
-                sx={{ mb: 2 }}
-              >
-                {isFavorite(Number(siteId)) ? 'Favorited' : 'Add to Favorites'}
-              </Button>
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* Title with favorite */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {isAuthenticated && (
+                  <Tooltip title={isFavorite(Number(siteId)) ? 'Remove from favorites' : 'Add to favorites'}>
+                    <IconButton
+                      color={isFavorite(Number(siteId)) ? 'error' : 'default'}
+                      onClick={() => toggleFavoriteSite(Number(siteId))}
+                      size="large"
+                    >
+                      {isFavorite(Number(siteId)) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0 }}>
+                  {siteData[0]?.name || 'Site Details'}
+                </Typography>
+              </Box>
+              <img src={`${process.env.PUBLIC_URL}/logo192.png`} alt="Glideator" style={{ height: 48 }} />
+            </Box>
           </Box>
           
           {/* Tabs navigation */}
