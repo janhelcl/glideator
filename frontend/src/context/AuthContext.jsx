@@ -10,6 +10,7 @@ import {
   addFavorite,
   removeFavorite,
   setAccessToken,
+  hasValidSession,
 } from '../api';
 
 const AuthContext = createContext({});
@@ -41,7 +42,25 @@ export const AuthProvider = ({ children }) => {
   const initialize = useCallback(async () => {
     setLoading(true);
     setError(null);
-    await loadAuthedData();
+    
+    try {
+      // Only try to load authenticated data if we have a valid session
+      const hasSession = await hasValidSession();
+      if (hasSession) {
+        await loadAuthedData();
+      } else {
+        // Clear any stale state if no valid session
+        setUser(null);
+        setProfile(null);
+        setFavorites([]);
+      }
+    } catch (err) {
+      // If session check fails, clear state
+      setUser(null);
+      setProfile(null);
+      setFavorites([]);
+    }
+    
     setLoading(false);
   }, [loadAuthedData]);
 

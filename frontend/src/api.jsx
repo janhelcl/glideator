@@ -13,6 +13,19 @@ export const setAccessToken = (token) => {
   accessToken = token;
 };
 
+export const getAccessToken = () => {
+  return accessToken;
+};
+
+export const hasValidSession = async () => {
+  try {
+    await refreshAccessToken();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 apiClient.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -21,12 +34,18 @@ apiClient.interceptors.request.use((config) => {
 });
 
 const refreshAccessToken = async () => {
-  const response = await apiClient.post('/auth/refresh');
-  const token = response.data?.access_token;
-  if (token) {
-    accessToken = token;
+  try {
+    const response = await apiClient.post('/auth/refresh');
+    const token = response.data?.access_token;
+    if (token) {
+      accessToken = token;
+    }
+    return token;
+  } catch (error) {
+    // Clear the access token if refresh fails
+    accessToken = null;
+    throw error;
   }
-  return token;
 };
 
 apiClient.interceptors.response.use(
@@ -37,13 +56,19 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.endsWith('/auth/login') &&
-      !originalRequest.url.endsWith('/auth/register')
+      !originalRequest.url.endsWith('/auth/register') &&
+      !originalRequest.url.endsWith('/auth/refresh')
     ) {
       originalRequest._retry = true;
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return apiClient(originalRequest);
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return apiClient(originalRequest);
+        }
+      } catch (refreshError) {
+        // If refresh fails, clear the token and don't retry
+        accessToken = null;
       }
     }
     return Promise.reject(error);
