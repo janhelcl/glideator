@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 
-const SearchBar = ({ sites, onSiteSelect }) => {
+const SearchBar = ({ sites, onSiteSelect, mobile = false }) => {
   const [options, setOptions] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,7 +37,11 @@ const SearchBar = ({ sites, onSiteSelect }) => {
   };
 
   return (
-    <Box sx={{ width: 300, margin: '0 20px' }}>
+    <Box sx={{ 
+      width: mobile ? '100%' : 300, 
+      margin: mobile ? '0' : '0 20px',
+      maxWidth: mobile ? 'none' : '300px'
+    }}>
       <Autocomplete
         options={options}
         onChange={handleSelect}
@@ -54,7 +58,7 @@ const SearchBar = ({ sites, onSiteSelect }) => {
             {...params}
             label="Search sites"
             variant="outlined"
-            size="small"
+            size={mobile ? "medium" : "small"}
             sx={{
               backgroundColor: 'white',
               borderRadius: '4px',
