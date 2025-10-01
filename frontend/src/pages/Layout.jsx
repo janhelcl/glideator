@@ -135,11 +135,6 @@ const Layout = () => {
             <ListItemButton onClick={() => handleMobileMenuClick('/profile')}>
               <ListItemText primary="Profile" />
             </ListItemButton>
-            <ListItem sx={{ px: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {user?.email}
-              </Typography>
-            </ListItem>
             <ListItemButton onClick={handleMobileLogout}>
               <ListItemText primary="Logout" />
             </ListItemButton>
