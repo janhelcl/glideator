@@ -32,7 +32,7 @@ const Layout = () => {
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
   const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, profile } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const navigate = useNavigate();
@@ -89,6 +89,8 @@ const Layout = () => {
     setMobileDrawerOpen(false);
     navigate('/');
   };
+
+  const displayLabel = profile?.display_name || user?.email;
 
   // Mobile drawer content
   const mobileDrawerContent = (
@@ -258,7 +260,7 @@ const Layout = () => {
                     open={Boolean(anchorEl)}
                     onClose={handleMenuClose}
                   >
-                    <MenuItem disabled>{user?.email}</MenuItem>
+                  <MenuItem disabled>{displayLabel}</MenuItem>
                     <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                       Profile
                     </MenuItem>
@@ -300,7 +302,7 @@ const Layout = () => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              <MenuItem disabled>{user?.email}</MenuItem>
+              <MenuItem disabled>{displayLabel}</MenuItem>
               <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                 Profile
               </MenuItem>
