@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, Paper, Alert } from '@mui/material';
+import { Box, Typography, IconButton, Paper, Alert, Snackbar, Button } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
@@ -50,33 +50,20 @@ const transformSite = (site) => {
 
 const Favorites = () => {
   const { favorites, toggleFavoriteSite } = useAuth();
+  const [allSites, setAllSites] = useState([]);
   const [favoriteSites, setFavoriteSites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [lastRemovedSite, setLastRemovedSite] = useState(null);
 
   useEffect(() => {
     const loadSites = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        if (!favorites || favorites.length === 0) {
-          setFavoriteSites([]);
-          return;
-        }
-
         const data = await fetchSites();
-
-        const filtered = (data || []).filter((site) =>
-          favorites.includes(site.site_id)
-        );
-
-        const transformed = filtered
-          .map(transformSite)
-          .filter(Boolean)
-          .sort((a, b) => a.site_name.localeCompare(b.site_name));
-
-        setFavoriteSites(transformed);
+        setAllSites(data || []);
       } catch (err) {
         console.error('Failed to load favorite sites', err);
         setError('Failed to load favorite sites. Please try again later.');
@@ -86,9 +73,74 @@ const Favorites = () => {
     };
 
     loadSites();
-  }, [favorites]);
+  }, []);
+
+  useEffect(() => {
+    if (!allSites || allSites.length === 0) {
+      setFavoriteSites([]);
+      return;
+    }
+
+    const filtered = allSites.filter((site) => favorites.includes(site.site_id));
+
+    const transformed = filtered
+      .map(transformSite)
+      .filter(Boolean)
+      .sort((a, b) => a.site_name.localeCompare(b.site_name));
+
+    setFavoriteSites(transformed);
+  }, [allSites, favorites]);
+
+  const handleRemoveFavorite = async (site) => {
+    const siteId = Number(site.site_id);
+    setLastRemovedSite(site);
+    setFavoriteSites((prev) => prev.filter((item) => item.site_id !== site.site_id));
+    setSnackbarOpen(true);
+    try {
+      await toggleFavoriteSite(siteId);
+    } catch (err) {
+      console.error('Failed to update favorite status', err);
+      // Revert optimistic update on failure
+      setFavoriteSites((prev) => [...prev, site].sort((a, b) => a.site_name.localeCompare(b.site_name)));
+      setLastRemovedSite(null);
+      setSnackbarOpen(false);
+      setError('Failed to remove from favorites. Please try again.');
+    }
+  };
+
+  const handleUndoRemove = async () => {
+    if (!lastRemovedSite) return;
+
+    const siteId = Number(lastRemovedSite.site_id);
+    try {
+      await toggleFavoriteSite(siteId);
+    } catch (err) {
+      console.error('Failed to restore favorite', err);
+      setError('Failed to restore favorite. Please try again.');
+      setSnackbarOpen(false);
+      setLastRemovedSite(null);
+      return;
+    }
+
+    setFavoriteSites((prev) =>
+      [...prev, lastRemovedSite].sort((a, b) => a.site_name.localeCompare(b.site_name))
+    );
+    setSnackbarOpen(false);
+    setLastRemovedSite(null);
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+    setLastRemovedSite(null);
+  };
 
   const hasFavorites = favorites && favorites.length > 0;
+  const snackbarMessage = lastRemovedSite
+    ? `${lastRemovedSite.site_name} removed from favorites`
+    : '';
 
   return (
     <Box sx={{ maxWidth: '1200px', margin: '0 auto', p: 2 }}>
@@ -154,7 +206,7 @@ const Favorites = () => {
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleFavoriteSite(Number(site.site_id));
+                      handleRemoveFavorite(site);
                     }}
                     color="error"
                     aria-label={`Remove ${site.site_name} from favorites`}
@@ -168,6 +220,20 @@ const Favorites = () => {
           )}
         </Box>
       </Paper>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        action={
+          lastRemovedSite ? (
+            <Button color="secondary" size="small" onClick={handleUndoRemove}>
+              Undo
+            </Button>
+          ) : null
+        }
+      />
     </Box>
   );
 };

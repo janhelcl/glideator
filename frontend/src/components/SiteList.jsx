@@ -57,8 +57,8 @@ const SiteList = ({
             }
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 0 }}>
               {/* Rank */}
               {showRanking && (
                 <Typography
@@ -113,14 +113,11 @@ const SiteList = ({
                 </Box>
               </Box>
 
-              {/* Sparkline */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Sparkline dailyProbabilities={site.daily_probabilities} />
-              </Box>
             </Box>
 
             {/* Action Buttons */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Sparkline dailyProbabilities={site.daily_probabilities} />
               {(() => {
                 const defaultAction = (
                   <IconButton
