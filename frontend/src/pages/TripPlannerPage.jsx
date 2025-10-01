@@ -515,6 +515,8 @@ const TripPlannerPage = () => {
     }
   }, [sites, sortBy]);
   
+  // Removed useAuth hook and its destructuring
+
   return (
     <Box sx={{ 
       maxWidth: '1200px',
@@ -688,6 +690,7 @@ const TripPlannerPage = () => {
                     onSiteClick={handleSiteClick}
                     selectedMetric={plannerState.selectedMetric}
                     showRanking={true}
+                    // Removed isAuthenticated, toggleFavoriteSite, isFavorite
                   />
                 ) : loading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -703,6 +706,7 @@ const TripPlannerPage = () => {
                   selectedMetric={plannerState.selectedMetric}
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
                   loading={loading && sites.length === 0}
+                  // Removed isAuthenticated, toggleFavoriteSite, isFavorite
                 />
               )}
               

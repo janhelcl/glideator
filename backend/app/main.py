@@ -8,7 +8,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
-from .routers import sites, trip_planning, auth
+from .routers import sites, trip_planning, auth, profiles, favorites
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
@@ -132,13 +132,16 @@ app = FastAPI(
 app.include_router(sites.router)
 app.include_router(trip_planning.router, tags=["Trip Planning"])
 app.include_router(auth.router)
+app.include_router(profiles.router)
+app.include_router(favorites.router)
 
 app.mount("/", mcp.streamable_http_app())
 
 # Configure CORS
+allowed_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Update with your frontend URL in production
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -28,6 +28,7 @@ const Home = () => {
   const { selectedSite } = useOutletContext();
   const markerRefs = useRef({});
   const mapRef = useRef();
+  // Removed useAuth import
 
   // Read site data using the resource. This will suspend if data is not ready.
   const allSitesData = sitesResource.read();

@@ -14,6 +14,23 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
+class UserProfile(Base):
+    __tablename__ = 'user_profiles'
+
+    user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    display_name = Column(String, nullable=True)
+    home_lat = Column(Float, nullable=True)
+    home_lon = Column(Float, nullable=True)
+    preferred_metric = Column(String, nullable=False, server_default='XC0')
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+class UserFavorite(Base):
+    __tablename__ = 'user_favorites'
+
+    user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    site_id = Column(Integer, ForeignKey('sites.site_id'), primary_key=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
 class Site(Base):
     __tablename__ = 'sites'
     

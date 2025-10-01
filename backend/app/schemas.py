@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Json, Field
+from pydantic import BaseModel, Json, Field, EmailStr, field_validator, ConfigDict
 from typing import List, Optional, Literal
 from datetime import date, datetime
+import os
 
 class PredictionBase(BaseModel):
     date: date
@@ -14,9 +15,7 @@ class PredictionCreate(PredictionBase):
 
 class Prediction(PredictionBase):
     site_id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PredictionValues(BaseModel):
     date: date
@@ -40,9 +39,7 @@ class SiteResponse(BaseModel):
     site_id: int
     predictions: List[PredictionValues]
     tags: List[str] = []
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Site(SiteResponse):
     pass
@@ -50,9 +47,7 @@ class Site(SiteResponse):
 class SiteListItem(BaseModel):
     site_id: int
     name: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ForecastBase(BaseModel):
     date: date
@@ -68,8 +63,7 @@ class ForecastCreate(ForecastBase):
     pass
 
 class Forecast(ForecastBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FlightStatsBase(BaseModel):
     site_id: int
@@ -90,8 +84,7 @@ class FlightStatsCreate(FlightStatsBase):
     pass
 
 class FlightStats(FlightStatsBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SpotBase(BaseModel):
     spot_id: int
@@ -107,8 +100,7 @@ class SpotCreate(SpotBase):
     pass
 
 class Spot(SpotBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SourceInfo(BaseModel):
     source_name: str
@@ -124,8 +116,7 @@ class SiteInfoCreate(SiteInfoBase):
     pass
 
 class SiteInfo(SiteInfoBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SiteTagBase(BaseModel):
     site_id: int
@@ -135,8 +126,7 @@ class SiteTagCreate(SiteTagBase):
     pass
 
 class SiteTag(SiteTagBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TripPlanRequest(BaseModel):
     start_date: date
@@ -174,11 +164,26 @@ class TripPlanResponse(BaseModel):
 # --- Auth Schemas ---
 
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        min_len = int(os.getenv("PASSWORD_MIN_LENGTH", "8"))
+        if len(v) < min_len:
+            raise ValueError(f"Password must be at least {min_len} characters long")
+        # Require at least 3 of 4 categories: lower, upper, digit, special
+        lower = any(c.islower() for c in v)
+        upper = any(c.isupper() for c in v)
+        digit = any(c.isdigit() for c in v)
+        special = any(c in "!@#$%^&*()-_=+[]{};:'\",.<>/?|`~" for c in v)
+        if sum([lower, upper, digit, special]) < 3:
+            raise ValueError("Password must include at least three of: lower, upper, digit, special")
+        return v
+
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class UserOut(BaseModel):
@@ -186,10 +191,26 @@ class UserOut(BaseModel):
     email: str
     is_active: bool
     role: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+# --- Profiles & Favorites ---
+
+class UserProfileOut(BaseModel):
+    user_id: int
+    display_name: Optional[str] = None
+    home_lat: Optional[float] = None
+    home_lon: Optional[float] = None
+    preferred_metric: str
+
+class UserProfileUpdate(BaseModel):
+    display_name: Optional[str] = None
+    home_lat: Optional[float] = None
+    home_lon: Optional[float] = None
+    preferred_metric: Optional[str] = None
+
+class FavoriteRequest(BaseModel):
+    site_id: int
