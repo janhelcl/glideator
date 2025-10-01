@@ -6,12 +6,19 @@ import {
   TextField,
   Typography,
   Alert,
+  IconButton,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { useAuth } from '../context/AuthContext';
 import { Helmet } from 'react-helmet-async';
+import StandaloneMetricControl from '../components/StandaloneMetricControl';
+import { AVAILABLE_METRICS } from '../types/ui-state';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Profile = () => {
-  const { profile, user, saveProfile } = useAuth();
+  const { profile, user, saveProfile, isLoading } = useAuth();
   const [form, setForm] = useState({
     display_name: '',
     home_lat: '',
@@ -20,6 +27,7 @@ const Profile = () => {
   });
   const [status, setStatus] = useState({ type: null, message: null });
   const [submitting, setSubmitting] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -35,6 +43,57 @@ const Profile = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleMetricChange = (newMetric) => {
+    setForm((prev) => ({ ...prev, preferred_metric: newMetric }));
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setStatus({ type: 'error', message: 'Geolocation is not supported by your browser' });
+      return;
+    }
+
+    setGettingLocation(true);
+    setStatus({ type: null, message: null });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setForm((prev) => ({
+          ...prev,
+          home_lat: latitude.toFixed(6),
+          home_lon: longitude.toFixed(6),
+        }));
+        setStatus({ type: 'success', message: 'Location set successfully!' });
+        setGettingLocation(false);
+      },
+      (error) => {
+        let errorMessage = 'Unable to get location';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied. Please enable location permissions in your browser.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+          default:
+            errorMessage = 'An unknown error occurred while getting location.';
+            break;
+        }
+        setStatus({ type: 'error', message: errorMessage });
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0, // Don't use cached position
+      }
+    );
   };
 
   const handleSubmit = async (event) => {
@@ -57,6 +116,10 @@ const Profile = () => {
       setSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <Box
@@ -104,17 +167,18 @@ const Profile = () => {
             </Box>
           </Box>
 
-          {status.type && (
-            <Alert severity={status.type} sx={{ mb: 2 }}>
-              {status.message}
-            </Alert>
-          )}
+          <Box sx={{ maxWidth: '700px', mx: 'auto' }}>
+            {status.type && (
+              <Alert severity={status.type} sx={{ mb: 2 }}>
+                {status.message}
+              </Alert>
+            )}
 
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-          >
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+            >
             <TextField
               fullWidth
               label="Display Name"
@@ -122,34 +186,67 @@ const Profile = () => {
               value={form.display_name}
               onChange={handleChange}
             />
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
-              <TextField
-                fullWidth
-                label="Home Latitude"
-                name="home_lat"
-                type="number"
-                value={form.home_lat}
-                onChange={handleChange}
-                inputProps={{ step: 'any' }}
-              />
-              <TextField
-                fullWidth
-                label="Home Longitude"
-                name="home_lon"
-                type="number"
-                value={form.home_lon}
-                onChange={handleChange}
-                inputProps={{ step: 'any' }}
-              />
+            
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Home Location
+                </Typography>
+                <Tooltip title="Use my current location">
+                  <span>
+                    <IconButton
+                      onClick={handleUseCurrentLocation}
+                      disabled={gettingLocation}
+                      size="small"
+                      color="primary"
+                    >
+                      {gettingLocation ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <MyLocationIcon />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Home Latitude"
+                  name="home_lat"
+                  type="number"
+                  value={form.home_lat}
+                  onChange={handleChange}
+                  inputProps={{ step: 'any' }}
+                />
+                <TextField
+                  fullWidth
+                  label="Home Longitude"
+                  name="home_lon"
+                  type="number"
+                  value={form.home_lon}
+                  onChange={handleChange}
+                  inputProps={{ step: 'any' }}
+                />
+              </Box>
             </Box>
-            <TextField
-              fullWidth
-              label="Preferred Metric"
-              name="preferred_metric"
-              value={form.preferred_metric}
-              onChange={handleChange}
-              helperText="e.g., XC0, XC50"
-            />
+            
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Preferred Flight Quality Metric
+                </Typography>
+                <StandaloneMetricControl
+                  metrics={AVAILABLE_METRICS}
+                  selectedMetric={form.preferred_metric}
+                  onMetricChange={handleMetricChange}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                Currently selected: <strong>{form.preferred_metric}</strong> (minimum {form.preferred_metric.replace('XC', '')} XC points)
+              </Typography>
+            </Box>
+            
             <Button
               type="submit"
               variant="contained"
@@ -160,6 +257,7 @@ const Profile = () => {
             >
               {submitting ? 'Saving…' : 'Save Profile'}
             </Button>
+            </Box>
           </Box>
         </Box>
       </Paper>
