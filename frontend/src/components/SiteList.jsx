@@ -4,7 +4,13 @@ import { Launch as LaunchIcon } from '@mui/icons-material';
 import Sparkline from './Sparkline';
 import { getColorWithAlpha } from '../utils/colorUtils';
 
-const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0', showRanking = true }) => {
+const SiteList = ({
+  sites,
+  onSiteClick,
+  selectedMetric = 'XC0',
+  showRanking = true,
+  renderSiteActions = null,
+}) => {
   const handleSiteClick = (site) => {
     // Open site details in new tab with selected metric
     const url = `/details/${site.site_id}?metric=${selectedMetric}`;
@@ -115,17 +121,27 @@ const SiteList = ({ sites, onSiteClick, selectedMetric = 'XC0', showRanking = tr
 
             {/* Action Buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSiteClick(site);
-                }}
-                sx={{ color: 'primary.main' }}
-                aria-label={`View details for ${site.site_name}`}
-              >
-                <LaunchIcon />
-              </IconButton>
+              {(() => {
+                const defaultAction = (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSiteClick(site);
+                    }}
+                    sx={{ color: 'primary.main' }}
+                    aria-label={`View details for ${site.site_name}`}
+                  >
+                    <LaunchIcon />
+                  </IconButton>
+                );
+
+                if (typeof renderSiteActions === 'function') {
+                  return renderSiteActions(site, { handleSiteClick, defaultAction });
+                }
+
+                return defaultAction;
+              })()}
             </Box>
           </Box>
         </Paper>
