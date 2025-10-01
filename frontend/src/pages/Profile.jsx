@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
-  Container,
+  Paper,
   TextField,
   Typography,
   Alert,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
+import { Helmet } from 'react-helmet-async';
 
 const Profile = () => {
   const { profile, user, saveProfile } = useAuth();
@@ -58,70 +59,111 @@ const Profile = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Profile
-      </Typography>
-      {status.type && (
-        <Alert severity={status.type} sx={{ mb: 2 }}>
-          {status.message}
-        </Alert>
-      )}
-      <Typography variant="body1" sx={{ mb: 2 }}>
-        Logged in as {user?.email}
-      </Typography>
-      <Box component="form" onSubmit={handleSubmit}>
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Display Name"
-          name="display_name"
-          value={form.display_name}
-          onChange={handleChange}
+    <Box
+      sx={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        p: 2,
+        minHeight: '100%',
+      }}
+    >
+      <Helmet>
+        <title>Profile – Parra-Glideator</title>
+        <meta
+          name="description"
+          content="Manage your Parra-Glideator profile, home coordinates, and preferred metrics."
         />
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Home Latitude"
-            name="home_lat"
-            type="number"
-            value={form.home_lat}
-            onChange={handleChange}
-            inputProps={{ step: 'any' }}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Home Longitude"
-            name="home_lon"
-            type="number"
-            value={form.home_lon}
-            onChange={handleChange}
-            inputProps={{ step: 'any' }}
-          />
+      </Helmet>
+      <Paper elevation={2}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              pb: 2,
+              mb: 3,
+              borderBottom: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                Profile
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {user?.email ? `Logged in as ${user.email}` : 'Manage your profile information'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img
+                src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
+                alt="Glideator Logo"
+                style={{ height: 56, width: 'auto' }}
+              />
+            </Box>
+          </Box>
+
+          {status.type && (
+            <Alert severity={status.type} sx={{ mb: 2 }}>
+              {status.message}
+            </Alert>
+          )}
+
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          >
+            <TextField
+              fullWidth
+              label="Display Name"
+              name="display_name"
+              value={form.display_name}
+              onChange={handleChange}
+            />
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Home Latitude"
+                name="home_lat"
+                type="number"
+                value={form.home_lat}
+                onChange={handleChange}
+                inputProps={{ step: 'any' }}
+              />
+              <TextField
+                fullWidth
+                label="Home Longitude"
+                name="home_lon"
+                type="number"
+                value={form.home_lon}
+                onChange={handleChange}
+                inputProps={{ step: 'any' }}
+              />
+            </Box>
+            <TextField
+              fullWidth
+              label="Preferred Metric"
+              name="preferred_metric"
+              value={form.preferred_metric}
+              onChange={handleChange}
+              helperText="e.g., XC0, XC50"
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 1 }}
+              disabled={submitting}
+            >
+              {submitting ? 'Saving…' : 'Save Profile'}
+            </Button>
+          </Box>
         </Box>
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Preferred Metric"
-          name="preferred_metric"
-          value={form.preferred_metric}
-          onChange={handleChange}
-          helperText="e.g., XC0, XC50"
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          fullWidth
-          sx={{ mt: 2 }}
-          disabled={submitting}
-        >
-          {submitting ? 'Saving…' : 'Save Profile'}
-        </Button>
-      </Box>
-    </Container>
+      </Paper>
+    </Box>
   );
 };
 
