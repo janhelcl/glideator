@@ -128,16 +128,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Include routers
-app.include_router(sites.router)
-app.include_router(trip_planning.router, tags=["Trip Planning"])
-app.include_router(auth.router)
-app.include_router(profiles.router)
-app.include_router(favorites.router)
-
-app.mount("/", mcp.streamable_http_app())
-
-# Configure CORS
+# Configure CORS (must be done before mounting and including routers)
 allowed_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -146,6 +137,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(sites.router)
+app.include_router(trip_planning.router, tags=["Trip Planning"])
+app.include_router(auth.router)
+app.include_router(profiles.router)
+app.include_router(favorites.router)
+
+app.mount("/", mcp.streamable_http_app())
 
 @app.get("/health")
 async def healthcheck():
