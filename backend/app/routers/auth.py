@@ -69,7 +69,7 @@ async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession =
         key="refresh_token",
         value=refresh,
         httponly=True,
-        samesite="lax",
+        samesite="none",  # Required for cross-origin requests
         secure=is_cookie_secure(),
         path="/auth",
     )
@@ -114,7 +114,12 @@ async def refresh(request: Request):
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key="refresh_token", path="/auth")
+    response.delete_cookie(
+        key="refresh_token",
+        path="/auth",
+        samesite="none",
+        secure=is_cookie_secure(),
+    )
     return {"ok": True}
 
 
