@@ -116,10 +116,17 @@ def format_flight_stats(flight_stats: List) -> str:
         
         # Format with key thresholds
         lines.append(f"**{month_name}**")
-        lines.append(f"  - Any XC flight (>0km): {stat.avg_days_over_0:.1f} days")
-        lines.append(f"  - XC >20km: {stat.avg_days_over_20:.1f} days")
-        lines.append(f"  - XC >50km: {stat.avg_days_over_50:.1f} days")
-        lines.append(f"  - XC >100km: {stat.avg_days_over_100:.1f} days")
+        lines.append(f"  - Any flight (>0 XC points): {stat.avg_days_over_0:.1f} days")
+        lines.append(f"  - flight >10 XC points: {stat.avg_days_over_10:.1f} days")
+        lines.append(f"  - flight >20 XC points: {stat.avg_days_over_20:.1f} days")
+        lines.append(f"  - flight >30 XC points: {stat.avg_days_over_30:.1f} days")
+        lines.append(f"  - flight >40 XC points: {stat.avg_days_over_40:.1f} days")
+        lines.append(f"  - flight >50 XC points: {stat.avg_days_over_50:.1f} days")
+        lines.append(f"  - flight >60 XC points: {stat.avg_days_over_60:.1f} days")
+        lines.append(f"  - flight >70 XC points: {stat.avg_days_over_70:.1f} days")
+        lines.append(f"  - flight >80 XC points: {stat.avg_days_over_80:.1f} days")
+        lines.append(f"  - flight >90 XC points: {stat.avg_days_over_90:.1f} days")
+        lines.append(f"  - flight >100 XC points: {stat.avg_days_over_100:.1f} days")
         lines.append("")
     
     return "\n".join(lines)
@@ -217,7 +224,7 @@ To connect your AI assistant, use the MCP server at: `https://www.parra-glideato
     for site in sites:
         site_id = site[0]  # site_id
         site_name = site[1]  # name
-        site_directory.append(f"- [{site_name}](/api/llms/sites/{site_id}.txt)")
+        site_directory.append(f"- [{site_name}](https://www.parra-glideator.com/api/llms/sites/{site_id}.txt)")
     
     # Combine everything
     content = static_content + "\n".join(site_directory)
@@ -292,6 +299,7 @@ async def get_site_llms_txt(site_id: int, db: AsyncSession = Depends(get_db)):
     # Current 7-Day Forecast
     lines.append("## Current 7-Day Forecast\n")
     lines.append("Glideator ML predictions for flying conditions (probability of achieving XC distance):\n")
+    lines.append("Metric explanation: 'XC0' for any flyable day, 'XC10' for 10+ XC points, up to 'XC100'. Higher thresholds = better/longer flight conditions.\n")
     forecast_text = format_predictions(predictions)
     lines.append(forecast_text)
     
