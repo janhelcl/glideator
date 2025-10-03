@@ -64,7 +64,8 @@ async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession =
     if not db_user or not verify_password(creds.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access = create_access_token(subject=str(db_user.user_id), expires_minutes=get_access_token_exp_minutes())
-    refresh = create_refresh_token(subject=str(db_user.user_id), expires_days=get_refresh_token_exp_days())
+    refresh_days = get_refresh_token_exp_days()
+    refresh = create_refresh_token(subject=str(db_user.user_id), expires_days=refresh_days)
     response.set_cookie(
         key="refresh_token",
         value=refresh,
@@ -72,6 +73,7 @@ async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession =
         samesite="lax",  # Using Lax since frontend proxies requests (same-origin)
         secure=is_cookie_secure(),
         path="/api/auth",  # Match the proxy path
+        max_age=refresh_days * 24 * 60 * 60,  # Convert days to seconds for cookie persistence
     )
     return schemas.TokenOut(access_token=access)
 
