@@ -1,11 +1,11 @@
-# Proxy llms.txt endpoints directly to backend service
+# Redirect llms.txt endpoints to backend
 /llms.txt https://glideator-web.onrender.com/llms.txt 200
 /llms/sites/* https://glideator-web.onrender.com/llms/sites/:splat 200
 
-# Proxy all API requests to backend
+# Redirect API requests to backend
 /api/* https://glideator-web.onrender.com/:splat 200
 
-# Proxy MCP requests to backend
+# Redirect MCP requests to backend
 /mcp/* https://glideator-web.onrender.com/mcp/:splat 200
 
 # SPA fallback - serve index.html for all other routes
