@@ -69,9 +69,9 @@ async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession =
         key="refresh_token",
         value=refresh,
         httponly=True,
-        samesite="none",  # Required for cross-origin requests
+        samesite="lax",  # Using Lax since frontend proxies requests (same-origin)
         secure=is_cookie_secure(),
-        path="/auth",
+        path="/api/auth",  # Match the proxy path
     )
     return schemas.TokenOut(access_token=access)
 
@@ -116,8 +116,8 @@ async def refresh(request: Request):
 async def logout(response: Response):
     response.delete_cookie(
         key="refresh_token",
-        path="/auth",
-        samesite="none",
+        path="/api/auth",
+        samesite="lax",
         secure=is_cookie_secure(),
     )
     return {"ok": True}
