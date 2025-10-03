@@ -1,6 +1,3 @@
-# Redirect individual site llms to backend (llms.txt is generated at build time)
-/llms/sites/* https://glideator-web.onrender.com/llms/sites/:splat 302
-
 # Redirect API requests to backend
 /api/* https://glideator-web.onrender.com/:splat 200
 
