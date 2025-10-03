@@ -16,6 +16,7 @@
     "axios": "^1.7.7",
     "d3": "^7.9.0",
     "date-fns": "^3.6.0",
+    "http-proxy-middleware": "^2.0.6",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "plotly.js": "^2.35.2",
