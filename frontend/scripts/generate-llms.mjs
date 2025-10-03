@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const API_URL = process.env.REACT_APP_API_BASE_URL || process.env.SITEMAP_API_URL || 'https://glideator-web.onrender.com';
+// Use backend URL directly (not through frontend proxy)
+// During build, the frontend isn't deployed yet, so we must fetch from backend
+const BACKEND_URL = process.env.BACKEND_API_URL || 'https://glideator-web.onrender.com';
 
 async function fetchText(url) {
   console.log(`Fetching: ${url}`);
@@ -22,7 +24,9 @@ async function fetchText(url) {
 async function generateLlmsTxt() {
   try {
     // Fetch the dynamic llms.txt from backend
-    const llmsContent = await fetchText(`${API_URL}/llms.txt`);
+    const fullUrl = `${BACKEND_URL}/llms.txt`;
+    console.log(`Fetching llms.txt from backend: ${fullUrl}`);
+    const llmsContent = await fetchText(fullUrl);
     
     // Write to public directory
     const outputPath = resolve(__dirname, '../public/llms.txt');
