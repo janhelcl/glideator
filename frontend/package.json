@@ -32,7 +32,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "SITEMAP_BASE_URL=https://parra-glideator.com SITEMAP_API_URL=https://parra-glideator.com/api node scripts/generate-sitemap.mjs && react-scripts build",
+    "build": "SITEMAP_BASE_URL=https://parra-glideator.com SITEMAP_API_URL=https://parra-glideator.com/api node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "sitemap": "node scripts/generate-sitemap.mjs"
