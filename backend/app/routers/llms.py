@@ -158,10 +158,11 @@ def format_spots(spots: List) -> str:
     return "\n".join(lines)
 
 
-@router.get("/llms.txt")
+@router.get("/llms.txt", response_class=Response)
 async def get_main_llms_txt(db: AsyncSession = Depends(get_db)):
     """
     Main llms.txt file with overview and directory of all sites.
+    Explicitly allows AI/bot access with permissive headers.
     """
     # Static content embedded directly
     static_content = """# Parra-Glideator
@@ -221,13 +222,23 @@ To connect your AI assistant, use the MCP server at: `https://www.parra-glideato
     # Combine everything
     content = static_content + "\n".join(site_directory)
     
-    return Response(content=content, media_type="text/plain; charset=utf-8")
+    # Return with headers that explicitly allow AI/bot access
+    return Response(
+        content=content, 
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=300",  # Cache for 5 minutes
+            "X-Robots-Tag": "all",  # Explicitly allow bots
+            "Access-Control-Allow-Origin": "*",  # Allow cross-origin requests
+        }
+    )
 
 
-@router.get("/llms/sites/{site_id}.txt")
+@router.get("/llms/sites/{site_id}.txt", response_class=Response)
 async def get_site_llms_txt(site_id: int, db: AsyncSession = Depends(get_db)):
     """
     Detailed information about a specific paragliding site in LLM-friendly format.
+    Explicitly allows AI/bot access with permissive headers.
     """
     # Fetch site basic info
     site = await crud.get_site(db, site_id)
@@ -302,5 +313,15 @@ async def get_site_llms_txt(site_id: int, db: AsyncSession = Depends(get_db)):
     
     content = "\n".join(lines)
     
-    return Response(content=content, media_type="text/plain; charset=utf-8")
+    # Return with headers that explicitly allow AI/bot access
+    return Response(
+        content=content, 
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "public, max-age=300",  # Cache for 5 minutes (forecasts update every few hours)
+            "X-Robots-Tag": "all",  # Explicitly allow bots
+            "Access-Control-Allow-Origin": "*",  # Allow cross-origin requests
+            "Content-Disposition": "inline",  # Ensure browsers display, not download
+        }
+    )
 
