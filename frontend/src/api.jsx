@@ -7,10 +7,23 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+const ACCESS_TOKEN_KEY = 'access_token';
+
 let accessToken = null;
+
+// Initialize access token from localStorage on module load
+const storedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+if (storedToken) {
+  accessToken = storedToken;
+}
 
 export const setAccessToken = (token) => {
   accessToken = token;
+  if (token) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
 };
 
 export const getAccessToken = () => {
