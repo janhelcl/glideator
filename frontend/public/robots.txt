@@ -1,5 +1,9 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
+# Allow AI assistants and bots to access LLM-friendly content
+Allow: /llms.txt
+Allow: /api/llms/
+# Disallow other API endpoints
 Disallow: /api/
 Disallow: /mcp
 Allow: /

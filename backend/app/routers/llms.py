@@ -213,11 +213,11 @@ To connect your AI assistant, use the MCP server at: `https://www.parra-glideato
     site_directory = ["\n\n## Site Directory\n"]
     site_directory.append("All paragliding sites with detailed information, current forecasts, and seasonal statistics:\n")
     
-    # Use absolute URLs to backend to bypass frontend routing issues
+    # Use /api/ path which proxies through frontend domain (avoids bot blocking)
     for site in sites:
         site_id = site[0]  # site_id
         site_name = site[1]  # name
-        site_directory.append(f"- [{site_name}](https://glideator-web.onrender.com/llms/sites/{site_id}.txt)")
+        site_directory.append(f"- [{site_name}](/api/llms/sites/{site_id}.txt)")
     
     # Combine everything
     content = static_content + "\n".join(site_directory)
