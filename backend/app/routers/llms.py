@@ -163,19 +163,47 @@ async def get_main_llms_txt(db: AsyncSession = Depends(get_db)):
     """
     Main llms.txt file with overview and directory of all sites.
     """
-    # Read the static content from frontend/public/llms.txt
-    static_file_path = os.path.join(
-        os.path.dirname(__file__), 
-        '..', '..', '..', 
-        'frontend', 'public', 'llms.txt'
-    )
-    
-    try:
-        with open(static_file_path, 'r', encoding='utf-8') as f:
-            static_content = f.read()
-    except FileNotFoundError:
-        # Fallback if file not found
-        static_content = "# Parra-Glideator\n\nAI-powered paragliding site recommendations.\n"
+    # Static content embedded directly
+    static_content = """# Parra-Glideator
+
+> Parra-Glideator is your AI-powered paragliding companion that helps pilots find the perfect place and time to fly. Using machine learning and weather forecasting, it recommends optimal flying spots and conditions based on current weather forecast and historical flight patterns from 250 most popular paragliding sites in Europe.
+
+Parra-Glideator combines advanced weather prediction with pilot-friendly tools to make paragliding safer, smarter, and more enjoyable. Whether you're planning your next flight or exploring new sites, our AI-powered recommendations help you make informed decisions about when and where to fly.
+
+## Main Features
+
+- **Interactive Map**: Browse 250 paragliding european sites with detailed information, takeoff/landing coordinates, facilities, and local conditions
+- **Site Details**: Get comprehensive information about each flying site including wind directions, best flying seasons, difficulty levels, and safety considerations  
+- **Trip Planning**: Plan multi-day paragliding trips with personalized recommendations based on your dates, skill level, and weather preferences
+- **Weather Forecasting**: Access 7-day flying forecasts powered by machine learning models that analyze NOAA weather data and historical flight patterns
+
+## How to Use Parra-Glideator
+
+- **Explore the Map**: Visit the main map to discover paragliding sites near you or in your destination area. Click on any site marker to see detailed information, photos, and current conditions
+- **Check Site Details**: Each site page provides everything you need to know - wind directions, seasonal patterns, difficulty ratings, nearby amenities, and safety information
+- **Plan Your Trip**: Use the trip planner to find the best sites for your travel dates. Filter by skill level, preferred weather conditions, and site amenities to create your perfect paragliding adventure
+- **Get Weather Forecasts**: View detailed flying forecasts that combine meteorological data with machine learning predictions to tell you the likelihood of good flying conditions
+
+## AI-Powered Forecasting
+
+Our forecasting system analyzes real-time weather data from NOAA's Global Forecast System combined with historical flight data from thousands of pilots. The machine learning models learn from actual flight patterns to predict not just what the weather will be, but whether conditions will be suitable for paragliding at each specific site.
+
+The forecast considers factors like:
+- Wind speed and direction at different altitudes
+- Thermal activity and lift potential  
+- Weather stability and safety conditions
+- Historical success rates for similar conditions
+
+## Connect Your AI Assistant
+
+Parra-Glideator provides a Model Context Protocol (MCP) server that allows you to connect AI assistants like Claude or ChatGPT to access paragliding data. Your AI assistant can help you:
+- Find suitable flying sites based on your criteria
+- Check weather forecasts and flying conditions
+- Plan paragliding trips and itineraries
+- Get detailed site information and safety advice
+
+To connect your AI assistant, use the MCP server at: `https://www.parra-glideator.com/mcp`
+"""
     
     # Fetch all sites
     sites = await crud.get_site_list(db)
