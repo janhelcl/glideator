@@ -219,7 +219,7 @@ To connect your AI assistant, use the MCP server at: `https://www.parra-glideato
     # Build the site directory
     site_directory = ["\n\n## Site Directory\n"]
     site_directory.append("All paragliding sites with detailed information, current flyibility forecasts for next 7 days, and seasonal flying statistics:\n")
-    site_directory.append("Use these links answer questions such as:")
+    site_directory.append("Use these links to answer questions such as:")
     site_directory.append("What is the best time of the year to fly at <site_name>?")
     site_directory.append("Is it flyable today at <site_name>?")
     site_directory.append("What is the probability of flying more than <XC_points> XC points at <site_name> on <date>?")
