@@ -223,7 +223,7 @@ To connect your AI assistant, use the MCP server at: `https://www.parra-glideato
     site_directory.append("What is the best time of the year to fly at <site_name>?")
     site_directory.append("Is it flyable today at <site_name>?")
     site_directory.append("What is the probability of flying more than <XC_points> XC points at <site_name> on <date>?")
-    site_directory.append("What is a better place to fly on <date> <site_name_1> or <site_name_2>?")
+    site_directory.append("What is a better place to fly on <date> <site_name_1> or <site_name_2>?\n")
     
     # Use /api/ path which proxies through frontend domain (avoids bot blocking)
     for site in sites:
