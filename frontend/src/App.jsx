@@ -10,41 +10,53 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Favorites from './pages/Favorites';
+import Notifications from './pages/Notifications';
 import RequireAuth from './components/RequireAuth';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/declined" element={<Declined />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="trip-planner" element={<TripPlannerPage />} />
-            <Route path="details/:siteId" element={<Details />} />
-            <Route
-              path="profile"
-              element={(
-                <RequireAuth>
-                  <Profile />
-                </RequireAuth>
-              )}
-            />
-            <Route
-              path="favorites"
-              element={(
-                <RequireAuth>
-                  <Favorites />
-                </RequireAuth>
-              )}
-            />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/declined" element={<Declined />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="trip-planner" element={<TripPlannerPage />} />
+              <Route path="details/:siteId" element={<Details />} />
+              <Route
+                path="profile"
+                element={(
+                  <RequireAuth>
+                    <Profile />
+                  </RequireAuth>
+                )}
+              />
+              <Route
+                path="favorites"
+                element={(
+                  <RequireAuth>
+                    <Favorites />
+                  </RequireAuth>
+                )}
+              />
+              <Route
+                path="notifications"
+                element={(
+                  <RequireAuth>
+                    <Notifications />
+                  </RequireAuth>
+                )}
+              />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };

@@ -66,13 +66,14 @@ async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession =
     access = create_access_token(subject=str(db_user.user_id), expires_minutes=get_access_token_exp_minutes())
     refresh_days = get_refresh_token_exp_days()
     refresh = create_refresh_token(subject=str(db_user.user_id), expires_days=refresh_days)
+    cookie_path = os.getenv("JWT_REFRESH_COOKIE_PATH", "/auth")
     response.set_cookie(
         key="refresh_token",
         value=refresh,
         httponly=True,
         samesite="lax",  # Using Lax since frontend proxies requests (same-origin)
         secure=is_cookie_secure(),
-        path="/api/auth",  # Match the proxy path
+        path=cookie_path,
         max_age=refresh_days * 24 * 60 * 60,  # Convert days to seconds for cookie persistence
     )
     return schemas.TokenOut(access_token=access)
@@ -116,9 +117,10 @@ async def refresh(request: Request):
 
 @router.post("/logout")
 async def logout(response: Response):
+    cookie_path = os.getenv("JWT_REFRESH_COOKIE_PATH", "/auth")
     response.delete_cookie(
         key="refresh_token",
-        path="/api/auth",
+        path=cookie_path,
         samesite="lax",
         secure=is_cookie_secure(),
     )

@@ -56,6 +56,19 @@ In the project directory, you can run:
 *   `npm run build`: Builds the app for production to the `build` folder.
 *   `npm run eject`: **(Use with caution!)** Removes the single build dependency and copies configuration files (webpack, Babel, ESLint, etc.) into your project for full control. This is a one-way operation.
 
+## Push Notifications
+
+The frontend now supports browser push notifications for forecast alerts. To enable them:
+
+1. Generate a VAPID key pair (for example with `npx web-push generate-vapid-keys`) and expose the public key to the app by setting `REACT_APP_VAPID_PUBLIC_KEY` in your environment (or `.env` file).
+2. Serve the frontend over HTTPS (or `http://localhost` during development). Browsers require a secure origin to register push service workers.
+3. Ensure the backend exposes the notification endpoints and the matching VAPID private key.
+
+The service worker that handles push messages lives at `public/push-sw.js`, and the registration happens automatically once an authenticated user visits the app. Users can manage devices and notification rules on the new **Notifications** page (`/notifications`) or from the Notifications panel on their profile.
+
+> **Docker Compose (dev)**  
+> `docker-compose.dev.yml` ships with a valid sample `REACT_APP_VAPID_PUBLIC_KEY`, so push registration works out-of-the-box in development. Override it by exporting `REACT_APP_VAPID_PUBLIC_KEY` before starting the stack if you want to test with your own key pair. Remember to set the matching private key on the backend (`VAPID_PRIVATE_KEY`) so outgoing pushes succeed.
+
 ## Project Structure
 
 The frontend codebase is organized as follows:

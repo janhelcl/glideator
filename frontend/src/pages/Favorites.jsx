@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, Paper, Alert, Snackbar, Button } from '@mui/material';
+import { Box, Typography, IconButton, Paper, Alert, Snackbar, Button, Tooltip } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
 import { fetchSites } from '../api';
 import SiteList from '../components/SiteList';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
 
 const METRIC = 'XC0';
 
@@ -50,6 +52,7 @@ const transformSite = (site) => {
 
 const Favorites = () => {
   const { favorites, toggleFavoriteSite } = useAuth();
+  const navigate = useNavigate();
   const [allSites, setAllSites] = useState([]);
   const [favoriteSites, setFavoriteSites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +93,17 @@ const Favorites = () => {
 
     setFavoriteSites(transformed);
   }, [allSites, favorites]);
+
+  const handleCreateNotification = (site) => {
+    navigate('/notifications', {
+      state: {
+        notificationSetup: {
+          siteId: Number(site.site_id),
+          metric: METRIC,
+        },
+      },
+    });
+  };
 
   const handleRemoveFavorite = async (site) => {
     const siteId = Number(site.site_id);
@@ -202,6 +216,18 @@ const Favorites = () => {
               showRanking={false}
               renderSiteActions={(site, { defaultAction }) => (
                 <>
+                  <Tooltip title="Create notification">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreateNotification(site);
+                      }}
+                    >
+                      <NotificationsActiveIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <IconButton
                     size="small"
                     onClick={(e) => {
@@ -239,4 +265,3 @@ const Favorites = () => {
 };
 
 export default Favorites;
-

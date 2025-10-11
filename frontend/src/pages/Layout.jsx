@@ -134,6 +134,9 @@ const Layout = () => {
             <ListItemButton onClick={() => handleMobileMenuClick('/favorites')}>
               <ListItemText primary="Favorites" />
             </ListItemButton>
+            <ListItemButton onClick={() => handleMobileMenuClick('/notifications')}>
+              <ListItemText primary="Notifications" />
+            </ListItemButton>
             <ListItemButton onClick={() => handleMobileMenuClick('/profile')}>
               <ListItemText primary="Profile" />
             </ListItemButton>
@@ -252,6 +255,13 @@ const Layout = () => {
                   >
                     Favorites
                   </Button>
+                  <Button
+                    component={RouterLink}
+                    to="/notifications"
+                    sx={{ color: 'white', mr: 1 }}
+                  >
+                    Notifications
+                  </Button>
                   <IconButton color="inherit" onClick={handleMenuOpen} size="large">
                     <AccountCircle />
                   </IconButton>
@@ -263,6 +273,9 @@ const Layout = () => {
                   <MenuItem disabled>{displayLabel}</MenuItem>
                     <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                       Profile
+                    </MenuItem>
+                    <MenuItem component={RouterLink} to="/notifications" onClick={handleMenuClose}>
+                      Notifications
                     </MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </Menu>
@@ -305,6 +318,9 @@ const Layout = () => {
               <MenuItem disabled>{displayLabel}</MenuItem>
               <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                 Profile
+              </MenuItem>
+              <MenuItem component={RouterLink} to="/notifications" onClick={handleMenuClose}>
+                Notifications
               </MenuItem>
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </Menu>

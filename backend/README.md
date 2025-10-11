@@ -99,6 +99,20 @@ CELERY_RESULT_BACKEND=rpc:// # Or configure a persistent backend like Redis or D
 This project uses Celery (`app.celery_app`) for background tasks, with RabbitMQ as the message broker.
 - The `docker-compose.dev.yml` runs a combined worker and beat service.
 - The `celerybeat-schedule` file likely stores the periodic task schedule database (managed by Celery Beat).
+- Forecast processing triggers notification evaluation once new predictions are stored.
+- A dedicated `dispatch_notifications` task runs every 30 minutes to queue push notifications for users with matching rules.
+
+## Notifications and Push Subscriptions
+
+The backend exposes authenticated endpoints under `/users/me` for managing notification rules and Web Push subscriptions.
+
+- `POST /users/me/notifications` creates a site-specific rule with metric, comparison operator, threshold, and optional lead time.
+- `PATCH /users/me/notifications/{notification_id}` updates thresholds, comparison, lead time, or active status.
+- `GET /users/me/notifications/{notification_id}/events` retrieves the most recent push payloads queued for that rule.
+- `POST /users/me/push-subscriptions` registers or refreshes a Web Push endpoint (upsert on the endpoint URL).
+- `DELETE /users/me/push-subscriptions/{subscription_id}` deactivates a subscription without removing its history.
+
+When Celery processes new forecasts, or the scheduled `dispatch_notifications` task runs, matching rules generate notification events stored in the `notification_events` table with a `queued` delivery status. Downstream services can consume these events to deliver push notifications to client devices.
 
 ## API Documentation
 
