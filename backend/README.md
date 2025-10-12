@@ -112,7 +112,19 @@ The backend exposes authenticated endpoints under `/users/me` for managing notif
 - `POST /users/me/push-subscriptions` registers or refreshes a Web Push endpoint (upsert on the endpoint URL).
 - `DELETE /users/me/push-subscriptions/{subscription_id}` deactivates a subscription without removing its history.
 
-When Celery processes new forecasts, or the scheduled `dispatch_notifications` task runs, matching rules generate notification events stored in the `notification_events` table with a `queued` delivery status. Downstream services can consume these events to deliver push notifications to client devices.
+When Celery processes new forecasts, or the scheduled `dispatch_notifications` task runs, matching rules generate notification events stored in the `notification_events` table. The worker immediately attempts Web Push delivery (using the VAPID keys described below), updating `delivery_status` to `sent`, `failed`, `config_missing`, or `skipped` based on the outcome.
+
+### Push Delivery Configuration
+
+To enable outbound Web Push delivery, set the following environment variables (typically on the Celery worker):
+
+```plaintext
+VAPID_PUBLIC_KEY=<your-public-key>
+VAPID_PRIVATE_KEY=<your-private-key>
+VAPID_SUBJECT=mailto:ops@example.com  # Optional, defaults to mailto:admin@example.com
+```
+
+If the keys are omitted, notifications are still logged but marked with `delivery_status=config_missing`.
 
 ## API Documentation
 

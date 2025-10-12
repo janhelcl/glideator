@@ -31,3 +31,4 @@ pandas==2.2.3
 python-jose[cryptography]==3.3.0
 argon2-cffi==23.1.0
 passlib[bcrypt]==1.7.4
+pywebpush==1.14.0

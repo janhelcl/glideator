@@ -189,9 +189,12 @@ def cleanup_old_data():
 async def _dispatch_notifications_async():
     async with AsyncSessionLocal() as db:
         try:
+            logger.info("Running scheduled notification evaluation...")
             events = await evaluate_and_queue_notifications(db)
             if events:
                 logger.info("Queued %s notification events via scheduled task", len(events))
+            else:
+                logger.info("Scheduled notification evaluation complete: no events generated")
         except Exception as exc:
             logger.error("Failed to evaluate notifications: %s", exc, exc_info=True)
 

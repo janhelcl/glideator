@@ -109,6 +109,7 @@ async def test_notifications_crud_and_event_flow():
     async with AsyncSessionLocal() as db:
         events = await evaluate_and_queue_notifications(db)
         assert events
+        assert any(evt.delivery_status in {"config_missing", "skipped", "sent"} for evt in events)
 
     # Fetch events via API
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
@@ -121,6 +122,10 @@ async def test_notifications_crud_and_event_flow():
         events_payload = events_resp.json()
         assert len(events_payload) >= 1
         assert events_payload[0]["payload"]["value"] >= 60.0
+        assert any(
+            evt["delivery_status"] in ["config_missing", "sent", "skipped", "failed", "missing_subscription"]
+            for evt in events_payload
+        )
 
         # Deactivate push subscription
         del_resp = await ac.delete(f"/users/me/push-subscriptions/{subscription_id}", headers=headers)
