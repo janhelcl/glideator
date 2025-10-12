@@ -60,7 +60,6 @@ async def send_web_push(
                 subscription_info=subscription_info,
                 data=data,
                 vapid_private_key=vapid_config.private_key,
-                vapid_public_key=vapid_config.public_key,
                 vapid_claims={"sub": vapid_config.subject},
             )
         except WebPushException as exc:
