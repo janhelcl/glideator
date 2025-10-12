@@ -27,6 +27,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { Helmet } from 'react-helmet-async';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
@@ -56,9 +57,10 @@ function TabPanel(props) {
 }
 
 const Details = () => {
-  const { siteId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+const { siteId } = useParams();
+const [searchParams, setSearchParams] = useSearchParams();
+const navigate = useNavigate();
+const numericSiteId = Number(siteId);
   
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
@@ -524,7 +526,8 @@ const Details = () => {
     );
   };
 
-  const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
+const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
+const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
 
   return (
     <Box sx={{ 
@@ -602,17 +605,43 @@ const Details = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               {/* Title with favorite */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {isAuthenticated && (
-                  <Tooltip title={isFavorite(Number(siteId)) ? 'Remove from favorites' : 'Add to favorites'}>
+                <Tooltip
+                  title={isAuthenticated ? (favoriteActive ? 'Remove from favorites' : 'Add to favorites') : 'Log in to manage favorites'}
+                >
+                  <span>
                     <IconButton
-                      color={isFavorite(Number(siteId)) ? 'error' : 'default'}
-                      onClick={() => toggleFavoriteSite(Number(siteId))}
+                      color={favoriteActive ? 'error' : 'default'}
+                      onClick={() => toggleFavoriteSite(numericSiteId)}
                       size="large"
+                      disabled={!isAuthenticated}
                     >
-                      {isFavorite(Number(siteId)) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                      {favoriteActive ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                     </IconButton>
-                  </Tooltip>
-                )}
+                  </span>
+                </Tooltip>
+                <Tooltip
+                  title={isAuthenticated ? 'Create notification' : 'Log in to create notifications'}
+                >
+                  <span>
+                    <IconButton
+                      color="primary"
+                      size="large"
+                      disabled={!isAuthenticated}
+                      onClick={() =>
+                        navigate('/notifications', {
+                          state: {
+                            notificationSetup: {
+                              siteId: numericSiteId,
+                              metric: selectedMetric,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      <NotificationsActiveIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
                 <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0 }}>
                   {siteData[0]?.name || 'Site Details'}
                 </Typography>

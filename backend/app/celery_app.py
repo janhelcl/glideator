@@ -8,6 +8,7 @@ from celery import Celery, chain
 from .database import AsyncSessionLocal
 from .crud import get_latest_gfs_forecast
 from .services.forecast import process_forecasts, fetch_sites
+from .services.notifications import evaluate_and_queue_notifications
 from .models import Prediction, Forecast
 import gfs.utils
 import gfs.fetch
@@ -40,6 +41,10 @@ celery.conf.beat_schedule = {
     'cleanup-old-data-daily': {
         'task': 'app.celery_app.cleanup_old_data',
         'schedule': crontab(hour=2, minute=0),  # Every day at 2 AM
+    },
+    'evaluate-notifications-hourly': {
+        'task': 'app.celery_app.dispatch_notifications',
+        'schedule': 1800.0,  # Every 30 minutes
     },
 }
 celery.conf.timezone = 'UTC'
@@ -133,7 +138,14 @@ async def _process_forecasts_async(forecasts):
     Async version of process forecasts.
     """
     async with AsyncSessionLocal() as db:
-        return await process_forecasts(db, forecasts)
+        result = await process_forecasts(db, forecasts)
+        try:
+            events = await evaluate_and_queue_notifications(db)
+            if events:
+                logger.info("Queued %s notification events after forecast processing", len(events))
+        except Exception as exc:
+            logger.error("Failed to evaluate notifications after forecasts: %s", exc, exc_info=True)
+        return result
 
 
 async def _cleanup_old_data_async():
@@ -172,6 +184,25 @@ def cleanup_old_data():
     Deletes all predictions and forecasts older than today.
     """
     return run_async(_cleanup_old_data_async())
+
+
+async def _dispatch_notifications_async():
+    async with AsyncSessionLocal() as db:
+        try:
+            logger.info("Running scheduled notification evaluation...")
+            events = await evaluate_and_queue_notifications(db)
+            if events:
+                logger.info("Queued %s notification events via scheduled task", len(events))
+            else:
+                logger.info("Scheduled notification evaluation complete: no events generated")
+        except Exception as exc:
+            logger.error("Failed to evaluate notifications: %s", exc, exc_info=True)
+
+
+@celery.task
+def dispatch_notifications():
+    return run_async(_dispatch_notifications_async())
+
 
 @celery.task(name="app.celery_app.simple_test_task")
 def simple_test_task(message: str):

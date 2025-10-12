@@ -233,4 +233,48 @@ export const removeFavorite = async (siteId) => {
   await apiClient.delete(`/users/me/favorites/${siteId}`);
 };
 
+// --- Push subscriptions ---
+
+export const fetchPushSubscriptions = async () => {
+  const response = await apiClient.get('/users/me/push-subscriptions');
+  return response.data;
+};
+
+export const registerPushSubscriptionApi = async (payload) => {
+  const response = await apiClient.post('/users/me/push-subscriptions', payload);
+  return response.data;
+};
+
+export const deactivatePushSubscriptionApi = async (subscriptionId) => {
+  await apiClient.delete(`/users/me/push-subscriptions/${subscriptionId}`);
+};
+
+// --- Notification rules ---
+
+export const fetchNotifications = async () => {
+  const response = await apiClient.get('/users/me/notifications');
+  return response.data;
+};
+
+export const createNotification = async (payload) => {
+  const response = await apiClient.post('/users/me/notifications', payload);
+  return response.data;
+};
+
+export const updateNotification = async (notificationId, payload) => {
+  const response = await apiClient.patch(`/users/me/notifications/${notificationId}`, payload);
+  return response.data;
+};
+
+export const deleteNotification = async (notificationId) => {
+  await apiClient.delete(`/users/me/notifications/${notificationId}`);
+};
+
+export const fetchNotificationEvents = async (notificationId, limit = 20) => {
+  const response = await apiClient.get(`/users/me/notifications/${notificationId}/events`, {
+    params: { limit },
+  });
+  return response.data;
+};
+
 export default apiClient;
