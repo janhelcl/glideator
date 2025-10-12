@@ -49,19 +49,16 @@ async def evaluate_and_queue_notifications(
     now: Optional[datetime] = None,
 ) -> List[models.NotificationEvent]:
     now = ensure_aware(now or datetime.now(timezone.utc))
-    logger.info("Starting notification evaluation at %s", now.isoformat())
-
+    
     result = await db.execute(
         select(models.UserNotification).where(models.UserNotification.active.is_(True))
     )
     notifications: List[models.UserNotification] = result.scalars().all()
 
     if not notifications:
-        logger.info("No active notification rules found")
-        return []
+                return []
 
-    logger.info("Found %d active notification rules", len(notifications))
-    for n in notifications:
+        for n in notifications:
         logger.debug(
             "  Rule %d: User %d, Site %d, %s %s %.1f%%, lead_time=%dh, last_triggered=%s",
             n.notification_id, n.user_id, n.site_id, n.metric, n.comparison,
@@ -77,11 +74,7 @@ async def evaluate_and_queue_notifications(
     day_window = max(0, math.ceil(max_lead_hours / 24))
     end_date = start_date + timedelta(days=day_window)
 
-    logger.info(
-        "Querying predictions: sites=%s, metrics=%s, dates=%s to %s",
-        sorted(site_ids), sorted(metrics), start_date, end_date
-    )
-
+    
     predictions_result = await db.execute(
         select(models.Prediction).where(
             models.Prediction.site_id.in_(site_ids),
@@ -92,11 +85,9 @@ async def evaluate_and_queue_notifications(
     )
     predictions = predictions_result.scalars().all()
     if not predictions:
-        logger.info("No matching predictions found for date range and sites")
-        return []
+                return []
 
-    logger.info("Found %d predictions matching criteria", len(predictions))
-    for pred in predictions[:5]:  # Log first 5
+        for pred in predictions[:5]:  # Log first 5
         logger.debug(
             "  Prediction: Site %d, %s, %s=%.1f%%, computed_at=%s",
             pred.site_id, pred.date, pred.metric, pred.value * 100, pred.computed_at
@@ -125,8 +116,7 @@ async def evaluate_and_queue_notifications(
         subscriptions_by_user[sub.user_id].append(sub)
 
     total_subs = sum(len(subs) for subs in subscriptions_by_user.values())
-    logger.info("Found %d active push subscriptions for %d users", total_subs, len(subscriptions_by_user))
-
+    
     triggers: List[NotificationTrigger] = []
 
     for notification in notifications:
@@ -144,25 +134,14 @@ async def evaluate_and_queue_notifications(
         triggered_this_rule = False
         for pred in preds:
             if pred.date < start_date:
-                logger.info(
-                    "Rule %d: Prediction date %s is before start_date %s",
-                    notification.notification_id, pred.date, start_date
-                )
-                continue
+                                continue
             if notification.lead_time_hours > 0 and pred.date > window_end.date():
-                logger.info(
-                    "Rule %d: Prediction date %s is beyond lead time window (ends %s)",
-                    notification.notification_id, pred.date, window_end.date()
-                )
+                                )
                 continue
 
             computed_at = ensure_aware(pred.computed_at)
             if last_triggered and computed_at and last_triggered >= computed_at:
-                logger.info(
-                    "Rule %d: Already triggered at %s for prediction computed at %s",
-                    notification.notification_id, last_triggered, computed_at
-                )
-                continue
+                                continue
 
             comparator = COMPARISON_OPERATORS.get(notification.comparison)
             if not comparator:
@@ -177,13 +156,7 @@ async def evaluate_and_queue_notifications(
             normalized_threshold = notification.threshold / 100.0
             
             if comparator(pred.value, normalized_threshold):
-                logger.info(
-                    "✓ Rule %d TRIGGERED: Site %d, %s=%.1f%% %s %.1f%% on %s",
-                    notification.notification_id, notification.site_id,
-                    notification.metric, pred.value * 100, notification.comparison,
-                    notification.threshold, pred.date
-                )
-                payload = {
+                                payload = {
                     "notification_id": notification.notification_id,
                     "site_id": notification.site_id,
                     "site_name": site_names.get(notification.site_id),
@@ -203,31 +176,20 @@ async def evaluate_and_queue_notifications(
                 triggered_this_rule = True
                 break
             else:
-                logger.info(
-                    "Rule %d: Threshold not met: %.1f%% %s %.1f%% = False",
-                    notification.notification_id, pred.value * 100,
-                    notification.comparison, notification.threshold
-                )
-        
+                        
         if not triggered_this_rule and preds:
             logger.debug("Rule %d: No predictions met the criteria", notification.notification_id)
 
     if not triggers:
-        logger.info("No notification rules triggered")
-        return []
+                return []
     
-    logger.info("Generated %d triggers", len(triggers))
-
+    
     events: List[models.NotificationEvent] = []
     for trigger in triggers:
         notification = trigger.notification
         subscriptions = subscriptions_by_user.get(notification.user_id, [])
         if not subscriptions:
-            logger.info(
-                "Creating event for rule %d (no subscriptions, will be skipped)",
-                notification.notification_id
-            )
-            event = models.NotificationEvent(
+                        event = models.NotificationEvent(
                 notification_id=notification.notification_id,
                 subscription_id=None,
                 payload=trigger.payload,
@@ -237,11 +199,7 @@ async def evaluate_and_queue_notifications(
             await db.flush()
             events.append(event)
         else:
-            logger.info(
-                "Creating %d event(s) for rule %d (user %d has %d subscription(s))",
-                len(subscriptions), notification.notification_id,
-                notification.user_id, len(subscriptions)
-            )
+                        )
             for subscription in subscriptions:
                 subscription.last_used_at = now
                 event = models.NotificationEvent(
@@ -260,13 +218,11 @@ async def evaluate_and_queue_notifications(
     for event in events:
         await db.refresh(event)
 
-    logger.info("Created %d notification event(s), attempting delivery...", len(events))
-
+    
     vapid_config: Optional[VapidConfig] = None
     try:
         vapid_config = get_vapid_configuration()
-        logger.info("VAPID configuration loaded successfully")
-    except PushConfigError as exc:
+            except PushConfigError as exc:
         logger.warning("Push delivery disabled: %s", exc)
 
     delivery_stats = {"sent": 0, "failed": 0, "skipped": 0, "config_missing": 0, "missing_subscription": 0}
@@ -291,14 +247,20 @@ async def evaluate_and_queue_notifications(
                 delivery_stats["missing_subscription"] += 1
                 logger.warning("Event %d: Subscription %d not found", event.event_id, event.subscription_id)
                 continue
-            await send_web_push(event.subscription, event.payload, vapid_config)
+            await send_web_push(
+                event.subscription,
+                {
+                    "title": _build_notification_title(
+                        event.payload.get("site_name") or "Glideator"
+                    ),
+                    "body": _build_notification_body(event.payload),
+                    "data": event.payload,
+                },
+                vapid_config,
+            )
             event.delivery_status = "sent"
             delivery_stats["sent"] += 1
-            logger.info(
-                "Event %d: Push sent successfully to subscription %d",
-                event.event_id, event.subscription_id
-            )
-        except PushDeliveryError as exc:
+                    except PushDeliveryError as exc:
             logger.warning(
                 "Failed to deliver push (event_id=%s, subscription_id=%s): %s",
                 event.event_id, event.subscription_id, exc,
@@ -318,8 +280,4 @@ async def evaluate_and_queue_notifications(
     for event in events:
         await db.refresh(event)
     
-    logger.info(
-        "Notification evaluation complete: %d events created, delivery status: %s",
-        len(events), delivery_stats
-    )
-    return events
+        return events
