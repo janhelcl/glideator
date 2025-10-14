@@ -130,34 +130,10 @@ async def create_prediction(db: AsyncSession, prediction: schemas.PredictionCrea
 
 async def get_latest_gfs_forecast(db: AsyncSession) -> Optional[datetime]:
     """
-    Retrieves the latest COMPLETE gfs_forecast_at timestamp from forecasts.
-    
-    A forecast is considered complete only if we have data for all 7 expected days.
-    This ensures that if processing crashes mid-way, we will retry on the next check.
-    
-    Returns:
-        The gfs_forecast_at timestamp if all 7 days are complete, None otherwise
+    Retrieves the latest gfs_forecast_at timestamp from predictions.
     """
-    # Get the most recent gfs_forecast_at
-    result = await db.execute(select(func.max(models.Forecast.gfs_forecast_at)))
-    latest_gfs_forecast = result.scalar_one_or_none()
-    
-    if latest_gfs_forecast is None:
-        return None
-    
-    # Count how many distinct dates we have for this gfs_forecast_at
-    result = await db.execute(
-        select(func.count(func.distinct(models.Forecast.date)))
-        .where(models.Forecast.gfs_forecast_at == latest_gfs_forecast)
-    )
-    date_count = result.scalar_one()
-    
-    # We expect 7 days of forecasts. If we don't have all 7, return None
-    # so the system will reprocess from scratch
-    if date_count < 7:
-        return None
-    
-    return latest_gfs_forecast
+    result = await db.execute(select(func.max(models.Prediction.gfs_forecast_at)))
+    return result.scalar_one_or_none()
 
 async def create_forecast(db: AsyncSession, forecast: schemas.ForecastCreate):
     db_forecast = models.Forecast(**forecast.dict())

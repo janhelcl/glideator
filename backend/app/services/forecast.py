@@ -20,23 +20,6 @@ from gfs.constants import HPA_LVLS
 logger = logging.getLogger(__name__)
 
 
-# Global model cache to avoid reloading on every prediction
-_MODEL_CACHE = None
-
-
-def get_model():
-    """
-    Get the PyTorch model, loading it once and caching for subsequent calls.
-    This prevents memory spikes from repeatedly loading the ~400MB model.
-    """
-    global _MODEL_CACHE
-    if _MODEL_CACHE is None:
-        logger.info(f"Loading PyTorch model from {MODEL_PATH}...")
-        _MODEL_CACHE = torch.load(MODEL_PATH, map_location='cpu')
-        logger.info("Model loaded successfully and cached in memory")
-    return _MODEL_CACHE
-
-
 EXPECTED_COLUMNS = [
     *gfs.fetch.get_col_order(),
     'date',
@@ -135,7 +118,7 @@ async def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_foreca
     full_data = preprocessing.add_date_features(joined_forecasts.join(sites), date_col='ref_time')
     # score
     predictions = net.io.score(
-        net=get_model(),
+        net=torch.load(MODEL_PATH),
         full_df=full_data, 
         weather_features=WEATHER_FEATURES, 
         site_features=SITE_FEATURES, 
