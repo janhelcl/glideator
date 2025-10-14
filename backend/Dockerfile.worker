@@ -12,6 +12,6 @@ RUN pip install --upgrade pip \
 
 COPY . .
 
-CMD ["celery", "-A", "app.celery_app", "worker", "-B", "--loglevel=info"]
+CMD ["celery", "-A", "app.celery_app", "worker", "-B", "--pool=solo", "--concurrency=1", "--loglevel=info"]
 
 
