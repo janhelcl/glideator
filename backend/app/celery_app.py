@@ -29,9 +29,6 @@ celery = Celery('app',
 # Optional: Celery configuration
 celery.conf.update(
     timezone='UTC',
-    task_acks_late=True,
-    worker_prefetch_multiplier=1,
-    broker_pool_limit=1,
     task_annotations={
         'app.tasks.generate_predictions': {'rate_limit': '10/m'}
     },
@@ -74,45 +71,33 @@ def run_async(coro):
 async def _check_and_trigger_forecast_processing_async():
     """
     Async version of forecast processing check.
-    Checks if new GFS data is available and if previous processing completed successfully.
     """
     async with AsyncSessionLocal() as db:
         try:
             last_gfs_forecast = await get_latest_gfs_forecast(db)
             date, run = gfs.utils.find_latest_forecast_parameters()
             latest_available_gfs_forecast = datetime(year=date.year, month=date.month, day=date.day, hour=run)
-            
-            if last_gfs_forecast is None:
-                logger.info(f"No previous complete forecast found. Processing GFS run: {latest_available_gfs_forecast}")
-            elif latest_available_gfs_forecast > last_gfs_forecast:
-                logger.info(f"New GFS data available. Last complete: {last_gfs_forecast}, New: {latest_available_gfs_forecast}")
+            if last_gfs_forecast is None or latest_available_gfs_forecast > last_gfs_forecast:
+                logger.info("New data available. Triggering forecast processing.")
+                # find deltas
+                delta = gfs.utils.find_delta(run, 9)
+                delta_9s = [delta + 24 * i for i in range(7)]
+                all_deltas = [[delta_9, delta_9 + 3, delta_9 + 6] for delta_9 in delta_9s]
+                # fetch sites and prepare coordinates
+                points = await fetch_sites(db)
+                points = points.drop_duplicates(subset=['lat_gfs', 'lon_gfs'])
+                lat_gfs = points['lat_gfs'].values.tolist()
+                lon_gfs = points['lon_gfs'].values.tolist()
+                # fetch forecasts
+                tasks = []
+                for deltas in all_deltas:
+                    task = fetch_forecast_for_day_task.si(date, run, deltas, lat_gfs, lon_gfs)
+                    tasks.append(task)
+                    if deltas != all_deltas[-1]:  # Don't sleep after the last task
+                        tasks.append(sleep_task.si(10))  # Use the defined sleep_task
+                chain(*tasks).apply_async()
             else:
-                logger.info(f"Latest GFS forecast already fully processed: {last_gfs_forecast}")
                 logger.info("No new data available. Skipping prediction tasks.")
-                return
-            
-            logger.info("Starting forecast processing for all 7 days...")
-            # find deltas
-            delta = gfs.utils.find_delta(run, 9)
-            delta_9s = [delta + 24 * i for i in range(7)]
-            all_deltas = [[delta_9, delta_9 + 3, delta_9 + 6] for delta_9 in delta_9s]
-            # fetch sites and prepare coordinates
-            points = await fetch_sites(db)
-            points = points.drop_duplicates(subset=['lat_gfs', 'lon_gfs'])
-            lat_gfs = points['lat_gfs'].values.tolist()
-            lon_gfs = points['lon_gfs'].values.tolist()
-            # fetch forecasts sequentially with processing in between
-            tasks = []
-            for deltas in all_deltas:
-                # Fetch task
-                task = fetch_forecast_for_day_task.si(date, run, deltas, lat_gfs, lon_gfs)
-                tasks.append(task)
-                # Process task (runs sequentially after fetch)
-                tasks.append(process_forecasts_task.s())  # .s() passes result from previous task
-                if deltas != all_deltas[-1]:  # Don't sleep after the last task
-                    tasks.append(sleep_task.si(10))  # Sleep between days
-            chain(*tasks).apply_async()
-            logger.info(f"Queued {len(all_deltas)} days for sequential processing")
         except Exception as e:
             logger.error(f"Error in checking data availability: {e}")
 
@@ -136,19 +121,16 @@ def sleep_task(duration):
 @celery.task
 def fetch_forecast_for_day_task(date, run, deltas, lat_gfs, lon_gfs):
     """
-    Fetches GFS grib files for a given day and returns them for processing.
-    Returns forecasts to be passed to the next task in the chain.
+    Fetches and processes GFS grib files for a given day.
     """
     # https://blog.det.life/replacing-celery-tasks-inside-a-chain-b1328923fb02
     forecasts = []
     for delta in deltas:
-        logger.info(f"Fetching GFS data for date={date}, run={run}, delta={delta}")
         forecast = gfs.fetch.get_gfs_data(date, run, delta, lat_gfs, lon_gfs, source='grib')
         forecasts.append(forecast.reset_index().to_dict())
         if delta != deltas[-1]:
-            time.sleep(10)  # Sleep between individual delta fetches
-    logger.info(f"Fetched {len(forecasts)} forecasts for date={date}, returning for processing")
-    return forecasts  # Return to be processed by next task in chain
+            time.sleep(10)
+    process_forecasts_task.delay(forecasts)
 
 
 async def _process_forecasts_async(forecasts):
@@ -193,14 +175,7 @@ async def _cleanup_old_data_async():
 
 @celery.task
 def process_forecasts_task(forecasts):
-    """
-    Processes forecasts sequentially as part of the task chain.
-    This ensures only one processing task runs at a time.
-    """
-    logger.info(f"Starting forecast processing for {len(forecasts)} forecasts")
-    result = run_async(_process_forecasts_async(forecasts))
-    logger.info("Forecast processing completed successfully")
-    return result
+    return run_async(_process_forecasts_async(forecasts))
 
 
 @celery.task
