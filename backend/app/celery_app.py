@@ -29,6 +29,10 @@ celery = Celery('app',
 # Optional: Celery configuration
 celery.conf.update(
     timezone='UTC',
+    acks_late=True,
+    task_reject_on_worker_lost=True,
+    task_acks_on_failure_or_timeout=False,
+    task_publish_retry=True,
     task_annotations={
         'app.tasks.generate_predictions': {'rate_limit': '10/m'}
     },
