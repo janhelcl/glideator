@@ -297,3 +297,18 @@ class NotificationEventOut(BaseModel):
     payload: dict
     delivery_status: str
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- S2S Recommendation Schemas ---
+
+class S2SRecommendationRequest(BaseModel):
+    source_site_ids: List[int] = Field(..., description="List of source site IDs to find similar sites for")
+    top_k: int = Field(default=10, ge=1, le=50, description="Number of top recommendations to return")
+
+class S2SRecommendationItem(BaseModel):
+    site_id: int
+    similarity_score: float
+
+class S2SRecommendationResponse(BaseModel):
+    recommendations: List[S2SRecommendationItem]
+    total_found: int

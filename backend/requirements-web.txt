@@ -29,6 +29,7 @@ passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 argon2-cffi==23.1.0
 mcp[cli]==1.13.1
+numpy==2.1.1
 email-validator==2.2.0
 pytest==7.4.4
 pytest-asyncio==0.23.8
