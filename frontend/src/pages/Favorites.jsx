@@ -4,7 +4,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
-import { fetchSites } from '../api';
+import { fetchSites, fetchSiteRecommendations } from '../api';
 import SiteList from '../components/SiteList';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
@@ -55,7 +55,9 @@ const Favorites = () => {
   const navigate = useNavigate();
   const [allSites, setAllSites] = useState([]);
   const [favoriteSites, setFavoriteSites] = useState([]);
+  const [recommendedSites, setRecommendedSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [lastRemovedSite, setLastRemovedSite] = useState(null);
@@ -94,6 +96,50 @@ const Favorites = () => {
     setFavoriteSites(transformed);
   }, [allSites, favorites]);
 
+  // Fetch recommendations when favorites change
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      if (!favorites || favorites.length === 0 || !allSites || allSites.length === 0) {
+        setRecommendedSites([]);
+        return;
+      }
+
+      try {
+        setRecommendationsLoading(true);
+        const response = await fetchSiteRecommendations(favorites, 5);
+        
+        if (response.recommendations && response.recommendations.length > 0) {
+          // Get site details for recommended site IDs
+          const recommendedSiteIds = response.recommendations.map(rec => rec.site_id);
+          const recommendedSitesData = allSites.filter(site => 
+            recommendedSiteIds.includes(site.site_id)
+          );
+          
+          // Transform and sort by similarity score
+          const transformed = recommendedSitesData
+            .map(transformSite)
+            .filter(Boolean)
+            .sort((a, b) => {
+              const aScore = response.recommendations.find(rec => rec.site_id === parseInt(a.site_id))?.similarity_score || 0;
+              const bScore = response.recommendations.find(rec => rec.site_id === parseInt(b.site_id))?.similarity_score || 0;
+              return bScore - aScore; // Sort by similarity score descending
+            });
+          
+          setRecommendedSites(transformed);
+        } else {
+          setRecommendedSites([]);
+        }
+      } catch (err) {
+        console.error('Failed to load recommendations', err);
+        setRecommendedSites([]);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+
+    loadRecommendations();
+  }, [favorites, allSites]);
+
   const handleCreateNotification = (site) => {
     navigate('/notifications', {
       state: {
@@ -119,6 +165,20 @@ const Favorites = () => {
       setLastRemovedSite(null);
       setSnackbarOpen(false);
       setError('Failed to remove from favorites. Please try again.');
+    }
+  };
+
+  const handleAddFavorite = async (site) => {
+    const siteId = Number(site.site_id);
+    try {
+      await toggleFavoriteSite(siteId);
+      // Add to favorites list optimistically
+      setFavoriteSites((prev) => [...prev, site].sort((a, b) => a.site_name.localeCompare(b.site_name)));
+      // Remove from recommendations
+      setRecommendedSites((prev) => prev.filter((item) => item.site_id !== site.site_id));
+    } catch (err) {
+      console.error('Failed to add to favorites', err);
+      setError('Failed to add to favorites. Please try again.');
     }
   };
 
@@ -246,6 +306,74 @@ const Favorites = () => {
           )}
         </Box>
       </Paper>
+
+      {/* Recommendations Section */}
+      {hasFavorites && (
+        <Paper elevation={2} sx={{ mt: 3 }}>
+          <Box sx={{ p: 3 }}>
+            <Box
+              sx={{
+                p: 2,
+                borderBottom: 1,
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3,
+              }}
+            >
+              <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                You may also like
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Based on your favorites
+              </Typography>
+            </Box>
+
+            {recommendationsLoading ? (
+              <LoadingSpinner />
+            ) : recommendedSites.length === 0 ? (
+              <Typography variant="body1" color="text.secondary">
+                No recommendations available at the moment.
+              </Typography>
+            ) : (
+              <SiteList
+                sites={recommendedSites}
+                selectedMetric={METRIC}
+                showRanking={false}
+                renderSiteActions={(site, { defaultAction }) => (
+                  <>
+                    <Tooltip title="Create notification">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateNotification(site);
+                        }}
+                      >
+                        <NotificationsActiveIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddFavorite(site);
+                      }}
+                      color="primary"
+                      aria-label={`Add ${site.site_name} to favorites`}
+                    >
+                      <FavoriteIcon />
+                    </IconButton>
+                    {defaultAction}
+                  </>
+                )}
+              />
+            )}
+          </Box>
+        </Paper>
+      )}
 
       <Snackbar
         open={snackbarOpen}
