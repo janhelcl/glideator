@@ -402,7 +402,10 @@ async def update_notification_last_triggered(
 async def list_push_subscriptions(db: AsyncSession, user_id: int) -> List[models.PushSubscription]:
     result = await db.execute(
         select(models.PushSubscription)
-        .where(models.PushSubscription.user_id == user_id)
+        .where(
+            models.PushSubscription.user_id == user_id,
+            models.PushSubscription.is_active.is_(True)
+        )
         .order_by(models.PushSubscription.subscription_id)
     )
     return result.scalars().all()
