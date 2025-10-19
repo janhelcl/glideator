@@ -277,4 +277,21 @@ export const fetchNotificationEvents = async (notificationId, limit = 20) => {
   return response.data;
 };
 
+// --- S2S Recommendations ---
+
+export const fetchSiteRecommendations = async (sourceSiteIds, topK = 5) => {
+  const response = await apiClient.post('/s2s/recommendations', {
+    source_site_ids: sourceSiteIds,
+    top_k: topK,
+  });
+  return response.data;
+};
+
+export const fetchSingleSiteRecommendations = async (siteId, topK = 5) => {
+  const response = await apiClient.get(`/s2s/recommendations/${siteId}`, {
+    params: { top_k: topK },
+  });
+  return response.data;
+};
+
 export default apiClient;
