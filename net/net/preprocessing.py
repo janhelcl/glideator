@@ -1,7 +1,5 @@
 import logging
 import numpy as np
-import torch
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -64,57 +62,3 @@ def add_date_features(df, date_col='date'):
     df['day_of_year_sin'] = np.sin(2 * np.pi * day_of_year / 365.25)
     df['day_of_year_cos'] = np.cos(2 * np.pi * day_of_year / 365.25)
     return df
-
-
-class Preprocessor:
-    """
-    Preprocesses the input data by scaling features and encoding categorical variables.
-
-    Attributes:
-        features (list): List of feature names to be scaled.
-        scaler (StandardScaler): Scaler object for feature scaling.
-        launch_indexer (LabelEncoder): Label encoder for encoding launch categories.
-    """
-
-    def __init__(self, features):
-        """
-        Initializes the Preprocessor with specified features.
-
-        Args:
-            features (list): List of feature names to be scaled.
-        """
-        logger.info(f"Initializing Preprocessor with features: {features}")
-        self.features = features
-
-    def fit(self, df):
-        """
-        Fits the scaler and label encoder to the data.
-
-        Args:
-            df (pandas.DataFrame): DataFrame containing the data to fit the scaler and encoder.
-        """
-        logger.info("Fitting scaler and label encoder to data.")
-        self.scaler = StandardScaler()
-        self.launch_indexer = LabelEncoder()
-        self.scaler.fit(df[self.features])
-        self.launch_indexer.fit(df['launch'])
-        logger.debug("Scaler and label encoder have been fitted.")
-
-    def transform(self, df):
-        """
-        Transforms the data using the fitted scaler and label encoder.
-
-        Args:
-            df (pandas.DataFrame): DataFrame containing the data to transform.
-
-        Returns:
-            tuple: A tuple containing:
-                - torch.FloatTensor: Scaled feature tensors.
-                - torch.LongTensor: Encoded launch tensors.
-        """
-        logger.info("Transforming data using the fitted scaler and label encoder.")
-        scaled_features = self.scaler.transform(df[self.features])
-        launch_encoded = self.launch_indexer.transform(df['launch'])
-        logger.debug(f"Scaled features shape: {scaled_features.shape}")
-        logger.debug(f"Encoded launch shape: {launch_encoded.shape}")
-        return torch.FloatTensor(scaled_features), torch.LongTensor(launch_encoded)

@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 
-import torch
 import numpy as np
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,7 +27,7 @@ EXPECTED_COLUMNS = [
     'ref_time'
 ]
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_FILENAME = 'model.pth'
+MODEL_FILENAME = 'model.onnx'
 MODEL_PATH = BASE_DIR / 'models' / MODEL_FILENAME
 REFERENCES = (
     (6, 3),
@@ -116,9 +115,9 @@ async def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_foreca
         await fetch_sites(db)
     ).set_index(['lat_gfs', 'lon_gfs'])
     full_data = preprocessing.add_date_features(joined_forecasts.join(sites), date_col='ref_time')
-    # score
-    predictions = net.io.score(
-        net=torch.load(MODEL_PATH),
+    # score using ONNX
+    predictions = net.io.score_onnx(
+        onnx_path=str(MODEL_PATH),
         full_df=full_data, 
         weather_features=WEATHER_FEATURES, 
         site_features=SITE_FEATURES, 
