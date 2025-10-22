@@ -3,14 +3,23 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# Install system dependencies for ONNX Runtime
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements-worker.txt ./requirements-worker.txt
 COPY packages/ ./packages/
 
 RUN pip install --upgrade pip \
- && pip install --no-cache-dir -r requirements-worker.txt \
- && pip install --timeout=10000 --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu ./packages/*.whl
+ && pip install --no-cache-dir ./packages/gfs-*.whl \
+ && pip install --no-cache-dir ./packages/net-*.whl \
+ && pip install --no-cache-dir -r requirements-worker.txt
 
 COPY . .
+
+# Set environment variable to work around ONNX Runtime stack issue in Docker/WSL2
+ENV OMP_NUM_THREADS=1
 
 CMD ["celery", "-A", "app.celery_app", "worker", "-B", "--loglevel=info"]
 
