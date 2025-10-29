@@ -4,18 +4,16 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from . import settings
 
-
-def split_train_val(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train = df[df[settings.DATE_COL] < pd.Timestamp(f"{settings.VAL_YEAR}-01-01")].copy()
-    val = df[(df[settings.DATE_COL] >= pd.Timestamp(f"{settings.VAL_YEAR}-01-01")) &
-             (df[settings.DATE_COL] < pd.Timestamp(f"{settings.VAL_YEAR + 1}-01-01"))].copy()
+def split_train_val(df: pd.DataFrame, date_col: str = "date", val_year: int = 2024) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    train = df[df[date_col] < pd.Timestamp(f"{val_year}-01-01")].copy()
+    val = df[(df[date_col] >= pd.Timestamp(f"{val_year}-01-01")) &
+             (df[date_col] < pd.Timestamp(f"{val_year + 1}-01-01"))].copy()
     return train, val
 
 
-def get_feature_cols(df: pd.DataFrame) -> List[str]:
-    non_feature = {settings.SITE_COL, settings.DATE_COL, settings.LABEL_COL}
+def get_feature_cols(df: pd.DataFrame, site_col: str = "site_id", date_col: str = "date", label_col: str = "max_points") -> List[str]:
+    non_feature = {site_col, date_col, label_col}
     return [
         c for c in df.columns
         if c not in non_feature and np.issubdtype(df[c].dtype, np.number)

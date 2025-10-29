@@ -3,7 +3,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from . import settings
 
 
 def plot_vertical_profile(row: pd.Series, hour: int = 15) -> Any:
@@ -105,6 +104,9 @@ def neighbors_for_visualization(
     feat_cols,
     site_indices,
     k: int = 5,
+    site_col: str = "site_id",
+    date_col: str = "date",
+    label_col: str = "max_points",
 ):
     """
     Returns (meta_df, features_wide_df, features_long_df)
@@ -115,8 +117,8 @@ def neighbors_for_visualization(
                       where which ∈ {'query','candidate'}
     """
     # --- locate query row in validation set ---
-    qdf = val_df[(val_df[settings.SITE_COL] == site_id) &
-                 (val_df[settings.DATE_COL] == pd.Timestamp(query_date))]
+    qdf = val_df[(val_df[site_col] == site_id) &
+                 (val_df[date_col] == pd.Timestamp(query_date))]
     if qdf.empty:
         raise ValueError("Query day not found in validation set for this site.")
 
@@ -139,7 +141,7 @@ def neighbors_for_visualization(
     rows_feats = []
 
     # Query row (rank 0)
-    q_label = int(q_row[settings.LABEL_COL])
+    q_label = int(q_row[label_col])
     q_date_print = pd.Timestamp(query_date).date()
     rows_meta.append({
         "rank": 0,

@@ -3,7 +3,6 @@ from typing import Dict, List, Any, Tuple
 import numpy as np
 import pandas as pd
 
-from . import settings
 from .metrics import graded_relevance, ndcg_at_k, hit_at_k, mrr
 
 
@@ -12,6 +11,8 @@ def evaluate(
     feat_cols: List[str],
     site_indices: Dict[Any, Dict[str, Any]],
     k: int = 10,
+    site_col: str = "site_id",
+    label_col: str = "max_points",
 ) -> Tuple[Dict[str, Any], pd.DataFrame]:
     ndcgs = []
     hits = []
@@ -19,7 +20,7 @@ def evaluate(
     site_stats = []
 
     # Prepare normalized val vectors the same way (cosine)
-    for site_id, g in val_df.groupby(settings.SITE_COL, sort=False):
+    for site_id, g in val_df.groupby(site_col, sort=False):
         if site_id not in site_indices:
             continue  # site has no train history
         model = site_indices[site_id]
@@ -34,7 +35,7 @@ def evaluate(
 
         # Compute graded relevance lists
         for row_i in range(len(g)):
-            q_label = int(g.iloc[row_i][settings.LABEL_COL])
+            q_label = int(g.iloc[row_i][label_col])
             nb_idx = idxs[row_i]
             nb_labels = [int(model["labels"][j]) for j in nb_idx]
             rels = [graded_relevance(q_label, nb) for nb in nb_labels]
@@ -68,8 +69,11 @@ def inspect_neighbors(
     site_indices: Dict[Any, Dict[str, Any]],
     k: int = 5,
     top_m_deltas: int = 8,
+    site_col: str = "site_id",
+    date_col: str = "date",
+    label_col: str = "max_points",
 ) -> Dict[str, Any]:
-    qdf = val_df[(val_df[settings.SITE_COL] == site_id) & (val_df[settings.DATE_COL] == pd.Timestamp(query_date))]
+    qdf = val_df[(val_df[site_col] == site_id) & (val_df[date_col] == pd.Timestamp(query_date))]
     if qdf.empty:
         raise ValueError("Query day not found in validation set for this site.")
 
@@ -87,7 +91,7 @@ def inspect_neighbors(
     dists, idxs = model["nn"].kneighbors(x_n.reshape(1, -1), n_neighbors=nnb, return_distance=True)
     idxs, dists = idxs[0], dists[0]
 
-    q_label = int(qdf.iloc[0][settings.LABEL_COL])
+    q_label = int(qdf.iloc[0][label_col])
     neighbors = []
     for r, (j, d) in enumerate(zip(idxs, dists), start=1):
         dte = pd.Timestamp(model["dates"][j]).date()
