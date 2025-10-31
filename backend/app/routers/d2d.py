@@ -92,8 +92,6 @@ async def get_past_date_forecast(
         similarity=similar_date.similarity,
         forecast_9=similar_date.forecast_9,
         forecast_12=similar_date.forecast_12,
-        forecast_15=similar_date.forecast_15,
-        computed_at=similar_date.computed_at,
-        gfs_forecast_at=similar_date.gfs_forecast_at
+        forecast_15=similar_date.forecast_15
     )
 

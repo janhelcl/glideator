@@ -355,6 +355,4 @@ class PastDateForecastResponse(BaseModel):
     forecast_9: Dict[str, Any]
     forecast_12: Dict[str, Any]
     forecast_15: Dict[str, Any]
-    computed_at: datetime
-    gfs_forecast_at: datetime
     model_config = ConfigDict(from_attributes=True)
