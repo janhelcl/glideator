@@ -149,7 +149,7 @@ async def find_similar_days(
     # Return (date, similarity) pairs
     results = [(past_dates[i], float(similarities[i])) for i in top_indices]
     
-    logger.info(f"Found {len(results)} similar days for site_id {site_id}. Similarity scores: {[f'{s:.4f}' for _, s in results]}")
+    logger.debug(f"Found {len(results)} similar days for site_id {site_id}. Similarity scores: {[f'{s:.4f}' for _, s in results]}")
     return results
 
 

@@ -365,7 +365,7 @@ async def _find_and_save_similar_days_async(forecast_date, joined_forecasts_reco
                 sites_processed += 1
                 sites_with_similar_days += 1
             
-            logger.info(f"Processed {sites_processed} sites, found similar days for {sites_with_similar_days} sites")
+            logger.info(f"Processed {sites_processed} sites for forecast_date {forecast_date}")
             
         except Exception as e:
             logger.error(f"Error in finding similar days: {e}", exc_info=True)
