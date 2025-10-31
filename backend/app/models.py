@@ -270,3 +270,20 @@ class ScaledFeature(Base):
 
     # Relationship with Site
     site = relationship("Site", backref="scaled_features")
+
+
+class SimilarDate(Base):
+    __tablename__ = "similar_dates"
+
+    site_id = Column(Integer, ForeignKey("sites.site_id"), primary_key=True)
+    forecast_date = Column(Date, primary_key=True)
+    past_date = Column(Date, primary_key=True)
+    similarity = Column(Float, nullable=False)
+    forecast_9 = Column(JSON, nullable=False)
+    forecast_12 = Column(JSON, nullable=False)
+    forecast_15 = Column(JSON, nullable=False)
+    computed_at = Column(DateTime, nullable=False)
+    gfs_forecast_at = Column(DateTime, nullable=False)
+
+    # Relationship with Site
+    site = relationship("Site", backref="similar_dates")
