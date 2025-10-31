@@ -200,3 +200,7 @@ yarn-error.log*
 # Site researcher batch processing
 agents/site_researcher/batch_requests/
 agents/site_researcher/batch_results/
+
+# Scaled features data (large files, loaded manually)
+backend/app/data/scaled_features.jsonl
+*.tsv
