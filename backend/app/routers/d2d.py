@@ -8,7 +8,7 @@ from ..database import AsyncSessionLocal
 
 router = APIRouter(
     prefix="/d2d",
-    tags=["data-to-date"],
+    tags=["date-to-date"],
     responses={404: {"description": "Not found"}},
 )
 
