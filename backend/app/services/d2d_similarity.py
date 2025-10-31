@@ -106,7 +106,7 @@ async def find_similar_days(
     Returns:
         List of (past_date, similarity_score) tuples, ordered by similarity (highest first)
     """
-    logger.info(f"Finding {top_k} similar days for site_id {site_id}")
+    logger.debug(f"Finding {top_k} similar days for site_id {site_id}")
     
     # Query scaled_features for this site_id
     query = select(models.ScaledFeature).where(
@@ -119,7 +119,7 @@ async def find_similar_days(
         logger.warning(f"No past features found for site_id {site_id}")
         return []
     
-    logger.info(f"Found {len(past_features)} past feature vectors for site_id {site_id}")
+    logger.debug(f"Found {len(past_features)} past feature vectors for site_id {site_id}")
     
     # Prepare arrays for similarity computation
     past_dates = []
