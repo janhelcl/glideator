@@ -294,4 +294,18 @@ export const fetchSingleSiteRecommendations = async (siteId, topK = 5) => {
   return response.data;
 };
 
+// --- D2D (Date-to-Date) API ---
+
+export const fetchSimilarDays = async (siteId, forecastDate, n = 3) => {
+  const response = await apiClient.get(`/d2d/similar-days/${siteId}/${forecastDate}`, {
+    params: { n },
+  });
+  return response.data;
+};
+
+export const fetchPastDateForecast = async (siteId, forecastDate, pastDate) => {
+  const response = await apiClient.get(`/d2d/past-forecast/${siteId}/${forecastDate}/${pastDate}`);
+  return response.data;
+};
+
 export default apiClient;

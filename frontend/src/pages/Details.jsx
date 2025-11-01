@@ -31,6 +31,7 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
+import SimilarDaysPanel from '../components/SimilarDaysPanel';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -748,6 +749,16 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
                   {renderForecastContent()}
                 </Box>
               </Collapse>
+              
+              {/* Similar Days Panel */}
+              {selectedDate && siteData && siteData[0] && (
+                <SimilarDaysPanel
+                  siteId={siteId}
+                  selectedDate={selectedDate}
+                  latitude={siteData[0].latitude}
+                  longitude={siteData[0].longitude}
+                />
+              )}
             </Box>
           </TabPanel>
           
