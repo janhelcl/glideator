@@ -6,8 +6,9 @@ This directory contains scripts to load `scaled_features.jsonl` into the databas
 
 - `jsonl_to_tsv.py` - Converts JSONL format to TSV for PostgreSQL COPY import
 - `load_to_docker.py` - Python script to load into development database (Docker) - **recommended for dev**
+- `load_to_prod.py` - Python script to load into production database (Render) - **recommended for prod**
 - `load_dev.ps1` - PowerShell script to load into development database (requires `psql` in PATH)
-- `load_prod.ps1` - PowerShell script to load into production database (Render)
+- `load_prod.ps1` - PowerShell script to load into production database (requires `psql` in PATH)
 
 ## Usage
 
@@ -53,9 +54,60 @@ Or specify a custom JSONL path:
 .\load_dev.ps1 ..\scaled_features.jsonl
 ```
 
-### Production (Render)
+### Production (Render) - Recommended Method
 
-Get your `DATABASE_URL` from the Render dashboard and run:
+**Step 1: Create `.env` file**
+
+Create a `.env` file in the `d2d` directory with your Render database URL:
+
+```powershell
+cd backend/app/data/d2d
+echo "DATABASE_URL=postgresql://user:pass@host:port/dbname" > .env
+```
+
+You can get the `DATABASE_URL` from the Render dashboard under your Postgres database settings.
+
+**Step 2: Install psycopg2 (if not already installed)**
+
+```powershell
+py -m pip install --user psycopg2-binary
+```
+
+**Step 3: Run the load script**
+
+```powershell
+cd backend/app/data/d2d
+py load_to_prod.py ..\scaled_features.jsonl
+```
+
+This script:
+- Automatically reads `DATABASE_URL` from `.env` file
+- Uses `psycopg2` (no need for `psql` command)
+- Handles UTF-8 encoding correctly
+- Shows progress every 50,000 rows
+- Verifies completion automatically
+
+**Example output:**
+```
+Step 1: Ensuring table exists...
+Step 2: Truncating existing data...
+Table ready. Starting data load...
+
+Starting conversion and load from C:\Users\...\scaled_features.jsonl...
+Connecting to production database via psycopg2...
+This may take several minutes...
+Processed 50000 rows...
+Processed 100000 rows...
+...
+Successfully loaded 354144 rows!
+
+Step 3: Verifying load...
+Total rows: 354144, Date range: 2021-01-01 to 2024-11-30, Unique sites: 248
+```
+
+### Alternative: Using PowerShell Script (requires psql)
+
+If you have `psql` in your PATH, you can use:
 
 ```powershell
 cd backend/app/data/d2d
@@ -72,7 +124,10 @@ Or pass it directly:
 
 - Python 3.x (for conversion scripts)
 - For dev: Docker Compose with postgres service running (`backend-postgres-1`)
-- For prod: PostgreSQL client (`psql`) in PATH and Render database credentials
+- For prod: 
+  - `psycopg2-binary` Python package (install with `pip install psycopg2-binary`)
+  - `.env` file with `DATABASE_URL` in the `d2d` directory
+  - OR: PostgreSQL client (`psql`) in PATH if using PowerShell script
 
 ## What the Scripts Do
 
@@ -114,9 +169,11 @@ FROM scaled_features;
 - Date range: 2021-01-01 to 2024-11-30
 - ~248 unique sites
 
-## Manual Loading Process (How It Was Done)
+## Loading Process Details
 
-The data was successfully loaded using the `load_to_docker.py` script:
+### Development Loading
+
+The data was successfully loaded into dev using the `load_to_docker.py` script:
 
 1. **File Location**: `backend/app/data/scaled_features.jsonl` (1.6GB)
 2. **Conversion**: The script streams JSONL → TSV format on-the-fly
@@ -129,5 +186,21 @@ The helper script (`load_to_docker.py`) handles:
 - Progress reporting (every 10,000 rows)
 - Error handling
 
-**Note**: The TSV file (`scaled_features.tsv`, ~3GB) is generated automatically but excluded from git via `.gitignore`. The direct streaming approach avoids needing the intermediate file.
+### Production Loading
+
+The production load uses `load_to_prod.py`:
+
+1. **Setup**: Create `.env` file with `DATABASE_URL` from Render dashboard
+2. **Dependencies**: Install `psycopg2-binary` (`pip install psycopg2-binary`)
+3. **Execution**: Run `py load_to_prod.py ..\scaled_features.jsonl`
+4. **Process**: 
+   - Creates/verifies table structure
+   - Truncates existing data
+   - Converts JSONL to TSV in temp file
+   - Loads via PostgreSQL COPY using psycopg2
+   - Verifies the load
+
+The script automatically detects available tools (psql or psycopg2) and uses the best available method.
+
+**Note**: The TSV file (`scaled_features.tsv`, ~3GB) is generated automatically but excluded from git via `.gitignore`. For production, a temporary TSV file is created during loading and automatically cleaned up.
 
