@@ -565,3 +565,84 @@ async def get_all_flight_stats(db: AsyncSession) -> List[models.FlightStats]:
     """
     result = await db.execute(select(models.FlightStats))
     return result.scalars().all()
+
+
+# --- D2D Similar Dates CRUD Functions ---
+
+async def delete_similar_dates_by_forecast_date(db: AsyncSession, forecast_date: date):
+    """
+    Delete existing similar_dates for a forecast_date (overwrite behavior).
+    """
+    await db.execute(delete(models.SimilarDate).where(models.SimilarDate.forecast_date == forecast_date))
+    await db.commit()
+
+
+async def create_similar_date(db: AsyncSession, similar_date: schemas.SimilarDateCreate):
+    """
+    Upsert a similar_date record (insert or update on conflict).
+    """
+    from sqlalchemy.dialects.postgresql import insert
+    
+    data = similar_date.dict()
+    stmt = insert(models.SimilarDate).values(**data)
+    
+    # Build update dict using excluded references
+    # stmt.excluded provides access to the EXCLUDED columns
+    excluded = stmt.excluded
+    stmt = stmt.on_conflict_do_update(
+        constraint='similar_dates_pkey',
+        set_={
+            'similarity': excluded.similarity,
+            'forecast_9': excluded.forecast_9,
+            'forecast_12': excluded.forecast_12,
+            'forecast_15': excluded.forecast_15,
+            'computed_at': excluded.computed_at,
+            'gfs_forecast_at': excluded.gfs_forecast_at
+        }
+    )
+    await db.execute(stmt)
+    await db.commit()
+    
+    # Retrieve the record
+    result = await db.execute(
+        select(models.SimilarDate).where(
+            models.SimilarDate.site_id == data['site_id'],
+            models.SimilarDate.forecast_date == data['forecast_date'],
+            models.SimilarDate.past_date == data['past_date']
+        )
+    )
+    return result.scalar_one()
+
+
+async def get_similar_dates(
+    db: AsyncSession,
+    site_id: int,
+    forecast_date: date
+) -> List[models.SimilarDate]:
+    """
+    Get similar dates for site_id and forecast_date, ordered by similarity (highest first).
+    """
+    query = select(models.SimilarDate).where(
+        models.SimilarDate.site_id == site_id,
+        models.SimilarDate.forecast_date == forecast_date
+    ).order_by(models.SimilarDate.similarity.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def get_past_date_forecast(
+    db: AsyncSession,
+    site_id: int,
+    forecast_date: date,
+    past_date: date
+) -> Optional[models.SimilarDate]:
+    """
+    Get forecast for specific site_id, forecast_date, and past_date from similar_dates table.
+    """
+    query = select(models.SimilarDate).where(
+        models.SimilarDate.site_id == site_id,
+        models.SimilarDate.forecast_date == forecast_date,
+        models.SimilarDate.past_date == past_date
+    )
+    result = await db.execute(query)
+    return result.scalar_one_or_none()

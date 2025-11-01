@@ -8,7 +8,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
-from .routers import sites, trip_planning, auth, profiles, favorites, llms, notifications, s2s
+from .routers import sites, trip_planning, auth, profiles, favorites, llms, notifications, s2s, d2d
 from fastapi.middleware.cors import CORSMiddleware
 
 from .services.sites_loader import load_sites_from_csv
@@ -148,6 +148,7 @@ app.include_router(notifications.router)
 app.include_router(notifications.subscriptions_router)
 app.include_router(llms.router)
 app.include_router(s2s.router)
+app.include_router(d2d.router)
 
 app.mount("/", mcp.streamable_http_app())
 

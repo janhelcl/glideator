@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Json, Field, EmailStr, field_validator, ConfigDict
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from datetime import date, datetime
 import os
 
@@ -312,3 +312,47 @@ class S2SRecommendationItem(BaseModel):
 class S2SRecommendationResponse(BaseModel):
     recommendations: List[S2SRecommendationItem]
     total_found: int
+
+
+# --- D2D Similar Days Schemas ---
+
+class SimilarDateBase(BaseModel):
+    site_id: int
+    forecast_date: date
+    past_date: date
+    similarity: float
+    forecast_9: Json
+    forecast_12: Json
+    forecast_15: Json
+    computed_at: datetime
+    gfs_forecast_at: datetime
+
+
+class SimilarDateCreate(SimilarDateBase):
+    pass
+
+
+class SimilarDate(SimilarDateBase):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SimilarDayItem(BaseModel):
+    past_date: date
+    similarity: float
+
+
+class SimilarDaysResponse(BaseModel):
+    site_id: int
+    forecast_date: date
+    similar_days: List[SimilarDayItem]
+
+
+class PastDateForecastResponse(BaseModel):
+    site_id: int
+    forecast_date: date
+    past_date: date
+    similarity: float
+    forecast_9: Dict[str, Any]
+    forecast_12: Dict[str, Any]
+    forecast_15: Dict[str, Any]
+    model_config = ConfigDict(from_attributes=True)

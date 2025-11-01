@@ -6,12 +6,24 @@ import logging
 
 from celery import Celery, chain
 from .database import AsyncSessionLocal
-from .crud import get_latest_gfs_forecast
-from .services.forecast import process_forecasts, fetch_sites
+from .crud import get_latest_gfs_forecast, delete_similar_dates_by_forecast_date, create_similar_date
+from .services.forecast import process_forecasts, fetch_sites, WEATHER_FEATURES, SITE_FEATURES, DATE_FEATURES
+from .services.d2d_similarity import (
+    load_scaler,
+    extract_features_from_forecast,
+    find_similar_days,
+    get_past_scaled_features,
+    reconstruct_forecast_from_unscaled_features,
+)
 from .services.notifications import evaluate_and_queue_notifications
-from .models import Prediction, Forecast
+from .models import Prediction, Forecast, SimilarDate
+from . import schemas
 import gfs.utils
 import gfs.fetch
+import net.preprocessing as preprocessing
+import json
+import pandas as pd
+import numpy as np
 from sqlalchemy import and_, select, delete
 from celery.schedules import crontab
 
@@ -126,6 +138,7 @@ def sleep_task(duration):
 def fetch_forecast_for_day_task(date, run, deltas, lat_gfs, lon_gfs):
     """
     Fetches and processes GFS grib files for a given day.
+    Chains process_forecasts_task and then find_and_save_similar_days_task.
     """
     # https://blog.det.life/replacing-celery-tasks-inside-a-chain-b1328923fb02
     forecasts = []
@@ -134,14 +147,34 @@ def fetch_forecast_for_day_task(date, run, deltas, lat_gfs, lon_gfs):
         forecasts.append(forecast.reset_index().to_dict())
         if delta != deltas[-1]:
             time.sleep(10)
-    process_forecasts_task.delay(forecasts)
+    # Chain: process forecasts -> find similar days
+    chain(process_forecasts_task.s(forecasts), find_and_save_similar_days_task.s()).apply_async()
 
 
 async def _process_forecasts_async(forecasts):
     """
     Async version of process forecasts.
+    Returns the forecast_date and joined_forecasts for use by subsequent tasks.
     """
     async with AsyncSessionLocal() as db:
+        # Reconstruct joined_forecasts before processing (we need it for similarity search)
+        import pandas as pd
+        from .services.forecast import validate_forecasts, join_forecasts
+        
+        forecast_dfs = [
+            pd.DataFrame.from_records(forecast).set_index(['lat', 'lon'])
+            for forecast in forecasts
+        ]
+        validate_forecasts(forecast_dfs)
+        joined_forecasts = (
+            join_forecasts(forecast_dfs)
+            .rename_axis(index={'lat': 'lat_gfs', 'lon': 'lon_gfs'})
+        )
+        joined_forecasts['ref_time'] = joined_forecasts['ref_time_12']
+        # Use ref_time (the date the forecast is for) instead of date_12
+        forecast_date = joined_forecasts['ref_time'].iloc[0].date()
+        
+        # Now process forecasts (this will save predictions and Forecast records)
         result = await process_forecasts(db, forecasts)
         try:
             events = await evaluate_and_queue_notifications(db)
@@ -149,7 +182,23 @@ async def _process_forecasts_async(forecasts):
                 logger.info("Queued %s notification events after forecast processing", len(events))
         except Exception as exc:
             logger.error("Failed to evaluate notifications after forecasts: %s", exc, exc_info=True)
-        return result
+        
+        # Extract metadata
+        run = joined_forecasts['run_12'].iloc[0]
+        gfs_forecast_at = datetime(year=forecast_date.year if isinstance(forecast_date, date) else forecast_date.year,
+                                   month=forecast_date.month if isinstance(forecast_date, date) else forecast_date.month,
+                                   day=forecast_date.day if isinstance(forecast_date, date) else forecast_date.day,
+                                   hour=run)
+        
+        # Return both date and joined_forecasts (convert to dict for Celery serialization)
+        # Note: joined_forecasts is large, so we serialize it
+        joined_forecasts_reset = joined_forecasts.reset_index()
+        return {
+            'forecast_date': forecast_date,
+            'joined_forecasts': joined_forecasts_reset.to_dict('records'),
+            'computed_at': datetime.now(),
+            'gfs_forecast_at': gfs_forecast_at
+        }
 
 
 async def _cleanup_old_data_async():
@@ -206,6 +255,145 @@ async def _dispatch_notifications_async():
 @celery.task
 def dispatch_notifications():
     return run_async(_dispatch_notifications_async())
+
+
+async def _find_and_save_similar_days_async(forecast_date, joined_forecasts_records, computed_at, gfs_forecast_at):
+    """
+    Async version of find and save similar days.
+    After forecasts are processed, find K most similar past days for each site.
+    Uses the raw joined_forecasts data for accurate feature extraction.
+    """
+    async with AsyncSessionLocal() as db:
+        try:
+            # Get K from environment variable, default 5
+            top_k = int(os.getenv("D2D_SIMILAR_DAYS_K", "5"))
+            
+            logger.info(f"Finding similar days for forecast_date {forecast_date} with K={top_k}")
+            
+            # Delete existing similar_dates for this forecast_date (overwrite behavior)
+            await delete_similar_dates_by_forecast_date(db, forecast_date)
+            
+            # Load scaler
+            scaler = load_scaler()
+            
+            # Reconstruct joined_forecasts DataFrame from records
+            joined_forecasts_df = pd.DataFrame(joined_forecasts_records)
+            joined_forecasts_df = joined_forecasts_df.set_index(['lat_gfs', 'lon_gfs'])
+            
+            # Get all sites
+            sites_df = await fetch_sites(db)
+            
+            # Process each site
+            sites_processed = 0
+            sites_with_similar_days = 0
+            
+            for _, site_row in sites_df.iterrows():
+                site_id = site_row['site_id']
+                lat_gfs = site_row['lat_gfs']
+                lon_gfs = site_row['lon_gfs']
+                site_lat = site_row['latitude']
+                site_lon = site_row['longitude']
+                site_alt = site_row['altitude']
+                
+                # Get row from joined_forecasts for this site's coordinates
+                try:
+                    row = joined_forecasts_df.loc[(lat_gfs, lon_gfs)]
+                except KeyError:
+                    logger.debug(f"No forecast found for site_id {site_id} at ({lat_gfs}, {lon_gfs})")
+                    continue
+                
+                # Extract features from raw forecast data (exact match with WEATHER_FEATURES)
+                features = extract_features_from_forecast(
+                    row,
+                    site_lat,
+                    site_lon,
+                    site_alt,
+                    forecast_date
+                )
+                
+                # Scale features
+                scaled_features = scaler.transform(features.reshape(1, -1))[0]
+                
+                # Find similar days
+                similar_days = await find_similar_days(db, site_id, scaled_features, top_k)
+                
+                if not similar_days:
+                    logger.debug(f"No similar days found for site_id {site_id}")
+                    sites_processed += 1
+                    continue
+                
+                # Get forecast record for metadata (computed_at, gfs_forecast_at)
+                from .crud import get_forecast
+                forecast_record = await get_forecast(db, forecast_date, lat_gfs, lon_gfs)
+                if not forecast_record:
+                    logger.warning(f"No forecast record found for forecast_date {forecast_date} at ({lat_gfs}, {lon_gfs}), skipping metadata")
+                    sites_processed += 1
+                    continue
+                
+                # For each similar day, unscale the features and reconstruct forecast
+                for past_date, similarity in similar_days:
+                    # Get unscaled features from scaled_features table (these ARE the past forecast)
+                    unscaled_features = await get_past_scaled_features(db, site_id, past_date)
+                    
+                    if unscaled_features is None:
+                        logger.warning(f"No scaled features found for site_id {site_id}, past_date {past_date}")
+                        continue
+                    
+                    # Reconstruct forecast JSON from unscaled features
+                    try:
+                        forecast_dict = reconstruct_forecast_from_unscaled_features(unscaled_features)
+                        
+                        # Create similar_date record with reconstructed forecasts
+                        similar_date = schemas.SimilarDateCreate(
+                            site_id=site_id,
+                            forecast_date=forecast_date,
+                            past_date=past_date,
+                            similarity=similarity,
+                            forecast_9=json.dumps(forecast_dict['forecast_9']),
+                            forecast_12=json.dumps(forecast_dict['forecast_12']),
+                            forecast_15=json.dumps(forecast_dict['forecast_15']),
+                            computed_at=forecast_record.computed_at,
+                            gfs_forecast_at=forecast_record.gfs_forecast_at
+                        )
+                        
+                        await create_similar_date(db, similar_date)
+                        logger.debug(f"Saved similar_date for site_id {site_id}, forecast_date {forecast_date}, past_date {past_date}")
+                    except Exception as e:
+                        logger.error(f"Error reconstructing forecast for site_id {site_id}, past_date {past_date}: {e}", exc_info=True)
+                        continue
+                
+                sites_processed += 1
+                sites_with_similar_days += 1
+            
+            logger.info(f"Processed nearest neighbors for {sites_processed} sites for forecast_date {forecast_date}")
+            
+        except Exception as e:
+            logger.error(f"Error in finding similar days: {e}", exc_info=True)
+            raise
+
+
+@celery.task
+def find_and_save_similar_days_task(process_result):
+    """
+    Find and save similar days after forecasts are processed.
+    Receives result from process_forecasts_task which includes forecast_date and joined_forecasts.
+    """
+    if not isinstance(process_result, dict):
+        logger.error("process_result is not a dict, cannot find similar days")
+        return
+    
+    forecast_date = process_result.get('forecast_date')
+    joined_forecasts = process_result.get('joined_forecasts')
+    
+    if not forecast_date or not joined_forecasts:
+        logger.error("Missing forecast_date or joined_forecasts in process_result")
+        return
+    
+    # Extract metadata from process_result if available
+    computed_at = process_result.get('computed_at', datetime.now())
+    gfs_forecast_at = process_result.get('gfs_forecast_at')
+    
+    return run_async(_find_and_save_similar_days_async(forecast_date, joined_forecasts, computed_at, gfs_forecast_at))
 
 
 @celery.task(name="app.celery_app.simple_test_task")
