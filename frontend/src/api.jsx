@@ -233,4 +233,79 @@ export const removeFavorite = async (siteId) => {
   await apiClient.delete(`/users/me/favorites/${siteId}`);
 };
 
+// --- Push subscriptions ---
+
+export const fetchPushSubscriptions = async () => {
+  const response = await apiClient.get('/users/me/push-subscriptions');
+  return response.data;
+};
+
+export const registerPushSubscriptionApi = async (payload) => {
+  const response = await apiClient.post('/users/me/push-subscriptions', payload);
+  return response.data;
+};
+
+export const deactivatePushSubscriptionApi = async (subscriptionId) => {
+  await apiClient.delete(`/users/me/push-subscriptions/${subscriptionId}`);
+};
+
+// --- Notification rules ---
+
+export const fetchNotifications = async () => {
+  const response = await apiClient.get('/users/me/notifications');
+  return response.data;
+};
+
+export const createNotification = async (payload) => {
+  const response = await apiClient.post('/users/me/notifications', payload);
+  return response.data;
+};
+
+export const updateNotification = async (notificationId, payload) => {
+  const response = await apiClient.patch(`/users/me/notifications/${notificationId}`, payload);
+  return response.data;
+};
+
+export const deleteNotification = async (notificationId) => {
+  await apiClient.delete(`/users/me/notifications/${notificationId}`);
+};
+
+export const fetchNotificationEvents = async (notificationId, limit = 20) => {
+  const response = await apiClient.get(`/users/me/notifications/${notificationId}/events`, {
+    params: { limit },
+  });
+  return response.data;
+};
+
+// --- S2S Recommendations ---
+
+export const fetchSiteRecommendations = async (sourceSiteIds, topK = 5) => {
+  const response = await apiClient.post('/s2s/recommendations', {
+    source_site_ids: sourceSiteIds,
+    top_k: topK,
+  });
+  return response.data;
+};
+
+export const fetchSingleSiteRecommendations = async (siteId, topK = 5) => {
+  const response = await apiClient.get(`/s2s/recommendations/${siteId}`, {
+    params: { top_k: topK },
+  });
+  return response.data;
+};
+
+// --- D2D (Date-to-Date) API ---
+
+export const fetchSimilarDays = async (siteId, forecastDate, n = 3) => {
+  const response = await apiClient.get(`/d2d/similar-days/${siteId}/${forecastDate}`, {
+    params: { n },
+  });
+  return response.data;
+};
+
+export const fetchPastDateForecast = async (siteId, forecastDate, pastDate) => {
+  const response = await apiClient.get(`/d2d/past-forecast/${siteId}/${forecastDate}/${pastDate}`);
+  return response.data;
+};
+
 export default apiClient;

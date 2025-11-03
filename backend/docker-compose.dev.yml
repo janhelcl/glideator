@@ -13,6 +13,7 @@ services:
       - CHOKIDAR_USEPOLLING=true # Helps with file watching in Docker
       - WATCHPACK_POLLING=true   # Alternative polling variable for react-scripts
       - REACT_APP_API_BASE_URL=http://localhost:8000 # Add API base URL for development
+      - REACT_APP_VAPID_PUBLIC_KEY=BOrq6Z9erjRzCQXDpUe1koRaSP-L6e7i0rGUNShUMpOWcZHhGXLiCFYl8a9kaI0s5momkV0_RN1h9Up_x5XnoFg
     depends_on:
       - web # Ensure backend is ready (optional, depends on startup needs)
     command: npm start
@@ -29,6 +30,9 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - VAPID_PUBLIC_KEY=BOrq6Z9erjRzCQXDpUe1koRaSP-L6e7i0rGUNShUMpOWcZHhGXLiCFYl8a9kaI0s5momkV0_RN1h9Up_x5XnoFg
+      - VAPID_PRIVATE_KEY=qE2ELusjEZuE-Wh05rq6ArtypoidH833Mu38xAi8X70
+      - VAPID_SUBJECT=mailto:dev@example.com
       #- SQL_ECHO=true  # Enable SQL logging in development
       #- FORCE_INITIAL_DATA_LOAD=true
     depends_on:
@@ -76,6 +80,9 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - VAPID_PUBLIC_KEY=BOrq6Z9erjRzCQXDpUe1koRaSP-L6e7i0rGUNShUMpOWcZHhGXLiCFYl8a9kaI0s5momkV0_RN1h9Up_x5XnoFg
+      - VAPID_PRIVATE_KEY=qE2ELusjEZuE-Wh05rq6ArtypoidH833Mu38xAi8X70
+      - VAPID_SUBJECT=mailto:dev@example.com
       #- SQL_ECHO=true  # Enable SQL logging in development
     depends_on:
       redis:

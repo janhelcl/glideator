@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Json, Field, EmailStr, field_validator, ConfigDict
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from datetime import date, datetime
 import os
 
@@ -214,3 +214,145 @@ class UserProfileUpdate(BaseModel):
 
 class FavoriteRequest(BaseModel):
     site_id: int
+
+
+NotificationComparison = Literal['gt', 'gte', 'lt', 'lte', 'eq']
+
+
+class NotificationBase(BaseModel):
+    site_id: int
+    metric: str
+    comparison: NotificationComparison
+    threshold: float
+    lead_time_hours: int = Field(default=0, ge=0, le=168, description="Hours before forecasted event to notify")
+
+    @field_validator("metric")
+    @classmethod
+    def metric_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Metric must not be empty")
+        return v
+
+
+class NotificationCreate(NotificationBase):
+    pass
+
+
+class NotificationUpdate(BaseModel):
+    metric: Optional[str] = None
+    comparison: Optional[NotificationComparison] = None
+    threshold: Optional[float] = None
+    lead_time_hours: Optional[int] = Field(default=None, ge=0, le=168)
+    active: Optional[bool] = None
+
+    @field_validator("metric")
+    @classmethod
+    def metric_not_empty(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("Metric must not be empty")
+        return v
+
+
+class NotificationOut(NotificationBase):
+    notification_id: int
+    active: bool
+    last_triggered_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PushSubscriptionBase(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+    client_info: Optional[dict] = None
+
+    @field_validator("endpoint", "p256dh", "auth")
+    @classmethod
+    def ensure_non_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Value must not be empty")
+        return v
+
+
+class PushSubscriptionCreate(PushSubscriptionBase):
+    pass
+
+
+class PushSubscriptionOut(PushSubscriptionBase):
+    subscription_id: int
+    is_active: bool
+    last_used_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationEventOut(BaseModel):
+    event_id: int
+    notification_id: int
+    subscription_id: Optional[int]
+    triggered_at: datetime
+    payload: dict
+    delivery_status: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- S2S Recommendation Schemas ---
+
+class S2SRecommendationRequest(BaseModel):
+    source_site_ids: List[int] = Field(..., description="List of source site IDs to find similar sites for")
+    top_k: int = Field(default=10, ge=1, le=50, description="Number of top recommendations to return")
+
+class S2SRecommendationItem(BaseModel):
+    site_id: int
+    similarity_score: float
+
+class S2SRecommendationResponse(BaseModel):
+    recommendations: List[S2SRecommendationItem]
+    total_found: int
+
+
+# --- D2D Similar Days Schemas ---
+
+class SimilarDateBase(BaseModel):
+    site_id: int
+    forecast_date: date
+    past_date: date
+    similarity: float
+    forecast_9: Json
+    forecast_12: Json
+    forecast_15: Json
+    computed_at: datetime
+    gfs_forecast_at: datetime
+
+
+class SimilarDateCreate(SimilarDateBase):
+    pass
+
+
+class SimilarDate(SimilarDateBase):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SimilarDayItem(BaseModel):
+    past_date: date
+    similarity: float
+
+
+class SimilarDaysResponse(BaseModel):
+    site_id: int
+    forecast_date: date
+    similar_days: List[SimilarDayItem]
+
+
+class PastDateForecastResponse(BaseModel):
+    site_id: int
+    forecast_date: date
+    past_date: date
+    similarity: float
+    forecast_9: Dict[str, Any]
+    forecast_12: Dict[str, Any]
+    forecast_15: Dict[str, Any]
+    model_config = ConfigDict(from_attributes=True)

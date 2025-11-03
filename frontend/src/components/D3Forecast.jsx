@@ -347,14 +347,22 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
       .style('font-weight', 'bold')
       .text(`Atmospheric Profile - ${formatDate(date)} ${selectedHour}:00`);
 
-    // Subtitle with forecast details
-    titleGroup.append('text')
-      .attr('class', 'subtitle')
-      .attr('text-anchor', 'middle')
-      .attr('dy', `${baseFontSize * 1.4}px`)  // Reduced from 1.6 to 1.4 to tighten spacing
-      .style('font-size', `${baseFontSize * 0.8}px`)
-      .style('fill', '#666')
-      .text(`GFS: ${formatDateTime(gfs_forecast_at)} | Processed: ${formatDateTime(computed_at)}`);
+    // Subtitle with forecast details (only if dates are valid)
+    const isValidDate = (dateStr) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return d instanceof Date && !isNaN(d);
+    };
+    
+    if (isValidDate(gfs_forecast_at) && isValidDate(computed_at)) {
+      titleGroup.append('text')
+        .attr('class', 'subtitle')
+        .attr('text-anchor', 'middle')
+        .attr('dy', `${baseFontSize * 1.4}px`)  // Reduced from 1.6 to 1.4 to tighten spacing
+        .style('font-size', `${baseFontSize * 0.8}px`)
+        .style('fill', '#666')
+        .text(`GFS: ${formatDateTime(gfs_forecast_at)} | Processed: ${formatDateTime(computed_at)}`);
+    }
 
     // Add hover functionality
     const hoverLine = svg.append('line')

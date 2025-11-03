@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 
-import torch
 import numpy as np
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,7 +27,7 @@ EXPECTED_COLUMNS = [
     'ref_time'
 ]
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_FILENAME = 'model.pth'
+MODEL_FILENAME = 'model.onnx'
 MODEL_PATH = BASE_DIR / 'models' / MODEL_FILENAME
 REFERENCES = (
     (6, 3),
@@ -116,9 +115,9 @@ async def get_and_save_predictions(db, joined_forecasts, computed_at, gfs_foreca
         await fetch_sites(db)
     ).set_index(['lat_gfs', 'lon_gfs'])
     full_data = preprocessing.add_date_features(joined_forecasts.join(sites), date_col='ref_time')
-    # score
-    predictions = net.io.score(
-        net=torch.load(MODEL_PATH),
+    # score using ONNX
+    predictions = net.io.score_onnx(
+        onnx_path=str(MODEL_PATH),
         full_df=full_data, 
         weather_features=WEATHER_FEATURES, 
         site_features=SITE_FEATURES, 
@@ -173,6 +172,29 @@ async def process_and_save_forecasts(db: AsyncSession, joined_forecasts, compute
     
     await db.commit()
 
+def _replace_nan_with_none(arr):
+    """Replace NaN and inf values with None for JSON serialization."""
+    # Convert to numpy array and ensure numeric type
+    if isinstance(arr, (pd.Series, list)):
+        arr = np.asarray(arr, dtype=float)
+    elif not isinstance(arr, np.ndarray):
+        arr = np.asarray(arr, dtype=float)
+    
+    # Ensure it's a numeric array
+    if arr.dtype == object or not np.issubdtype(arr.dtype, np.number):
+        # Try to convert to float, if it fails return as is
+        try:
+            arr = arr.astype(float)
+        except (ValueError, TypeError):
+            return arr
+    
+    # Check for finite values first, then convert to object array with None
+    is_finite = np.isfinite(arr)
+    result = np.empty(arr.shape, dtype=object)
+    result[is_finite] = arr[is_finite]
+    result[~is_finite] = None
+    return result
+
 def forecast_to_dict(row, suffix=''):
     geo_iso_cols = [f'geopotential_height_{int(lvl)}hpa_m{suffix}' for lvl in HPA_LVLS]
     temp_iso_cols = [f'temperature_{int(lvl)}hpa_k{suffix}' for lvl in HPA_LVLS]
@@ -182,20 +204,21 @@ def forecast_to_dict(row, suffix=''):
 
     forecast_dict = {
         'hpa_lvls': HPA_LVLS.tolist(),
-        'geopotential_height_iso_m': row[geo_iso_cols].values.tolist(),
-        'temperature_iso_c': (row[temp_iso_cols] - 273.15).tolist(),
-        'relative_humidity_iso_pct': row[humidity_iso_cols].tolist()
+        'geopotential_height_iso_m': _replace_nan_with_none(row[geo_iso_cols].values).tolist(),
+        'temperature_iso_c': _replace_nan_with_none((row[temp_iso_cols] - 273.15)).tolist(),
+        'relative_humidity_iso_pct': _replace_nan_with_none(row[humidity_iso_cols].values).tolist()
     }
-    forecast_dict['dewpoint_iso_c'] = calculate_dewpoint(
+    dewpoint = calculate_dewpoint(
         forecast_dict['temperature_iso_c'],
         forecast_dict['relative_humidity_iso_pct']
-    ).tolist()
+    )
+    forecast_dict['dewpoint_iso_c'] = _replace_nan_with_none(dewpoint).tolist()
     wind_speed, wind_direction = calculate_wind_speed_and_direction(
         row[u_wind_iso_cols].values,
         row[v_wind_iso_cols].values
     )
-    forecast_dict['wind_speed_iso_ms'] = wind_speed.tolist()
-    forecast_dict['wind_direction_iso_dgr'] = wind_direction.tolist()
+    forecast_dict['wind_speed_iso_ms'] = _replace_nan_with_none(wind_speed).tolist()
+    forecast_dict['wind_direction_iso_dgr'] = _replace_nan_with_none(wind_direction).tolist()
     return forecast_dict
 
 def calculate_wind_speed_and_direction(u_wind, v_wind):
@@ -213,8 +236,13 @@ def calculate_wind_speed_and_direction(u_wind, v_wind):
     """
     u_wind = np.asarray(u_wind, dtype=float)
     v_wind = np.asarray(v_wind, dtype=float)
-    wind_speed = np.sqrt(u_wind**2 + v_wind**2)
-    wind_direction = np.mod(270 - np.degrees(np.arctan2(v_wind, u_wind)), 360)
+    with np.errstate(invalid='ignore'):
+        wind_speed = np.sqrt(u_wind**2 + v_wind**2)
+        wind_direction = np.mod(270 - np.degrees(np.arctan2(v_wind, u_wind)), 360)
+        # Replace NaN and inf with None (will be null in JSON)
+        # Use _replace_nan_with_none to handle conversion properly
+        wind_speed = _replace_nan_with_none(wind_speed)
+        wind_direction = _replace_nan_with_none(wind_direction)
     
     return wind_speed, wind_direction
 
@@ -222,6 +250,11 @@ def calculate_dewpoint(temp_c, rh_percent):
     temp_c = np.asarray(temp_c, dtype=float)
     rh_percent = np.asarray(rh_percent, dtype=float)
     a, b = 17.27, 237.7
-    alpha = (a * temp_c) / (b + temp_c) + np.log(rh_percent / 100.0)
-    dewpoint = (b * alpha) / (a - alpha)
+    # Handle division by zero and invalid values
+    with np.errstate(divide='ignore', invalid='ignore'):
+        alpha = (a * temp_c) / (b + temp_c) + np.log(np.maximum(rh_percent / 100.0, 1e-10))
+        dewpoint = (b * alpha) / (a - alpha)
+        # Replace NaN and inf with None (will be null in JSON)
+        # Use _replace_nan_with_none to handle conversion properly
+        dewpoint = _replace_nan_with_none(dewpoint)
     return dewpoint

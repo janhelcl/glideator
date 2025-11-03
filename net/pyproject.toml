@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "net"
-version = "0.2.0"
+version = "0.4.0"
 description = ""
 authors = ["Jan Helcl <janhelcl@gmail.com>"]
 readme = "README.md"
@@ -9,11 +9,16 @@ readme = "README.md"
 python = "^3.10"
 numpy = "^2.1.1"
 pandas = "^2.2.3"
-scikit-learn = "^1.5.2"
-torch = {version = "2.4.1", source = "pytorch_cpu"}
-torchrec = {version = "0.8.0", source = "pytorch_cpu"}
-fbgemm-gpu = {version = "0.8.0", source = "pytorch_cpu"}
+# Optional dependencies
+torch = {version = "2.4.1", source = "pytorch_cpu", optional = true}
+torchrec = {version = "0.8.0", source = "pytorch_cpu", optional = true}
+fbgemm-gpu = {version = "0.8.0", source = "pytorch_cpu", optional = true}
+onnxruntime = {version = "^1.16.0", optional = true}
+onnx = {version = "^1.15.0", optional = true}
 
+[tool.poetry.extras]
+torch = ["torch", "torchrec", "fbgemm-gpu"]
+onnx = ["onnxruntime", "onnx"]
 
 [[tool.poetry.source]]
 name = "pytorch_cpu"

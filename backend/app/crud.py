@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, with_loader_criteria
 from sqlalchemy import and_, func, select, delete
+from sqlalchemy.exc import IntegrityError
 from collections import defaultdict
 from . import models, schemas
 from typing import Optional, List, Dict
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 async def get_site(db: AsyncSession, site_id: int):
     result = await db.execute(select(models.Site).filter(models.Site.site_id == site_id))
@@ -307,6 +308,219 @@ def create_site_sync(db, site: schemas.SiteBase):
     db.refresh(db_site)
     return db_site
 
+# --- Notification CRUD Functions ---
+
+
+async def list_user_notifications(db: AsyncSession, user_id: int) -> List[models.UserNotification]:
+    result = await db.execute(
+        select(models.UserNotification)
+        .where(models.UserNotification.user_id == user_id)
+        .order_by(models.UserNotification.notification_id)
+    )
+    return result.scalars().all()
+
+
+async def get_user_notification(db: AsyncSession, user_id: int, notification_id: int) -> Optional[models.UserNotification]:
+    result = await db.execute(
+        select(models.UserNotification).where(
+            models.UserNotification.user_id == user_id,
+            models.UserNotification.notification_id == notification_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_user_notification(
+    db: AsyncSession,
+    user_id: int,
+    payload: schemas.NotificationCreate,
+) -> models.UserNotification:
+    data = payload.model_dump()
+    notification = models.UserNotification(
+        user_id=user_id,
+        site_id=data["site_id"],
+        metric=data["metric"],
+        comparison=data["comparison"],
+        threshold=data["threshold"],
+        lead_time_hours=data["lead_time_hours"],
+    )
+    db.add(notification)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise
+    await db.refresh(notification)
+    return notification
+
+
+async def update_user_notification(
+    db: AsyncSession,
+    notification: models.UserNotification,
+    payload: schemas.NotificationUpdate,
+) -> models.UserNotification:
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(notification, field, value)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise
+    await db.refresh(notification)
+    return notification
+
+
+async def delete_user_notification(db: AsyncSession, notification: models.UserNotification) -> None:
+    await db.delete(notification)
+    await db.commit()
+
+
+async def get_active_notifications(
+    db: AsyncSession,
+    site_ids: Optional[List[int]] = None,
+    metric: Optional[str] = None,
+) -> List[models.UserNotification]:
+    query = select(models.UserNotification).where(models.UserNotification.active.is_(True))
+    if site_ids:
+        query = query.where(models.UserNotification.site_id.in_(site_ids))
+    if metric:
+        query = query.where(models.UserNotification.metric == metric)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def update_notification_last_triggered(
+    db: AsyncSession,
+    notification: models.UserNotification,
+    triggered_at: datetime,
+) -> None:
+    notification.last_triggered_at = triggered_at
+    await db.commit()
+
+
+async def list_push_subscriptions(db: AsyncSession, user_id: int) -> List[models.PushSubscription]:
+    result = await db.execute(
+        select(models.PushSubscription)
+        .where(
+            models.PushSubscription.user_id == user_id,
+            models.PushSubscription.is_active.is_(True)
+        )
+        .order_by(models.PushSubscription.subscription_id)
+    )
+    return result.scalars().all()
+
+
+async def upsert_push_subscription(
+    db: AsyncSession,
+    user_id: int,
+    payload: schemas.PushSubscriptionCreate,
+) -> models.PushSubscription:
+    data = payload.model_dump()
+    result = await db.execute(
+        select(models.PushSubscription).where(models.PushSubscription.endpoint == data["endpoint"])
+    )
+    subscription = result.scalar_one_or_none()
+    now = datetime.now(timezone.utc)
+    if subscription:
+        subscription.user_id = user_id
+        subscription.p256dh = data["p256dh"]
+        subscription.auth = data["auth"]
+        subscription.client_info = data.get("client_info")
+        subscription.is_active = True
+        subscription.last_used_at = now
+    else:
+        subscription = models.PushSubscription(
+            user_id=user_id,
+            endpoint=data["endpoint"],
+            p256dh=data["p256dh"],
+            auth=data["auth"],
+            client_info=data.get("client_info"),
+            is_active=True,
+            last_used_at=now,
+        )
+        db.add(subscription)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise
+    await db.refresh(subscription)
+    return subscription
+
+
+async def deactivate_push_subscription(
+    db: AsyncSession,
+    user_id: int,
+    subscription_id: int,
+) -> Optional[models.PushSubscription]:
+    result = await db.execute(
+        select(models.PushSubscription).where(
+            models.PushSubscription.subscription_id == subscription_id,
+            models.PushSubscription.user_id == user_id,
+        )
+    )
+    subscription = result.scalar_one_or_none()
+    if not subscription:
+        return None
+    subscription.is_active = False
+    subscription.last_used_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(subscription)
+    return subscription
+
+
+async def get_active_push_subscriptions_for_users(
+    db: AsyncSession,
+    user_ids: List[int],
+) -> Dict[int, List[models.PushSubscription]]:
+    if not user_ids:
+        return {}
+    result = await db.execute(
+        select(models.PushSubscription).where(
+            models.PushSubscription.user_id.in_(user_ids),
+            models.PushSubscription.is_active.is_(True),
+        )
+    )
+    subs = result.scalars().all()
+    by_user: Dict[int, List[models.PushSubscription]] = defaultdict(list)
+    for sub in subs:
+        by_user[sub.user_id].append(sub)
+    return by_user
+
+
+async def create_notification_event(
+    db: AsyncSession,
+    notification_id: int,
+    subscription_id: Optional[int],
+    payload: Dict,
+    status: str = "queued",
+) -> models.NotificationEvent:
+    event = models.NotificationEvent(
+        notification_id=notification_id,
+        subscription_id=subscription_id,
+        payload=payload,
+        delivery_status=status,
+    )
+    db.add(event)
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+async def list_notification_events_for_notification(
+    db: AsyncSession,
+    notification_id: int,
+    limit: int = 50,
+) -> List[models.NotificationEvent]:
+    result = await db.execute(
+        select(models.NotificationEvent)
+        .where(models.NotificationEvent.notification_id == notification_id)
+        .order_by(models.NotificationEvent.triggered_at.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()
+
 # --- Trip Planning CRUD Functions ---
 
 async def get_predictions_for_range(
@@ -351,3 +565,84 @@ async def get_all_flight_stats(db: AsyncSession) -> List[models.FlightStats]:
     """
     result = await db.execute(select(models.FlightStats))
     return result.scalars().all()
+
+
+# --- D2D Similar Dates CRUD Functions ---
+
+async def delete_similar_dates_by_forecast_date(db: AsyncSession, forecast_date: date):
+    """
+    Delete existing similar_dates for a forecast_date (overwrite behavior).
+    """
+    await db.execute(delete(models.SimilarDate).where(models.SimilarDate.forecast_date == forecast_date))
+    await db.commit()
+
+
+async def create_similar_date(db: AsyncSession, similar_date: schemas.SimilarDateCreate):
+    """
+    Upsert a similar_date record (insert or update on conflict).
+    """
+    from sqlalchemy.dialects.postgresql import insert
+    
+    data = similar_date.dict()
+    stmt = insert(models.SimilarDate).values(**data)
+    
+    # Build update dict using excluded references
+    # stmt.excluded provides access to the EXCLUDED columns
+    excluded = stmt.excluded
+    stmt = stmt.on_conflict_do_update(
+        constraint='similar_dates_pkey',
+        set_={
+            'similarity': excluded.similarity,
+            'forecast_9': excluded.forecast_9,
+            'forecast_12': excluded.forecast_12,
+            'forecast_15': excluded.forecast_15,
+            'computed_at': excluded.computed_at,
+            'gfs_forecast_at': excluded.gfs_forecast_at
+        }
+    )
+    await db.execute(stmt)
+    await db.commit()
+    
+    # Retrieve the record
+    result = await db.execute(
+        select(models.SimilarDate).where(
+            models.SimilarDate.site_id == data['site_id'],
+            models.SimilarDate.forecast_date == data['forecast_date'],
+            models.SimilarDate.past_date == data['past_date']
+        )
+    )
+    return result.scalar_one()
+
+
+async def get_similar_dates(
+    db: AsyncSession,
+    site_id: int,
+    forecast_date: date
+) -> List[models.SimilarDate]:
+    """
+    Get similar dates for site_id and forecast_date, ordered by similarity (highest first).
+    """
+    query = select(models.SimilarDate).where(
+        models.SimilarDate.site_id == site_id,
+        models.SimilarDate.forecast_date == forecast_date
+    ).order_by(models.SimilarDate.similarity.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def get_past_date_forecast(
+    db: AsyncSession,
+    site_id: int,
+    forecast_date: date,
+    past_date: date
+) -> Optional[models.SimilarDate]:
+    """
+    Get forecast for specific site_id, forecast_date, and past_date from similar_dates table.
+    """
+    query = select(models.SimilarDate).where(
+        models.SimilarDate.site_id == site_id,
+        models.SimilarDate.forecast_date == forecast_date,
+        models.SimilarDate.past_date == past_date
+    )
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
