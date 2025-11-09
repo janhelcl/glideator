@@ -9,9 +9,15 @@ readme = "README.md"
 requires-python = ">=3.13,<4.0"
 dependencies = [
     "jupyterlab (>=4.4.9,<5.0.0)",
-    "browser-use (>=0.7.10,<0.8.0)",
+    "browser-use (>=0.8.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "chromium (>=0.0.0,<0.0.1)"
+    "chromium (>=0.0.0,<0.0.1)",
+    "pydantic (>=2.12.3,<3.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "google-genai (>=1.48.0,<2.0.0)",
+    "sqlalchemy (>=2.0.44,<3.0.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "matplotlib (>=3.10.7,<4.0.0)"
 ]
 
 
