@@ -1,0 +1,19 @@
+[project]
+name = "ground-crew"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "typer[all]",
+  "psycopg[binary]>=3.2.1",
+  "SQLAlchemy>=2.0",
+  "python-dotenv",
+  "pandas",
+  "tldextract",
+  "httpx",
+  "playwright",         # remember: `playwright install chromium`
+  "browser-use",        # your agent framework
+  "pydantic>=2.7",
+]
+
+[project.scripts]
+resources = "ground_crew.cli:app"
