@@ -1,18 +1,19 @@
 """CLI for ground crew data management."""
 
+import asyncio
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import typer
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+from .agent_runner import CandidateRetrievalAgent
+from .db import get_engine
 from .io import load_extraction_run
+from .sites import format_site_details, get_sites
 
 app = typer.Typer(help="Ground Crew - Manage extraction run data")
 console = Console()
@@ -99,20 +100,6 @@ def _collect_candidates() -> List[Dict[str, Any]]:
         )
 
     return candidates
-
-
-def get_engine():
-    """Get database engine from environment variables."""
-    load_dotenv()
-    
-    connection_string = "postgresql://{user}:{password}@{host}:{port}/{db}".format(
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD'),
-        host=os.getenv('DB_HOST'),
-        port=os.getenv('DB_PORT'),
-        db=os.getenv('DB_NAME')
-    )
-    return create_engine(connection_string)
 
 
 @app.command()
@@ -202,6 +189,125 @@ def manual_run():
     console.print(
         f"[green]✓ Manual run stored with run_id={run_id} "
         f"({len(candidates)} candidate(s))[/green]"
+    )
+
+
+async def _run_candidate_retrieval_for_sites(
+    output_path: Path,
+    site_rows,
+    engine,
+):
+    """Run the CandidateRetrievalAgent for the provided site rows."""
+    total_sites = len(site_rows)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    console.print(f"[cyan]Processing {total_sites} site(s). Writing to {output_path}[/cyan]")
+
+    success_count = 0
+    with output_path.open("w", encoding="utf-8") as output_file:
+        for idx, row in enumerate(site_rows, start=1):
+            site_id = int(row.site_id)
+            site_name = row.name
+            country = row.country
+
+            console.rule(f"[bold]Site {idx}/{total_sites}: {site_name} ({country})[/bold]")
+            try:
+                site_details = format_site_details(site_name, country, engine)
+                retrieval_agent = CandidateRetrievalAgent()
+                retrieval_agent.set_task(site_details)
+
+                console.print(f"[italic]Running agent for site_id={site_id}...[/italic]")
+                start_time = datetime.utcnow()
+                result = await retrieval_agent.run()
+                duration = (datetime.utcnow() - start_time).total_seconds()
+
+                record = {
+                    "site_id": site_id,
+                    "site_name": site_name,
+                    "country": country,
+                    "extracted_at": datetime.utcnow().isoformat(),
+                    "duration_seconds": duration,
+                    "result": result,
+                    "agent": "BUAgent",
+                }
+
+                output_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+                output_file.flush()
+
+                if result.get("is_successful"):
+                    success_count += 1
+                    structured_output = result.get("structured_output") or {}
+                    candidates = len(structured_output.get("candidate_websites", []))
+                    usage_stats = result.get("usage_stats") or {}
+                    console.print(
+                        f"[green]✓ Success. {candidates} candidate(s). "
+                        f"Cost ${usage_stats.get('total_cost', 0):.4f}[/green]"
+                    )
+                else:
+                    console.print("[yellow]Agent finished but marked as unsuccessful.[/yellow]")
+
+            except Exception as exc:  # pragma: no cover - interactive command
+                console.print(f"[red]Error processing {site_name} ({site_id}): {exc}[/red]")
+                error_record = {
+                    "site_id": site_id,
+                    "site_name": site_name,
+                    "country": country,
+                    "extracted_at": datetime.utcnow().isoformat(),
+                    "error": str(exc),
+                    "result": None,
+                    "agent": "BUAgent",
+                }
+                output_file.write(json.dumps(error_record, ensure_ascii=False) + "\n")
+                output_file.flush()
+
+    console.print(
+        f"[bold green]Completed candidate retrieval. "
+        f"{success_count}/{total_sites} successful run(s).[/bold green]"
+    )
+
+
+@app.command("candidate-run")
+def candidate_run(
+    output: Path = typer.Option(
+        Path("outputs/candidate_retrieval_results.jsonl"),
+        "--output",
+        "-o",
+        help="Path to write JSONL results.",
+    ),
+    site_ids: Optional[List[int]] = typer.Option(
+        None,
+        "--site-id",
+        "-s",
+        help="Filter to specific site IDs (repeat option for multiple).",
+    ),
+    limit: Optional[int] = typer.Option(
+        None,
+        "--limit",
+        "-l",
+        help="Limit the number of sites to process after applying filters.",
+    ),
+):
+    """Run the CandidateRetrievalAgent via the CLI."""
+    engine = get_engine()
+    sites_df = get_sites(engine)
+
+    if site_ids:
+        site_set = set(site_ids)
+        sites_df = sites_df[sites_df["site_id"].isin(site_set)]
+
+    if limit is not None:
+        sites_df = sites_df.head(limit)
+
+    if sites_df.empty:
+        console.print("[yellow]No sites match the given filters.[/yellow]")
+        raise typer.Exit(1)
+
+    asyncio.run(
+        _run_candidate_retrieval_for_sites(
+            output_path=output,
+            site_rows=list(sites_df.itertuples(index=False)),
+            engine=engine,
+        )
     )
 
 
