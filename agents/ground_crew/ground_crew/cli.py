@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -14,6 +15,14 @@ from .agent_runner import CandidateRetrievalAgent
 from .db import get_engine
 from .io import load_extraction_run
 from .sites import format_site_details, get_sites
+from .validation import BrowserValidator, ValidationResult, ValidationStatus
+from .validation.io import (
+    create_validation_run,
+    finalize_validation_run,
+    fetch_candidates_for_validation,
+    get_candidate_by_id,
+    record_candidate_validation,
+)
 
 app = typer.Typer(help="Ground Crew - Manage extraction run data")
 console = Console()
@@ -100,6 +109,18 @@ def _collect_candidates() -> List[Dict[str, Any]]:
         )
 
     return candidates
+
+
+def _prompt_optional_int(message: str) -> Optional[int]:
+    """Prompt user for an integer, allowing blank for None."""
+    value = typer.prompt(f"{message} (leave blank to skip)", default="").strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        console.print("[red]Please provide a valid integer or leave blank.[/red]")
+        return _prompt_optional_int(message)
 
 
 @app.command()
@@ -264,6 +285,260 @@ async def _run_candidate_retrieval_for_sites(
         f"[bold green]Completed candidate retrieval. "
         f"{success_count}/{total_sites} successful run(s).[/bold green]"
     )
+
+
+@app.command("candidate-validate")
+def candidate_validate(
+    candidate_ids: Optional[List[int]] = typer.Option(
+        None,
+        "--candidate-id",
+        "-c",
+        help="Specific candidate IDs to validate (repeat option for multiple).",
+    ),
+    site_ids: Optional[List[int]] = typer.Option(
+        None,
+        "--site-id",
+        "-s",
+        help="Filter candidates by site IDs.",
+    ),
+    host: Optional[str] = typer.Option(
+        None,
+        "--host",
+        help="Filter by exact domain host.",
+    ),
+    limit: Optional[int] = typer.Option(
+        None,
+        "--limit",
+        "-l",
+        help="Limit number of candidates to validate.",
+    ),
+    only_unvalidated: bool = typer.Option(
+        False,
+        "--only-unvalidated",
+        help="Include only candidates that have never been validated.",
+    ),
+    retry_failed: bool = typer.Option(
+        False,
+        "--retry-failed",
+        help="Include only candidates whose latest validation was not successful.",
+    ),
+    headless: bool = typer.Option(True, help="Run browser headless."),
+    timeout_ms: int = typer.Option(15000, help="Navigation timeout in milliseconds."),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Optional JSONL file to write validation results.",
+    ),
+    validated_by: str = typer.Option(
+        "BUValidator",
+        "--validated-by",
+        help="Label stored with validation records.",
+    ),
+):
+    """Validate candidate URLs via a real browser and store the results."""
+    engine = get_engine()
+    filters = {
+        "candidate_ids": candidate_ids,
+        "site_ids": site_ids,
+        "host": host,
+        "limit": limit,
+        "only_unvalidated": only_unvalidated,
+        "retry_failed": retry_failed,
+    }
+    candidates = fetch_candidates_for_validation(
+        engine,
+        candidate_ids=candidate_ids,
+        site_ids=site_ids,
+        host=host,
+        limit=limit,
+        only_unvalidated=only_unvalidated,
+    )
+
+    if retry_failed:
+        candidates = [
+            c
+            for c in candidates
+            if c.get("latest_status") and c.get("latest_status") != ValidationStatus.OK.value
+        ]
+
+    if not candidates:
+        console.print("[yellow]No candidates match the provided filters.[/yellow]")
+        raise typer.Exit()
+
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output_handle = output.open("w", encoding="utf-8")
+    else:
+        output_handle = None
+
+    run_id = create_validation_run(
+        engine,
+        triggered_by="cli",
+        validator="browser",
+        filters=filters,
+    )
+
+    success = 0
+    failure = 0
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Validating candidates...", total=len(candidates))
+            validation_results = asyncio.run(
+                _validate_candidates_async(
+                    candidates,
+                    headless=headless,
+                    timeout_ms=timeout_ms,
+                    progress=progress,
+                    task_id=task,
+                )
+            )
+
+        for candidate, result in validation_results:
+            record_candidate_validation(
+                engine,
+                candidate_id=int(candidate["candidate_id"]),
+                result=result,
+                validation_run_id=run_id,
+                validator="browser",
+                validated_by=validated_by,
+            )
+
+            if output_handle:
+                output_handle.write(
+                    json.dumps(
+                        {
+                            **candidate,
+                            "validation": asdict(result),
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
+            if result.status in (ValidationStatus.OK, ValidationStatus.REDIRECTED):
+                success += 1
+            else:
+                failure += 1
+
+    finally:
+        if output_handle:
+            output_handle.close()
+        finalize_validation_run(
+            engine,
+            run_id,
+            candidate_total=len(candidates),
+            success_count=success,
+            failure_count=failure,
+        )
+
+    console.print(
+        f"[green]Validation run complete.[/green] "
+        f"{success} succeeded / {failure} failed (run_id={run_id})."
+    )
+
+
+@app.command("candidate-validate-manual")
+def candidate_validate_manual(
+    candidate_id: int = typer.Option(
+        ...,
+        "--candidate-id",
+        "-c",
+        prompt=True,
+        help="Candidate ID to annotate.",
+    ),
+    validated_by: str = typer.Option(
+        "Human",
+        "--validated-by",
+        help="Label for the operator performing the validation.",
+    ),
+):
+    """Record a manual validation decision for a candidate."""
+    engine = get_engine()
+    candidate = get_candidate_by_id(engine, candidate_id)
+    if not candidate:
+        console.print(f"[red]Candidate {candidate_id} not found.[/red]")
+        raise typer.Exit(1)
+
+    console.print("[bold cyan]Candidate details[/bold cyan]")
+    console.print(
+        f"Site ID: {candidate['site_id']} | Run ID: {candidate['run_id']} | "
+        f"Name: {candidate.get('name') or '<unnamed>'}"
+    )
+    console.print(f"URL: {candidate['url']}")
+    if candidate.get("latest_status"):
+        console.print(
+            f"Latest status: {candidate['latest_status']} "
+            f"(at {candidate.get('latest_validated_at')})"
+        )
+
+    status_value = typer.prompt(
+        "Validation status [ok/dead/redirected/blocked/timeout/error]",
+        default="ok",
+    ).strip().lower()
+    try:
+        status = ValidationStatus(status_value)
+    except ValueError:
+        console.print("[red]Invalid status provided.[/red]")
+        raise typer.Exit(1)
+
+    http_status = _prompt_optional_int("HTTP status code")
+    latency_ms = _prompt_optional_int("Latency in ms")
+    final_url_input = typer.prompt("Final URL (leave blank to keep original)", default="").strip()
+    error_notes = typer.prompt("Error/notes (optional)", default="").strip() or None
+
+    result = ValidationResult(
+        status=status,
+        http_status=http_status,
+        final_url=final_url_input or candidate["url"],
+        latency_ms=latency_ms,
+        error=error_notes,
+    )
+
+    record_candidate_validation(
+        engine,
+        candidate_id=candidate_id,
+        result=result,
+        validation_run_id=None,
+        validator="manual",
+        validated_by=validated_by,
+    )
+
+    console.print(
+        "[green]Manual validation recorded[/green] "
+        f"(candidate_id={candidate_id}, status={result.status.value})."
+    )
+
+
+async def _validate_candidates_async(
+    candidates: List[Dict[str, Any]],
+    *,
+    headless: bool,
+    timeout_ms: int,
+    progress: Progress | None = None,
+    task_id: int | None = None,
+):
+    """Run browser validations sequentially while reusing a single browser."""
+    validator = BrowserValidator(headless=headless, timeout_ms=timeout_ms)
+    results: List[tuple[Dict[str, Any], Any]] = []
+    try:
+        for idx, candidate in enumerate(candidates, start=1):
+            result = await validator.validate_url(candidate["url"])
+            results.append((candidate, result))
+            if progress and task_id is not None:
+                label = candidate.get("name") or candidate.get("url")
+                progress.update(
+                    task_id,
+                    advance=1,
+                    description=f"Validating {label} ({idx}/{len(candidates)})",
+                )
+    finally:
+        await validator.close()
+    return results
 
 
 @app.command("candidate-run")

@@ -16,4 +16,4 @@ dependencies = [
 ]
 
 [project.scripts]
-resources = "ground_crew.cli:app"
+ground-crew = "ground_crew.cli:app"

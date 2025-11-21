@@ -55,6 +55,42 @@ CREATE INDEX idx_extraction_candidates_run_id ON glideator_ground_crew.extractio
 CREATE INDEX idx_extraction_candidates_url ON glideator_ground_crew.extraction_candidates(url);
 CREATE INDEX idx_extraction_candidates_host ON glideator_ground_crew.extraction_candidates(host);
 
+-- Table: candidate_validation_runs
+-- Purpose: Track batches of candidate validation operations
+CREATE TABLE glideator_ground_crew.candidate_validation_runs (
+    validation_run_id BIGSERIAL PRIMARY KEY,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    triggered_by VARCHAR NOT NULL DEFAULT 'cli', -- cli/manual/schedule/etc
+    filters JSONB DEFAULT '{}'::jsonb,
+    validator VARCHAR DEFAULT 'browser',
+    candidate_total INTEGER,
+    success_count INTEGER,
+    failure_count INTEGER,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Table: candidate_validations
+-- Purpose: Append-only records of individual validation attempts per candidate
+CREATE TABLE glideator_ground_crew.candidate_validations (
+    validation_id BIGSERIAL PRIMARY KEY,
+    candidate_id BIGINT NOT NULL REFERENCES glideator_ground_crew.extraction_candidates(candidate_id),
+    validation_run_id BIGINT REFERENCES glideator_ground_crew.candidate_validation_runs(validation_run_id),
+    status VARCHAR NOT NULL,
+    http_status INTEGER,
+    final_url TEXT,
+    latency_ms INTEGER,
+    error TEXT,
+    validator VARCHAR DEFAULT 'browser',
+    validated_by VARCHAR,
+    validated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_candidate_validations_candidate_id ON glideator_ground_crew.candidate_validations(candidate_id, validated_at DESC);
+CREATE INDEX idx_candidate_validations_run_id ON glideator_ground_crew.candidate_validations(validation_run_id);
+CREATE INDEX idx_candidate_validations_status ON glideator_ground_crew.candidate_validations(status, validated_at DESC);
+
 -- Example queries
 -- ================
 
