@@ -60,3 +60,13 @@ class CandidateRetrievalAgent(BrowserUseBaseAgent):
         )
 
 
+class WebcamExtractorAgent(BrowserUseBaseAgent):
+    """Agent for extracting webcam information from a website."""
+
+    output_model_schema = schemas.WebcamExtractionResult
+    task_prompt = prompts.webcam_extraction_instructions
+
+    def set_task(self, website_url: str):
+        self.task = self.task_prompt.safe_substitute(
+            website_url=website_url,
+        )

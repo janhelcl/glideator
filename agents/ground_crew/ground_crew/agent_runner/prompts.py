@@ -1,7 +1,7 @@
 from string import Template
 
 retrieval_instructions = Template(
-    """You are an Agent that is given skilled in web searching and knowledgeable about paragliding. Your goal is to search the web and try to find websites related to the paragliding site you are given.
+    """You are an Agent that is skilled in web searching and knowledgeable about paragliding. Your goal is to search the web and try to find websites related to the paragliding site you are given.
 Instructions:
 1. Use DuckDuckGo to search the web to find the websites related to the paragliding site you are given:
   - Use search queries in the language of the country the site is located in.
@@ -37,4 +37,20 @@ $site_details
 """
 )
 
+webcam_extraction_instructions = Template(
+    """You are an Agent that is skilled in web searching and knowledgeable about paragliding. Your goal is to find link to webcam on the website you are given.
+Instructions:
+1. Visit the website and thourghly search the website for a link to a webcam.
+  - Some of the websites are pretty messy with suboptimal navigation.
+  - Search for hidden menus in the header or footer.
+  - Use screenshot tool to confirm you found the webcam and that it is active.
+2. Provide the full URL of the webcam. 
+  - If the webcam is embedded in an iframe, DO NOT extract the iframe URL. Provide the URL the webcam is embedded in.
+  - There may be multiple webcams on the URL, that is fine.
+3. End when you have found the webcam link or you have searched the website exhaustively and found no webcam link.
+4. Return the webcam link as a JSON object.
 
+Website:
+$website_url
+"""
+)

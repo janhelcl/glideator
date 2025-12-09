@@ -35,3 +35,6 @@ class RetrievalResult(BaseModel):
     )
 
 
+class WebcamExtractionResult(BaseModel):
+    found: bool = Field(description="Whether the webcam was found")
+    webcam_url: str = Field(description="URL of the webcam (empty if not found)", default="")
