@@ -38,3 +38,8 @@ class RetrievalResult(BaseModel):
 class WebcamExtractionResult(BaseModel):
     found: bool = Field(description="Whether the webcam was found")
     webcam_url: str = Field(description="URL of the webcam (empty if not found)", default="")
+
+
+class MeteostationExtractionResult(BaseModel):
+    found: bool = Field(description="Whether the meteostation was found")
+    meteostation_url: str = Field(description="URL of the meteostation (empty if not found)", default="")

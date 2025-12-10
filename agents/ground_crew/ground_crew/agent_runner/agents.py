@@ -25,7 +25,7 @@ class BrowserUseBaseAgent:
         agent = Agent(
             task=self.task,
             browser=Browser(headless=False),
-            llm=ChatGoogle(model="gemini-2.5-flash-preview-09-2025"),
+            llm=ChatGoogle(model="gemini-2.5-pro"), #gemini-2.5-flash-preview-09-2025
             output_model_schema=self.output_model_schema,
             calculate_cost=True,
         )
@@ -65,6 +65,18 @@ class WebcamExtractorAgent(BrowserUseBaseAgent):
 
     output_model_schema = schemas.WebcamExtractionResult
     task_prompt = prompts.webcam_extraction_instructions
+
+    def set_task(self, website_url: str):
+        self.task = self.task_prompt.safe_substitute(
+            website_url=website_url,
+        )
+
+
+class MeteostationExtractorAgent(BrowserUseBaseAgent):
+    """Agent for extracting meteostation information from a website."""
+
+    output_model_schema = schemas.MeteostationExtractionResult
+    task_prompt = prompts.meteostation_extraction_instructions
 
     def set_task(self, website_url: str):
         self.task = self.task_prompt.safe_substitute(
