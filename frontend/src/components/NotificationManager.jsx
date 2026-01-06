@@ -35,6 +35,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useNotifications } from '../context/NotificationContext';
@@ -56,6 +59,7 @@ const DEFAULT_RULE_FORM = {
   comparison: 'gte',
   threshold: 50,
   lead_time_hours: 0,
+  improvement_threshold: 15,
   active: true,
 };
 
@@ -70,6 +74,30 @@ const truncate = (value, maxLength = 36) => {
   if (!value) return '';
   if (value.length <= maxLength) return value;
   return `${value.slice(0, maxLength)}...`;
+};
+
+const getEventTypeDisplay = (eventType) => {
+  switch (eventType) {
+    case 'deteriorated':
+      return {
+        label: 'Conditions dropped',
+        color: 'warning',
+        icon: <TrendingDownIcon fontSize="small" />,
+      };
+    case 'improved':
+      return {
+        label: 'Conditions improved',
+        color: 'success',
+        icon: <TrendingUpIcon fontSize="small" />,
+      };
+    case 'initial':
+    default:
+      return {
+        label: 'Initial alert',
+        color: 'info',
+        icon: <NewReleasesIcon fontSize="small" />,
+      };
+  }
 };
 
 const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityProp }) => {
@@ -137,6 +165,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
         comparison: rule.comparison,
         threshold: rule.threshold ?? 0,
         lead_time_hours: rule.lead_time_hours ?? 0,
+        improvement_threshold: rule.improvement_threshold ?? 15,
         active: rule.active,
       });
     } else {
@@ -151,6 +180,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
           preset.lead_time_hours !== undefined
             ? preset.lead_time_hours
             : DEFAULT_RULE_FORM.lead_time_hours,
+        improvement_threshold: DEFAULT_RULE_FORM.improvement_threshold,
         active: true,
       });
     }
@@ -220,6 +250,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
         comparison: ruleForm.comparison,
         threshold: Number(ruleForm.threshold),
         lead_time_hours: Number(ruleForm.lead_time_hours),
+        improvement_threshold: Number(ruleForm.improvement_threshold),
         active: Boolean(ruleForm.active),
       };
 
@@ -495,30 +526,52 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                   </Typography>
                 ) : (
                   <Stack spacing={1}>
-                    {events.map((event) => (
-                      <Paper key={event.event_id} variant="outlined" sx={{ p: 1.5 }}>
-                        <Stack
-                          direction={{ xs: 'column', sm: 'row' }}
-                          spacing={1}
-                          justifyContent="space-between"
-                        >
-                          <Typography variant="subtitle2">
-                            {formatTimestamp(event.triggered_at)}
+                    {events.map((event) => {
+                      const eventTypeInfo = getEventTypeDisplay(event.payload?.event_type);
+                      return (
+                        <Paper key={event.event_id} variant="outlined" sx={{ p: 1.5 }}>
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1}
+                            justifyContent="space-between"
+                            alignItems={{ sm: 'center' }}
+                          >
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Typography variant="subtitle2">
+                                {formatTimestamp(event.triggered_at)}
+                              </Typography>
+                              <Chip
+                                icon={eventTypeInfo.icon}
+                                label={eventTypeInfo.label}
+                                size="small"
+                                color={eventTypeInfo.color}
+                                variant="outlined"
+                              />
+                            </Stack>
+                            <Typography variant="body2" color="text.secondary">
+                              Status: {event.delivery_status}
+                            </Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {event.payload?.previous_value != null ? (
+                              <>
+                                Value: {event.payload.previous_value}% → {event.payload?.value ?? 'n/a'}%
+                                {' '}(threshold {rule.threshold}%)
+                              </>
+                            ) : (
+                              <>
+                                Value: {event.payload?.value ?? 'n/a'}% (threshold {rule.threshold}%)
+                              </>
+                            )}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Status: {event.delivery_status}
-                          </Typography>
-                        </Stack>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          Value: {event.payload?.value ?? 'n/a'} (threshold {rule.threshold})
-                        </Typography>
-                        {event.payload?.prediction_date && (
-                          <Typography variant="caption" color="text.secondary">
-                            Forecast date {event.payload.prediction_date}
-                          </Typography>
-                        )}
-                      </Paper>
-                    ))}
+                          {event.payload?.prediction_date && (
+                            <Typography variant="caption" color="text.secondary">
+                              Forecast date {event.payload.prediction_date}
+                            </Typography>
+                          )}
+                        </Paper>
+                      );
+                    })}
                   </Stack>
                 )}
               </Collapse>
@@ -612,6 +665,17 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                 onChange={handleRuleFieldChange}
                 inputProps={{ min: 0, max: 168 }}
                 helperText="Notify this many hours before the forecast window (0 for immediate)."
+              />
+
+              <TextField
+                fullWidth
+                label="Improvement threshold (%)"
+                name="improvement_threshold"
+                type="number"
+                value={ruleForm.improvement_threshold}
+                onChange={handleRuleFieldChange}
+                inputProps={{ min: 0, max: 100, step: 5 }}
+                helperText="Re-notify when conditions improve by this many percentage points (e.g., 35% to 50%)."
               />
 
               <Stack direction="row" spacing={1} alignItems="center">

@@ -219,12 +219,16 @@ class FavoriteRequest(BaseModel):
 NotificationComparison = Literal['gt', 'gte', 'lt', 'lte', 'eq']
 
 
+NotificationEventType = Literal['initial', 'deteriorated', 'improved']
+
+
 class NotificationBase(BaseModel):
     site_id: int
     metric: str
     comparison: NotificationComparison
     threshold: float
     lead_time_hours: int = Field(default=0, ge=0, le=168, description="Hours before forecasted event to notify")
+    improvement_threshold: float = Field(default=15.0, ge=0, le=100, description="Percentage point increase to trigger improvement notification")
 
     @field_validator("metric")
     @classmethod
@@ -243,6 +247,7 @@ class NotificationUpdate(BaseModel):
     comparison: Optional[NotificationComparison] = None
     threshold: Optional[float] = None
     lead_time_hours: Optional[int] = Field(default=None, ge=0, le=168)
+    improvement_threshold: Optional[float] = Field(default=None, ge=0, le=100)
     active: Optional[bool] = None
 
     @field_validator("metric")
@@ -296,6 +301,16 @@ class NotificationEventOut(BaseModel):
     triggered_at: datetime
     payload: dict
     delivery_status: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotifiedForecastOut(BaseModel):
+    id: int
+    notification_id: int
+    forecast_date: date
+    last_value: float
+    last_event_type: NotificationEventType
+    notified_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 

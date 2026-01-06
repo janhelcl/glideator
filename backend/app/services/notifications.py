@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models
+from .. import crud
 from .push_delivery import (
     PushConfigError,
     PushDeliveryError,
@@ -24,6 +25,10 @@ COMPARISON_OPERATORS = {
     "eq": lambda value, threshold: value == threshold,
 }
 
+EVENT_TYPE_INITIAL = "initial"
+EVENT_TYPE_DETERIORATED = "deteriorated"
+EVENT_TYPE_IMPROVED = "improved"
+
 
 def ensure_aware(dt: Optional[datetime]) -> Optional[datetime]:
     if dt is None:
@@ -38,6 +43,8 @@ class NotificationTrigger:
     notification: models.UserNotification
     prediction: models.Prediction
     payload: Dict
+    event_type: str
+    previous_value: Optional[float] = None
 
 
 def _build_notification_payload(
@@ -45,6 +52,8 @@ def _build_notification_payload(
     prediction: models.Prediction,
     site_names: Dict[int, str],
     now: datetime,
+    event_type: str,
+    previous_value: Optional[float] = None,
 ) -> Dict:
     computed_at = ensure_aware(prediction.computed_at)
     forecast_at = ensure_aware(prediction.gfs_forecast_at)
@@ -57,24 +66,35 @@ def _build_notification_payload(
         "comparison": notification.comparison,
         "threshold": notification.threshold,
         "value": round(prediction.value * 100, 1),
+        "previous_value": round(previous_value * 100, 1) if previous_value is not None else None,
         "prediction_date": prediction.date.isoformat(),
         "computed_at": computed_at.isoformat() if computed_at else None,
         "gfs_forecast_at": forecast_at.isoformat() if forecast_at else None,
         "lead_time_hours": notification.lead_time_hours,
         "triggered_at": now.isoformat(),
+        "event_type": event_type,
     }
 
 
 def _build_notification_title(payload: Dict) -> str:
     site_name = payload.get("site_name") or "Glideator site"
-    return f"Heads up for {site_name}!"
+    event_type = payload.get("event_type", EVENT_TYPE_INITIAL)
+
+    if event_type == EVENT_TYPE_DETERIORATED:
+        return f"Conditions changed at {site_name}"
+    elif event_type == EVENT_TYPE_IMPROVED:
+        return f"Good news for {site_name}!"
+    else:
+        return f"Heads up for {site_name}!"
 
 
 def _build_notification_body(payload: Dict) -> str:
     prediction_date = payload.get("prediction_date")
     value = payload.get("value")
+    previous_value = payload.get("previous_value")
     metric = payload.get("metric")
     lead_time_hours = payload.get("lead_time_hours", 0)
+    event_type = payload.get("event_type", EVENT_TYPE_INITIAL)
 
     today_iso = datetime.utcnow().date().isoformat()
     if prediction_date == today_iso:
@@ -82,10 +102,21 @@ def _build_notification_body(payload: Dict) -> str:
     else:
         day_phrase = prediction_date
 
-    return (
-        f"Looks like {day_phrase} is {value}% flyable — above your {metric} goal. "
-        f"We’re letting you know {lead_time_hours} hours early so you can plan it in."
-    )
+    if event_type == EVENT_TYPE_DETERIORATED:
+        return (
+            f"Heads up: {day_phrase} dropped from {previous_value}% to {value}% — "
+            f"now below your {metric} threshold. You may want to reconsider your plans."
+        )
+    elif event_type == EVENT_TYPE_IMPROVED:
+        return (
+            f"Update: {day_phrase} improved from {previous_value}% to {value}% — "
+            f"looking even better for flying!"
+        )
+    else:
+        return (
+            f"Looks like {day_phrase} is {value}% flyable — above your {metric} goal. "
+            f"We're letting you know {lead_time_hours} hours early so you can plan it in."
+        )
 
 
 async def evaluate_and_queue_notifications(
@@ -94,6 +125,7 @@ async def evaluate_and_queue_notifications(
 ) -> List[models.NotificationEvent]:
     now = ensure_aware(now or datetime.now(timezone.utc))
 
+    # Fetch all active notifications
     result = await db.execute(
         select(models.UserNotification).where(models.UserNotification.active.is_(True))
     )
@@ -104,12 +136,14 @@ async def evaluate_and_queue_notifications(
     site_ids = {n.site_id for n in notifications}
     user_ids = {n.user_id for n in notifications}
     metrics = {n.metric for n in notifications}
+    notification_ids = [n.notification_id for n in notifications]
     max_lead_hours = max((n.lead_time_hours for n in notifications), default=0)
 
     start_date = now.date()
     day_window = max(0, (max_lead_hours + 23) // 24)
     end_date = start_date + timedelta(days=day_window)
 
+    # Fetch predictions
     predictions_result = await db.execute(
         select(models.Prediction).where(
             models.Prediction.site_id.in_(site_ids),
@@ -129,11 +163,13 @@ async def evaluate_and_queue_notifications(
     for preds in predictions_by_key.values():
         preds.sort(key=lambda p: (p.date, p.computed_at))
 
+    # Fetch site names
     site_result = await db.execute(
         select(models.Site.site_id, models.Site.name).where(models.Site.site_id.in_(site_ids))
     )
     site_names = {row.site_id: row.name for row in site_result}
 
+    # Fetch push subscriptions
     subs_result = await db.execute(
         select(models.PushSubscription).where(
             models.PushSubscription.user_id.in_(user_ids),
@@ -144,6 +180,11 @@ async def evaluate_and_queue_notifications(
     for sub in subs_result.scalars().all():
         subscriptions_by_user[sub.user_id].append(sub)
 
+    # Fetch existing notified_forecasts records
+    notified_forecasts = await crud.get_notified_forecasts_for_notifications(
+        db, notification_ids, start_date, end_date
+    )
+
     triggers: List[NotificationTrigger] = []
 
     for notification in notifications:
@@ -153,7 +194,12 @@ async def evaluate_and_queue_notifications(
             continue
 
         window_end = now + timedelta(hours=notification.lead_time_hours)
-        last_triggered = ensure_aware(notification.last_triggered_at)
+        normalized_threshold = notification.threshold / 100.0
+        improvement_threshold = notification.improvement_threshold / 100.0
+
+        comparator = COMPARISON_OPERATORS.get(notification.comparison)
+        if not comparator:
+            continue
 
         for pred in preds:
             if pred.date < start_date:
@@ -161,29 +207,64 @@ async def evaluate_and_queue_notifications(
             if notification.lead_time_hours > 0 and pred.date > window_end.date():
                 continue
 
-            computed_at = ensure_aware(pred.computed_at)
-            if last_triggered and computed_at and last_triggered >= computed_at:
-                continue
+            current_value = pred.value
+            threshold_met = comparator(current_value, normalized_threshold)
 
-            comparator = COMPARISON_OPERATORS.get(notification.comparison)
-            if not comparator:
-                continue
+            # Check if we have a previous notification for this forecast date
+            nf_key = (notification.notification_id, pred.date)
+            notified_forecast = notified_forecasts.get(nf_key)
 
-            normalized_threshold = notification.threshold / 100.0
-            if comparator(pred.value, normalized_threshold):
-                payload = _build_notification_payload(notification, pred, site_names, now)
-                triggers.append(
-                    NotificationTrigger(notification=notification, prediction=pred, payload=payload)
+            event_type = None
+            previous_value = None
+
+            if notified_forecast is None:
+                # No previous notification for this forecast date
+                if threshold_met:
+                    event_type = EVENT_TYPE_INITIAL
+            else:
+                # We have previously notified for this forecast date
+                previous_value = notified_forecast.last_value
+                was_above_threshold = comparator(previous_value, normalized_threshold)
+
+                if was_above_threshold and not threshold_met:
+                    # Conditions deteriorated - was above threshold, now below
+                    event_type = EVENT_TYPE_DETERIORATED
+                elif threshold_met and (current_value - previous_value) >= improvement_threshold:
+                    # Conditions improved significantly
+                    event_type = EVENT_TYPE_IMPROVED
+
+            if event_type:
+                payload = _build_notification_payload(
+                    notification, pred, site_names, now, event_type, previous_value
                 )
-                break
+                triggers.append(
+                    NotificationTrigger(
+                        notification=notification,
+                        prediction=pred,
+                        payload=payload,
+                        event_type=event_type,
+                        previous_value=previous_value,
+                    )
+                )
 
     if not triggers:
         return []
 
+    # Create events and update notified_forecasts
     events: List[models.NotificationEvent] = []
     for trigger in triggers:
         notification = trigger.notification
         subscriptions = subscriptions_by_user.get(notification.user_id, [])
+
+        # Update notified_forecasts record
+        await crud.upsert_notified_forecast(
+            db,
+            notification.notification_id,
+            trigger.prediction.date,
+            trigger.prediction.value,
+            trigger.event_type,
+            now,
+        )
 
         if not subscriptions:
             event = models.NotificationEvent(
@@ -209,12 +290,14 @@ async def evaluate_and_queue_notifications(
                 await db.flush()
                 events.append(event)
 
+        # Update last_triggered_at on the notification rule
         notification.last_triggered_at = now
 
     await db.commit()
     for event in events:
         await db.refresh(event)
 
+    # Attempt push delivery
     vapid_config: Optional[VapidConfig] = None
     try:
         vapid_config = get_vapid_configuration()
