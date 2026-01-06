@@ -343,6 +343,7 @@ async def create_user_notification(
         comparison=data["comparison"],
         threshold=data["threshold"],
         lead_time_hours=data["lead_time_hours"],
+        improvement_threshold=data.get("improvement_threshold", 15.0),
     )
     db.add(notification)
     try:
@@ -520,6 +521,106 @@ async def list_notification_events_for_notification(
         .limit(limit)
     )
     return result.scalars().all()
+
+
+# --- Notified Forecasts CRUD Functions ---
+
+
+async def get_notified_forecast(
+    db: AsyncSession,
+    notification_id: int,
+    forecast_date: date,
+) -> Optional[models.NotifiedForecast]:
+    """Get the notified forecast record for a specific notification and forecast date."""
+    result = await db.execute(
+        select(models.NotifiedForecast).where(
+            models.NotifiedForecast.notification_id == notification_id,
+            models.NotifiedForecast.forecast_date == forecast_date,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_notified_forecasts_for_notifications(
+    db: AsyncSession,
+    notification_ids: List[int],
+    start_date: date,
+    end_date: date,
+) -> Dict[tuple, models.NotifiedForecast]:
+    """
+    Bulk fetch notified forecasts for multiple notifications and a date range.
+    Returns a dict keyed by (notification_id, forecast_date).
+    """
+    if not notification_ids:
+        return {}
+    result = await db.execute(
+        select(models.NotifiedForecast).where(
+            models.NotifiedForecast.notification_id.in_(notification_ids),
+            models.NotifiedForecast.forecast_date >= start_date,
+            models.NotifiedForecast.forecast_date <= end_date,
+        )
+    )
+    records = result.scalars().all()
+    return {(r.notification_id, r.forecast_date): r for r in records}
+
+
+async def upsert_notified_forecast(
+    db: AsyncSession,
+    notification_id: int,
+    forecast_date: date,
+    value: float,
+    event_type: str,
+    now: Optional[datetime] = None,
+) -> models.NotifiedForecast:
+    """
+    Create or update a notified forecast record.
+    Value should be in 0-1 scale (matching prediction.value).
+    """
+    from sqlalchemy.dialects.postgresql import insert
+
+    now = now or datetime.now(timezone.utc)
+
+    stmt = insert(models.NotifiedForecast).values(
+        notification_id=notification_id,
+        forecast_date=forecast_date,
+        last_value=value,
+        last_event_type=event_type,
+        notified_at=now,
+    )
+    stmt = stmt.on_conflict_do_update(
+        constraint="uq_notified_forecast_rule_date",
+        set_={
+            "last_value": stmt.excluded.last_value,
+            "last_event_type": stmt.excluded.last_event_type,
+            "notified_at": stmt.excluded.notified_at,
+        },
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+    # Retrieve the record
+    result = await db.execute(
+        select(models.NotifiedForecast).where(
+            models.NotifiedForecast.notification_id == notification_id,
+            models.NotifiedForecast.forecast_date == forecast_date,
+        )
+    )
+    return result.scalar_one()
+
+
+async def cleanup_old_notified_forecasts(db: AsyncSession, before_date: date) -> int:
+    """
+    Delete notified_forecasts records where forecast_date is before the given date.
+    Returns the number of deleted records.
+    """
+    result = await db.execute(
+        delete(models.NotifiedForecast).where(
+            models.NotifiedForecast.forecast_date < before_date
+        )
+    )
+    await db.commit()
+    return result.rowcount
+
 
 # --- Trip Planning CRUD Functions ---
 

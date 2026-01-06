@@ -195,6 +195,7 @@ class UserNotification(Base):
     comparison = Column(String, nullable=False)
     threshold = Column(Float, nullable=False)
     lead_time_hours = Column(Integer, nullable=False, server_default="0")
+    improvement_threshold = Column(Float, nullable=False, server_default="15.0")
     active = Column(Boolean, nullable=False, server_default="true")
     last_triggered_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -209,6 +210,11 @@ class UserNotification(Base):
     site = relationship("Site", back_populates="notifications")
     events = relationship(
         "NotificationEvent",
+        back_populates="notification",
+        cascade="all, delete-orphan",
+    )
+    notified_forecasts = relationship(
+        "NotifiedForecast",
         back_populates="notification",
         cascade="all, delete-orphan",
     )
@@ -287,3 +293,28 @@ class SimilarDate(Base):
 
     # Relationship with Site
     site = relationship("Site", backref="similar_dates")
+
+
+class NotifiedForecast(Base):
+    __tablename__ = "notified_forecasts"
+    __table_args__ = (
+        UniqueConstraint(
+            "notification_id",
+            "forecast_date",
+            name="uq_notified_forecast_rule_date",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    notification_id = Column(
+        Integer,
+        ForeignKey("user_notifications.notification_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    forecast_date = Column(Date, nullable=False, index=True)
+    last_value = Column(Float, nullable=False)
+    last_event_type = Column(String, nullable=False)
+    notified_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    notification = relationship("UserNotification", back_populates="notified_forecasts")
