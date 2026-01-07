@@ -19,13 +19,13 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
+  ListSubheader,
   MenuItem,
   Paper,
   Select,
   Stack,
   Switch,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -101,7 +101,7 @@ const getEventTypeDisplay = (eventType) => {
 };
 
 const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityProp }) => {
-  const { user, profile } = useAuth();
+  const { user, profile, favorites } = useAuth();
   const identityLabel = identityProp || profile?.display_name || user?.email || 'Current device';
 
   const {
@@ -126,19 +126,26 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
 
   const [status, setStatus] = useState({ type: null, message: null });
   const [sites, setSites] = useState([]);
-  const siteOptions = useMemo(
-    () =>
-      (sites || []).map((site) => ({
+  const { favoriteSites, otherSites } = useMemo(() => {
+    const favoriteSet = new Set(favorites.map(String));
+    const allSites = (sites || [])
+      .map((site) => ({
         value: String(site.site_id ?? site[0]),
         label: site.name ?? site[1],
-      })),
-    [sites],
-  );
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    return {
+      favoriteSites: allSites.filter((s) => favoriteSet.has(s.value)),
+      otherSites: allSites.filter((s) => !favoriteSet.has(s.value)),
+    };
+  }, [sites, favorites]);
 
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [ruleSubmitting, setRuleSubmitting] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [ruleForm, setRuleForm] = useState(DEFAULT_RULE_FORM);
+  const [siteSearch, setSiteSearch] = useState('');
   const [expandedRuleId, setExpandedRuleId] = useState(null);
   const [eventsLoadingId, setEventsLoadingId] = useState(null);
   const [subscriptionSubmitting, setSubscriptionSubmitting] = useState(false);
@@ -200,7 +207,20 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
     setRuleDialogOpen(false);
     setEditingRule(null);
     setRuleForm(DEFAULT_RULE_FORM);
+    setSiteSearch('');
   }, []);
+
+  const filteredFavoriteSites = useMemo(() => {
+    if (!siteSearch.trim()) return favoriteSites;
+    const search = siteSearch.toLowerCase();
+    return favoriteSites.filter((s) => s.label.toLowerCase().includes(search));
+  }, [favoriteSites, siteSearch]);
+
+  const filteredOtherSites = useMemo(() => {
+    if (!siteSearch.trim()) return otherSites;
+    const search = siteSearch.toLowerCase();
+    return otherSites.filter((s) => s.label.toLowerCase().includes(search));
+  }, [otherSites, siteSearch]);
 
   const renderPermissionAlert = () => {
     if (!pushSupported) {
@@ -348,7 +368,9 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
   };
 
   const getSiteName = (siteId) => {
-    const option = siteOptions.find((opt) => Number(opt.value) === Number(siteId));
+    const option =
+      favoriteSites.find((opt) => Number(opt.value) === Number(siteId)) ||
+      otherSites.find((opt) => Number(opt.value) === Number(siteId));
     return option ? option.label : `Site ${siteId}`;
   };
 
@@ -598,12 +620,39 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                   name="site_id"
                   value={ruleForm.site_id}
                   onChange={handleRuleFieldChange}
+                  onClose={() => setSiteSearch('')}
+                  MenuProps={{ autoFocus: false }}
                 >
-                  {siteOptions.map((option) => (
+                  <ListSubheader sx={{ bgcolor: 'background.paper' }}>
+                    <TextField
+                      size="small"
+                      autoFocus
+                      placeholder="Search sites..."
+                      fullWidth
+                      value={siteSearch}
+                      onChange={(e) => setSiteSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </ListSubheader>
+                  {filteredFavoriteSites.length > 0 && [
+                    <ListSubheader key="favorites-header">Favorites</ListSubheader>,
+                    ...filteredFavoriteSites.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    )),
+                  ]}
+                  {filteredOtherSites.length > 0 && (
+                    <ListSubheader key="all-sites-header">All Sites</ListSubheader>
+                  )}
+                  {filteredOtherSites.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
+                  {filteredFavoriteSites.length === 0 && filteredOtherSites.length === 0 && (
+                    <MenuItem disabled>No sites found</MenuItem>
+                  )}
                 </Select>
               </FormControl>
 
