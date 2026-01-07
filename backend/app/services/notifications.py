@@ -1,3 +1,25 @@
+"""
+Notification evaluation engine.
+
+Evaluates user notification rules against weather predictions and sends
+push notifications when conditions are met.
+
+Timing context: GFS weather forecasts update 4 times daily at approximately
+00:00, 06:00, 12:00, and 18:00 UTC. The exact arrival time varies, so this
+service runs every 30 minutes (via Celery Beat) to catch updates promptly.
+
+Key concepts:
+- NotifiedForecast: Tracks state per (notification, forecast_date) to prevent
+  duplicate notifications and detect forecast evolution
+- Event types:
+  - initial: First time threshold is met for a forecast date
+  - deteriorated: Was above threshold, now below
+  - improved: Currently above threshold AND improvement >= improvement_threshold
+- improvement_threshold: Minimum change (default 15%) to trigger "improved"
+  notification, preventing spam from minor forecast fluctuations
+
+See also: docs/adr/001-notification-system.md
+"""
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
