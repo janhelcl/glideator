@@ -44,6 +44,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { fetchSitesList } from '../api';
 import { AVAILABLE_METRICS } from '../types/ui-state';
+import StandaloneMetricControl from './StandaloneMetricControl';
 
 const COMPARISON_OPTIONS = [
   { value: 'gte', label: '>= (at least)' },
@@ -656,22 +657,29 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                 </Select>
               </FormControl>
 
-              <FormControl fullWidth>
-                <InputLabel id="notification-metric-label">Metric</InputLabel>
-                <Select
-                  labelId="notification-metric-label"
-                  label="Metric"
-                  name="metric"
-                  value={ruleForm.metric}
-                  onChange={handleRuleFieldChange}
-                >
-                  {AVAILABLE_METRICS.map((metric) => (
-                    <MenuItem key={metric} value={metric}>
-                      {metric}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  px: 2,
+                  py: 1.5,
+                }}
+              >
+                <Typography variant="body1">
+                  Metric: <strong>{ruleForm.metric}</strong>
+                </Typography>
+                <StandaloneMetricControl
+                  metrics={AVAILABLE_METRICS}
+                  selectedMetric={ruleForm.metric}
+                  onMetricChange={(metric) =>
+                    setRuleForm((prev) => ({ ...prev, metric }))
+                  }
+                />
+              </Box>
 
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
