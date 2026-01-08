@@ -46,14 +46,6 @@ import { fetchSitesList } from '../api';
 import { AVAILABLE_METRICS } from '../types/ui-state';
 import StandaloneMetricControl from './StandaloneMetricControl';
 
-const COMPARISON_OPTIONS = [
-  { value: 'gte', label: '>= (at least)' },
-  { value: 'gt', label: '> (greater than)' },
-  { value: 'lte', label: '<= (at most)' },
-  { value: 'lt', label: '< (less than)' },
-  { value: 'eq', label: '= (exact match)' },
-];
-
 const DEFAULT_RULE_FORM = {
   site_id: '',
   metric: 'XC0',
@@ -681,37 +673,16 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                 />
               </Box>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id="notification-comparison-label">Comparison</InputLabel>
-                    <Select
-                      labelId="notification-comparison-label"
-                      label="Comparison"
-                      name="comparison"
-                      value={ruleForm.comparison}
-                      onChange={handleRuleFieldChange}
-                    >
-                      {COMPARISON_OPTIONS.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Threshold"
-                    name="threshold"
-                    type="number"
-                    value={ruleForm.threshold}
-                    onChange={handleRuleFieldChange}
-                    inputProps={{ step: 'any', min: 0 }}
-                  />
-                </Grid>
-              </Grid>
+              <TextField
+                fullWidth
+                label="Threshold (%)"
+                name="threshold"
+                type="number"
+                value={ruleForm.threshold}
+                onChange={handleRuleFieldChange}
+                inputProps={{ step: 'any', min: 0, max: 100 }}
+                helperText="Notify when forecast is at least this value"
+              />
 
               <TextField
                 fullWidth
