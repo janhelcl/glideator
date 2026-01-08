@@ -196,6 +196,7 @@ class UserNotification(Base):
     threshold = Column(Float, nullable=False)
     lead_time_hours = Column(Integer, nullable=False, server_default="0")
     improvement_threshold = Column(Float, nullable=False, server_default="15.0")
+    deterioration_threshold = Column(Float, nullable=False, server_default="15.0")
     active = Column(Boolean, nullable=False, server_default="true")
     last_triggered_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

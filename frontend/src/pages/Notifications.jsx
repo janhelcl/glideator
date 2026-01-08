@@ -22,9 +22,28 @@ const NotificationsPage = () => {
 
       <Paper elevation={2}>
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Notifications
-          </Typography>
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: 1,
+              borderColor: 'divider',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+            }}
+          >
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+              Notifications
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img
+                src="/logo192.png"
+                alt="Glideator Logo"
+                style={{ height: '60px', width: 'auto' }}
+              />
+            </Box>
+          </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Register your devices and create rules to receive push alerts when forecast
             metrics meet your criteria.

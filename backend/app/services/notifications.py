@@ -1,3 +1,25 @@
+"""
+Notification evaluation engine.
+
+Evaluates user notification rules against weather predictions and sends
+push notifications when conditions are met.
+
+Timing context: GFS weather forecasts update 4 times daily at approximately
+00:00, 06:00, 12:00, and 18:00 UTC. The exact arrival time varies, so this
+service runs every 30 minutes (via Celery Beat) to catch updates promptly.
+
+Key concepts:
+- NotifiedForecast: Tracks state per (notification, forecast_date) to prevent
+  duplicate notifications and detect forecast evolution
+- Event types:
+  - initial: First time threshold is met for a forecast date
+  - deteriorated: Was above threshold, now below
+  - improved: Currently above threshold AND improvement >= improvement_threshold
+- improvement_threshold: Minimum change (default 15%) to trigger "improved"
+  notification, preventing spam from minor forecast fluctuations
+
+See also: docs/adr/001-notification-system.md
+"""
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -196,6 +218,7 @@ async def evaluate_and_queue_notifications(
         window_end = now + timedelta(hours=notification.lead_time_hours)
         normalized_threshold = notification.threshold / 100.0
         improvement_threshold = notification.improvement_threshold / 100.0
+        deterioration_threshold = notification.deterioration_threshold / 100.0
 
         comparator = COMPARISON_OPERATORS.get(notification.comparison)
         if not comparator:
@@ -227,8 +250,12 @@ async def evaluate_and_queue_notifications(
                 was_above_threshold = comparator(previous_value, normalized_threshold)
 
                 if was_above_threshold and not threshold_met:
-                    # Conditions deteriorated - was above threshold, now below
+                    # Crossed below threshold - always notify
                     event_type = EVENT_TYPE_DETERIORATED
+                elif not was_above_threshold and not threshold_met:
+                    # Was already below threshold, still below - only notify if significant drop
+                    if (previous_value - current_value) >= deterioration_threshold:
+                        event_type = EVENT_TYPE_DETERIORATED
                 elif threshold_met and (current_value - previous_value) >= improvement_threshold:
                     # Conditions improved significantly
                     event_type = EVENT_TYPE_IMPROVED
