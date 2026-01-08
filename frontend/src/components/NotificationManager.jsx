@@ -53,6 +53,7 @@ const DEFAULT_RULE_FORM = {
   threshold: 50,
   lead_time_hours: 0,
   improvement_threshold: 15,
+  deterioration_threshold: 15,
   active: true,
 };
 
@@ -166,6 +167,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
         threshold: rule.threshold ?? 0,
         lead_time_hours: rule.lead_time_hours ?? 0,
         improvement_threshold: rule.improvement_threshold ?? 15,
+        deterioration_threshold: rule.deterioration_threshold ?? 15,
         active: rule.active,
       });
     } else {
@@ -181,6 +183,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
             ? preset.lead_time_hours
             : DEFAULT_RULE_FORM.lead_time_hours,
         improvement_threshold: DEFAULT_RULE_FORM.improvement_threshold,
+        deterioration_threshold: DEFAULT_RULE_FORM.deterioration_threshold,
         active: true,
       });
     }
@@ -264,6 +267,7 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
         threshold: Number(ruleForm.threshold),
         lead_time_hours: Number(ruleForm.lead_time_hours),
         improvement_threshold: Number(ruleForm.improvement_threshold),
+        deterioration_threshold: Number(ruleForm.deterioration_threshold),
         active: Boolean(ruleForm.active),
       };
 
@@ -703,7 +707,18 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                 value={ruleForm.improvement_threshold}
                 onChange={handleRuleFieldChange}
                 inputProps={{ min: 0, max: 100, step: 5 }}
-                helperText="Re-notify when conditions improve by this many percentage points (e.g., 35% to 50%)."
+                helperText="Re-notify when conditions improve by this many percentage points."
+              />
+
+              <TextField
+                fullWidth
+                label="Deterioration threshold (%)"
+                name="deterioration_threshold"
+                type="number"
+                value={ruleForm.deterioration_threshold}
+                onChange={handleRuleFieldChange}
+                inputProps={{ min: 0, max: 100, step: 5 }}
+                helperText="Notify when conditions drop by this many percentage points."
               />
 
               <Stack direction="row" spacing={1} alignItems="center">

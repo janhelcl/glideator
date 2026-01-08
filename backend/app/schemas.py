@@ -229,6 +229,7 @@ class NotificationBase(BaseModel):
     threshold: float
     lead_time_hours: int = Field(default=0, ge=0, le=168, description="Hours before forecasted event to notify")
     improvement_threshold: float = Field(default=15.0, ge=0, le=100, description="Percentage point increase to trigger improvement notification")
+    deterioration_threshold: float = Field(default=15.0, ge=0, le=100, description="Percentage point decrease to trigger deterioration notification")
 
     @field_validator("metric")
     @classmethod
@@ -248,6 +249,7 @@ class NotificationUpdate(BaseModel):
     threshold: Optional[float] = None
     lead_time_hours: Optional[int] = Field(default=None, ge=0, le=168)
     improvement_threshold: Optional[float] = Field(default=None, ge=0, le=100)
+    deterioration_threshold: Optional[float] = Field(default=None, ge=0, le=100)
     active: Optional[bool] = None
 
     @field_validator("metric")
