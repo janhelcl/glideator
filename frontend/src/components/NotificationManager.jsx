@@ -497,9 +497,9 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <Stack direction="row" spacing={1} flexWrap="wrap">
-                    <Chip label={`Metric ${rule.metric}`} size="small" />
-                    <Chip label={`Condition ${rule.comparison} ${rule.threshold}`} size="small" />
-                    <Chip label={`Lead ${rule.lead_time_hours}h`} size="small" />
+                    <Chip label={rule.metric} size="small" />
+                    <Chip label={`≥ ${rule.threshold}%`} size="small" />
+                    <Chip label={`${rule.lead_time_hours}h ahead`} size="small" />
                   </Stack>
                 </Grid>
                 <Grid item xs={12} md={4}>
