@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Header, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
@@ -106,6 +107,26 @@ async def list_notification_events(
     if not notification:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
     events = await crud.list_notification_events_for_notification(db, notification.notification_id, limit=limit)
+    return events
+
+
+# Separate router for events across all notifications (for catch-up)
+events_router = APIRouter(prefix="/users/me/notification-events", tags=["Notifications"])
+
+
+@events_router.get("", response_model=List[schemas.NotificationEventOut])
+async def list_recent_events(
+    authorization: Optional[str] = Header(default=None),
+    db: AsyncSession = Depends(get_db),
+    since: Optional[datetime] = Query(default=None, description="Only return events after this ISO timestamp"),
+    limit: int = Query(default=50, le=100, description="Maximum number of events to return"),
+):
+    """
+    Get recent notification events for the current user across all their notifications.
+    Used for catch-up when app opens after being offline.
+    """
+    user_id = require_user_id(authorization)
+    events = await crud.list_recent_notification_events_for_user(db, user_id, since=since, limit=limit)
     return events
 
 

@@ -277,6 +277,15 @@ export const fetchNotificationEvents = async (notificationId, limit = 20) => {
   return response.data;
 };
 
+export const fetchRecentNotificationEvents = async (since = null, limit = 50) => {
+  const params = { limit };
+  if (since) {
+    params.since = since;
+  }
+  const response = await apiClient.get('/users/me/notification-events', { params });
+  return response.data;
+};
+
 // --- S2S Recommendations ---
 
 export const fetchSiteRecommendations = async (sourceSiteIds, topK = 5) => {
