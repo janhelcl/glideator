@@ -17,7 +17,6 @@ import StandaloneMetricControl from '../components/StandaloneMetricControl';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { AVAILABLE_METRICS } from '../types/ui-state';
 import { useAuth } from '../context/AuthContext';
-import NotificationManager from '../components/NotificationManager';
 
 const Profile = () => {
   const { profile, user, saveProfile, isLoading } = useAuth();
@@ -250,20 +249,6 @@ const Profile = () => {
               </Button>
             </Box>
           </Box>
-        </Box>
-      </Paper>
-
-      <Paper elevation={2}>
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-              Notifications
-            </Typography>
-          </Box>
-          <NotificationManager
-            defaultMetric={form.preferred_metric || 'XC0'}
-            identityLabel={profile?.display_name || user?.email || undefined}
-          />
         </Box>
       </Paper>
     </Box>
