@@ -23,7 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
-import MissedNotificationsBanner from '../components/MissedNotificationsBanner';
+import NotificationDropdown from '../components/NotificationDropdown';
 import useDisclaimer from '../hooks/useDisclaimer';
 import { fetchSitesList } from '../api';  // Reverted back to fetchSitesList
 import { useAuth } from '../context/AuthContext';
@@ -244,6 +244,9 @@ const Layout = () => {
 
           <Box sx={{ flexGrow: 1 }} />
 
+          {/* Notification bell - always visible on desktop */}
+          {!isMobile && <NotificationDropdown iconColor="inherit" />}
+
           {/* Desktop authentication menu */}
           {!isMobile && (
             <>
@@ -255,13 +258,6 @@ const Layout = () => {
                     sx={{ color: 'white', mr: 1 }}
                   >
                     Favorites
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/notifications"
-                    sx={{ color: 'white', mr: 1 }}
-                  >
-                    Notifications
                   </Button>
                   <IconButton color="inherit" onClick={handleMenuOpen} size="large">
                     <AccountCircle />
@@ -302,11 +298,16 @@ const Layout = () => {
             </>
           )}
 
-          {/* Mobile: Show user icon if authenticated, nothing if not */}
-          {isMobile && isAuthenticated && (
-            <IconButton color="inherit" onClick={handleMenuOpen} size="large">
-              <AccountCircle />
-            </IconButton>
+          {/* Mobile: Show notification bell and user icon */}
+          {isMobile && (
+            <>
+              <NotificationDropdown iconColor="inherit" />
+              {isAuthenticated && (
+                <IconButton color="inherit" onClick={handleMenuOpen} size="large">
+                  <AccountCircle />
+                </IconButton>
+              )}
+            </>
           )}
           
           {/* Mobile menu for authenticated users */}
@@ -345,9 +346,6 @@ const Layout = () => {
         {/* This is where child routes will be rendered */}
         <Outlet context={{ selectedSite, setSelectedSite }} />
       </Box>
-
-      {/* Missed notifications drawer - shows when app opens after being offline */}
-      <MissedNotificationsBanner />
 
       {/* Bottom Footer Bar */}
       <AppBar
