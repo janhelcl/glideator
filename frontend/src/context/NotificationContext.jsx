@@ -16,6 +16,7 @@ import {
   updateNotification as updateNotificationApi,
   deleteNotification as deleteNotificationApi,
   fetchNotificationEvents,
+  fetchRecentNotificationEvents,
 } from '../api';
 import {
   supportsPush,
@@ -26,6 +27,8 @@ import {
 } from '../utils/push';
 import { useAuth } from './AuthContext';
 
+const LAST_CHECK_KEY = 'glideator_notification_last_check';
+
 export const NotificationContext = createContext({
   pushSupported: false,
   permission: 'default',
@@ -34,6 +37,7 @@ export const NotificationContext = createContext({
   subscriptions: [],
   notifications: [],
   eventsByNotification: {},
+  missedEvents: [],
   refresh: async () => {},
   clearError: () => {},
   registerCurrentDevice: async () => {},
@@ -42,6 +46,8 @@ export const NotificationContext = createContext({
   updateRule: async () => {},
   deleteRule: async () => {},
   loadNotificationEvents: async () => {},
+  checkForMissedEvents: async () => {},
+  dismissMissedEvents: () => {},
 });
 
 export const NotificationProvider = ({ children }) => {
@@ -59,11 +65,13 @@ export const NotificationProvider = ({ children }) => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [eventsByNotification, setEventsByNotification] = useState({});
+  const [missedEvents, setMissedEvents] = useState([]);
 
   const clearState = useCallback(() => {
     setSubscriptions([]);
     setNotifications([]);
     setEventsByNotification({});
+    setMissedEvents([]);
     setError(null);
   }, []);
 
@@ -239,6 +247,50 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
+  const checkForMissedEvents = useCallback(async () => {
+    if (!isAuthenticated) return [];
+
+    try {
+      const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
+      const events = await fetchRecentNotificationEvents(lastCheck, 50);
+
+      // Update last check time to now
+      localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
+
+      if (events.length > 0) {
+        setMissedEvents(events);
+      }
+      return events;
+    } catch (err) {
+      console.error('Failed to check for missed notifications:', err);
+      return [];
+    }
+  }, [isAuthenticated]);
+
+  const dismissMissedEvents = useCallback(() => {
+    setMissedEvents([]);
+  }, []);
+
+  // Check for missed events on app load and when app comes to foreground
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Check on initial load
+    checkForMissedEvents();
+
+    // Check when app becomes visible (e.g., PWA opened after being backgrounded)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForMissedEvents();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, checkForMissedEvents]);
+
   const value = useMemo(
     () => ({
       pushSupported,
@@ -248,6 +300,7 @@ export const NotificationProvider = ({ children }) => {
       subscriptions,
       notifications,
       eventsByNotification,
+      missedEvents,
       refresh,
       clearError: () => setError(null),
       registerCurrentDevice,
@@ -256,6 +309,8 @@ export const NotificationProvider = ({ children }) => {
       updateRule,
       deleteRule,
       loadNotificationEvents,
+      checkForMissedEvents,
+      dismissMissedEvents,
     }),
     [
       pushSupported,
@@ -265,6 +320,7 @@ export const NotificationProvider = ({ children }) => {
       subscriptions,
       notifications,
       eventsByNotification,
+      missedEvents,
       refresh,
       registerCurrentDevice,
       deactivateSubscription,
@@ -272,6 +328,8 @@ export const NotificationProvider = ({ children }) => {
       updateRule,
       deleteRule,
       loadNotificationEvents,
+      checkForMissedEvents,
+      dismissMissedEvents,
     ],
   );
 

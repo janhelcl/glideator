@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
+import MissedNotificationsBanner from '../components/MissedNotificationsBanner';
 import useDisclaimer from '../hooks/useDisclaimer';
 import { fetchSitesList } from '../api';  // Reverted back to fetchSitesList
 import { useAuth } from '../context/AuthContext';
@@ -341,6 +342,10 @@ const Layout = () => {
           WebkitOverflowScrolling: 'touch',
         }}
       >
+        {/* Missed notifications banner - shows when app opens after being offline */}
+        <Box sx={{ px: { xs: 1, sm: 2 }, pt: 1 }}>
+          <MissedNotificationsBanner />
+        </Box>
         {/* This is where child routes will be rendered */}
         <Outlet context={{ selectedSite, setSelectedSite }} />
       </Box>

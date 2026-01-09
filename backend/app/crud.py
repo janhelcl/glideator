@@ -523,6 +523,34 @@ async def list_notification_events_for_notification(
     return result.scalars().all()
 
 
+async def list_recent_notification_events_for_user(
+    db: AsyncSession,
+    user_id: int,
+    since: Optional[datetime] = None,
+    limit: int = 50,
+) -> List[models.NotificationEvent]:
+    """
+    Get recent notification events for all of a user's notifications.
+    Used for catch-up when app opens after being offline.
+
+    Args:
+        db: Database session
+        user_id: The user ID to fetch events for
+        since: Only return events triggered after this timestamp
+        limit: Maximum number of events to return
+    """
+    query = (
+        select(models.NotificationEvent)
+        .join(models.UserNotification)
+        .where(models.UserNotification.user_id == user_id)
+    )
+    if since:
+        query = query.where(models.NotificationEvent.triggered_at > since)
+    query = query.order_by(models.NotificationEvent.triggered_at.desc()).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
 # --- Notified Forecasts CRUD Functions ---
 
 
