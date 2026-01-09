@@ -28,6 +28,26 @@ import {
 import { useAuth } from './AuthContext';
 
 const LAST_CHECK_KEY = 'glideator_notification_last_check';
+const READ_EVENTS_KEY = 'glideator_read_event_ids';
+
+// Helper to get read event IDs from localStorage
+const getReadEventIds = () => {
+  try {
+    const stored = localStorage.getItem(READ_EVENTS_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+// Helper to save read event IDs to localStorage
+const saveReadEventIds = (readIds) => {
+  try {
+    localStorage.setItem(READ_EVENTS_KEY, JSON.stringify([...readIds]));
+  } catch {
+    // Ignore storage errors
+  }
+};
 
 export const NotificationContext = createContext({
   pushSupported: false,
@@ -38,6 +58,8 @@ export const NotificationContext = createContext({
   notifications: [],
   eventsByNotification: {},
   missedEvents: [],
+  unreadEvents: [],
+  unreadCount: 0,
   refresh: async () => {},
   clearError: () => {},
   registerCurrentDevice: async () => {},
@@ -47,6 +69,8 @@ export const NotificationContext = createContext({
   deleteRule: async () => {},
   loadNotificationEvents: async () => {},
   checkForMissedEvents: async () => {},
+  markEventAsRead: () => {},
+  markAllEventsAsRead: () => {},
   dismissMissedEvents: () => {},
 });
 
@@ -66,6 +90,14 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [eventsByNotification, setEventsByNotification] = useState({});
   const [missedEvents, setMissedEvents] = useState([]);
+  const [readEventIds, setReadEventIds] = useState(() => getReadEventIds());
+
+  // Compute unread events and count
+  const unreadEvents = useMemo(() => {
+    return missedEvents.filter((event) => !readEventIds.has(event.event_id));
+  }, [missedEvents, readEventIds]);
+
+  const unreadCount = unreadEvents.length;
 
   const clearState = useCallback(() => {
     setSubscriptions([]);
@@ -267,6 +299,24 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  const markEventAsRead = useCallback((eventId) => {
+    setReadEventIds((prev) => {
+      const next = new Set(prev);
+      next.add(eventId);
+      saveReadEventIds(next);
+      return next;
+    });
+  }, []);
+
+  const markAllEventsAsRead = useCallback(() => {
+    setReadEventIds((prev) => {
+      const next = new Set(prev);
+      missedEvents.forEach((event) => next.add(event.event_id));
+      saveReadEventIds(next);
+      return next;
+    });
+  }, [missedEvents]);
+
   const dismissMissedEvents = useCallback(() => {
     setMissedEvents([]);
   }, []);
@@ -301,6 +351,8 @@ export const NotificationProvider = ({ children }) => {
       notifications,
       eventsByNotification,
       missedEvents,
+      unreadEvents,
+      unreadCount,
       refresh,
       clearError: () => setError(null),
       registerCurrentDevice,
@@ -310,6 +362,8 @@ export const NotificationProvider = ({ children }) => {
       deleteRule,
       loadNotificationEvents,
       checkForMissedEvents,
+      markEventAsRead,
+      markAllEventsAsRead,
       dismissMissedEvents,
     }),
     [
@@ -321,6 +375,8 @@ export const NotificationProvider = ({ children }) => {
       notifications,
       eventsByNotification,
       missedEvents,
+      unreadEvents,
+      unreadCount,
       refresh,
       registerCurrentDevice,
       deactivateSubscription,
@@ -329,6 +385,8 @@ export const NotificationProvider = ({ children }) => {
       deleteRule,
       loadNotificationEvents,
       checkForMissedEvents,
+      markEventAsRead,
+      markAllEventsAsRead,
       dismissMissedEvents,
     ],
   );
