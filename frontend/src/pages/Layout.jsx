@@ -342,13 +342,12 @@ const Layout = () => {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Missed notifications banner - shows when app opens after being offline */}
-        <Box sx={{ px: { xs: 1, sm: 2 }, pt: 1 }}>
-          <MissedNotificationsBanner />
-        </Box>
         {/* This is where child routes will be rendered */}
         <Outlet context={{ selectedSite, setSelectedSite }} />
       </Box>
+
+      {/* Missed notifications drawer - shows when app opens after being offline */}
+      <MissedNotificationsBanner />
 
       {/* Bottom Footer Bar */}
       <AppBar
