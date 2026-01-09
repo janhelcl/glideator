@@ -547,8 +547,28 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
                   <Stack spacing={1}>
                     {events.map((event) => {
                       const eventTypeInfo = getEventTypeDisplay(event.payload?.event_type);
+                      const handleEventClick = () => {
+                        const params = new URLSearchParams();
+                        if (event.payload?.prediction_date) params.set('date', event.payload.prediction_date);
+                        if (event.payload?.metric) params.set('metric', event.payload.metric);
+                        const siteId = event.payload?.site_id || rule.site_id;
+                        navigate(`/details/${siteId}?${params.toString()}`);
+                      };
                       return (
-                        <Paper key={event.event_id} variant="outlined" sx={{ p: 1.5 }}>
+                        <Paper
+                          key={event.event_id}
+                          variant="outlined"
+                          onClick={handleEventClick}
+                          sx={{
+                            p: 1.5,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                            '&:hover': {
+                              backgroundColor: 'action.hover',
+                              transform: 'translateX(4px)',
+                            },
+                          }}
+                        >
                           <Stack
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={1}
