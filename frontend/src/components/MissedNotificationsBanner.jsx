@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, AlertTitle, Box, Button, Collapse, Stack, Typography } from '@mui/material';
+import { Alert, AlertTitle, Button, Collapse, Stack, Typography } from '@mui/material';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import { useNotifications } from '../context/NotificationContext';
 
