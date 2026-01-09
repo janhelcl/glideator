@@ -9,13 +9,15 @@ import {
   IconButton,
   LinearProgress,
   Popover,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import FlagIcon from '@mui/icons-material/Flag';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import SettingsIcon from '@mui/icons-material/Settings';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 
 // Mock data for testing UI with ?testMissed=true
@@ -205,16 +207,18 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
 
   return (
     <>
-      <IconButton
-        aria-describedby={id}
-        onClick={handleClick}
-        color={iconColor}
-        size="large"
-      >
-        <Badge badgeContent={notificationCount} color="error" max={99}>
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
+      <Tooltip title="Notifications">
+        <IconButton
+          aria-describedby={id}
+          onClick={handleClick}
+          color={iconColor}
+          size="large"
+        >
+          <Badge badgeContent={notificationCount} color="error" max={99}>
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
+      </Tooltip>
 
       <Popover
         id={id}
@@ -265,6 +269,16 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
               Mark all read
             </Button>
           )}
+          <Tooltip title="Notification settings">
+            <IconButton
+              component={RouterLink}
+              to="/notifications"
+              size="small"
+              onClick={handleClose}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Notification list */}

@@ -5,7 +5,6 @@ import {
   Toolbar, 
   Typography, 
   Box, 
-  Button, 
   IconButton, 
   Menu, 
   MenuItem, 
@@ -13,13 +12,21 @@ import {
   List, 
   ListItem, 
   ListItemText,
+  ListItemIcon,
   useMediaQuery,
   useTheme,
   Divider,
-  ListItemButton
+  ListItemButton,
+  Tooltip,
 } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import ExploreIcon from '@mui/icons-material/Explore';
+import HomeIcon from '@mui/icons-material/Home';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import PersonIcon from '@mui/icons-material/Person';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
@@ -95,67 +102,95 @@ const Layout = () => {
 
   // Mobile drawer content
   const mobileDrawerContent = (
-    <Box sx={{ width: 280, pt: 2 }}>
-      <List>
-        <ListItem>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#424242' }}>
-            Parra-Glideator
-          </Typography>
-        </ListItem>
-        <Divider sx={{ my: 1 }} />
-        
+    <Box sx={{ width: 280 }}>
+      {/* Header with logo and close button */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2,
+          py: 1.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+          🏔️ Glideator
+        </Typography>
+        <IconButton onClick={() => setMobileDrawerOpen(false)} size="small">
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      {/* Search Bar */}
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <SearchBar 
+          sites={sites}
+          onSiteSelect={(site) => {
+            setSelectedSite(site);
+            setMobileDrawerOpen(false);
+          }}
+          mobile={true}
+        />
+      </Box>
+
+      <Divider />
+
+      {/* Main Navigation */}
+      <List sx={{ py: 1 }}>
         <ListItemButton onClick={() => handleMobileMenuClick('/')}>
+          <ListItemIcon><HomeIcon /></ListItemIcon>
           <ListItemText primary="Home" />
         </ListItemButton>
         
         <ListItemButton onClick={() => handleMobileMenuClick('/trip-planner')}>
+          <ListItemIcon><ExploreIcon /></ListItemIcon>
           <ListItemText primary="Plan a Trip" />
         </ListItemButton>
-        
-        <Divider sx={{ my: 1 }} />
-        
-        {/* Search Bar in Mobile Drawer */}
-        <ListItem sx={{ px: 2, py: 1 }}>
-          <Box sx={{ width: '100%' }}>
-            <SearchBar 
-              sites={sites}
-              onSiteSelect={(site) => {
-                setSelectedSite(site);
-                setMobileDrawerOpen(false);
-              }}
-              mobile={true}
-            />
-          </Box>
-        </ListItem>
-        
-        <Divider sx={{ my: 1 }} />
-        
+      </List>
+
+      <Divider />
+
+      {/* User Section */}
+      <List sx={{ py: 1 }}>
         {isAuthenticated ? (
           <>
             <ListItemButton onClick={() => handleMobileMenuClick('/favorites')}>
+              <ListItemIcon><FavoriteIcon /></ListItemIcon>
               <ListItemText primary="Favorites" />
             </ListItemButton>
-            <ListItemButton onClick={() => handleMobileMenuClick('/notifications')}>
-              <ListItemText primary="Notifications" />
-            </ListItemButton>
             <ListItemButton onClick={() => handleMobileMenuClick('/profile')}>
+              <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary="Profile" />
-            </ListItemButton>
-            <ListItemButton onClick={handleMobileLogout}>
-              <ListItemText primary="Logout" />
             </ListItemButton>
           </>
         ) : (
           <>
             <ListItemButton onClick={() => handleMobileMenuClick('/login')}>
+              <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary="Log In" />
             </ListItemButton>
             <ListItemButton onClick={() => handleMobileMenuClick('/register')}>
+              <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary="Register" />
             </ListItemButton>
           </>
         )}
       </List>
+
+      {/* Logout at bottom */}
+      {isAuthenticated && (
+        <>
+          <Divider />
+          <List sx={{ py: 1 }}>
+            <ListItemButton onClick={handleMobileLogout}>
+              <ListItemIcon><LogoutIcon /></ListItemIcon>
+              <ListItemText primary="Log Out" />
+            </ListItemButton>
+          </List>
+        </>
+      )}
     </Box>
   );
 
@@ -188,145 +223,125 @@ const Layout = () => {
         }}
       >
         <Toolbar>
-          {/* Mobile: Show hamburger menu */}
+          {/* Mobile: Hamburger menu */}
           {isMobile && (
             <IconButton
               color="inherit"
-              aria-label="open drawer"
+              aria-label="open menu"
               edge="start"
               onClick={handleMobileDrawerToggle}
-              sx={{ mr: 2 }}
             >
               <MenuIcon />
             </IconButton>
           )}
           
-          {/* Logo/Home button - always visible */}
-          <Button
+          {/* Logo - links to home */}
+          <Typography
             component={RouterLink}
             to="/"
+            variant="h6"
             sx={{
               color: 'white',
-              fontSize: isMobile ? '0.9rem' : '1rem',
-              minWidth: 'auto',
-              px: isMobile ? 1 : 2,
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-              },
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              ml: isMobile ? 1 : 0,
+              '&:hover': { opacity: 0.9 },
             }}
           >
-            Home
-          </Button>
+            🏔️ {!isMobile && 'Glideator'}
+          </Typography>
           
-          {/* Desktop navigation */}
+          {/* Desktop: Search bar */}
           {!isMobile && (
-            <>
-              <Button
-                component={RouterLink}
-                to="/trip-planner"
-                sx={{
-                  color: 'white',
-                  ml: 2,
-                  '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                  },
-                }}
-              >
-                Plan a Trip
-              </Button>
-              
+            <Box sx={{ ml: 3, flexGrow: 1, maxWidth: 400 }}>
               <SearchBar 
                 sites={sites}
                 onSiteSelect={setSelectedSite}
               />
-            </>
+            </Box>
           )}
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* Notification bell - always visible on desktop */}
-          {!isMobile && <NotificationDropdown iconColor="inherit" />}
+          {/* Right side icons */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {/* Desktop: Plan a Trip */}
+            {!isMobile && (
+              <Tooltip title="Plan a Trip">
+                <IconButton
+                  component={RouterLink}
+                  to="/trip-planner"
+                  color="inherit"
+                >
+                  <ExploreIcon />
+                </IconButton>
+              </Tooltip>
+            )}
 
-          {/* Desktop authentication menu */}
-          {!isMobile && (
-            <>
-              {isAuthenticated ? (
-                <>
-                  <Button
-                    component={RouterLink}
-                    to="/favorites"
-                    sx={{ color: 'white', mr: 1 }}
-                  >
-                    Favorites
-                  </Button>
-                  <IconButton color="inherit" onClick={handleMenuOpen} size="large">
+            {/* Desktop: Favorites (authenticated only) */}
+            {!isMobile && isAuthenticated && (
+              <Tooltip title="Favorites">
+                <IconButton
+                  component={RouterLink}
+                  to="/favorites"
+                  color="inherit"
+                >
+                  <FavoriteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* Notifications - always visible */}
+            <NotificationDropdown iconColor="inherit" />
+
+            {/* Profile menu */}
+            {isAuthenticated ? (
+              <>
+                <Tooltip title="Account">
+                  <IconButton color="inherit" onClick={handleMenuOpen}>
                     <AccountCircle />
                   </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleMenuClose}
-                  >
-                  <MenuItem disabled>{displayLabel}</MenuItem>
-                    <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
-                      Profile
-                    </MenuItem>
-                    <MenuItem component={RouterLink} to="/notifications" onClick={handleMenuClose}>
-                      Notifications
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <>
-                  <Button
+                </Tooltip>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem disabled sx={{ opacity: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {displayLabel}
+                    </Typography>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
+                    <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
+                    Profile
+                  </MenuItem>
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+                    Log Out
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              /* Not authenticated - show login icon on desktop */
+              !isMobile && (
+                <Tooltip title="Log In">
+                  <IconButton
                     component={RouterLink}
                     to="/login"
-                    sx={{ color: 'white', ml: 2 }}
+                    color="inherit"
                   >
-                    Log In
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/register"
-                    sx={{ color: 'white', ml: 1, border: '1px solid white' }}
-                  >
-                    Register
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-
-          {/* Mobile: Show notification bell and user icon */}
-          {isMobile && (
-            <>
-              <NotificationDropdown iconColor="inherit" />
-              {isAuthenticated && (
-                <IconButton color="inherit" onClick={handleMenuOpen} size="large">
-                  <AccountCircle />
-                </IconButton>
-              )}
-            </>
-          )}
-          
-          {/* Mobile menu for authenticated users */}
-          {isMobile && (
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              <MenuItem disabled>{displayLabel}</MenuItem>
-              <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
-                Profile
-              </MenuItem>
-              <MenuItem component={RouterLink} to="/notifications" onClick={handleMenuClose}>
-                Notifications
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-          )}
+                    <PersonIcon />
+                  </IconButton>
+                </Tooltip>
+              )
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
