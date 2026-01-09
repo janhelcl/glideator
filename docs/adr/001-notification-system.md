@@ -16,6 +16,8 @@ Key constraints:
 
 3. **Lead time requirements**: Users want advance notice (e.g., 24-48 hours before a flyable day) to plan trips.
 
+4. **Offline devices**: PWA users may turn off WiFi/data at night. The midnight forecast update (first data for new dates) must not be missed.
+
 ## Decision
 
 ### Polling Strategy
@@ -46,10 +48,14 @@ Three notification event types capture different scenarios:
 | Event Type | Trigger Condition |
 |------------|-------------------|
 | `initial` | First time threshold is met for a forecast date |
-| `deteriorated` | Previously above threshold, now below |
-| `improved` | Currently above threshold AND improvement >= `improvement_threshold` |
+| `deteriorated` | Crossed below threshold, OR already below and dropped by ≥ `deterioration_threshold` |
+| `improved` | Currently above threshold AND improvement ≥ `improvement_threshold` |
 
-The `improvement_threshold` (default 15%) prevents notifications for minor forecast fluctuations while still alerting users to significant positive changes.
+**Threshold behavior**:
+- `improvement_threshold` (default 15%): Prevents spam for minor forecast improvements
+- `deterioration_threshold` (default 15%):
+  - Crossing below the notification threshold **always** triggers a notification
+  - If already below threshold, only re-notify if drop ≥ deterioration_threshold
 
 ### Delivery
 
@@ -57,6 +63,20 @@ Use Web Push Protocol (RFC 8030) with VAPID authentication for browser push noti
 - No dependency on third-party notification services
 - Works across browsers (Chrome, Firefox, Edge, Safari)
 - Encrypted end-to-end delivery
+
+**TTL (Time-To-Live)**: Push notifications are sent with a 6-hour TTL, instructing push services to keep retrying delivery if the device is offline. This addresses the overnight WiFi-off scenario.
+
+### Offline Catch-Up Mechanism
+
+For cases where push delivery fails entirely (device offline beyond TTL), the frontend implements a catch-up mechanism:
+
+1. **Last check tracking**: Store timestamp of last notification check in localStorage
+2. **On app open**: Fetch recent notification events from `GET /users/me/notification-events?since=<timestamp>`
+3. **On visibility change**: Re-check when PWA comes to foreground
+4. **Display**: Show missed notifications in a bottom sheet drawer with:
+   - Site name, metric, date, and forecast value
+   - Color-coded progress bars
+   - Tap to navigate to site details
 
 ## Components
 
@@ -89,13 +109,28 @@ Use Web Push Protocol (RFC 8030) with VAPID authentication for browser push noti
 │  4. Determine event type (initial/deteriorated/improved)        │
 │  5. Create NotificationEvent audit records                      │
 │  6. Update NotifiedForecast state                               │
-│  7. Send via Web Push                                           │
+│  7. Send via Web Push (TTL=6 hours)                             │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  User's Browser                                                 │
-│  Service Worker receives push, displays notification            │
+│  User's Device                                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Option A: Device Online                                 │   │
+│  │  → Push service delivers immediately                     │   │
+│  │  → Service Worker shows notification                     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Option B: Device Offline < 6 hours                      │   │
+│  │  → Push service queues notification (TTL=6h)             │   │
+│  │  → Delivers when device comes online                     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Option C: Device Offline > 6 hours / Push fails         │   │
+│  │  → User opens app                                        │   │
+│  │  → Frontend fetches missed events from API               │   │
+│  │  → Bottom sheet shows missed notifications               │   │
+│  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -107,10 +142,11 @@ UserNotification (notification rules)
 ├── user_id (FK → User)
 ├── site_id (FK → Site)
 ├── metric (e.g., "XC0", "XC10")
-├── comparison ("gt", "gte", "lt", "lte", "eq")
+├── comparison ("gte" - always "at least")
 ├── threshold (0-100 percentage)
 ├── lead_time_hours (0-168)
 ├── improvement_threshold (default 15%)
+├── deterioration_threshold (default 15%)
 ├── active (boolean)
 └── last_triggered_at
 
@@ -136,15 +172,30 @@ NotifiedForecast (state tracking)
 ├── forecast_date
 ├── last_value
 ├── last_event_type
-└── notified_at
+├── notified_at
 └── UNIQUE(notification_id, forecast_date)
 ```
+
+## API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/users/me/notifications` | List user's notification rules |
+| POST | `/users/me/notifications` | Create notification rule |
+| PATCH | `/users/me/notifications/{id}` | Update notification rule |
+| DELETE | `/users/me/notifications/{id}` | Delete notification rule |
+| GET | `/users/me/notifications/{id}/events` | List events for a rule |
+| GET | `/users/me/notification-events?since=` | **Catch-up**: Recent events across all rules |
+| GET | `/users/me/push-subscriptions` | List push subscriptions |
+| POST | `/users/me/push-subscriptions` | Register device for push |
+| DELETE | `/users/me/push-subscriptions/{id}` | Deactivate subscription |
 
 ## Consequences
 
 ### Positive
 
 - **Reliable delivery**: 30-minute polling ensures notifications arrive within 30 minutes of forecast availability
+- **Offline resilience**: 6-hour TTL + frontend catch-up ensures users don't miss overnight notifications
 - **No spam**: State tracking prevents duplicate notifications for unchanged forecasts
 - **Meaningful updates**: Users are notified of deterioration and significant improvements, not just initial threshold crossings
 - **Auditable**: NotificationEvent table provides complete history for debugging and user transparency
@@ -164,10 +215,13 @@ NotifiedForecast (state tracking)
 
 3. **Shorter polling interval**: 5-10 minutes would reduce latency but increase load with minimal user benefit.
 
+4. **Longer TTL**: Could set TTL to 24+ hours, but push services may not honor very long TTLs reliably. Frontend catch-up is more reliable.
+
 ## Related Files
 
 | Component | Path |
 |-----------|------|
+| **Backend** | |
 | Models | `backend/app/models.py` |
 | Evaluation logic | `backend/app/services/notifications.py` |
 | Push delivery | `backend/app/services/push_delivery.py` |
@@ -175,3 +229,8 @@ NotifiedForecast (state tracking)
 | API routes | `backend/app/routers/notifications.py` |
 | CRUD operations | `backend/app/crud.py` |
 | Tests | `backend/tests/test_notifications.py` |
+| **Frontend** | |
+| Notification context | `frontend/src/context/NotificationContext.jsx` |
+| Missed notifications UI | `frontend/src/components/MissedNotificationsBanner.jsx` |
+| Notification manager | `frontend/src/components/NotificationManager.jsx` |
+| API functions | `frontend/src/api.jsx` |
