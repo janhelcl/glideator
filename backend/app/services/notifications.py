@@ -13,10 +13,16 @@ Key concepts:
   duplicate notifications and detect forecast evolution
 - Event types:
   - initial: First time threshold is met for a forecast date
-  - deteriorated: Was above threshold, now below
+  - deteriorated: Crossed below threshold (always notifies), OR was already
+    below and dropped by >= deterioration_threshold
   - improved: Currently above threshold AND improvement >= improvement_threshold
 - improvement_threshold: Minimum change (default 15%) to trigger "improved"
   notification, preventing spam from minor forecast fluctuations
+- deterioration_threshold: Minimum drop (default 15%) to re-notify when already
+  below threshold. Crossing below threshold always notifies regardless.
+
+Push notifications are sent with TTL=6 hours to handle offline devices.
+Frontend also implements catch-up via GET /users/me/notification-events.
 
 See also: docs/adr/001-notification-system.md
 """
