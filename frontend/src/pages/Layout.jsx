@@ -115,9 +115,12 @@ const Layout = () => {
           borderColor: 'divider',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-          🏔️ Glideator
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <img src="/logo192.png" alt="Parra-Glideator" style={{ height: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            Parra-Glideator
+          </Typography>
+        </Box>
         <IconButton onClick={() => setMobileDrawerOpen(false)} size="small">
           <CloseIcon />
         </IconButton>
@@ -236,22 +239,31 @@ const Layout = () => {
           )}
           
           {/* Logo - links to home */}
-          <Typography
+          <Box
             component={RouterLink}
             to="/"
-            variant="h6"
             sx={{
-              color: 'white',
-              textDecoration: 'none',
-              fontWeight: 'bold',
               display: 'flex',
               alignItems: 'center',
+              textDecoration: 'none',
               ml: isMobile ? 1 : 0,
               '&:hover': { opacity: 0.9 },
             }}
           >
-            🏔️ {!isMobile && 'Glideator'}
-          </Typography>
+            <img
+              src="/logo192.png"
+              alt="Parra-Glideator"
+              style={{ height: 32, marginRight: isMobile ? 0 : 8 }}
+            />
+            {!isMobile && (
+              <Typography
+                variant="h6"
+                sx={{ color: 'white', fontWeight: 'bold' }}
+              >
+                Parra-Glideator
+              </Typography>
+            )}
+          </Box>
           
           {/* Desktop: Search bar */}
           {!isMobile && (
