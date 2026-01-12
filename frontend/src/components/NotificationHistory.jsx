@@ -20,6 +20,21 @@ import { fetchNotificationHistory } from '../api';
 
 const PAGE_SIZE = 20;
 
+// Deduplicate events by notification_id + prediction_date
+// (same notification rule + same forecast = same logical notification)
+const deduplicateEvents = (events) => {
+  const seen = new Set();
+  return events.filter((event) => {
+    const payload = event.payload || {};
+    const key = `${event.notification_id}-${payload.prediction_date}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
 const formatTimeAgo = (isoString) => {
   if (!isoString) return '';
   const date = new Date(isoString);
@@ -98,11 +113,13 @@ const NotificationHistory = () => {
       const newEvents = await fetchNotificationHistory(offset, PAGE_SIZE);
 
       if (append) {
-        setEvents((prev) => [...prev, ...newEvents]);
+        // Deduplicate when appending to existing events
+        setEvents((prev) => deduplicateEvents([...prev, ...newEvents]));
       } else {
-        setEvents(newEvents);
+        setEvents(deduplicateEvents(newEvents));
       }
 
+      // Keep loading if we got a full page (there might be more unique events)
       setHasMore(newEvents.length === PAGE_SIZE);
     } catch (err) {
       setError(err.message || 'Failed to load notification history');
