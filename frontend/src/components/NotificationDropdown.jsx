@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Badge,
   Box,
@@ -9,6 +9,8 @@ import {
   IconButton,
   LinearProgress,
   Popover,
+  Tab,
+  Tabs,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -125,26 +127,39 @@ const getProgressColor = (value) => {
 const MAX_VISIBLE_NOTIFICATIONS = 5;
 
 const NotificationDropdown = ({ iconColor = 'inherit' }) => {
-  const { 
-    missedEvents, 
+  const {
+    missedEvents,
+    unreadEvents,
     unreadCount,
-    markEventAsRead, 
+    markEventAsRead,
     markAllEventsAsRead,
   } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [anchorEl, setAnchorEl] = useState(null);
-  
+  const [activeTab, setActiveTab] = useState('unread');
+
   // Test mode state for tracking read status locally
   const [testReadIds, setTestReadIds] = useState(new Set());
 
   // Test mode: ?testMissed=true shows mock data
   const testMode = searchParams.get('testMissed') === 'true';
-  const effectiveEvents = testMode ? MOCK_MISSED_EVENTS : (missedEvents || []);
-  
+  const allEvents = testMode ? MOCK_MISSED_EVENTS : (missedEvents || []);
+  const unreadEventIds = useMemo(() => {
+    if (testMode) {
+      return new Set(allEvents.filter(e => !testReadIds.has(e.event_id)).map(e => e.event_id));
+    }
+    return new Set((unreadEvents || []).map(e => e.event_id));
+  }, [testMode, allEvents, testReadIds, unreadEvents]);
+
+  // Filter events based on active tab
+  const effectiveEvents = activeTab === 'unread'
+    ? allEvents.filter(e => unreadEventIds.has(e.event_id))
+    : allEvents;
+
   // In test mode, filter by local read state; otherwise use context's unreadCount
-  const notificationCount = testMode 
-    ? effectiveEvents.filter(e => !testReadIds.has(e.event_id)).length
+  const notificationCount = testMode
+    ? allEvents.filter(e => !testReadIds.has(e.event_id)).length
     : unreadCount;
 
   const open = Boolean(anchorEl);
@@ -160,7 +175,7 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
 
   const notifications = effectiveEvents.slice(0, MAX_VISIBLE_NOTIFICATIONS).map((event) => {
     const payload = event.payload || {};
-    const isRead = testMode ? testReadIds.has(event.event_id) : false; // Real read status comes from context
+    const isRead = !unreadEventIds.has(event.event_id);
     return {
       id: event.event_id,
       siteId: payload.site_id,
@@ -272,7 +287,7 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
           <Tooltip title="Notification settings">
             <IconButton
               component={RouterLink}
-              to="/notifications"
+              to="/notifications?tab=settings"
               size="small"
               onClick={handleClose}
             >
@@ -281,13 +296,40 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
           </Tooltip>
         </Box>
 
+        {/* Tabs */}
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          variant="fullWidth"
+          sx={{
+            minHeight: 36,
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              minHeight: 36,
+              py: 0.5,
+              textTransform: 'none',
+              fontSize: '0.875rem',
+            },
+          }}
+        >
+          <Tab
+            value="unread"
+            label={notificationCount > 0 ? `Unread (${notificationCount})` : 'Unread'}
+          />
+          <Tab
+            value="all"
+            label={allEvents.length > 0 ? `All (${allEvents.length})` : 'All'}
+          />
+        </Tabs>
+
         {/* Notification list */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           {notifications.length === 0 ? (
             <Box sx={{ py: 6, textAlign: 'center' }}>
               <NotificationsIcon sx={{ fontSize: 48, color: 'grey.400', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
-                No new notifications
+                {activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
               </Typography>
             </Box>
           ) : (
@@ -394,7 +436,7 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
         </Box>
 
         {/* Footer */}
-        {notifications.length > 0 && (
+        {(notifications.length > 0 || allEvents.length > 0) && (
           <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
             <Button
               fullWidth
@@ -403,7 +445,7 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
             >
               {effectiveEvents.length > MAX_VISIBLE_NOTIFICATIONS
                 ? `View all ${effectiveEvents.length} notifications`
-                : 'View all notifications'}
+                : 'View full history'}
             </Button>
           </Box>
         )}

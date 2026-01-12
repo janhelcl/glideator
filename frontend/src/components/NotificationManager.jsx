@@ -5,12 +5,10 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControl,
   Grid,
   IconButton,
@@ -32,12 +30,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import HistoryIcon from '@mui/icons-material/History';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useNotifications } from '../context/NotificationContext';
@@ -70,30 +64,6 @@ const truncate = (value, maxLength = 36) => {
   return `${value.slice(0, maxLength)}...`;
 };
 
-const getEventTypeDisplay = (eventType) => {
-  switch (eventType) {
-    case 'deteriorated':
-      return {
-        label: 'Conditions dropped',
-        color: 'warning',
-        icon: <TrendingDownIcon fontSize="small" />,
-      };
-    case 'improved':
-      return {
-        label: 'Conditions improved',
-        color: 'success',
-        icon: <TrendingUpIcon fontSize="small" />,
-      };
-    case 'initial':
-    default:
-      return {
-        label: 'Initial alert',
-        color: 'info',
-        icon: <NewReleasesIcon fontSize="small" />,
-      };
-  }
-};
-
 const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityProp }) => {
   const { user, profile, favorites } = useAuth();
   const identityLabel = identityProp || profile?.display_name || user?.email || 'Current device';
@@ -103,13 +73,11 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
     permission,
     subscriptions,
     notifications,
-    eventsByNotification,
     registerCurrentDevice,
     deactivateSubscription,
     createRule,
     updateRule,
     deleteRule,
-    loadNotificationEvents,
     isLoading,
     error,
     clearError,
@@ -140,8 +108,6 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
   const [editingRule, setEditingRule] = useState(null);
   const [ruleForm, setRuleForm] = useState(DEFAULT_RULE_FORM);
   const [siteSearch, setSiteSearch] = useState('');
-  const [expandedRuleId, setExpandedRuleId] = useState(null);
-  const [eventsLoadingId, setEventsLoadingId] = useState(null);
   const [subscriptionSubmitting, setSubscriptionSubmitting] = useState(false);
 
   useEffect(() => {
@@ -347,23 +313,6 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
     }
   };
 
-  const handleToggleEvents = async (ruleId) => {
-    const isExpanding = expandedRuleId !== ruleId;
-    setExpandedRuleId(isExpanding ? ruleId : null);
-    if (isExpanding && !eventsByNotification[ruleId]) {
-      setEventsLoadingId(ruleId);
-      try {
-        await loadNotificationEvents(ruleId);
-      } catch (err) {
-        const detail =
-          err?.response?.data?.detail || err?.message || 'Failed to load events.';
-        setStatus({ type: 'error', message: detail });
-      } finally {
-        setEventsLoadingId(null);
-      }
-    }
-  };
-
   const getSiteName = (siteId) => {
     const option =
       favoriteSites.find((opt) => Number(opt.value) === Number(siteId)) ||
@@ -485,138 +434,45 @@ const NotificationManager = ({ defaultMetric = 'XC0', identityLabel: identityPro
       ) : null}
 
       <Stack spacing={2}>
-        {notifications.map((rule) => {
-          const events = eventsByNotification[rule.notification_id] || [];
-          const isExpanded = expandedRuleId === rule.notification_id;
-          return (
-            <Paper key={rule.notification_id} variant="outlined" sx={{ p: 2 }}>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={4}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                    {getSiteName(rule.site_id)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Last triggered: {formatTimestamp(rule.last_triggered_at)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    <Chip label={rule.metric} size="small" />
-                    <Chip label={`≥ ${rule.threshold}%`} size="small" />
-                    <Chip label={`${rule.lead_time_hours}h ahead`} size="small" />
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography variant="body2">Active</Typography>
-                      <Switch
-                        checked={rule.active}
-                        onChange={() => handleToggleRuleActive(rule)}
-                        inputProps={{ 'aria-label': 'Toggle notification' }}
-                      />
-                    </Stack>
-                    <Button
-                      size="small"
-                      startIcon={<HistoryIcon />}
-                      onClick={() => handleToggleEvents(rule.notification_id)}
-                    >
-                      Events
-                    </Button>
-                    <IconButton size="small" onClick={() => handleOpenRuleDialog(rule)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </Grid>
+        {notifications.map((rule) => (
+          <Paper key={rule.notification_id} variant="outlined" sx={{ p: 2 }}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={4}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                  {getSiteName(rule.site_id)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Last triggered: {formatTimestamp(rule.last_triggered_at)}
+                </Typography>
               </Grid>
-
-              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                <Divider sx={{ my: 2 }} />
-                {eventsLoadingId === rule.notification_id ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : events.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No recent events recorded.
-                  </Typography>
-                ) : (
-                  <Stack spacing={1}>
-                    {events.map((event) => {
-                      const eventTypeInfo = getEventTypeDisplay(event.payload?.event_type);
-                      const handleEventClick = () => {
-                        const params = new URLSearchParams();
-                        if (event.payload?.prediction_date) params.set('date', event.payload.prediction_date);
-                        if (event.payload?.metric) params.set('metric', event.payload.metric);
-                        const siteId = event.payload?.site_id || rule.site_id;
-                        navigate(`/details/${siteId}?${params.toString()}`);
-                      };
-                      return (
-                        <Paper
-                          key={event.event_id}
-                          variant="outlined"
-                          onClick={handleEventClick}
-                          sx={{
-                            p: 1.5,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            '&:hover': {
-                              backgroundColor: 'action.hover',
-                              transform: 'translateX(4px)',
-                            },
-                          }}
-                        >
-                          <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
-                            spacing={1}
-                            justifyContent="space-between"
-                            alignItems={{ sm: 'center' }}
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Typography variant="subtitle2">
-                                {formatTimestamp(event.triggered_at)}
-                              </Typography>
-                              <Chip
-                                icon={eventTypeInfo.icon}
-                                label={eventTypeInfo.label}
-                                size="small"
-                                color={eventTypeInfo.color}
-                                variant="outlined"
-                              />
-                            </Stack>
-                            <Typography variant="body2" color="text.secondary">
-                              Status: {event.delivery_status}
-                            </Typography>
-                          </Stack>
-                          <Typography variant="body2" sx={{ mt: 1 }}>
-                            {event.payload?.previous_value != null ? (
-                              <>
-                                Value: {event.payload.previous_value}% → {event.payload?.value ?? 'n/a'}%
-                                {' '}(threshold {rule.threshold}%)
-                              </>
-                            ) : (
-                              <>
-                                Value: {event.payload?.value ?? 'n/a'}% (threshold {rule.threshold}%)
-                              </>
-                            )}
-                          </Typography>
-                          {event.payload?.prediction_date && (
-                            <Typography variant="caption" color="text.secondary">
-                              Forecast date {event.payload.prediction_date}
-                            </Typography>
-                          )}
-                        </Paper>
-                      );
-                    })}
+              <Grid item xs={12} md={4}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Chip label={rule.metric} size="small" />
+                  <Chip label={`≥ ${rule.threshold}%`} size="small" />
+                  <Chip label={`${rule.lead_time_hours}h ahead`} size="small" />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="body2">Active</Typography>
+                    <Switch
+                      checked={rule.active}
+                      onChange={() => handleToggleRuleActive(rule)}
+                      inputProps={{ 'aria-label': 'Toggle notification' }}
+                    />
                   </Stack>
-                )}
-              </Collapse>
-            </Paper>
-          );
-        })}
+                  <IconButton size="small" onClick={() => handleOpenRuleDialog(rule)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Paper>
+        ))}
       </Stack>
 
       <Dialog open={ruleDialogOpen} onClose={handleCloseRuleDialog} fullWidth maxWidth="sm">
