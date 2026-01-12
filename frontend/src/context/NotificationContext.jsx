@@ -49,6 +49,21 @@ const saveReadEventIds = (readIds) => {
   }
 };
 
+// Deduplicate events by notification_id + prediction_date
+// (same notification rule + same forecast = same logical notification)
+const deduplicateEvents = (events) => {
+  const seen = new Set();
+  return events.filter((event) => {
+    const payload = event.payload || {};
+    const key = `${event.notification_id}-${payload.prediction_date}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
 export const NotificationContext = createContext({
   pushSupported: false,
   permission: 'default',
@@ -290,7 +305,8 @@ export const NotificationProvider = ({ children }) => {
       localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
 
       if (events.length > 0) {
-        setMissedEvents(events);
+        // Deduplicate events (same notification + forecast date = one notification)
+        setMissedEvents(deduplicateEvents(events));
       }
       return events;
     } catch (err) {
