@@ -119,14 +119,15 @@ async def list_recent_events(
     authorization: Optional[str] = Header(default=None),
     db: AsyncSession = Depends(get_db),
     since: Optional[datetime] = Query(default=None, description="Only return events after this ISO timestamp"),
+    offset: int = Query(default=0, ge=0, description="Number of events to skip for pagination"),
     limit: int = Query(default=50, le=100, description="Maximum number of events to return"),
 ):
     """
     Get recent notification events for the current user across all their notifications.
-    Used for catch-up when app opens after being offline.
+    Used for catch-up when app opens after being offline, and for browsing notification history.
     """
     user_id = require_user_id(authorization)
-    events = await crud.list_recent_notification_events_for_user(db, user_id, since=since, limit=limit)
+    events = await crud.list_recent_notification_events_for_user(db, user_id, since=since, offset=offset, limit=limit)
     return events
 
 
