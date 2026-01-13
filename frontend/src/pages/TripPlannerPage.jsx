@@ -8,6 +8,7 @@ import { planTrip } from '../api';
 import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '../types/ui-state';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
@@ -19,8 +20,12 @@ const formatDate = (date) => {
   return date.toISOString().split('T')[0];
 };
 
-const getInitialStateFromURL = (searchParams) => {
+const getInitialStateFromURL = (searchParams, preferredMetric = 'XC0') => {
     const state = JSON.parse(JSON.stringify(DEFAULT_PLANNER_STATE));
+    // Override the default selectedMetric with preferredMetric
+    state.selectedMetric = preferredMetric;
+    state.flightQuality.selectedValues = [preferredMetric];
+
     const [defaultStart, defaultEnd] = getDefaultDateRange();
     state.dates = [defaultStart, defaultEnd];
 
@@ -74,7 +79,7 @@ const getInitialStateFromURL = (searchParams) => {
     }
     
     // Enabled state logic: a non-default metric implies enabled, but fqEnabled param has final say.
-    if (metricParam && metricParam !== DEFAULT_PLANNER_STATE.selectedMetric) {
+    if (metricParam && metricParam !== preferredMetric) {
         state.flightQuality.enabled = true;
     }
     if (fqEnabledParam === 'true') {
@@ -103,9 +108,10 @@ const getInitialStateFromURL = (searchParams) => {
 
 const TripPlannerPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { preferredMetric } = useDefaultMetric();
 
   // Initialize unified planner state with default values, potentially overridden by URL params
-  const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams));
+  const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams, preferredMetric));
   
   // Separate UI states (client-side only, don't trigger API calls)
   const [sortBy, setSortBy] = useState(plannerState.sortBy);
@@ -211,8 +217,8 @@ const TripPlannerPage = () => {
     if (flightQuality.enabled) {
         newParams.set('fqEnabled', 'true');
     }
-    
-    if (selectedMetric !== defaultState.selectedMetric) {
+
+    if (selectedMetric !== preferredMetric) {
          newParams.set('metric', selectedMetric);
     }
 
