@@ -62,7 +62,7 @@ const About = () => {
               a simple flyability score for each site and day.
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Currently covering sites across Europe with 7-day forecasts updated daily.
+              Currently covering sites across Europe with 7-day forecasts updated 4 times daily.
             </Typography>
           </Box>
         </Box>
@@ -141,7 +141,11 @@ const About = () => {
                 secondary="Find the best sites within your travel range. Filter by distance, altitude, date range, and minimum flyability."
               />
             </ListItem>
-            <ListItem sx={{ px: 0 }}>
+            <ListItem
+              sx={{ px: 0, cursor: 'pointer' }}
+              component={RouterLink}
+              to="/details/133?tab=activity"
+            >
               <ListItemIcon>
                 <PlaceIcon color="primary" />
               </ListItemIcon>
