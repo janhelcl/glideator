@@ -144,7 +144,10 @@ const NotificationDropdown = ({ iconColor = 'inherit' }) => {
 
   // Test mode: ?testMissed=true shows mock data
   const testMode = searchParams.get('testMissed') === 'true';
-  const allEvents = testMode ? MOCK_MISSED_EVENTS : (missedEvents || []);
+  const allEvents = useMemo(() => {
+    return testMode ? MOCK_MISSED_EVENTS : (missedEvents || []);
+  }, [testMode, missedEvents]);
+
   const unreadEventIds = useMemo(() => {
     if (testMode) {
       return new Set(allEvents.filter(e => !testReadIds.has(e.event_id)).map(e => e.event_id));
