@@ -231,7 +231,7 @@ const TripPlannerPage = () => {
     }
 
     setSearchParams(newParams, { replace: true });
-  }, [plannerState, sortBy, view, setSearchParams]);
+  }, [plannerState, sortBy, view, setSearchParams, preferredMetric]);
 
   // Function to request location permission
   const requestLocation = useCallback(() => {
@@ -378,10 +378,15 @@ const TripPlannerPage = () => {
   ]);
   
   // Handle site click from map
-  const handleSiteClick = (site) => {
-    // Open site details in new tab with selected metric
+  const handleSiteClick = (site, event) => {
     const url = `/details/${site.site_id}?metric=${plannerState.selectedMetric}`;
-    window.open(url, '_blank');
+
+    // Check if middle-click or ctrl/cmd-click
+    if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
   };
 
   // Handle loading more sites
@@ -587,14 +592,14 @@ const TripPlannerPage = () => {
                     alignItems: 'center',
                     mb: { xs: 1, sm: 0 }
                   }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
+                    <Typography
+                      variant="h6"
+                      sx={{
                         fontWeight: 'bold',
                         fontSize: { xs: '1.1rem', sm: '1.25rem' }
                       }}
                     >
-                      Showing {sites.length} of {totalCount} sites
+                      Top {sites.length} sites ({totalCount} total)
                     </Typography>
                   
                   {/* Sort buttons - only show on desktop */}

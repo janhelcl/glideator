@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Box, 
-  IconButton, 
-  Menu, 
-  MenuItem, 
-  Drawer, 
-  List, 
-  ListItem, 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Drawer,
+  List,
   ListItemText,
   ListItemIcon,
   useMediaQuery,

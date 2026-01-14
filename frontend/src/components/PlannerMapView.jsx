@@ -73,10 +73,15 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
     });
   }, []);
 
-  const handleSiteClick = useCallback((site) => {
-    // Open site details in new tab with selected metric
+  const handleSiteClick = useCallback((site, event) => {
     const url = `/details/${site.site_id}?metric=${selectedMetric}`;
-    window.open(url, '_blank');
+
+    // Check if middle-click or ctrl/cmd-click
+    if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
   }, [selectedMetric]);
 
   // Function to center map on user's location
@@ -127,7 +132,13 @@ const PlannerMapView = ({ sites, onSiteClick, isVisible, maxSites = 10, selected
               <div className="popup-footer">
                 <button
                   className="popup-details-button"
-                  onClick={() => handleSiteClick(site)}
+                  onClick={(e) => handleSiteClick(site, e)}
+                  onAuxClick={(e) => {
+                    if (e.button === 1) {
+                      e.preventDefault();
+                      handleSiteClick(site, e);
+                    }
+                  }}
                 >
                   View Details
                 </button>

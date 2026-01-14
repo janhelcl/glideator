@@ -11,10 +11,15 @@ const SiteList = ({
   showRanking = true,
   renderSiteActions = null,
 }) => {
-  const handleSiteClick = (site) => {
-    // Open site details in new tab with selected metric
+  const handleSiteClick = (site, event) => {
     const url = `/details/${site.site_id}?metric=${selectedMetric}`;
-    window.open(url, '_blank');
+
+    // Check if middle-click or ctrl/cmd-click
+    if (event.button === 1 || event.ctrlKey || event.metaKey) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
   };
 
   if (!sites || sites.length === 0) {
@@ -48,12 +53,18 @@ const SiteList = ({
               boxShadow: 2
             }
           }}
-          onClick={() => handleSiteClick(site)}
+          onClick={(e) => handleSiteClick(site, e)}
+          onAuxClick={(e) => {
+            if (e.button === 1) {
+              e.preventDefault();
+              handleSiteClick(site, e);
+            }
+          }}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              handleSiteClick(site);
+              handleSiteClick(site, e);
             }
           }}
         >
@@ -124,7 +135,14 @@ const SiteList = ({
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSiteClick(site);
+                      handleSiteClick(site, e);
+                    }}
+                    onAuxClick={(e) => {
+                      if (e.button === 1) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleSiteClick(site, e);
+                      }
                     }}
                     sx={{ color: 'primary.main' }}
                     aria-label={`View details for ${site.site_name}`}
