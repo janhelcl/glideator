@@ -7,7 +7,6 @@ import {
   AccordionDetails,
   Button,
   ButtonGroup,
-  IconButton,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -182,12 +181,21 @@ const SimilarDaysPanel = ({ siteId, selectedDate, latitude, longitude }) => {
     return null;
   }
 
+  // Get rank label
+  const getRankLabel = (index) => {
+    const labels = ['Best Match', '2nd Best', '3rd Best'];
+    return labels[index] || `#${index + 1}`;
+  };
+
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h6" gutterBottom>
         Similar Days in the Past
       </Typography>
-      
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Compare with days that had similar atmospheric conditions to see what flights were possible.
+      </Typography>
+
       {similarDays.map((day, index) => (
         <Accordion
           key={day.past_date}
@@ -202,22 +210,42 @@ const SimilarDaysPanel = ({ siteId, selectedDate, latitude, longitude }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 1,
+                flexWrap: 'wrap',
               }
             }}
           >
-            <Typography>{formatDate(day.past_date)}</Typography>
-            <IconButton
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  bgcolor: index === 0 ? 'primary.main' : 'grey.500',
+                  color: 'white',
+                  px: 1,
+                  py: 0.25,
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {getRankLabel(index)}
+              </Typography>
+              <Typography>{formatDate(day.past_date)}</Typography>
+            </Box>
+            <Button
               size="small"
+              variant="outlined"
               href={getXContestLink(day.past_date)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              sx={{ ml: 1 }}
+              startIcon={<OpenInNewIcon fontSize="small" />}
+              sx={{ whiteSpace: 'nowrap' }}
             >
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
+              View Flights
+            </Button>
           </AccordionSummary>
-          
+
           <AccordionDetails>
             {renderForecastContent(day.past_date)}
           </AccordionDetails>
