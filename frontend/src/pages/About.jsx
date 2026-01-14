@@ -8,8 +8,10 @@ import PlaceIcon from '@mui/icons-material/Place';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CloudIcon from '@mui/icons-material/Cloud';
-import FlightIcon from '@mui/icons-material/Flight';
+import HistoryIcon from '@mui/icons-material/History';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import LinkIcon from '@mui/icons-material/Link';
 
 const About = () => {
   return (
@@ -60,7 +62,7 @@ const About = () => {
               a simple flyability score for each site and day.
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Currently covering sites across Europe with 7-day forecasts updated daily.
+              Currently covering sites across Europe with 7-day forecasts updated 4 times daily.
             </Typography>
           </Box>
         </Box>
@@ -85,7 +87,7 @@ const About = () => {
             </ListItem>
             <ListItem sx={{ px: 0 }}>
               <ListItemIcon>
-                <FlightIcon color="primary" />
+                <HistoryIcon color="primary" />
               </ListItemIcon>
               <ListItemText
                 primary="Learned from Real Flights"
@@ -139,7 +141,11 @@ const About = () => {
                 secondary="Find the best sites within your travel range. Filter by distance, altitude, date range, and minimum flyability."
               />
             </ListItem>
-            <ListItem sx={{ px: 0 }}>
+            <ListItem
+              sx={{ px: 0, cursor: 'pointer' }}
+              component={RouterLink}
+              to="/details/133?tab=activity"
+            >
               <ListItemIcon>
                 <PlaceIcon color="primary" />
               </ListItemIcon>
@@ -172,6 +178,59 @@ const About = () => {
               <ListItemText
                 primary="Notifications"
                 secondary="Set up alerts to get notified when conditions at your favorite sites look promising."
+              />
+            </ListItem>
+          </List>
+        </Box>
+      </Paper>
+
+      {/* AI Integration */}
+      <Paper elevation={2} sx={{ mb: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 2 }}>
+            AI Assistant Integration
+          </Typography>
+
+          <Typography variant="body1" paragraph>
+            Glideator supports the Model Context Protocol (MCP), which allows AI assistants
+            like Claude to access our forecasts and site data directly. Ask your AI about
+            flying conditions, plan trips, or get site information — all through natural conversation.
+          </Typography>
+
+          <List>
+            <ListItem sx={{ px: 0 }}>
+              <ListItemIcon>
+                <SmartToyIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Talk to Your AI About Flying"
+                secondary="Ask questions like 'Where should I fly this weekend?' or 'What's the forecast for Bassano?' and get answers powered by Glideator data."
+              />
+            </ListItem>
+            <ListItem sx={{ px: 0 }}>
+              <ListItemIcon>
+                <LinkIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Connect Your AI Assistant"
+                secondary={
+                  <>
+                    Add the MCP server to your AI client using:{' '}
+                    <Typography
+                      component="code"
+                      sx={{
+                        backgroundColor: 'grey.100',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        fontSize: '0.875rem',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      https://www.parra-glideator.com/mcp
+                    </Typography>
+                  </>
+                }
               />
             </ListItem>
           </List>
