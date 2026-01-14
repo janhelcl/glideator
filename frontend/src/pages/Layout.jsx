@@ -23,6 +23,7 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import ExploreIcon from '@mui/icons-material/Explore';
 import HomeIcon from '@mui/icons-material/Home';
+import InfoIcon from '@mui/icons-material/Info';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -150,6 +151,11 @@ const Layout = () => {
         <ListItemButton onClick={() => handleMobileMenuClick('/trip-planner')}>
           <ListItemIcon><ExploreIcon /></ListItemIcon>
           <ListItemText primary="Plan a Trip" />
+        </ListItemButton>
+
+        <ListItemButton onClick={() => handleMobileMenuClick('/about')}>
+          <ListItemIcon><InfoIcon /></ListItemIcon>
+          <ListItemText primary="How It Works" />
         </ListItemButton>
       </List>
 
@@ -288,6 +294,19 @@ const Layout = () => {
                   color="inherit"
                 >
                   <ExploreIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* Desktop: How It Works */}
+            {!isMobile && (
+              <Tooltip title="How It Works">
+                <IconButton
+                  component={RouterLink}
+                  to="/about"
+                  color="inherit"
+                >
+                  <InfoIcon />
                 </IconButton>
               </Tooltip>
             )}
