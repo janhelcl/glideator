@@ -32,6 +32,7 @@ import { useAuth } from '../context/AuthContext';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import SimilarDaysPanel from '../components/SimilarDaysPanel';
+import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -62,10 +63,11 @@ const { siteId } = useParams();
 const [searchParams, setSearchParams] = useSearchParams();
 const navigate = useNavigate();
 const numericSiteId = Number(siteId);
-  
+const { preferredMetric } = useDefaultMetric();
+
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
-  const initialMetric = searchParams.get('metric') || 'XC50';
+  const initialMetric = searchParams.get('metric') || preferredMetric;
   const initialTabName = searchParams.get('tab') || tabNames[1]; // Default to 'forecast'
 
   // Find the index corresponding to the initial tab name

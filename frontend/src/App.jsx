@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Favorites from './pages/Favorites';
 import Notifications from './pages/Notifications';
+import About from './pages/About';
 import RequireAuth from './components/RequireAuth';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -27,6 +28,7 @@ const App = () => {
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="trip-planner" element={<TripPlannerPage />} />
+              <Route path="about" element={<About />} />
               <Route path="details/:siteId" element={<Details />} />
               <Route
                 path="profile"

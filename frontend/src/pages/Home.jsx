@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { createSitesResource } from '../utils/suspenseResource';
 import { Helmet } from 'react-helmet-async';
+import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -29,6 +30,7 @@ const Home = () => {
   const markerRefs = useRef({});
   const mapRef = useRef();
   // Removed useAuth import
+  const { preferredMetric } = useDefaultMetric();
 
   // Read site data using the resource. This will suspend if data is not ready.
   const allSitesData = sitesResource.read();
@@ -36,7 +38,7 @@ const Home = () => {
   const [selectedMetric, setSelectedMetric] = useState(() => {
     const params = new URLSearchParams(location.search);
     const metric = params.get('metric');
-    return metric && METRICS.includes(metric) ? metric : 'XC0';
+    return metric && METRICS.includes(metric) ? metric : preferredMetric;
   });
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => {
