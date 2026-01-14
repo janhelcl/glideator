@@ -6,6 +6,7 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
   const svgRef = useRef();
   const tooltipRef = useRef();
   const containerRef = useRef();
+  const clipIdRef = useRef(`clip-${Math.random().toString(36).substr(2, 9)}`);
 
   // Move createChart to useCallback to fix dependency warning
   const createChart = useCallback(() => {
@@ -158,6 +159,14 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
       .attr('stroke-width', 2)
       .attr('d', tempLine);
 
+    // Define the clipping path before using it
+    svg.append('defs')
+      .append('clipPath')
+      .attr('id', clipIdRef.current)
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height);
+
     // Draw dewpoint line with clipping
     svg.append('path')
       .datum(forecast.dewpoint_iso_c)
@@ -166,15 +175,7 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', '4')
       .attr('d', tempLine)
-      .attr('clip-path', 'url(#clip)');
-
-    // Define the clipping path
-    svg.append('defs')
-      .append('clipPath')
-      .attr('id', 'clip')
-      .append('rect')
-      .attr('width', width)  // Use the full width of the chart
-      .attr('height', height);
+      .attr('clip-path', `url(#${clipIdRef.current})`);
 
     // Draw wind speed line
     const windLine = d3.line()
