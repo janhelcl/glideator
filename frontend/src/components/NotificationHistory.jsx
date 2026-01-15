@@ -100,6 +100,7 @@ const NotificationHistory = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [rawOffset, setRawOffset] = useState(0);
 
   const loadEvents = useCallback(async (offset = 0, append = false) => {
     try {
@@ -117,7 +118,11 @@ const NotificationHistory = () => {
         setEvents((prev) => deduplicateEvents([...prev, ...newEvents]));
       } else {
         setEvents(deduplicateEvents(newEvents));
+        setRawOffset(0);
       }
+
+      // Update raw offset based on number of events fetched
+      setRawOffset((prev) => prev + newEvents.length);
 
       // Keep loading if we got a full page (there might be more unique events)
       setHasMore(newEvents.length === PAGE_SIZE);
@@ -134,7 +139,7 @@ const NotificationHistory = () => {
   }, [loadEvents]);
 
   const handleLoadMore = () => {
-    loadEvents(events.length, true);
+    loadEvents(rawOffset, true);
   };
 
   const handleEventClick = (event) => {
