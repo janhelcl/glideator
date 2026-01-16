@@ -9,6 +9,7 @@ import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '.
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
+import { useAuth } from '../context/AuthContext';
 
 // Cache for API requests (5 minutes)
 const REQUEST_CACHE = new Map();
@@ -46,6 +47,12 @@ const getInitialStateFromURL = (searchParams, preferredMetric = 'XC0') => {
         state.distance.km = parseInt(searchParams.get('distKm'), 10) || state.distance.km;
     } else if (searchParams.get('distEnabled') === 'false') {
         state.distance.enabled = false;
+    }
+
+    // Location source (home vs current)
+    const locSrc = searchParams.get('locSrc');
+    if (locSrc === 'home' || locSrc === 'current') {
+        state.distance.locationSource = locSrc;
     }
 
     // Altitude
@@ -109,9 +116,33 @@ const getInitialStateFromURL = (searchParams, preferredMetric = 'XC0') => {
 const TripPlannerPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { preferredMetric } = useDefaultMetric();
+  const { profile } = useAuth();
 
   // Initialize unified planner state with default values, potentially overridden by URL params
   const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams, preferredMetric));
+
+  // Initialize home coords if URL specifies home location source
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+
+    const hasHomeLocation = profile?.home_lat && profile?.home_lon;
+    const urlLocSrc = searchParams.get('locSrc');
+
+    // Only populate home coords if URL explicitly says 'home' and user has home location
+    if (urlLocSrc === 'home' && hasHomeLocation) {
+      initializedRef.current = true;
+      setPlannerState(prev => ({
+        ...prev,
+        distance: {
+          ...prev.distance,
+          coords: { latitude: profile.home_lat, longitude: profile.home_lon }
+        }
+      }));
+    } else {
+      initializedRef.current = true;
+    }
+  }, [profile, searchParams]);
   
   // Separate UI states (client-side only, don't trigger API calls)
   const [sortBy, setSortBy] = useState(plannerState.sortBy);
@@ -134,18 +165,19 @@ const TripPlannerPage = () => {
   // Generate cache key for requests
   const getCacheKey = (start, end, state, userLoc) => {
     // Include user location for distance calculation
-    const userLocationStr = userLoc 
+    const userLocationStr = userLoc
       ? `user_${userLoc.latitude.toFixed(3)}_${userLoc.longitude.toFixed(3)}`
       : 'no_user_location';
     // Include distance filter if enabled
-    const distanceFilterStr = state.distance.enabled && state.distance.coords 
-      ? `filter_${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}` 
+    const locationSource = state.distance.locationSource || 'current';
+    const distanceFilterStr = state.distance.enabled && state.distance.coords
+      ? `filter_${locationSource}_${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}`
       : 'no_distance_filter';
-    const altitudeStr = state.altitude.enabled 
-      ? `${state.altitude.min}_${state.altitude.max}` 
+    const altitudeStr = state.altitude.enabled
+      ? `${state.altitude.min}_${state.altitude.max}`
       : 'no_altitude';
-    const flightQualityStr = state.flightQuality.enabled 
-      ? state.flightQuality.selectedValues.join(',') 
+    const flightQualityStr = state.flightQuality.enabled
+      ? state.flightQuality.selectedValues.join(',')
       : 'no_flight_quality';
     const tagsStr = (state.tags && state.tags.length > 0) ? state.tags.join(',') : 'no_tags';
     return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${userLocationStr}_${distanceFilterStr}_${altitudeStr}_${flightQualityStr}_${tagsStr}`;
@@ -202,6 +234,10 @@ const TripPlannerPage = () => {
         newParams.set('distEnabled', 'true');
         if (distance.km !== defaultState.distance.km) {
             newParams.set('distKm', distance.km);
+        }
+        // Location source
+        if (distance.locationSource && distance.locationSource !== 'current') {
+            newParams.set('locSrc', distance.locationSource);
         }
     }
 
@@ -472,7 +508,12 @@ const TripPlannerPage = () => {
   const filtersSignature = useMemo(() => {
     return JSON.stringify({
       altitude: plannerState.altitude,
-      distance: { enabled: plannerState.distance.enabled, km: plannerState.distance.km },
+      distance: {
+        enabled: plannerState.distance.enabled,
+        km: plannerState.distance.km,
+        locationSource: plannerState.distance.locationSource,
+        coords: plannerState.distance.coords
+      },
       flightQuality: { enabled: plannerState.flightQuality.enabled, values: plannerState.flightQuality.selectedValues },
       metric: plannerState.selectedMetric,
       dates: plannerState.dates,
@@ -482,6 +523,8 @@ const TripPlannerPage = () => {
     plannerState.altitude,
     plannerState.distance.enabled,
     plannerState.distance.km,
+    plannerState.distance.locationSource,
+    plannerState.distance.coords,
     plannerState.flightQuality.enabled,
     plannerState.flightQuality.selectedValues,
     plannerState.selectedMetric,
