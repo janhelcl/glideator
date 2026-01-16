@@ -216,7 +216,7 @@ const FlightQualityMetricControl = ({
   return (
     <MetricStyleControl
       icon={TimelineIcon}
-      title="Minimum Flight Quality"
+      title="Flight Quality"
       subtitle="(XC Points)"
       enabled={enabled}
       onToggle={onToggle}

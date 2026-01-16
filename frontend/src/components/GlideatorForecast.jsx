@@ -122,7 +122,7 @@ const GlideatorForecast = ({
       .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
       .style('text-anchor', 'middle')
       .style('font-size', `${axisFontSize + 2}px`)
-      .text('Minimum Flight Quality (XC Points)');
+      .text('Flight Quality (XC Points)');
 
     // Use a single color for all bars
     const barColor = '#4CAF50'; // Green color for all bars
