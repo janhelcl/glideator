@@ -110,7 +110,7 @@ const StandaloneMetricControl = ({ metrics, selectedMetric, onMetricChange }) =>
                 width: '100%',
               }}
             >
-              <span style={{ display: 'block', fontSize: '0.75rem' }}>Minimum Flight Quality</span>
+              <span style={{ display: 'block', fontSize: '0.75rem' }}>Flight Quality</span>
               <span style={{ display: 'block', fontSize: '0.65rem', marginTop: '2px' }}>(XC Points)</span>
             </Typography>
             
