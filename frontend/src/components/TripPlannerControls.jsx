@@ -10,14 +10,18 @@ import {
   IconButton,
   Autocomplete,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import ViewModeToggle from './ViewModeToggle';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { useAuth } from '../context/AuthContext';
 import { DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SocialDistanceIcon from '@mui/icons-material/SocialDistance';
 import FilterHdrIcon from '@mui/icons-material/FilterHdr';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import HomeIcon from '@mui/icons-material/Home';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { fetchAllTags } from '../api';
 
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -261,26 +265,40 @@ const FlightQualityMetricControl = ({
 /**
  * Distance Control - metric style
  */
-const DistanceMetricControl = ({ 
-  distanceState, 
-  onDistanceChange, 
-  onToggle, 
+const DistanceMetricControl = ({
+  distanceState,
+  onDistanceChange,
+  onToggle,
   onDetectLocation,
   isDetectingLocation,
-  locationError 
+  locationError,
+  homeLocation,
+  onLocationSourceChange
 }) => {
   const [localDistance, setLocalDistance] = useState(distanceState.km);
+  const locationSource = distanceState.locationSource || 'current';
+  const hasHomeLocation = homeLocation && homeLocation.latitude && homeLocation.longitude;
 
   useEffect(() => {
     setLocalDistance(distanceState.km);
   }, [distanceState.km]);
 
-  // Automatically try to get location when filter is enabled and no coords exist
+  // Automatically try to get location when filter is enabled and no coords exist and source is 'current'
   useEffect(() => {
-    if (distanceState.enabled && !distanceState.coords && !isDetectingLocation) {
+    if (distanceState.enabled && !distanceState.coords && !isDetectingLocation && locationSource === 'current') {
       onDetectLocation();
     }
-  }, [distanceState.enabled, distanceState.coords, isDetectingLocation, onDetectLocation]);
+  }, [distanceState.enabled, distanceState.coords, isDetectingLocation, onDetectLocation, locationSource]);
+
+  const handleLocationSourceChange = (source) => {
+    if (source === 'home' && hasHomeLocation) {
+      onLocationSourceChange(source, homeLocation);
+    } else if (source === 'current') {
+      onLocationSourceChange(source, null);
+      // Trigger geolocation detection
+      onDetectLocation();
+    }
+  };
 
   const marks = useMemo(() => [
     { value: 10, label: '10' },
@@ -301,39 +319,92 @@ const DistanceMetricControl = ({
     return `${distance} km`;
   };
 
+  const getSubtitle = () => {
+    if (!distanceState.enabled) return '(km)';
+    return locationSource === 'home' ? 'from home' : 'from location';
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <MetricStyleControl
         icon={SocialDistanceIcon}
         title="Distance"
-        subtitle="(km)"
+        subtitle={getSubtitle()}
         enabled={distanceState.enabled}
         onToggle={onToggle}
         showDisableButton={true}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {!distanceState.coords && distanceState.enabled && (
-            <Typography variant="caption" sx={{ 
-              fontSize: '0.6rem', 
-              textAlign: 'center', 
+          {/* Location source toggle */}
+          {distanceState.enabled && (
+            <Box sx={{ display: 'flex', gap: 0.5, mb: 1, justifyContent: 'center' }}>
+              <Tooltip title="Use current location">
+                <IconButton
+                  size="small"
+                  onClick={() => handleLocationSourceChange('current')}
+                  sx={{
+                    backgroundColor: locationSource === 'current' ? 'primary.main' : 'transparent',
+                    color: locationSource === 'current' ? 'white' : 'action.active',
+                    border: '1px solid',
+                    borderColor: locationSource === 'current' ? 'primary.main' : 'divider',
+                    padding: '4px',
+                    '&:hover': {
+                      backgroundColor: locationSource === 'current' ? 'primary.dark' : 'action.hover',
+                    }
+                  }}
+                >
+                  <MyLocationIcon sx={{ fontSize: '0.9rem' }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={hasHomeLocation ? 'Use home location' : 'Set home in Profile'}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleLocationSourceChange('home')}
+                    disabled={!hasHomeLocation}
+                    sx={{
+                      backgroundColor: locationSource === 'home' ? 'primary.main' : 'transparent',
+                      color: locationSource === 'home' ? 'white' : 'action.active',
+                      border: '1px solid',
+                      borderColor: locationSource === 'home' ? 'primary.main' : 'divider',
+                      padding: '4px',
+                      '&:hover': {
+                        backgroundColor: locationSource === 'home' ? 'primary.dark' : 'action.hover',
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 0.5,
+                      }
+                    }}
+                  >
+                    <HomeIcon sx={{ fontSize: '0.9rem' }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+          )}
+
+          {!distanceState.coords && distanceState.enabled && locationSource === 'current' && (
+            <Typography variant="caption" sx={{
+              fontSize: '0.6rem',
+              textAlign: 'center',
               color: 'text.secondary',
               marginBottom: '8px'
             }}>
               {isDetectingLocation ? 'Getting location...' : 'Location access needed'}
             </Typography>
           )}
-          
+
           {!distanceState.enabled && (
-            <Typography variant="caption" sx={{ 
-              fontSize: '0.6rem', 
-              textAlign: 'center', 
+            <Typography variant="caption" sx={{
+              fontSize: '0.6rem',
+              textAlign: 'center',
               color: 'text.secondary',
               marginBottom: '8px'
             }}>
               Filter is disabled
             </Typography>
           )}
-          
+
           <Slider
             orientation="vertical"
             value={localDistance}
@@ -367,7 +438,7 @@ const DistanceMetricControl = ({
               }
             }}
           />
-          
+
           <Typography variant="caption" sx={{ fontSize: '0.6rem', textAlign: 'center' }}>
             {formatDistance(localDistance)}
           </Typography>
@@ -531,11 +602,21 @@ const TripPlannerControls = ({
     ];
   });
 
-  const { 
-    location: detectedLocation, 
-    isLoading: isDetectingLocation, 
-    error: locationError, 
-    detectLocation 
+  const { profile } = useAuth();
+
+  // Create home location object from profile
+  const homeLocation = useMemo(() => {
+    if (profile?.home_lat && profile?.home_lon) {
+      return { latitude: profile.home_lat, longitude: profile.home_lon };
+    }
+    return null;
+  }, [profile?.home_lat, profile?.home_lon]);
+
+  const {
+    location: detectedLocation,
+    isLoading: isDetectingLocation,
+    error: locationError,
+    detectLocation
   } = useGeolocation();
 
   const formatDateForInput = (date) => {
@@ -583,14 +664,28 @@ const TripPlannerControls = ({
     detectLocation();
   };
 
+  // Handle location source change (home vs current)
+  const handleLocationSourceChange = useCallback((source, coords) => {
+    setState(prev => ({
+      ...prev,
+      distance: {
+        ...prev.distance,
+        locationSource: source,
+        coords: coords,
+        enabled: true
+      }
+    }));
+  }, [setState]);
+
+  // Update coords when geolocation is detected (only if source is 'current')
   React.useEffect(() => {
-    if (detectedLocation) {
+    if (detectedLocation && state.distance.locationSource === 'current') {
       setState(prev => ({
         ...prev,
         distance: { ...prev.distance, coords: detectedLocation, enabled: true }
       }));
     }
-  }, [detectedLocation, setState]);
+  }, [detectedLocation, setState, state.distance.locationSource]);
 
   const handleAltitudeToggle = (enabled) => {
     setState(prev => ({
@@ -704,6 +799,8 @@ const TripPlannerControls = ({
                 onDetectLocation={handleLocationDetect}
                 isDetectingLocation={isDetectingLocation}
                 locationError={locationError}
+                homeLocation={homeLocation}
+                onLocationSourceChange={handleLocationSourceChange}
               />
             <AltitudeMetricControl
                 altitudeState={state.altitude}
