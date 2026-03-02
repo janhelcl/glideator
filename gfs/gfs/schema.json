@@ -164,7 +164,7 @@
     "u_wind_100m_ms": {
         "forecast_name": "ugrd100m",
         "hist_name": "u-component_of_wind_height_above_ground_100",
-        "grib_name": "u100",
+        "grib_name": "u_100",
         "position": 27
     },
     "v_wind_10m_ms": {
@@ -176,7 +176,7 @@
     "v_wind_100m_ms": {
         "forecast_name": "vgrd100m",
         "hist_name": "v-component_of_wind_height_above_ground_100",
-        "grib_name": "v100",
+        "grib_name": "v_100",
         "position": 29
     },
     "wind_gust_sfc_ms": {
