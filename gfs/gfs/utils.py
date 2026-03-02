@@ -57,20 +57,19 @@ def find_latest_available_date():
     """
     Finds the latest available date for GFS forecast data.
 
-    This function scrapes the GFS forecast base URL to find the most recent date
-    for which forecast data is available. It looks for directories named in the
-    format 'gfsYYYYMMDD/'.
+    This function scrapes the NOMADS gribfilter page to find the most recent date
+    for which forecast data is available. It looks for dates in the format 'gfs.YYYYMMDD'.
 
     Returns:
     str: The latest available date in 'YYYYMMDD' format, or None if no valid dates are found
          or if an error occurs during the process.
     """
-    url = f'{constants.GFS_FORECAST_BASE}/gfs_0p25'
+    url = "https://nomads.ncep.noaa.gov/gribfilter.php?ds=gfs_0p25"
     try:
         response = requests.get(url)
         response.raise_for_status()
 
-        pattern = re.compile(r'gfs(\d{8})/')
+        pattern = re.compile(r'gfs\.(\d{8})')
         dates = pattern.findall(response.text)
 
         if not dates:
@@ -91,37 +90,43 @@ def find_latest_available_run(date_str):
     """
     Finds the latest available run for a given date in GFS forecast data.
 
-    This function scrapes the GFS forecast URL for a specific date to find the most recent
-    run number available. It looks for patterns like 'gfs_0p25_XXz' where XX is the run number.
+    This function checks the NOMADS gribfilter page for a specific date to find the most
+    recent run (cycle) that actually has files available. It checks cycles in descending
+    order (18, 12, 06, 00) and verifies that files exist for each cycle.
 
     Args:
     date_str (str): The date string in 'YYYYMMDD' format.
 
     Returns:
-    int: The latest available run number (0-23), or None if no valid runs are found
-         or if an error occurs during the process.
+    int: The latest available run number (0, 6, 12, or 18), or None if no valid runs
+         are found or if an error occurs during the process.
     """
-    url = f'{constants.GFS_FORECAST_BASE}/gfs_0p25/gfs{date_str}'
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+    base_url = "https://nomads.ncep.noaa.gov/gribfilter.php"
+    cycles = [18, 12, 6, 0]
 
-        pattern = re.compile(r'gfs_0p25_(\d{2})z:')
-        runs = pattern.findall(response.text)
-        runs = map(int, runs)
+    for cycle in cycles:
+        cycle_str = f"{cycle:02d}"
+        url = f"{base_url}?ds=gfs_0p25&dir=%2Fgfs.{date_str}%2F{cycle_str}%2Fatmos"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
 
-        if not runs:
-            logger.warning("No valid run numbers found.")
-            return None
+            # Check if files for this specific cycle exist
+            # Files are named like gfs.t18z.pgrb2.0p25.f000 or gfs.t18z.pgrb2.0p25.anl
+            pattern = re.compile(rf'gfs\.t{cycle_str}z\.pgrb2\.0p25\.(f\d{{3}}|anl)')
+            if pattern.search(response.text):
+                logger.info(f"Found available run: {cycle} for date {date_str}")
+                return cycle
 
-        return max(runs)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching data from {url}: {e}")
+            continue
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            continue
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching data from {url}: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-        return None
+    logger.warning(f"No valid run numbers found for date {date_str}.")
+    return None
 
 
 def find_latest_forecast_parameters():
