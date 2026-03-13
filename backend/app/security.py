@@ -10,12 +10,22 @@ import os
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
+def get_app_env() -> str:
+    return os.getenv("APP_ENV", os.getenv("ENV", "development")).strip().lower()
+
+
+def is_production() -> bool:
+    return get_app_env() in {"prod", "production"}
+
+
 def get_jwt_secret() -> str:
     secret = os.getenv("JWT_SECRET_KEY")
-    if not secret:
-        # Development default only; must be set in prod
-        secret = "dev-insecure-secret-change-me"
-    return secret
+    if secret:
+        return secret
+    if is_production():
+        raise RuntimeError("JWT_SECRET_KEY must be set in production")
+    # Development-only fallback for local iteration.
+    return "dev-insecure-secret-change-me"
 
 
 def hash_password(password: str) -> str:
@@ -68,7 +78,9 @@ def get_refresh_token_exp_days() -> int:
 
 
 def is_cookie_secure() -> bool:
-    # Set JWT_COOKIE_SECURE=true in prod to force Secure cookies
-    return os.getenv("JWT_COOKIE_SECURE", "false").lower() == "true"
+    value = os.getenv("JWT_COOKIE_SECURE")
+    if value is not None:
+        return value.lower() == "true"
+    return is_production()
 
 

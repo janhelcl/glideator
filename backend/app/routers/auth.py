@@ -41,21 +41,33 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/login", response_model=schemas.TokenOut)
-async def login(creds: schemas.UserLogin, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(
+    creds: schemas.UserLogin,
+    response: Response,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
     # Rate limit: max N attempts per window per email and IP
     rc = get_redis_client()
     window_sec = int(os.getenv("RATE_LIMIT_WINDOW_MINUTES", "15")) * 60
     max_attempts = int(os.getenv("RATE_LIMIT_LOGIN_ATTEMPTS", "5"))
-    ip = "unknown"
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded_for.split(",", 1)[0].strip() if forwarded_for else None
+    ip = client_ip or (request.client.host if request.client else "unknown")
     try:
-        # FastAPI doesn't pass request here; simple heuristic via X-Forwarded-For is omitted for brevity
-        # We scope by email only for now
-        key = f"login:attempts:{creds.email}"
-        current = rc.incr(key)
-        if current == 1:
-            rc.expire(key, window_sec)
-        if current > max_attempts:
-            raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+        keys = [
+            f"login:attempts:email:{creds.email.lower()}",
+            f"login:attempts:ip:{ip}",
+            f"login:attempts:email-ip:{creds.email.lower()}:{ip}",
+        ]
+        for key in keys:
+            current = rc.incr(key)
+            if current == 1:
+                rc.expire(key, window_sec)
+            if current > max_attempts:
+                raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+    except HTTPException:
+        raise
     except Exception:
         # If Redis fails, proceed without blocking login
         pass
