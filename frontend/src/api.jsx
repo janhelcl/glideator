@@ -7,23 +7,10 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-const ACCESS_TOKEN_KEY = 'access_token';
-
 let accessToken = null;
-
-// Initialize access token from localStorage on module load
-const storedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-if (storedToken) {
-  accessToken = storedToken;
-}
 
 export const setAccessToken = (token) => {
   accessToken = token;
-  if (token) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  } else {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-  }
 };
 
 export const getAccessToken = () => {
@@ -51,12 +38,12 @@ const refreshAccessToken = async () => {
     const response = await apiClient.post('/auth/refresh');
     const token = response.data?.access_token;
     if (token) {
-      accessToken = token;
+      setAccessToken(token);
     }
     return token;
   } catch (error) {
     // Clear the access token if refresh fails
-    accessToken = null;
+    setAccessToken(null);
     throw error;
   }
 };
@@ -81,7 +68,7 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         // If refresh fails, clear the token and don't retry
-        accessToken = null;
+        setAccessToken(null);
       }
     }
     return Promise.reject(error);
@@ -195,7 +182,7 @@ export const loginUser = async (email, password) => {
   const response = await apiClient.post('/auth/login', { email, password });
   const token = response.data?.access_token;
   if (token) {
-    accessToken = token;
+    setAccessToken(token);
   }
   return response.data;
 };
@@ -207,7 +194,7 @@ export const fetchCurrentUser = async () => {
 
 export const logoutUser = async () => {
   await apiClient.post('/auth/logout');
-  accessToken = null;
+  setAccessToken(null);
 };
 
 export const fetchUserProfile = async () => {

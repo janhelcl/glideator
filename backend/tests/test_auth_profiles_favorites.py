@@ -37,6 +37,11 @@ async def test_auth_register_login_me_refresh_logout():
         new_tok = r.json()["access_token"]
         assert new_tok and isinstance(new_tok, str)
 
+        # health should remain reachable (not shadowed by MCP mount)
+        r = await ac.get("/health")
+        assert r.status_code == 200
+        assert r.json()["status"] == "ok"
+
         # logout
         r = await ac.post("/auth/logout")
         assert r.status_code == 200

@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
 from .routers import sites, trip_planning, auth, profiles, favorites, llms, notifications, s2s, d2d
 from fastapi.middleware.cors import CORSMiddleware
+from .security import is_production
 
 from .services.sites_loader import load_sites_from_csv
 from .services.flight_stats_loader import load_flight_stats_from_csv
@@ -19,9 +20,11 @@ from .services.tags_loader import load_tags_from_jsonl
 from .celery_client import celery
 from .mcp import mcp
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if is_production() else "DEBUG").upper()
+
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Set the logging level
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler()
@@ -121,21 +124,28 @@ def startup_logic():
     except Exception as e:
         logger.error(f"Error during startup sequence: {str(e)}", exc_info=True) # Add traceback logging
 
+docs_enabled = not is_production() or os.getenv("ENABLE_API_DOCS", "false").lower() == "true"
+
 app = FastAPI(
     title="Glideator API",
     description="API for recommending paragliding sites based on weather forecasts.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
 )
 
 # Configure CORS (must be done before mounting and including routers)
-allowed_origins = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000").split(",")
+allowed_origins = [origin.strip() for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
+if is_production() and any(origin == "*" for origin in allowed_origins):
+    raise RuntimeError("CORS_ALLOW_ORIGINS must not contain '*' in production")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Include routers
@@ -151,8 +161,6 @@ app.include_router(llms.router)
 app.include_router(s2s.router)
 app.include_router(d2d.router)
 
-app.mount("/", mcp.streamable_http_app())
-
 @app.get("/health")
 async def healthcheck():
     try:
@@ -164,15 +172,19 @@ async def healthcheck():
         raise HTTPException(status_code=503, detail="unhealthy")
 
 
-# Test endpoint for Celery
-@app.get("/test-celery/{message}")
-async def test_celery_task_endpoint(message: str):
-    logger.info(f"WEB SERVICE: Received request for /test-celery/{message}")
-    try:
-        logger.info(f"WEB SERVICE: Attempting to send simple_test_task with message: {message}")
-        task_result = celery.send_task('app.celery_app.simple_test_task', args=[message])
-        logger.info(f"WEB SERVICE: simple_test_task sent. Task ID: {task_result.id}")
-        return {"message": "Test task sent", "task_id": task_result.id}
-    except Exception as e:
-         logger.error(f"WEB SERVICE: Failed to send simple_test_task: {e}", exc_info=True)
-         raise HTTPException(status_code=500, detail="Failed to send test task")
+if not is_production():
+    # Test endpoint for Celery
+    @app.get("/test-celery/{message}")
+    async def test_celery_task_endpoint(message: str):
+        logger.info(f"WEB SERVICE: Received request for /test-celery/{message}")
+        try:
+            logger.info(f"WEB SERVICE: Attempting to send simple_test_task with message: {message}")
+            task_result = celery.send_task('app.celery_app.simple_test_task', args=[message])
+            logger.info(f"WEB SERVICE: simple_test_task sent. Task ID: {task_result.id}")
+            return {"message": "Test task sent", "task_id": task_result.id}
+        except Exception as e:
+             logger.error(f"WEB SERVICE: Failed to send simple_test_task: {e}", exc_info=True)
+             raise HTTPException(status_code=500, detail="Failed to send test task")
+
+
+app.mount("/", mcp.streamable_http_app())
