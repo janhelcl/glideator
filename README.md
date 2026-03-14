@@ -42,6 +42,8 @@ scrapers/    Scrapy spiders for XContest & Paragliding Map
 
 ## Quick Start
 
+> **Deployment note:** production runs on **Render** and Render is the source of truth for production configuration. The Docker Compose setup under `backend/docker-compose.dev.yml` is for local development only.
+
 ### All-in-one (Docker Compose)
 
 ```bash
@@ -59,7 +61,7 @@ $ docker-compose -f backend/docker-compose.dev.yml up --build
 
 Each core component can be run on its own. Follow the dedicated README in the corresponding folder for setup & usage details:
 
-* [`backend/README.md`](backend/README.md) — FastAPI API, Celery worker & Docker compose files
+* [`backend/README.md`](backend/README.md) — FastAPI API, Celery worker, local dev stack, and Render deployment notes
 * [`frontend/README.md`](frontend/README.md) — React single-page application
 * [`db/README.md`](db/README.md) — dbt analytics warehouse
 * [`scrapers/README.md`](scrapers/README.md) — Scrapy project for flight & site data
@@ -72,7 +74,7 @@ Each core component can be run on its own. Follow the dedicated README in the co
 
 ## Key Components
 
-* **Backend** (`backend/`) – FastAPI, MCP server, PostgreSQL, Celery, RabbitMQ.
+* **Backend** (`backend/`) – FastAPI, MCP server, PostgreSQL, Celery, Redis, deployed on Render in production.
 * **Frontend** (`frontend/`) – React 18, Material-UI, React-Leaflet, D3.
 * **Warehouse** (`db/`) – Postgres + dbt (staging & mart models).
 * **ML Library** (`net/`) – Neural Networks implemented in PyTorch.
