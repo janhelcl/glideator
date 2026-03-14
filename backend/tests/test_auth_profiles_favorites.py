@@ -37,10 +37,17 @@ async def test_auth_register_login_me_refresh_logout():
         new_tok = r.json()["access_token"]
         assert new_tok and isinstance(new_tok, str)
 
-        # health should remain reachable (not shadowed by MCP mount)
+        # health should remain reachable and unknown routes should not fall through to MCP
         r = await ac.get("/health")
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
+
+        r = await ac.get("/definitely-not-a-real-route")
+        assert r.status_code == 404
+
+        # MCP should be exposed only on its dedicated path
+        r = await ac.get("/mcp")
+        assert r.status_code in {200, 307, 308}
 
         # logout
         r = await ac.post("/auth/logout")

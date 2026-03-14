@@ -187,4 +187,5 @@ if not is_production():
              raise HTTPException(status_code=500, detail="Failed to send test task")
 
 
-app.mount("/", mcp.streamable_http_app())
+MCP_PATH = "/mcp"
+app.mount(MCP_PATH, mcp.streamable_http_app())
