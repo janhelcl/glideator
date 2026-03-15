@@ -3,6 +3,8 @@ from typing import List, Optional, Literal, Dict, Any
 from datetime import date, datetime
 import os
 
+from .security import normalize_email
+
 class PredictionBase(BaseModel):
     date: date
     metric: str
@@ -167,6 +169,11 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email_value(cls, v: str) -> str:
+        return normalize_email(v)
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
@@ -185,6 +192,11 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email_value(cls, v: str) -> str:
+        return normalize_email(v)
 
 class UserOut(BaseModel):
     user_id: int

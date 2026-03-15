@@ -8,8 +8,23 @@ os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@postgres:5
 os.environ.setdefault("CORS_ALLOW_ORIGINS", "http://localhost:3000")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
 os.environ.setdefault("RATE_LIMIT_LOGIN_ATTEMPTS", "100")
+os.environ.setdefault("RATE_LIMIT_REGISTER_ATTEMPTS", "100")
 
 from app.main import app
+from app.routers import auth as auth_router
+
+
+class FakeRedis:
+    def __init__(self):
+        self.values = {}
+
+    def incr(self, key):
+        value = self.values.get(key, 0) + 1
+        self.values[key] = value
+        return value
+
+    def expire(self, key, _seconds):
+        return True
 
 
 @pytest.mark.asyncio
@@ -45,6 +60,40 @@ async def test_auth_register_login_me_refresh_logout():
         # logout
         r = await ac.post("/auth/logout")
         assert r.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_register_and_login_normalize_email_case():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        mixed_case_email = f"  T3+{uuid.uuid4().hex[:8]}@Example.COM  "
+        normalized_email = mixed_case_email.strip().lower()
+
+        r = await ac.post("/auth/register", json={"email": mixed_case_email, "password": "StrongPass1!"})
+        assert r.status_code == 200
+        assert r.json()["email"] == normalized_email
+
+        duplicate = await ac.post("/auth/register", json={"email": normalized_email.upper(), "password": "StrongPass1!"})
+        assert duplicate.status_code == 400
+
+        login = await ac.post("/auth/login", json={"email": normalized_email.upper(), "password": "StrongPass1!"})
+        assert login.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_register_rate_limit(monkeypatch):
+    fake_redis = FakeRedis()
+    monkeypatch.setattr(auth_router, "get_redis_client", lambda: fake_redis)
+    monkeypatch.setenv("RATE_LIMIT_REGISTER_ATTEMPTS", "1")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        first_email = f"t4+{uuid.uuid4().hex[:8]}@example.com"
+        second_email = f"t5+{uuid.uuid4().hex[:8]}@example.com"
+
+        first = await ac.post("/auth/register", json={"email": first_email, "password": "StrongPass1!"})
+        assert first.status_code == 200
+
+        second = await ac.post("/auth/register", json={"email": second_email, "password": "StrongPass1!"})
+        assert second.status_code == 429
 
 
 @pytest.mark.asyncio

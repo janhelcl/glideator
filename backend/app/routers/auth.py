@@ -15,11 +15,41 @@ from ..security import (
     get_access_token_exp_minutes,
     get_refresh_token_exp_days,
     is_cookie_secure,
+    normalize_email,
 )
 from ..cache import get_redis_client
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+RATE_LIMIT_WINDOW_MINUTES = "RATE_LIMIT_WINDOW_MINUTES"
+RATE_LIMIT_LOGIN_ATTEMPTS = "RATE_LIMIT_LOGIN_ATTEMPTS"
+RATE_LIMIT_REGISTER_ATTEMPTS = "RATE_LIMIT_REGISTER_ATTEMPTS"
+
+
+def apply_attempt_rate_limit(action: str, *, email: str, ip: str, max_attempts_env: str, default_attempts: str) -> None:
+    rc = get_redis_client()
+    window_sec = int(os.getenv(RATE_LIMIT_WINDOW_MINUTES, "15")) * 60
+    max_attempts = int(os.getenv(max_attempts_env, default_attempts))
+    try:
+        keys = [
+            f"{action}:attempts:email:{email}",
+            f"{action}:attempts:ip:{ip}",
+            f"{action}:attempts:email-ip:{email}:{ip}",
+        ]
+        for key in keys:
+            current = rc.incr(key)
+            if current == 1:
+                rc.expire(key, window_sec)
+            if current > max_attempts:
+                raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+    except HTTPException:
+        raise
+    except Exception:
+        # If Redis fails, proceed without blocking auth, but log it loudly.
+        import logging
+        logging.getLogger(__name__).exception("Rate limiting unavailable for %s", action)
 
 
 async def get_db():
@@ -28,12 +58,23 @@ async def get_db():
 
 
 @router.post("/register", response_model=schemas.UserOut)
-async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
-    # check if exists
-    existing = await db.execute(select(models.User).where(models.User.email == user.email))
+async def register(user: schemas.UserCreate, request: Request, db: AsyncSession = Depends(get_db)):
+    email = normalize_email(user.email)
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded_for.split(",", 1)[0].strip() if forwarded_for else None
+    ip = client_ip or (request.client.host if request.client else "unknown")
+    apply_attempt_rate_limit(
+        "register",
+        email=email,
+        ip=ip,
+        max_attempts_env=RATE_LIMIT_REGISTER_ATTEMPTS,
+        default_attempts="5",
+    )
+
+    existing = await db.execute(select(models.User).where(models.User.email == email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
-    db_user = models.User(email=user.email, password_hash=hash_password(user.password))
+    db_user = models.User(email=email, password_hash=hash_password(user.password))
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
@@ -47,31 +88,18 @@ async def login(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    # Rate limit: max N attempts per window per email and IP
-    rc = get_redis_client()
-    window_sec = int(os.getenv("RATE_LIMIT_WINDOW_MINUTES", "15")) * 60
-    max_attempts = int(os.getenv("RATE_LIMIT_LOGIN_ATTEMPTS", "5"))
     forwarded_for = request.headers.get("x-forwarded-for", "")
     client_ip = forwarded_for.split(",", 1)[0].strip() if forwarded_for else None
     ip = client_ip or (request.client.host if request.client else "unknown")
-    try:
-        keys = [
-            f"login:attempts:email:{creds.email.lower()}",
-            f"login:attempts:ip:{ip}",
-            f"login:attempts:email-ip:{creds.email.lower()}:{ip}",
-        ]
-        for key in keys:
-            current = rc.incr(key)
-            if current == 1:
-                rc.expire(key, window_sec)
-            if current > max_attempts:
-                raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
-    except HTTPException:
-        raise
-    except Exception:
-        # If Redis fails, proceed without blocking login
-        pass
-    result = await db.execute(select(models.User).where(models.User.email == creds.email))
+    email = normalize_email(creds.email)
+    apply_attempt_rate_limit(
+        "login",
+        email=email,
+        ip=ip,
+        max_attempts_env=RATE_LIMIT_LOGIN_ATTEMPTS,
+        default_attempts="5",
+    )
+    result = await db.execute(select(models.User).where(models.User.email == email))
     db_user: Optional[models.User] = result.scalar_one_or_none()
     if not db_user or not verify_password(creds.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -115,15 +143,18 @@ async def me(authorization: Optional[str] = Header(default=None), db: AsyncSessi
 
 
 @router.post("/refresh", response_model=schemas.TokenOut)
-async def refresh(request: Request):
+async def refresh(request: Request, db: AsyncSession = Depends(get_db)):
     cookie = request.cookies.get("refresh_token")
     if not cookie:
         raise HTTPException(status_code=401, detail="Missing refresh token")
     payload = decode_token(cookie)
     if not payload or payload.get("typ") != "refresh" or "sub" not in payload:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
-    user_id = str(payload["sub"])  # keep as str for token subject
-    access = create_access_token(subject=user_id, expires_minutes=get_access_token_exp_minutes())
+    user_id = int(payload["sub"])
+    user = await db.get(models.User, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    access = create_access_token(subject=str(user_id), expires_minutes=get_access_token_exp_minutes())
     return schemas.TokenOut(access_token=access)
 
 

@@ -3,6 +3,10 @@ import pytest
 from app import security
 
 
+def test_normalize_email_trims_and_lowercases():
+    assert security.normalize_email("  Test.User@Example.COM ") == "test.user@example.com"
+
+
 def test_get_jwt_secret_allows_dev_fallback(monkeypatch):
     monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
     monkeypatch.setenv("APP_ENV", "development")
