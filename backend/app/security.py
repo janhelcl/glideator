@@ -10,6 +10,10 @@ import os
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
 def get_app_env() -> str:
     return os.getenv("APP_ENV", os.getenv("ENV", "development")).strip().lower()
 
