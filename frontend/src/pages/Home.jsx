@@ -110,38 +110,28 @@ const Home = () => {
 
   // Derive filtered sites based on selectedMetric and selectedDate
   const filteredSites = useMemo(() => {
-    console.log('Selected Metric:', selectedMetric);
-    console.log('Selected Date:', selectedDate);
+    if (!selectedDate || !allSitesData.length) {
+      return [];
+    }
 
     const metricIdx = metricIndexMap[selectedMetric];
+    if (metricIdx === undefined) {
+      return [];
+    }
 
-    const result = allSitesData.filter((site) => {
-      // Check if site has predictions
+    return allSitesData.filter((site) => {
       if (!site.predictions || !Array.isArray(site.predictions)) {
-        console.warn(`Site "${site.name}" has no predictions.`);
         return false;
       }
 
-      // Find a prediction that matches the selected date
       const predictionForDate = site.predictions.find(pred => pred.date === selectedDate);
       if (!predictionForDate || !Array.isArray(predictionForDate.values)) {
-        console.warn(`Site "${site.name}" has no predictions for date ${selectedDate}.`);
         return false;
       }
 
-      // Get the value for the selected metric based on its index
       const value = predictionForDate.values[metricIdx];
-      if (value !== undefined && value !== null) {
-        console.log(`Site "${site.name}" matches the criteria with value ${value}.`);
-        return true;
-      } else {
-        console.log(`Site "${site.name}" does NOT match the criteria.`);
-        return false;
-      }
+      return value !== undefined && value !== null;
     });
-
-    console.log('Filtered Sites:', result);
-    return result;
   }, [allSitesData, selectedMetric, selectedDate]);
 
   // Update the effect to handle map centering
