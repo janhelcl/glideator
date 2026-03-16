@@ -38,6 +38,7 @@ class SiteResponse(BaseModel):
     name: str
     latitude: float
     longitude: float
+    altitude: int
     site_id: int
     predictions: List[PredictionValues]
     tags: List[str] = []

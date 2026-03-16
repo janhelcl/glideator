@@ -78,6 +78,7 @@ async def read_predictions(
         name=site.name,
         latitude=site.latitude,
         longitude=site.longitude,
+        altitude=site.altitude,
         site_id=site.site_id,
         predictions=predictions_list,
         tags=await crud.get_tags_by_site_id(db, site_id)
