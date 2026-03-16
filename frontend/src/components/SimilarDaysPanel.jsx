@@ -14,7 +14,7 @@ import { fetchSimilarDays, fetchPastDateForecast } from '../api';
 import D3Forecast from './D3Forecast';
 import LoadingSpinner from './LoadingSpinner';
 
-const SimilarDaysPanel = ({ siteId, selectedDate, latitude, longitude }) => {
+const SimilarDaysPanel = ({ siteId, selectedDate, latitude, longitude, siteAltitude }) => {
   const [similarDays, setSimilarDays] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -166,6 +166,38 @@ const SimilarDaysPanel = ({ siteId, selectedDate, latitude, longitude }) => {
             selectedHour={selectedHour}
             date={forecast.past_date}
           />
+        </Box>
+
+        {/* Surface metadata */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, auto)' },
+          gap: { xs: 0.5, sm: 2 },
+          justifyContent: 'center',
+          justifyItems: { xs: 'center', sm: 'start' },
+          mt: 1,
+          px: 1,
+        }}>
+          {currentForecast.wind_gust_sfc_ms != null && (
+            <Typography variant="body2" color="text.secondary">
+              Gust: <strong>{currentForecast.wind_gust_sfc_ms.toFixed(1)} m/s</strong>
+            </Typography>
+          )}
+          {currentForecast.pressure_sfc_pa != null && (
+            <Typography variant="body2" color="text.secondary">
+              Pressure: <strong>{(currentForecast.pressure_sfc_pa / 100).toFixed(0)} hPa</strong>
+            </Typography>
+          )}
+          {currentForecast.geopotential_height_sfc_m != null && (
+            <Typography variant="body2" color="text.secondary">
+              Model alt.: <strong>{Math.round(currentForecast.geopotential_height_sfc_m)} m</strong>
+            </Typography>
+          )}
+          {siteAltitude != null && (
+            <Typography variant="body2" color="text.secondary">
+              Actual alt.: <strong>{siteAltitude} m</strong>
+            </Typography>
+          )}
         </Box>
       </Box>
     );

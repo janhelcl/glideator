@@ -215,9 +215,10 @@ async def get_sites_with_predictions(db: AsyncSession, skip: int = 0, limit: int
             name=site.name,
             latitude=site.latitude,
             longitude=site.longitude,
+            altitude=site.altitude,
             site_id=site.site_id,
             predictions=predictions_list,
-            tags=site_tags[site.site_id]  # Get tags from batch-loaded dict
+            tags=site_tags[site.site_id]
         )
         result_list.append(site_response)
 
