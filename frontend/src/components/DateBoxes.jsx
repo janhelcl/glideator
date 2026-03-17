@@ -69,9 +69,11 @@ const DateBoxes = ({
     };
   }, [dates]); // Re-run when dates change
 
+  const metricThreshold = selectedMetric.replace('XC', '');
+  const metricArticle = /^[8]/.test(metricThreshold) ? 'an' : 'a';
   const metricLabel = selectedMetric === 'XC0'
-    ? 'Showing: Chances of a flight'
-    : `Showing: Chances of a ${selectedMetric.replace('XC', '')}+ points flight`;
+    ? 'Chances of a flight'
+    : `Chances of ${metricArticle} ${metricThreshold}+ point flight`;
 
   return (
     <Box className="date-strip-wrapper">
