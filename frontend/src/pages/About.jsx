@@ -93,16 +93,13 @@ const FeatureCard = ({ icon, title, description, to }) => (
 );
 
 const About = () => {
-  const theme = useTheme();
-  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
-
   return (
     <Box sx={{ maxWidth: '1000px', margin: '0 auto', p: { xs: 1.5, sm: 2 }, minHeight: '100%' }}>
       <Helmet>
         <title>How It Works – Parra-Glideator</title>
         <meta
           name="description"
-          content="Learn how Parra-Glideator uses AI and real flight data to predict paragliding conditions across Europe."
+          content="Learn how Parra-Glideator turns forecast data and real flight history into practical paragliding decision support."
         />
       </Helmet>
 
@@ -118,7 +115,7 @@ const About = () => {
           position: 'relative',
         }}
       >
-        <Box sx={{ p: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: 'center' }}>
+        <Box sx={{ p: { xs: 3, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: { xs: 'stretch', md: 'center' } }}>
           <Box sx={{ flex: 1 }}>
             <Chip
               label="Public Beta"
@@ -126,25 +123,31 @@ const About = () => {
               sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 'bold' }}
             />
             <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '1.75rem', sm: '2.5rem' } }}>
-              Should you fly tomorrow?
+              Find the promising days. Verify the details. Make the call yourself.
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.92, mb: 1.5, fontSize: { xs: '1rem', sm: '1.05rem' } }}>
+              Meet Parra-Glideator: a parrot who traded natural flight for a paraglider. Nobody knows why.
             </Typography>
             <Typography variant="h6" sx={{ mb: 2, opacity: 0.9, fontWeight: 'normal', fontSize: { xs: '1rem', sm: '1.15rem' } }}>
-              Parra-Glideator crunches weather forecasts and real paragliding flight data
-              to tell you when and where conditions look best.
+              Parra-Glideator helps you scan forecast chaos faster by combining weather models and real flight history into a practical flying signal.
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.75 }}>
+              Decision support, not divine revelation.
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.65, mt: 1.5 }}>
               250 sites across Europe &middot; 7-day forecasts &middot; Updated 4&times; daily
             </Typography>
           </Box>
+
           <Box
             component="img"
-            src={`${process.env.PUBLIC_URL || ''}/assets/images/parraglideator_disclaimer.png`}
-            alt="Parra-Glideator — The skies are wild, the thermals treacherous. Be brave — but not foolish!"
+            src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
+            alt="Parra-Glideator mascot"
             sx={{
-              width: { xs: '100%', md: 280 },
-              maxWidth: 320,
-              borderRadius: 2,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              width: { xs: 120, md: 220 },
+              height: 'auto',
+              alignSelf: { xs: 'center', md: 'center' },
+              flexShrink: 0,
             }}
           />
         </Box>
@@ -154,11 +157,10 @@ const About = () => {
       <Paper elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            How Predictions Work
+            How the forecast becomes a flying signal
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Three ingredients go into every forecast. New predictions are generated
-            each time NOAA publishes fresh GFS data — roughly every 6 hours.
+            Every update starts with fresh NOAA GFS data. From there, Glideator compares the forecast with patterns from real flights and turns that mess into something you can actually use.
           </Typography>
 
           <Box sx={{
@@ -169,18 +171,18 @@ const About = () => {
           }}>
             <PipelineStep
               icon={<CloudIcon sx={{ fontSize: 30 }} />}
-              title="Weather Forecast"
-              description="The full vertical profile of the atmosphere over each site — pulled from NOAA's global GFS model every 6 hours."
+              title="Forecast data"
+              description="The full atmospheric profile over each site, pulled from NOAA's global GFS model every 6 hours. Wind, lift, clouds, and the rest of the weather spaghetti."
             />
             <PipelineStep
               icon={<PsychologyIcon sx={{ fontSize: 30 }} />}
-              title="Neural Network"
-              description="An AI trained on real flights learns which weather patterns historically produced flyable days at each site."
+              title="Learned from real flights"
+              description="A model trained on actual paragliding flights learns which forecast patterns tend to line up with days when pilots really flew."
             />
             <PipelineStep
               icon={<TrendingUpIcon sx={{ fontSize: 30 }} />}
-              title="Flyability Score"
-              description="The result: a simple 0–100 score for each site and day telling you how good conditions look."
+              title="Flight chances"
+              description="The result is a simple score for each site and day that helps you see where conditions look worth a closer look."
               isLast
             />
           </Box>
@@ -191,19 +193,16 @@ const About = () => {
       <Paper elevation={2} sx={{ mb: 3, borderRadius: 3, overflow: 'hidden' }}>
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            The Flyability Score
+            What the score actually means
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Every dot on the map is a paragliding site. The score is a calibrated probability
-            that at least one pilot will fly there that day. Drag the slider to see how the
-            score changes when you ask about longer, more ambitious flights.
+            The map can show the estimated chance of a flight — or the chance of a stronger day, like a 20+ or 80+ point flight. Drag the slider to see how the interpretation changes when you ask a more ambitious question.
           </Typography>
 
           <ScoreDemo />
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic', textAlign: 'center' }}>
-            Still a forecast, not a guarantee. Always check local conditions
-            and use your pilot judgment.
+            Useful for orientation, not a guarantee. Always check local conditions and use your judgment.
           </Typography>
         </Box>
       </Paper>
@@ -212,58 +211,58 @@ const About = () => {
       <Paper elevation={2} sx={{ mb: 3, borderRadius: 3, overflow: 'hidden' }}>
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-            What You Can Do
+            How people actually use it
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Explore the forecast, plan trips, and never miss a flyable day.
+            Glideator is best at helping you narrow the search, compare options quickly, and notice when a good window might be opening.
           </Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<MapIcon />}
-                title="Map View"
-                description="See every site at a glance. Color-coded dots show the 7-day forecast — zoom in, pick a date, and spot where conditions are shaping up."
+                title="Scan the map"
+                description="Get a fast read on where the interesting days seem to be. The map is there to orient you quickly, not make the final decision for you."
                 to="/"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<ExploreIcon />}
-                title="Trip Planner"
-                description="Set your travel range, pick your dates, and let the planner rank the best sites you can reach. Filter by flyability, altitude, and tags."
+                title="Compare trip options"
+                description="Set your travel range and dates, then let Trip Planner compress the search space instead of manually checking half a continent."
                 to="/trip-planner"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<PlaceIcon />}
-                title="Site Details"
-                description="Dive into any site for hourly forecasts, flight-quality distributions, seasonal patterns, and a list of historically similar days with real XContest flights."
+                title="Inspect the evidence"
+                description="Open any site to dig into hourly forecasts, flight-quality distributions, seasonal patterns, and similar historical days with real XContest flights."
                 to="/details/133?tab=activity"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<FavoriteIcon />}
-                title="Favorites"
-                description="Save the sites you fly most. Your favorites get a dedicated dashboard so you can check conditions in seconds."
+                title="Keep your shortlist ready"
+                description="Save the places you care about most so checking conditions feels like a quick scan, not a ritual involving twelve tabs and mild despair."
                 to="/favorites"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<NotificationsActiveIcon />}
-                title="Notifications"
-                description="Set a flyability threshold for your favorite sites. Get an alert when conditions cross it — so you can pack the car instead of refreshing the forecast."
+                title="Get nudged when it matters"
+                description="Set thresholds for your favorite sites and let Glideator alert you when conditions start looking interesting. Better than remembering to refresh everything yourself."
                 to="/notifications?tab=settings"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<SmartToyIcon />}
-                title="AI Assistant (MCP)"
-                description={`Ask your AI assistant "Where should I fly this weekend?" and get answers backed by Glideator data. Works with Claude and any MCP-compatible client.`}
+                title="Ask your AI"
+                description={'Use Glideator through any MCP-compatible assistant when you want to ask things like “Where should I fly this weekend?” in plain language.'}
                 to="/about#mcp"
               />
             </Grid>
@@ -277,12 +276,11 @@ const About = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <SmartToyIcon color="primary" />
             <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-              Talk to Your AI About Flying
+              Talk to your AI about flying
             </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Glideator exposes an MCP (Model Context Protocol) server, which means AI assistants
-            can query forecasts and site data on your behalf. Ask in plain language:
+            Glideator exposes an MCP server, so compatible AI assistants can query forecasts and site data directly. That means you can ask normal planning questions instead of forcing a chatbot to improvise about valley winds.
           </Typography>
 
           <Box sx={{
@@ -319,40 +317,6 @@ const About = () => {
         </Box>
       </Paper>
 
-      {/* Meet Parra-Glideator */}
-      <Paper
-        elevation={2}
-        sx={{
-          borderRadius: 3,
-          overflow: 'hidden',
-          background: 'linear-gradient(135deg, #4e342e 0%, #3e2723 100%)',
-          color: '#fff',
-        }}
-      >
-        <Box sx={{ p: { xs: 2.5, sm: 3.5 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3, alignItems: 'center' }}>
-          <Box
-            component="img"
-            src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
-            alt="Parra-Glideator mascot"
-            sx={{ width: { xs: 100, sm: 120 }, height: 'auto', flexShrink: 0 }}
-          />
-          <Box>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Meet Parra-Glideator
-            </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-              Our mascot is a parrot who traded natural flight for a paraglider. Nobody knows why.
-              Ask him and he&rsquo;ll dodge the question:{' '}
-              <Box component="em">&ldquo;I have chosen the noble path of man-borne flight, for wings alone
-              cannot lift one&rsquo;s soul!&rdquo;</Box>
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.7 }}>
-              Like every pilot, Parra faces uncertainty — weather, site choice, timing.
-              This app is built to give you (and him) the odds before the battle.
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
     </Box>
   );
 };
