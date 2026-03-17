@@ -232,7 +232,7 @@ const DemoBarChart = ({ values, selectedMetric }) => {
 
   return (
     <Box ref={containerRef} sx={{ width: '100%', height: '100%', minHeight: 200 }}>
-      <svg ref={svgRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+      <svg ref={svgRef} style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', colorScheme: 'light' }} />
     </Box>
   );
 };
@@ -321,7 +321,7 @@ const ScoreDemo = () => {
             flex: { xs: 'none', sm: 1 },
             height: { xs: 240, sm: 280 },
             borderRadius: 2,
-            overflow: 'hidden',
+            overflow: 'visible',
             border: 1,
             borderColor: 'divider',
           }}>
