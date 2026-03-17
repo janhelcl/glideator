@@ -69,8 +69,16 @@ const DateBoxes = ({
     };
   }, [dates]); // Re-run when dates change
 
+  const metricLabel = selectedMetric === 'XC0'
+    ? 'Showing: Chances of a flight'
+    : `Showing: Chances of a ${selectedMetric.replace('XC', '')}+ points flight`;
+
   return (
-    <Box className="date-boxes-container" ref={containerRef}>
+    <Box className="date-strip-wrapper">
+      <Typography className="date-strip-label" variant="caption">
+        {metricLabel}
+      </Typography>
+      <Box className="date-boxes-container" ref={containerRef}>
       {dates.map((date) => {
         const isVisible = visibleDates.includes(date) || date === selectedDate;
         
@@ -101,6 +109,7 @@ const DateBoxes = ({
           </Box>
         );
       })}
+      </Box>
     </Box>
   );
 };
