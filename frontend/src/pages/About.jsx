@@ -193,7 +193,7 @@ const About = () => {
             What the score actually means
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            The map can show the estimated chance of a flight — or the chance of a stronger day, like a 20+ or 80+ point flight. Drag the slider to see how the interpretation changes when you ask a more ambitious question.
+          A site can be flyable, local-soarable, or properly on. The scores helps separate those.
           </Typography>
 
           <ScoreDemo />
@@ -211,7 +211,7 @@ const About = () => {
             How people actually use it
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Glideator is best at helping you narrow the search, compare options quickly, and notice when a good window might be opening.
+            Parra-Glideator is best at helping you narrow the search, compare options quickly, and notice when a good window might be opening.
           </Typography>
 
           <Grid container spacing={2}>
@@ -251,7 +251,7 @@ const About = () => {
               <FeatureCard
                 icon={<NotificationsActiveIcon />}
                 title="Get nudged when it matters"
-                description="Set thresholds for your favorite sites and let Glideator alert you when conditions start looking interesting. Better than remembering to refresh everything yourself."
+                description="Set thresholds for your favorite sites and let Parra-Glideator alert you when conditions start looking interesting. Better than remembering to refresh everything yourself."
                 to="/notifications?tab=settings"
               />
             </Grid>
@@ -277,7 +277,7 @@ const About = () => {
             </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Glideator exposes an MCP server, so compatible AI assistants can query forecasts and site data directly. That means you can ask normal planning questions instead of forcing a chatbot to improvise about valley winds.
+            Parra-Glideator exposes an MCP server, so compatible AI assistants can query forecasts and site data directly. That means you can ask normal planning questions instead of forcing a chatbot to improvise about valley winds.
           </Typography>
 
           <Box sx={{
