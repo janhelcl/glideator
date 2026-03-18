@@ -126,13 +126,10 @@ const About = () => {
               Find the promising days. Verify the details. Make the call yourself.
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.92, mb: 1.5, fontSize: { xs: '1rem', sm: '1.05rem' } }}>
-              Meet Parra-Glideator: a parrot who traded natural flight for a paraglider. Nobody knows why.
+              Meet Parra-Glideator: a parrot who traded natural flight for a paraglider.<br />Nobody knows why.
             </Typography>
-            <Typography variant="h6" sx={{ mb: 2, opacity: 0.9, fontWeight: 'normal', fontSize: { xs: '1rem', sm: '1.15rem' } }}>
-              Parra-Glideator helps you scan forecast chaos faster by combining weather models and real flight history into a practical flying signal.
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.75 }}>
-              Decision support, not divine revelation.
+            <Typography variant="body1" sx={{ opacity: 0.92, mb: 2, fontSize: { xs: '1rem', sm: '1.05rem' } }}>
+              Parra-Glideator combines weather forecasts and real flight history into a practical flying signal, so you never miss the good days.
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.65, mt: 1.5 }}>
               250 sites across Europe &middot; 7-day forecasts &middot; Updated 4&times; daily
@@ -141,7 +138,7 @@ const About = () => {
 
           <Box
             component="img"
-            src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
+            src={`${process.env.PUBLIC_URL || ''}/logo512.png`}
             alt="Parra-Glideator mascot"
             sx={{
               width: { xs: 120, md: 220 },
@@ -202,7 +199,7 @@ const About = () => {
           <ScoreDemo />
 
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic', textAlign: 'center' }}>
-            Useful for orientation, not a guarantee. Always check local conditions and use your judgment.
+          Decision support, not divine revelation. Always check local conditions and use your judgment.
           </Typography>
         </Box>
       </Paper>
