@@ -13,17 +13,17 @@ const SCENARIOS = {
   terrible: {
     label: 'Terrible Day',
     values: [0.08, 0.04, 0.02, 0.01, 0.01, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    comment: 'Almost no chance of anyone flying. Red dot, flat bars — today is for hiking.',
+    comment: 'No amount of parawaiting is gonna save you, today is for hiking. Almost no chance of anyone flying.',
   },
   average: {
-    label: 'Average Day',
+    label: 'Flyable Day',
     values: [0.92, 0.75, 0.55, 0.35, 0.20, 0.10, 0.05, 0.02, 0.01, 0.00, 0.00],
-    comment: 'High chance someone gets airborne, but long XC flights are unlikely. Good for local soaring.',
+    comment: 'The site is on. You are likely to see sombeody in the air. Local soaring maybe some short XC flights. Long XC flights are unlikely.',
   },
   epic: {
     label: 'Epic Day',
     values: [0.99, 0.97, 0.95, 0.92, 0.88, 0.82, 0.75, 0.69, 0.62, 0.53, 0.44],
-    comment: 'Strong probabilities across the board. Even 100+ point XC flights are plausible. Call in sick.',
+    comment: 'Call in sick, it\'s pumping. This will be a big day for some pilots. Even 100+ point XC flights are plausible. ',
   },
 };
 
@@ -272,7 +272,7 @@ const ScoreDemo = () => {
         }}
       >
         <ToggleButton value="terrible">Terrible Day</ToggleButton>
-        <ToggleButton value="average">Average Day</ToggleButton>
+        <ToggleButton value="average">Flyable Day</ToggleButton>
         <ToggleButton value="epic">Epic Day</ToggleButton>
       </ToggleButtonGroup>
 
@@ -338,11 +338,6 @@ const ScoreDemo = () => {
           />
         </Box>
       </Box>
-
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-        Use the <strong>slider button</strong> on the chart to change the flight quality threshold
-        and watch the map dot change color.
-      </Typography>
     </Box>
   );
 };
