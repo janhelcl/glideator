@@ -129,7 +129,7 @@ const About = () => {
               Meet Parra-Glideator: a parrot who traded natural flight for a paraglider.<br />Nobody knows why.
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.92, mb: 2, fontSize: { xs: '1rem', sm: '1.05rem' } }}>
-            Parra-Glideator reads the forecast through the lens of real flights, helping you spot which sites are likely to be on.
+            Built for busy pilots who want a faster way to spot promising days without giving up the final call.
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.65, mt: 1.5 }}>
               250 sites across Europe &middot; 7-day forecasts &middot; Updated 4&times; daily
@@ -154,10 +154,10 @@ const About = () => {
       <Paper elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            How the forecast becomes a flying signal
+          From forecast to flying signal
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Every update starts with fresh NOAA GFS data. From there, Glideator compares the forecast with patterns from real flights and turns that mess into something you can actually use.
+          Parra-Glideator compares the forecast with real flights to show which sites are most likely to be on.
           </Typography>
 
           <Box sx={{
@@ -169,17 +169,17 @@ const About = () => {
             <PipelineStep
               icon={<CloudIcon sx={{ fontSize: 30 }} />}
               title="Forecast data"
-              description="The full atmospheric profile over each site, pulled from NOAA's global GFS model every 6 hours. Wind, lift, clouds, and the rest of the weather spaghetti."
+              description="The full atmospheric profile (NOAA GFS) over each site, updated every 6 hours."
             />
             <PipelineStep
               icon={<PsychologyIcon sx={{ fontSize: 30 }} />}
-              title="Learned from real flights"
-              description="A model trained on actual paragliding flights learns which forecast patterns tend to line up with days when pilots really flew."
+              title="Real flight patterns"
+              description="An AI trained on real paragliding flights."
             />
             <PipelineStep
               icon={<TrendingUpIcon sx={{ fontSize: 30 }} />}
-              title="Flight chances"
-              description="The result is a simple score for each site and day that helps you see where conditions look worth a closer look."
+              title="Flight scores"
+              description="Simple scores showing where conditions look most promising."
               isLast
             />
           </Box>
