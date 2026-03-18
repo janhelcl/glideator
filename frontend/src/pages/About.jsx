@@ -129,7 +129,7 @@ const About = () => {
               Meet Parra-Glideator: a parrot who traded natural flight for a paraglider.<br />Nobody knows why.
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.92, mb: 2, fontSize: { xs: '1rem', sm: '1.05rem' } }}>
-              Parra-Glideator combines weather forecasts and real flight history into a practical flying signal, so you never miss the good days.
+            Parra-Glideator reads the forecast through the lens of real flights, helping you spot which sites are likely to be on.
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.65, mt: 1.5 }}>
               250 sites across Europe &middot; 7-day forecasts &middot; Updated 4&times; daily
