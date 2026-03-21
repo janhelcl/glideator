@@ -11,7 +11,8 @@ export const DEFAULT_PLANNER_STATE = {
   distance: {
     enabled: false,
     km: 200,
-    coords: null // { latitude, longitude, accuracy }
+    coords: null, // { latitude, longitude, accuracy }
+    locationSource: 'current' // 'home' | 'current'
   },
   
   // Altitude filter

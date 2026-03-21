@@ -1,18 +1,36 @@
-.date-boxes-container {
+.date-strip-wrapper {
     position: absolute;
     bottom: calc(var(--footer-height, 30px) + 10px);
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: min(90%, 1200px);
+    z-index: 1000;
+}
+
+.date-strip-label {
+    background: rgba(255, 255, 255, 0.92);
+    padding: 2px 12px;
+    border-radius: 4px 4px 0 0;
+    font-size: 0.72rem !important;
+    color: #555;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    line-height: 1.4 !important;
+}
+
+.date-boxes-container {
     display: flex;
     gap: clamp(5px, 1vw, 10px);
     padding: clamp(5px, 1.5vw, 10px);
     background: rgba(255, 255, 255, 0.9);
     border-radius: 8px;
     overflow-x: auto;
-    max-width: min(90%, 1200px);
+    max-width: 100%;
     max-height: 25vh;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
 }
@@ -84,8 +102,11 @@
 
 /* Mobile optimizations */
 @media (max-width: 600px) {
-    .date-boxes-container {
+    .date-strip-wrapper {
         bottom: calc(var(--footer-height, 24px) + 5px);
+    }
+
+    .date-boxes-container {
         padding: 5px;
         gap: 5px;
         max-height: 20vh;

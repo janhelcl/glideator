@@ -35,11 +35,26 @@ def get_vapid_configuration() -> VapidConfig:
     return VapidConfig(public_key=public_key, private_key=private_key, subject=subject)
 
 
+# Default TTL: 6 hours - gives push service time to deliver when device comes online
+DEFAULT_PUSH_TTL = 21600
+
+
 async def send_web_push(
     subscription: PushSubscription,
     payload: Dict,
     config: Optional[VapidConfig] = None,
+    ttl: int = DEFAULT_PUSH_TTL,
 ) -> None:
+    """
+    Send a Web Push notification.
+
+    Args:
+        subscription: The push subscription to send to
+        payload: The notification payload (will be JSON-serialized)
+        config: Optional VAPID configuration (fetched from env if not provided)
+        ttl: Time-to-live in seconds - how long push service should retry delivery
+             Default is 6 hours (21600s) to handle overnight offline devices
+    """
     if not subscription.endpoint or not subscription.p256dh or not subscription.auth:
         raise PushDeliveryError("Subscription is missing required endpoint or keys.")
 
@@ -61,6 +76,7 @@ async def send_web_push(
                 data=data,
                 vapid_private_key=vapid_config.private_key,
                 vapid_claims={"sub": vapid_config.subject},
+                ttl=ttl,
             )
         except WebPushException as exc:
             raise PushDeliveryError(str(exc)) from exc

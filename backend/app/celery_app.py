@@ -6,7 +6,7 @@ import logging
 
 from celery import Celery, chain
 from .database import AsyncSessionLocal
-from .crud import get_latest_gfs_forecast, delete_similar_dates_by_forecast_date, create_similar_date
+from .crud import get_latest_gfs_forecast, delete_similar_dates_by_forecast_date, create_similar_date, cleanup_old_notified_forecasts
 from .services.forecast import process_forecasts, fetch_sites, WEATHER_FEATURES, SITE_FEATURES, DATE_FEATURES
 from .services.d2d_similarity import (
     load_scaler,
@@ -212,14 +212,19 @@ async def _cleanup_old_data_async():
             await db.execute(
                 delete(Prediction).where(Prediction.date < today)
             )
-            
+
             # Delete old forecasts
             await db.execute(
                 delete(Forecast).where(Forecast.date < today)
             )
-            
+
             await db.commit()
             logger.info(f"Cleaned up predictions and forecasts older than {today}")
+
+            # Delete old notified_forecasts records (separate transaction)
+            deleted_count = await cleanup_old_notified_forecasts(db, today)
+            if deleted_count > 0:
+                logger.info(f"Cleaned up {deleted_count} old notified_forecasts records")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
             await db.rollback()

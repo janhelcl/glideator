@@ -12,12 +12,12 @@ const SearchBar = ({ sites, onSiteSelect, mobile = false }) => {
 
   useEffect(() => {
     const sortedSites = sites && sites.length > 0
-      ? [...sites].sort((a, b) => a.site_id - b.site_id)
+      ? [...sites].sort((a, b) => a.name.localeCompare(b.name))
       : [];
 
     const favoriteSet = new Set(favorites);
     const siteOptions = sortedSites.map(site => ({
-      label: `${site.name} (${site.site_id})`,
+      label: site.name,
       site,
       favorite: favoriteSet.has(site.site_id),
     }));

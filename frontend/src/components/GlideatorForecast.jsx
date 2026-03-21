@@ -87,14 +87,29 @@ const GlideatorForecast = ({
       .range([height, 0]);
 
     // Create and add x-axis with responsive font size
-    svg.append('g')
+    const xAxis = svg.append('g')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x))
-      .selectAll('text')
-      .attr('transform', 'translate(-10,0)rotate(-45)')
+      .call(d3.axisBottom(x).tickSizeOuter(0));
+
+    // Adjust tick marks to align with left edge of bars
+    xAxis.selectAll('.tick line')
+      .attr('transform', `translate(${-x.bandwidth()/2},0)`);
+
+    // Adjust tick labels to align with left edge of bars
+    xAxis.selectAll('text')
+      .attr('transform', `translate(${-x.bandwidth()/2},0)rotate(-45)`)
       .style('text-anchor', 'end')
       .style('font-size', `${axisFontSize}px`)
       .text(d => d.replace('XC', '')); // Remove 'XC' prefix from axis labels
+
+    // Remove any ticks that don't have text labels (the extra tick at the end)
+    xAxis.selectAll('.tick').each(function() {
+      const tick = d3.select(this);
+      const text = tick.select('text').node();
+      if (!text || !text.textContent || text.textContent.trim() === '') {
+        tick.remove();
+      }
+    });
 
     // For the bar chart - remove y-axis
     svg.append('g')
@@ -107,7 +122,7 @@ const GlideatorForecast = ({
       .attr('transform', `translate(${width / 2}, ${height + margin.bottom - 10})`)
       .style('text-anchor', 'middle')
       .style('font-size', `${axisFontSize + 2}px`)
-      .text('Minimum Flight Quality (XC Points)');
+      .text('Flight Quality (XC Points)');
 
     // Use a single color for all bars
     const barColor = '#4CAF50'; // Green color for all bars

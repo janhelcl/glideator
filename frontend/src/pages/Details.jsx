@@ -32,6 +32,7 @@ import { useAuth } from '../context/AuthContext';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import SimilarDaysPanel from '../components/SimilarDaysPanel';
+import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Define tab names for URL mapping
 const tabNames = ['details', 'forecast', 'season', 'map'];
@@ -62,10 +63,11 @@ const { siteId } = useParams();
 const [searchParams, setSearchParams] = useSearchParams();
 const navigate = useNavigate();
 const numericSiteId = Number(siteId);
-  
+const { preferredMetric } = useDefaultMetric();
+
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
-  const initialMetric = searchParams.get('metric') || 'XC50';
+  const initialMetric = searchParams.get('metric') || preferredMetric;
   const initialTabName = searchParams.get('tab') || tabNames[1]; // Default to 'forecast'
 
   // Find the index corresponding to the initial tab name
@@ -330,6 +332,38 @@ const numericSiteId = Number(siteId);
             gfs_forecast_at={forecast.gfs_forecast_at}
             computed_at={forecast.computed_at}
           />
+        </Box>
+
+        {/* Surface metadata */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, auto)' },
+          gap: { xs: 0.5, sm: 2 },
+          justifyContent: 'center',
+          justifyItems: { xs: 'center', sm: 'start' },
+          mt: 1,
+          px: 1,
+        }}>
+          {currentForecast.wind_gust_sfc_ms != null && (
+            <Typography variant="body2" color="text.secondary">
+              Gust: <strong>{currentForecast.wind_gust_sfc_ms.toFixed(1)} m/s</strong>
+            </Typography>
+          )}
+          {currentForecast.pressure_sfc_pa != null && (
+            <Typography variant="body2" color="text.secondary">
+              Pressure: <strong>{(currentForecast.pressure_sfc_pa / 100).toFixed(0)} hPa</strong>
+            </Typography>
+          )}
+          {currentForecast.geopotential_height_sfc_m != null && (
+            <Typography variant="body2" color="text.secondary">
+              Model alt.: <strong>{Math.round(currentForecast.geopotential_height_sfc_m)} m</strong>
+            </Typography>
+          )}
+          {siteData && siteData[0]?.altitude != null && (
+            <Typography variant="body2" color="text.secondary">
+              Actual alt.: <strong>{siteData[0].altitude} m</strong>
+            </Typography>
+          )}
         </Box>
       </Box>
     );
@@ -757,6 +791,7 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
                   selectedDate={selectedDate}
                   latitude={siteData[0].latitude}
                   longitude={siteData[0].longitude}
+                  siteAltitude={siteData[0].altitude}
                 />
               )}
             </Box>

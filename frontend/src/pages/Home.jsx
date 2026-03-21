@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { createSitesResource } from '../utils/suspenseResource';
 import { Helmet } from 'react-helmet-async';
+import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -29,6 +30,7 @@ const Home = () => {
   const markerRefs = useRef({});
   const mapRef = useRef();
   // Removed useAuth import
+  const { preferredMetric } = useDefaultMetric();
 
   // Read site data using the resource. This will suspend if data is not ready.
   const allSitesData = sitesResource.read();
@@ -36,7 +38,7 @@ const Home = () => {
   const [selectedMetric, setSelectedMetric] = useState(() => {
     const params = new URLSearchParams(location.search);
     const metric = params.get('metric');
-    return metric && METRICS.includes(metric) ? metric : 'XC0';
+    return metric && METRICS.includes(metric) ? metric : preferredMetric;
   });
   const [dates, setDates] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -108,38 +110,28 @@ const Home = () => {
 
   // Derive filtered sites based on selectedMetric and selectedDate
   const filteredSites = useMemo(() => {
-    console.log('Selected Metric:', selectedMetric);
-    console.log('Selected Date:', selectedDate);
+    if (!selectedDate || !allSitesData.length) {
+      return [];
+    }
 
     const metricIdx = metricIndexMap[selectedMetric];
+    if (metricIdx === undefined) {
+      return [];
+    }
 
-    const result = allSitesData.filter((site) => {
-      // Check if site has predictions
+    return allSitesData.filter((site) => {
       if (!site.predictions || !Array.isArray(site.predictions)) {
-        console.warn(`Site "${site.name}" has no predictions.`);
         return false;
       }
 
-      // Find a prediction that matches the selected date
       const predictionForDate = site.predictions.find(pred => pred.date === selectedDate);
       if (!predictionForDate || !Array.isArray(predictionForDate.values)) {
-        console.warn(`Site "${site.name}" has no predictions for date ${selectedDate}.`);
         return false;
       }
 
-      // Get the value for the selected metric based on its index
       const value = predictionForDate.values[metricIdx];
-      if (value !== undefined && value !== null) {
-        console.log(`Site "${site.name}" matches the criteria with value ${value}.`);
-        return true;
-      } else {
-        console.log(`Site "${site.name}" does NOT match the criteria.`);
-        return false;
-      }
+      return value !== undefined && value !== null;
     });
-
-    console.log('Filtered Sites:', result);
-    return result;
   }, [allSitesData, selectedMetric, selectedDate]);
 
   // Update the effect to handle map centering

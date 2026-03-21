@@ -16,6 +16,7 @@ import {
   updateNotification as updateNotificationApi,
   deleteNotification as deleteNotificationApi,
   fetchNotificationEvents,
+  fetchRecentNotificationEvents,
 } from '../api';
 import {
   supportsPush,
@@ -26,6 +27,43 @@ import {
 } from '../utils/push';
 import { useAuth } from './AuthContext';
 
+const LAST_CHECK_KEY = 'glideator_notification_last_check';
+const READ_EVENTS_KEY = 'glideator_read_event_ids';
+
+// Helper to get read event IDs from localStorage
+const getReadEventIds = () => {
+  try {
+    const stored = localStorage.getItem(READ_EVENTS_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+// Helper to save read event IDs to localStorage
+const saveReadEventIds = (readIds) => {
+  try {
+    localStorage.setItem(READ_EVENTS_KEY, JSON.stringify([...readIds]));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+// Deduplicate events by notification_id + prediction_date
+// (same notification rule + same forecast = same logical notification)
+const deduplicateEvents = (events) => {
+  const seen = new Set();
+  return events.filter((event) => {
+    const payload = event.payload || {};
+    const key = `${event.notification_id}-${payload.prediction_date}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
 export const NotificationContext = createContext({
   pushSupported: false,
   permission: 'default',
@@ -34,6 +72,9 @@ export const NotificationContext = createContext({
   subscriptions: [],
   notifications: [],
   eventsByNotification: {},
+  missedEvents: [],
+  unreadEvents: [],
+  unreadCount: 0,
   refresh: async () => {},
   clearError: () => {},
   registerCurrentDevice: async () => {},
@@ -42,6 +83,10 @@ export const NotificationContext = createContext({
   updateRule: async () => {},
   deleteRule: async () => {},
   loadNotificationEvents: async () => {},
+  checkForMissedEvents: async () => {},
+  markEventAsRead: () => {},
+  markAllEventsAsRead: () => {},
+  dismissMissedEvents: () => {},
 });
 
 export const NotificationProvider = ({ children }) => {
@@ -59,11 +104,21 @@ export const NotificationProvider = ({ children }) => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [eventsByNotification, setEventsByNotification] = useState({});
+  const [missedEvents, setMissedEvents] = useState([]);
+  const [readEventIds, setReadEventIds] = useState(() => getReadEventIds());
+
+  // Compute unread events and count
+  const unreadEvents = useMemo(() => {
+    return missedEvents.filter((event) => !readEventIds.has(event.event_id));
+  }, [missedEvents, readEventIds]);
+
+  const unreadCount = unreadEvents.length;
 
   const clearState = useCallback(() => {
     setSubscriptions([]);
     setNotifications([]);
     setEventsByNotification({});
+    setMissedEvents([]);
     setError(null);
   }, []);
 
@@ -239,6 +294,69 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
+  const checkForMissedEvents = useCallback(async () => {
+    if (!isAuthenticated) return [];
+
+    try {
+      const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
+      const events = await fetchRecentNotificationEvents(lastCheck, 50);
+
+      // Update last check time to now
+      localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
+
+      if (events.length > 0) {
+        // Deduplicate events (same notification + forecast date = one notification)
+        setMissedEvents(deduplicateEvents(events));
+      }
+      return events;
+    } catch (err) {
+      console.error('Failed to check for missed notifications:', err);
+      return [];
+    }
+  }, [isAuthenticated]);
+
+  const markEventAsRead = useCallback((eventId) => {
+    setReadEventIds((prev) => {
+      const next = new Set(prev);
+      next.add(eventId);
+      saveReadEventIds(next);
+      return next;
+    });
+  }, []);
+
+  const markAllEventsAsRead = useCallback(() => {
+    setReadEventIds((prev) => {
+      const next = new Set(prev);
+      missedEvents.forEach((event) => next.add(event.event_id));
+      saveReadEventIds(next);
+      return next;
+    });
+  }, [missedEvents]);
+
+  const dismissMissedEvents = useCallback(() => {
+    setMissedEvents([]);
+  }, []);
+
+  // Check for missed events on app load and when app comes to foreground
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Check on initial load
+    checkForMissedEvents();
+
+    // Check when app becomes visible (e.g., PWA opened after being backgrounded)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForMissedEvents();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, checkForMissedEvents]);
+
   const value = useMemo(
     () => ({
       pushSupported,
@@ -248,6 +366,9 @@ export const NotificationProvider = ({ children }) => {
       subscriptions,
       notifications,
       eventsByNotification,
+      missedEvents,
+      unreadEvents,
+      unreadCount,
       refresh,
       clearError: () => setError(null),
       registerCurrentDevice,
@@ -256,6 +377,10 @@ export const NotificationProvider = ({ children }) => {
       updateRule,
       deleteRule,
       loadNotificationEvents,
+      checkForMissedEvents,
+      markEventAsRead,
+      markAllEventsAsRead,
+      dismissMissedEvents,
     }),
     [
       pushSupported,
@@ -265,6 +390,9 @@ export const NotificationProvider = ({ children }) => {
       subscriptions,
       notifications,
       eventsByNotification,
+      missedEvents,
+      unreadEvents,
+      unreadCount,
       refresh,
       registerCurrentDevice,
       deactivateSubscription,
@@ -272,6 +400,10 @@ export const NotificationProvider = ({ children }) => {
       updateRule,
       deleteRule,
       loadNotificationEvents,
+      checkForMissedEvents,
+      markEventAsRead,
+      markAllEventsAsRead,
+      dismissMissedEvents,
     ],
   );
 

@@ -219,6 +219,20 @@ def forecast_to_dict(row, suffix=''):
     )
     forecast_dict['wind_speed_iso_ms'] = _replace_nan_with_none(wind_speed).tolist()
     forecast_dict['wind_direction_iso_dgr'] = _replace_nan_with_none(wind_direction).tolist()
+
+    forecast_dict['temperature_2m_c'] = float(row[f'temperature_2m_k{suffix}'] - 273.15)
+    forecast_dict['dewpoint_2m_c'] = float(row[f'dewpoint_2m_k{suffix}'] - 273.15)
+    forecast_dict['geopotential_height_sfc_m'] = float(row[f'geopotential_height_sfc_m{suffix}'])
+    forecast_dict['pressure_sfc_pa'] = float(row[f'pressure_sfc_pa{suffix}'])
+    forecast_dict['wind_gust_sfc_ms'] = float(row[f'wind_gust_sfc_ms{suffix}'])
+
+    sfc_wind_speed, sfc_wind_dir = calculate_wind_speed_and_direction(
+        np.array([row[f'u_wind_10m_ms{suffix}']]),
+        np.array([row[f'v_wind_10m_ms{suffix}']]),
+    )
+    forecast_dict['wind_speed_10m_ms'] = float(sfc_wind_speed[0]) if sfc_wind_speed[0] is not None else None
+    forecast_dict['wind_direction_10m_dgr'] = float(sfc_wind_dir[0]) if sfc_wind_dir[0] is not None else None
+
     return forecast_dict
 
 def calculate_wind_speed_and_direction(u_wind, v_wind):

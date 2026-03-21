@@ -14,7 +14,7 @@ A brief description of the backend service for the Glideator project, built with
 - **Framework:** FastAPI
 - **MCP Server:** Model Context Protocol server (FastMCP)
 - **Database:** PostgreSQL (using SQLAlchemy and psycopg2)
-- **Background Tasks:** Celery (with RabbitMQ as broker)
+- **Background Tasks:** Celery (with Redis as broker/result backend in development and Render)
 - **Web Server:** Uvicorn
 - **Containerization:** Docker
 
@@ -44,7 +44,7 @@ A brief description of the backend service for the Glideator project, built with
 
 ### Using Docker Compose (Recommended)
 
-This is the easiest way to run the application and all its dependencies (PostgreSQL, RabbitMQ, Celery).
+This is the easiest way to run the application and its local dependencies for development (PostgreSQL, Redis, Celery).
 
 #### Development Environment (with Hot-Reloading)
 
@@ -56,13 +56,11 @@ docker-compose -f docker-compose.dev.yml up --build
 
 The API will be available at `http://localhost:8000`.
 
-#### Production Environment
+#### Production / Deployment
 
-This uses `docker-compose.yml` (assuming it's configured for production).
+Production is deployed on **Render**. The legacy `docker-compose.yml` path has been removed because it was no longer the real production setup and had drifted badly from what Render actually runs.
 
-```bash
-docker-compose -f docker-compose.yml up --build -d
-```
+If you need to inspect or change production behavior, treat the Render services and their environment/config as the source of truth.
 
 To stop the services:
 
@@ -72,7 +70,7 @@ docker-compose -f <your-chosen-compose-file.yml> down
 
 ### Running Locally (Without Docker)
 
-Ensure PostgreSQL and RabbitMQ services are running and accessible. Set the environment variables listed below.
+Ensure PostgreSQL and Redis services are running and accessible. Set the environment variables listed below.
 
 ```bash
 # Run the FastAPI application with hot-reloading
@@ -85,18 +83,18 @@ celery -A app.celery_app beat --loglevel=info
 
 ## Environment Variables
 
-Environment variables are primarily configured within the `docker-compose.*.yml` files. For local development without Docker, you would need to set these in your environment (e.g., using a `.env` file and `python-dotenv`, although `python-dotenv` is not listed in requirements):
+For local development with Docker, environment variables live mainly in `docker-compose.dev.yml`. For local development without Docker, set them directly in your environment (for example via your shell or a `.env` loader if you add one):
 
 ```plaintext
 # Example values (adjust as needed, especially for local setup)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/glideator
-CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
-CELERY_RESULT_BACKEND=rpc:// # Or configure a persistent backend like Redis or DB if needed
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ```
 
 ## Celery Tasks
 
-This project uses Celery (`app.celery_app`) for background tasks, with RabbitMQ as the message broker.
+This project uses Celery (`app.celery_app`) for background tasks, with Redis as the broker/result backend in the active development and Render deployment paths.
 - The `docker-compose.dev.yml` runs a combined worker and beat service.
 - The `celerybeat-schedule` file likely stores the periodic task schedule database (managed by Celery Beat).
 - Forecast processing triggers notification evaluation once new predictions are stored.

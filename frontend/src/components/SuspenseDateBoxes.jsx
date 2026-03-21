@@ -24,8 +24,6 @@ const SuspenseDateBoxes = ({
     // Skip computation if we don't have sites or dates yet
     if (!allSites.length || !dates.length) return {};
     
-    console.log('Precomputing filtered sites for all dates in SuspenseDateBoxes');
-    
     // Create an object to store filtered sites for each date
     const result = {};
     const metricIndexMap = metrics.reduce((acc, metric, index) => {
