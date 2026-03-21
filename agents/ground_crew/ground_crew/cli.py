@@ -11,8 +11,13 @@ import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from .agent_runner import CandidateRetrievalAgent
+from .agent_runner import CandidateRetrievalAgent, WebcamExtractorAgent, MeteostationExtractorAgent
 from .db import get_engine
+from .extraction_io import (
+    fetch_candidates_for_feature_extraction,
+    record_meteostation_extraction,
+    record_webcam_extraction,
+)
 from .io import load_extraction_run
 from .sites import format_site_details, get_sites
 from .validation import BrowserValidator, ValidationResult, ValidationStatus
@@ -539,6 +544,193 @@ async def _validate_candidates_async(
     finally:
         await validator.close()
     return results
+
+
+async def _run_feature_extraction(
+    feature: str,
+    candidates,
+    engine,
+    output_path: Optional[Path],
+):
+    """Run WebcamExtractorAgent or MeteostationExtractorAgent on a list of candidates."""
+    agent_cls = WebcamExtractorAgent if feature == "webcam" else MeteostationExtractorAgent
+    record_fn = record_webcam_extraction if feature == "webcam" else record_meteostation_extraction
+    url_field = "webcam_url" if feature == "webcam" else "meteostation_url"
+
+    total = len(candidates)
+    output_handle = None
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_handle = output_path.open("w", encoding="utf-8")
+
+    found_count = 0
+    try:
+        for idx, candidate in enumerate(candidates, start=1):
+            cid = candidate["candidate_id"]
+            label = candidate.get("name") or candidate.get("url")
+            console.rule(f"[bold]{feature.title()} {idx}/{total}: {label} (candidate_id={cid})[/bold]")
+
+            try:
+                agent = agent_cls()
+                agent.set_task(candidate["url"])
+                start_time = datetime.utcnow()
+                result = await agent.run()
+                duration = (datetime.utcnow() - start_time).total_seconds()
+
+                structured = result.get("structured_output") or {}
+                usage = result.get("usage_stats") or {}
+                model_name = None
+                if usage.get("by_model"):
+                    model_name = list(usage["by_model"].keys())[0]
+
+                is_found = structured.get("found", False)
+                extracted_url = structured.get(url_field, "") or ""
+
+                record_fn(
+                    engine,
+                    candidate_id=cid,
+                    found=is_found,
+                    **{url_field: extracted_url or None},
+                    agent="BUAgent",
+                    model=model_name,
+                    duration_seconds=duration,
+                    usage_total_tokens=usage.get("total_tokens"),
+                    usage_total_cost=usage.get("total_cost"),
+                )
+
+                if is_found:
+                    found_count += 1
+                    console.print(f"[green]Found: {extracted_url}[/green]")
+                else:
+                    console.print("[yellow]Not found.[/yellow]")
+
+                if output_handle:
+                    output_handle.write(
+                        json.dumps(
+                            {
+                                **candidate,
+                                "feature": feature,
+                                "found": is_found,
+                                url_field: extracted_url,
+                                "duration_seconds": duration,
+                                "usage_stats": usage,
+                            },
+                            ensure_ascii=False,
+                            default=str,
+                        )
+                        + "\n"
+                    )
+                    output_handle.flush()
+
+            except Exception as exc:
+                console.print(f"[red]Error on candidate {cid}: {exc}[/red]")
+                record_fn(
+                    engine,
+                    candidate_id=cid,
+                    found=False,
+                    **{url_field: None},
+                    agent="BUAgent",
+                )
+    finally:
+        if output_handle:
+            output_handle.close()
+
+    console.print(
+        f"[bold green]{feature.title()} extraction complete. "
+        f"{found_count}/{total} found.[/bold green]"
+    )
+
+
+@app.command("webcam-run")
+def webcam_run(
+    candidate_ids: Optional[List[int]] = typer.Option(
+        None, "--candidate-id", "-c",
+        help="Specific candidate IDs (repeat for multiple).",
+    ),
+    site_ids: Optional[List[int]] = typer.Option(
+        None, "--site-id", "-s",
+        help="Filter by site IDs.",
+    ),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-l",
+        help="Max candidates to process.",
+    ),
+    only_unextracted: bool = typer.Option(
+        True, help="Skip candidates that already have a webcam extraction.",
+    ),
+    include_unvalidated: bool = typer.Option(
+        False, "--include-unvalidated",
+        help="Include candidates not yet validated as ok/redirected.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o",
+        help="JSONL file to write results.",
+    ),
+):
+    """Extract webcam URLs from candidate websites using the WebcamExtractorAgent."""
+    engine = get_engine()
+    candidates = fetch_candidates_for_feature_extraction(
+        engine,
+        feature="webcam",
+        candidate_ids=candidate_ids,
+        site_ids=site_ids,
+        limit=limit,
+        only_unextracted=only_unextracted,
+        only_validated_ok=not include_unvalidated,
+    )
+
+    if not candidates:
+        console.print("[yellow]No candidates match the provided filters.[/yellow]")
+        raise typer.Exit()
+
+    console.print(f"[cyan]Found {len(candidates)} candidate(s) for webcam extraction.[/cyan]")
+    asyncio.run(_run_feature_extraction("webcam", candidates, engine, output))
+
+
+@app.command("meteostation-run")
+def meteostation_run(
+    candidate_ids: Optional[List[int]] = typer.Option(
+        None, "--candidate-id", "-c",
+        help="Specific candidate IDs (repeat for multiple).",
+    ),
+    site_ids: Optional[List[int]] = typer.Option(
+        None, "--site-id", "-s",
+        help="Filter by site IDs.",
+    ),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-l",
+        help="Max candidates to process.",
+    ),
+    only_unextracted: bool = typer.Option(
+        True, help="Skip candidates that already have a meteostation extraction.",
+    ),
+    include_unvalidated: bool = typer.Option(
+        False, "--include-unvalidated",
+        help="Include candidates not yet validated as ok/redirected.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o",
+        help="JSONL file to write results.",
+    ),
+):
+    """Extract meteostation URLs from candidate websites using the MeteostationExtractorAgent."""
+    engine = get_engine()
+    candidates = fetch_candidates_for_feature_extraction(
+        engine,
+        feature="meteostation",
+        candidate_ids=candidate_ids,
+        site_ids=site_ids,
+        limit=limit,
+        only_unextracted=only_unextracted,
+        only_validated_ok=not include_unvalidated,
+    )
+
+    if not candidates:
+        console.print("[yellow]No candidates match the provided filters.[/yellow]")
+        raise typer.Exit()
+
+    console.print(f"[cyan]Found {len(candidates)} candidate(s) for meteostation extraction.[/cyan]")
+    asyncio.run(_run_feature_extraction("meteostation", candidates, engine, output))
 
 
 @app.command("candidate-run")

@@ -91,6 +91,44 @@ CREATE INDEX idx_candidate_validations_candidate_id ON glideator_ground_crew.can
 CREATE INDEX idx_candidate_validations_run_id ON glideator_ground_crew.candidate_validations(validation_run_id);
 CREATE INDEX idx_candidate_validations_status ON glideator_ground_crew.candidate_validations(status, validated_at DESC);
 
+-- Table: webcam_extractions
+-- Purpose: Store webcam URLs extracted from candidate websites by WebcamExtractorAgent
+CREATE TABLE glideator_ground_crew.webcam_extractions (
+    extraction_id BIGSERIAL PRIMARY KEY,
+    candidate_id BIGINT NOT NULL REFERENCES glideator_ground_crew.extraction_candidates(candidate_id),
+    found BOOLEAN NOT NULL,
+    webcam_url TEXT,
+    agent VARCHAR NOT NULL DEFAULT 'BUAgent',
+    model VARCHAR,
+    duration_seconds NUMERIC,
+    usage_total_tokens INTEGER,
+    usage_total_cost NUMERIC,
+    extracted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_webcam_extractions_candidate_id ON glideator_ground_crew.webcam_extractions(candidate_id);
+CREATE INDEX idx_webcam_extractions_found ON glideator_ground_crew.webcam_extractions(found);
+
+-- Table: meteostation_extractions
+-- Purpose: Store meteostation URLs extracted from candidate websites by MeteostationExtractorAgent
+CREATE TABLE glideator_ground_crew.meteostation_extractions (
+    extraction_id BIGSERIAL PRIMARY KEY,
+    candidate_id BIGINT NOT NULL REFERENCES glideator_ground_crew.extraction_candidates(candidate_id),
+    found BOOLEAN NOT NULL,
+    meteostation_url TEXT,
+    agent VARCHAR NOT NULL DEFAULT 'BUAgent',
+    model VARCHAR,
+    duration_seconds NUMERIC,
+    usage_total_tokens INTEGER,
+    usage_total_cost NUMERIC,
+    extracted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_meteostation_extractions_candidate_id ON glideator_ground_crew.meteostation_extractions(candidate_id);
+CREATE INDEX idx_meteostation_extractions_found ON glideator_ground_crew.meteostation_extractions(found);
+
 -- Example queries
 -- ================
 

@@ -10,6 +10,8 @@ Utilities for ingesting and managing candidate retrieval and validation runs.
 - `ground-crew candidate-run` executes the BrowserUse `CandidateRetrievalAgent` end‑to‑end and writes a JSONL file (defaults to `outputs/candidate_retrieval_results.jsonl`).
 - `ground-crew candidate-validate` replays candidates through a real browser, stores append-only validation rows, and (optionally) emits a JSONL artifact.
 - `ground-crew candidate-validate-manual` records a manual decision for an existing candidate_id (handy after reviewing a link yourself).
+- `ground-crew webcam-run` runs the `WebcamExtractorAgent` on candidates flagged with webcam evidence, extracts actual webcam URLs, and persists results.
+- `ground-crew meteostation-run` runs the `MeteostationExtractorAgent` on candidates flagged with meteostation evidence, extracts actual meteostation URLs, and persists results.
 
 ### Candidate Runner Options
 
@@ -40,6 +42,30 @@ poetry run ground-crew candidate-validate \
 
 5. Inspect `outputs/validation_results.jsonl` and confirm new rows exist in `glideator_ground_crew.candidate_validations`.
 6. Try a manual entry: `poetry run ground-crew candidate-validate-manual --candidate-id <id>` and verify the appended row in the same table.
+
+### Webcam & Meteostation Extraction Options
+
+```
+poetry run ground-crew webcam-run \
+  --site-id 1 --site-id 2 \
+  --limit 5 \
+  --output outputs/webcam_results.jsonl
+```
+
+```
+poetry run ground-crew meteostation-run \
+  --site-id 1 \
+  --limit 5 \
+  --output outputs/meteostation_results.jsonl
+```
+
+- `--candidate-id/-c` and `--site-id/-s` narrow the batch.
+- `--limit` caps the number of candidates processed.
+- `--only-unextracted/--no-only-unextracted` (default: on) skips candidates that already have an extraction record.
+- `--include-unvalidated` also processes candidates that haven't been browser-validated as ok/redirected yet.
+- `--output` writes JSONL rows with the extraction results.
+
+Both commands only target candidates whose evidence flags (`webcams` or `meteostation`) are `true`, and by default only those with a passing validation status.
 
 ## Validation Filters & Options
 
