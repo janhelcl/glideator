@@ -19,6 +19,8 @@ browser-use = "*"  # your agent framework
 pydantic = ">=2.7"
 psycopg2-binary = "^2.9.11"
 jupyterlab = "^4.5.0"
+streamlit = ">=1.35"
+plotly = ">=5.20"
 
 [tool.poetry.scripts]
 ground-crew = "ground_crew.cli:app"

@@ -778,6 +778,29 @@ def candidate_run(
     )
 
 
+@app.command("dashboard")
+def dashboard(
+    port: int = typer.Option(8501, help="Port to run the dashboard on."),
+    host: str = typer.Option("localhost", help="Host to bind the dashboard to."),
+):
+    """Launch the Ground Crew monitoring dashboard."""
+    import subprocess
+    import sys
+
+    dashboard_path = Path(__file__).parent / "dashboard" / "app.py"
+    console.print(f"[cyan]Starting dashboard at http://{host}:{port}[/cyan]")
+    subprocess.run(
+        [
+            sys.executable, "-m", "streamlit", "run",
+            str(dashboard_path),
+            "--server.port", str(port),
+            "--server.address", host,
+            "--browser.gatherUsageStats", "false",
+        ],
+        cwd=str(Path(__file__).parent.parent),
+    )
+
+
 if __name__ == "__main__":
     app()
 
