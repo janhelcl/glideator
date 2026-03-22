@@ -197,10 +197,6 @@ const About = () => {
           </Typography>
 
           <ScoreDemo />
-
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic', textAlign: 'center' }}>
-          Decision support, not divine revelation. Always check local conditions and use your judgment.
-          </Typography>
         </Box>
       </Paper>
 

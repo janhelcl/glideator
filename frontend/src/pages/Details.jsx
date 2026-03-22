@@ -887,6 +887,10 @@ const { preferredMetric } = useDefaultMetric();
                 mapState={mapState}
                 allSites={siteData}
               />
+
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic', textAlign: 'center' }}>
+                Decision support, not divine revelation. Always check local conditions and use your judgment.
+              </Typography>
               
               {/* Button to show weather details */}
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
