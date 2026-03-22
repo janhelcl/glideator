@@ -317,4 +317,9 @@ export const fetchPastDateForecast = async (siteId, forecastDate, pastDate) => {
   return response.data;
 };
 
+export const submitFeedback = async (message) => {
+  const response = await apiClient.post('/feedback/submit', { message });
+  return response.data;
+};
+
 export default apiClient;

@@ -12,6 +12,7 @@ import Profile from './pages/Profile';
 import Favorites from './pages/Favorites';
 import Notifications from './pages/Notifications';
 import About from './pages/About';
+import Feedback from './pages/Feedback';
 import RequireAuth from './components/RequireAuth';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -29,6 +30,14 @@ const App = () => {
               <Route index element={<Home />} />
               <Route path="trip-planner" element={<TripPlannerPage />} />
               <Route path="about" element={<About />} />
+              <Route
+                path="feedback"
+                element={(
+                  <RequireAuth>
+                    <Feedback />
+                  </RequireAuth>
+                )}
+              />
               <Route path="details/:siteId" element={<Details />} />
               <Route
                 path="profile"

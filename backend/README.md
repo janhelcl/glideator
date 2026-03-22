@@ -92,6 +92,20 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ```
 
+### Feedback submissions (`POST /feedback/submit`)
+
+**Authentication required:** callers must send a valid `Authorization: Bearer <access_token>` header (same session as other `/users/me` APIs). Submissions are stored in `feedback_submissions` with the authenticated user ID.
+
+Redis enforces fixed-window limits per IP and per user. The client IP is taken from `X-Forwarded-For` (first address) when the header is set—configure your reverse proxy so this reflects the real client.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| **`RATE_LIMIT_FEEDBACK_WINDOW_MINUTES`** | `60` | Length of each window in minutes. |
+| **`RATE_LIMIT_FEEDBACK_MAX_PER_IP`** | `10` | Max submissions per IP per window. |
+| **`RATE_LIMIT_FEEDBACK_MAX_PER_USER`** | `10` | Max submissions per authenticated user ID per window (in addition to the IP limit). |
+
+If Redis is unavailable, the handler logs an error and **allows** the request (same tradeoff as auth rate limiting), so the API stays reachable.
+
 ### Site resources (`/sites/{id}/resources`)
 
 The app database used by Docker Compose (`docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:

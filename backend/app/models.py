@@ -319,3 +319,12 @@ class NotifiedForecast(Base):
     notified_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     notification = relationship("UserNotification", back_populates="notified_forecasts")
+
+
+class FeedbackSubmission(Base):
+    __tablename__ = "feedback_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message = Column(Text, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
