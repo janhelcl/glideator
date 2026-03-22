@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
-import { fetchSiteForecast, fetchFlightStats, fetchSiteInfo, fetchSitePredictions } from '../api';
+import {
+  fetchSiteForecast,
+  fetchFlightStats,
+  fetchSiteInfo,
+  fetchSitePredictions,
+  fetchSiteResources,
+} from '../api';
 import { 
   Box, 
   Button, 
@@ -13,12 +19,15 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
+  Link,
+  Divider,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import MapIcon from '@mui/icons-material/Map';
+import LinkIcon from '@mui/icons-material/Link';
 import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
@@ -34,8 +43,8 @@ import IconButton from '@mui/material/IconButton';
 import SimilarDaysPanel from '../components/SimilarDaysPanel';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
-// Define tab names for URL mapping
-const tabNames = ['details', 'forecast', 'season', 'map'];
+// Define tab names for URL mapping (default tab = forecast at index 2)
+const tabNames = ['details', 'resources', 'forecast', 'season', 'map'];
 
 // TabPanel component to display tab content
 function TabPanel(props) {
@@ -64,14 +73,15 @@ const [searchParams, setSearchParams] = useSearchParams();
 const navigate = useNavigate();
 const numericSiteId = Number(siteId);
 const { preferredMetric } = useDefaultMetric();
+  const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
 
   // Get date and metric from URL or use defaults
   const initialDate = searchParams.get('date') || '';
   const initialMetric = searchParams.get('metric') || preferredMetric;
-  const initialTabName = searchParams.get('tab') || tabNames[1]; // Default to 'forecast'
+  const initialTabName = searchParams.get('tab') || 'forecast';
 
   // Find the index corresponding to the initial tab name
-  const initialTabIndex = tabNames.indexOf(initialTabName) !== -1 ? tabNames.indexOf(initialTabName) : 1;
+  const initialTabIndex = tabNames.indexOf(initialTabName) !== -1 ? tabNames.indexOf(initialTabName) : 2;
   
   // State for site data and dates
   const [siteData, setSiteData] = useState(null);
@@ -83,6 +93,10 @@ const { preferredMetric } = useDefaultMetric();
   // New state for site info
   const [siteInfo, setSiteInfo] = useState(null);
   const [siteInfoLoading, setSiteInfoLoading] = useState(false);
+
+  const [siteResources, setSiteResources] = useState(null);
+  const [siteResourcesLoading, setSiteResourcesLoading] = useState(false);
+  const [siteResourcesError, setSiteResourcesError] = useState(null);
   
   // State for active tab, initialized from URL or default
   const [activeTab, setActiveTab] = useState(initialTabIndex);
@@ -155,6 +169,25 @@ const { preferredMetric } = useDefaultMetric();
     
     loadSiteInfo();
   }, [siteId, navigate]);
+
+  useEffect(() => {
+    const loadResources = async () => {
+      try {
+        setSiteResourcesLoading(true);
+        setSiteResourcesError(null);
+        const data = await fetchSiteResources(siteId);
+        setSiteResources(data);
+      } catch (err) {
+        console.error('Error loading site resources:', err);
+        setSiteResourcesError('Could not load resources. Try again later.');
+        setSiteResources(null);
+      } finally {
+        setSiteResourcesLoading(false);
+      }
+    };
+
+    loadResources();
+  }, [siteId]);
   
   // Set default date if none selected and data is loaded
   useEffect(() => {
@@ -561,8 +594,125 @@ const { preferredMetric } = useDefaultMetric();
     );
   };
 
-const { isAuthenticated, toggleFavoriteSite, isFavorite } = useAuth();
-const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
+  const renderResourcesContent = () => {
+    if (siteResourcesLoading) {
+      return (
+        <Box display="flex" justifyContent="center" p={3}>
+          <LoadingSpinner />
+        </Box>
+      );
+    }
+    if (siteResourcesError) {
+      return (
+        <Typography color="error" align="center">
+          {siteResourcesError}
+        </Typography>
+      );
+    }
+    if (!siteResources) {
+      return (
+        <Typography color="text.secondary" align="center">
+          No resource data available.
+        </Typography>
+      );
+    }
+
+    const { local_resources: localResources = [], webcam_urls: webcamUrls = [], meteostation_urls: meteoUrls = [] } = siteResources;
+
+    const externalLink = (href, label) => (
+      <Link href={href} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all' }}>
+        {label || href}
+      </Link>
+    );
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Typography variant="body2" color="text.secondary">
+          Local club or site pages we found and validated. Open links in a new tab.
+        </Typography>
+
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Local resources
+          </Typography>
+          {localResources.length === 0 ? (
+            <Typography color="text.secondary">No local resource links on file yet.</Typography>
+          ) : (
+            <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+              {localResources.map((r) => (
+                <Box component="li" key={r.candidate_id} sx={{ mb: 1.5 }}>
+                  <Typography variant="subtitle2" component="div">
+                    {r.name || r.host || 'Resource'}
+                  </Typography>
+                  {externalLink(r.url, r.url)}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Webcam
+          </Typography>
+          {webcamUrls.length === 0 ? (
+            <Typography color="text.secondary">No webcam link on file.</Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {externalLink(webcamUrls[0], webcamUrls[0])}
+              {webcamUrls.length > 1 && (
+                <>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Additional webcams
+                  </Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                    {webcamUrls.slice(1).map((u) => (
+                      <Box component="li" key={u} sx={{ mb: 0.5 }}>
+                        {externalLink(u, u)}
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Meteostation
+          </Typography>
+          {meteoUrls.length === 0 ? (
+            <Typography color="text.secondary">No meteostation link on file.</Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {externalLink(meteoUrls[0], meteoUrls[0])}
+              {meteoUrls.length > 1 && (
+                <>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Additional meteostation pages
+                  </Typography>
+                  <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                    {meteoUrls.slice(1).map((u) => (
+                      <Box component="li" key={u} sx={{ mb: 0.5 }}>
+                        {externalLink(u, u)}
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
 
   return (
     <Box sx={{ 
@@ -717,25 +867,32 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
               aria-controls="site-tabpanel-0" 
             />
             <Tab 
-              label="Activity Forecast" 
-              icon={<TimelineIcon />} 
+              label="Resources" 
+              icon={<LinkIcon />} 
               iconPosition="top"
               id="site-tab-1" 
               aria-controls="site-tabpanel-1" 
             />
             <Tab 
-              label="Season" 
-              icon={<CalendarMonthIcon />} 
+              label="Activity Forecast" 
+              icon={<TimelineIcon />} 
               iconPosition="top"
               id="site-tab-2" 
               aria-controls="site-tabpanel-2" 
             />
             <Tab 
-              label="Site Map" 
-              icon={<MapIcon />} 
+              label="Season" 
+              icon={<CalendarMonthIcon />} 
               iconPosition="top"
               id="site-tab-3" 
               aria-controls="site-tabpanel-3" 
+            />
+            <Tab 
+              label="Site Map" 
+              icon={<MapIcon />} 
+              iconPosition="top"
+              id="site-tab-4" 
+              aria-controls="site-tabpanel-4" 
             />
           </Tabs>
           
@@ -745,6 +902,10 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
           </TabPanel>
           
           <TabPanel value={activeTab} index={1}>
+            {renderResourcesContent()}
+          </TabPanel>
+          
+          <TabPanel value={activeTab} index={2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
               <GlideatorForecast 
                 siteData={siteData[0]}
@@ -797,7 +958,7 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
             </Box>
           </TabPanel>
           
-          <TabPanel value={activeTab} index={2}>
+          <TabPanel value={activeTab} index={3}>
             {flightStatsLoading ? (
               <Box display="flex" justifyContent="center" p={3}>
                 <LoadingSpinner />
@@ -816,7 +977,7 @@ const favoriteActive = isAuthenticated && isFavorite(numericSiteId);
             )}
           </TabPanel>
           
-          <TabPanel value={activeTab} index={3}>
+          <TabPanel value={activeTab} index={4}>
             <SiteMap siteId={siteId} siteName={siteData[0]?.name} />
           </TabPanel>
         </Paper>

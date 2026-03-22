@@ -185,3 +185,19 @@ async def get_site_info(site_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Site info not found for site {site_id}")
     
     return site_info
+
+
+@router.get(
+    "/{site_id}/resources",
+    response_model=schemas.SiteResourcesResponse,
+    summary="Get site external resources",
+)
+async def get_site_resources(site_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Local validated links and webcam/meteostation URLs from the latest ground-crew extraction run.
+    Returns empty resources if no extraction data exists for the site.
+    """
+    site = await crud.get_site(db, site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site with ID {site_id} not found")
+    return await crud.get_site_resources(db, site_id)

@@ -1,11 +1,106 @@
+import json
+import logging
+import os
+from pathlib import Path
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, with_loader_criteria
-from sqlalchemy import and_, func, select, delete
+from sqlalchemy import and_, bindparam, func, select, delete, text
 from sqlalchemy.exc import IntegrityError
 from collections import defaultdict
 from . import models, schemas
-from typing import Optional, List, Dict
+from typing import Any, Dict, List, Optional, Sequence
 from datetime import date, datetime, timezone
+
+logger = logging.getLogger(__name__)
+
+# Populated when SITE_RESOURCES_JSON_PATH is used (see _site_resources_json_index).
+_site_resources_json_cache_path: Optional[str] = None
+_site_resources_json_cache_mtime: Optional[float] = None
+_site_resources_json_cache_index: Optional[Dict[int, dict]] = None
+
+
+def invalidate_site_resources_json_cache() -> None:
+    """Clear JSON file cache (e.g. in tests after changing env or file)."""
+    global _site_resources_json_cache_path, _site_resources_json_cache_mtime, _site_resources_json_cache_index
+    _site_resources_json_cache_path = None
+    _site_resources_json_cache_mtime = None
+    _site_resources_json_cache_index = None
+
+
+def _site_resources_json_file_path() -> Optional[Path]:
+    """Resolve JSON path: explicit env, else bundled app/data (same tree as flight_stats.csv).
+
+    Set SITE_RESOURCES_FROM_APP_DATA=false to skip the default file (e.g. in tests).
+    """
+    raw = os.getenv("SITE_RESOURCES_JSON_PATH", "").strip()
+    if raw:
+        return Path(raw)
+    use_bundled = os.getenv("SITE_RESOURCES_FROM_APP_DATA", "true").lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+    if not use_bundled:
+        return None
+    default = Path(__file__).resolve().parent / "data" / "site_resources.json"
+    if default.is_file():
+        return default
+    return None
+
+
+def _site_resources_json_index() -> Optional[Dict[int, dict]]:
+    """If a JSON file path is configured and exists, return site_id -> row; None = use DB instead."""
+    global _site_resources_json_cache_path, _site_resources_json_cache_mtime, _site_resources_json_cache_index
+    path = _site_resources_json_file_path()
+    if path is None:
+        return None
+    if not path.is_file():
+        logger.warning("Site resources JSON path is not a file: %s", path)
+        return {}
+
+    try:
+        mtime = path.stat().st_mtime
+    except OSError as e:
+        logger.warning("Site resources JSON stat failed: %s", e)
+        return {}
+
+    if (
+        _site_resources_json_cache_index is not None
+        and _site_resources_json_cache_path == str(path.resolve())
+        and _site_resources_json_cache_mtime == mtime
+    ):
+        return _site_resources_json_cache_index
+
+    try:
+        with path.open(encoding="utf-8") as f:
+            payload = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logger.error("Failed to load site resources JSON %s: %s", path, e)
+        _site_resources_json_cache_path = str(path.resolve())
+        _site_resources_json_cache_mtime = mtime
+        _site_resources_json_cache_index = {}
+        return _site_resources_json_cache_index
+
+    if not isinstance(payload, list):
+        logger.error("Site resources JSON must be a JSON array of site objects, got %s", type(payload))
+        _site_resources_json_cache_index = {}
+        return _site_resources_json_cache_index
+
+    index: Dict[int, dict] = {}
+    for row in payload:
+        if not isinstance(row, dict) or "site_id" not in row:
+            continue
+        try:
+            index[int(row["site_id"])] = row
+        except (TypeError, ValueError):
+            continue
+
+    _site_resources_json_cache_path = str(path.resolve())
+    _site_resources_json_cache_mtime = mtime
+    _site_resources_json_cache_index = index
+    logger.info("Loaded %d site resource record(s) from %s", len(index), path)
+    return _site_resources_json_cache_index
 
 async def get_site(db: AsyncSession, site_id: int):
     result = await db.execute(select(models.Site).filter(models.Site.site_id == site_id))
@@ -293,6 +388,161 @@ def create_site_info_sync(db, site_info: schemas.SiteInfoCreate):
 async def get_site_info(db: AsyncSession, site_id: int):
     result = await db.execute(select(models.SiteInfo).filter(models.SiteInfo.site_id == site_id))
     return result.scalar_one_or_none()
+
+
+def _dedupe_urls_preserve_order(rows: Sequence[Dict[str, Any]], url_key: str) -> List[str]:
+    seen: set[str] = set()
+    out: List[str] = []
+    for row in rows:
+        u = (row.get(url_key) or "").strip()
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        out.append(u)
+    return out
+
+
+async def get_site_resources(db: AsyncSession, site_id: int) -> schemas.SiteResourcesResponse:
+    """Load site resources from glideator_ground_crew or from SITE_RESOURCES_JSON_PATH export."""
+    json_index = _site_resources_json_index()
+    if json_index is not None:
+        row = json_index.get(site_id)
+        if not row:
+            return schemas.SiteResourcesResponse(site_id=site_id)
+        return schemas.SiteResourcesResponse.model_validate(row)
+
+    # Prefer latest run that has ≥1 validated (ok/redirected) candidate; else latest run.
+    # Keeps SQL aligned with ground_crew/site_resources_query.py.
+    run_result = await db.execute(
+        text(
+            """
+            SELECT r.run_id, r.extracted_at
+            FROM glideator_ground_crew.extraction_runs r
+            WHERE r.site_id = :site_id
+              AND EXISTS (
+                SELECT 1
+                FROM glideator_ground_crew.extraction_candidates c
+                LEFT JOIN LATERAL (
+                    SELECT status
+                    FROM glideator_ground_crew.candidate_validations v
+                    WHERE v.candidate_id = c.candidate_id
+                    ORDER BY v.validated_at DESC
+                    LIMIT 1
+                ) latest ON TRUE
+                WHERE c.run_id = r.run_id
+                  AND latest.status IN ('ok', 'redirected')
+              )
+            ORDER BY r.extracted_at DESC NULLS LAST
+            LIMIT 1
+            """
+        ),
+        {"site_id": site_id},
+    )
+    run_row = run_result.mappings().first()
+    if not run_row:
+        run_result = await db.execute(
+            text(
+                """
+                SELECT run_id, extracted_at
+                FROM glideator_ground_crew.extraction_runs
+                WHERE site_id = :site_id
+                ORDER BY extracted_at DESC NULLS LAST
+                LIMIT 1
+                """
+            ),
+            {"site_id": site_id},
+        )
+        run_row = run_result.mappings().first()
+    if not run_row:
+        return schemas.SiteResourcesResponse(site_id=site_id)
+
+    run_id = int(run_row["run_id"])
+    run_extracted_at = run_row["extracted_at"]
+    if run_extracted_at is not None and not isinstance(run_extracted_at, datetime):
+        run_extracted_at = None
+
+    cand_result = await db.execute(
+        text(
+            """
+            SELECT
+                c.candidate_id,
+                c.name,
+                c.url,
+                c.host,
+                c.takeoff_landing_areas,
+                c.rules,
+                c.fees,
+                c.access,
+                c.meteostation,
+                c.webcams
+            FROM glideator_ground_crew.extraction_candidates c
+            LEFT JOIN LATERAL (
+                SELECT status
+                FROM glideator_ground_crew.candidate_validations v
+                WHERE v.candidate_id = c.candidate_id
+                ORDER BY v.validated_at DESC
+                LIMIT 1
+            ) latest ON TRUE
+            WHERE c.run_id = :run_id
+              AND latest.status IN ('ok', 'redirected')
+            ORDER BY c.candidate_id
+            """
+        ),
+        {"run_id": run_id},
+    )
+    cand_rows = [dict(r) for r in cand_result.mappings().all()]
+    candidate_ids = [int(r["candidate_id"]) for r in cand_rows]
+
+    webcam_urls: List[str] = []
+    meteostation_urls: List[str] = []
+    if candidate_ids:
+        webcam_stmt = (
+            text(
+                """
+                SELECT webcam_url, extracted_at
+                FROM glideator_ground_crew.webcam_extractions
+                WHERE candidate_id IN :cids
+                  AND found = true
+                  AND NULLIF(TRIM(webcam_url), '') IS NOT NULL
+                ORDER BY extracted_at DESC NULLS LAST
+                """
+            ).bindparams(bindparam("cids", expanding=True))
+        )
+        webcam_result = await db.execute(webcam_stmt, {"cids": candidate_ids})
+        webcam_urls = _dedupe_urls_preserve_order(
+            [dict(r) for r in webcam_result.mappings().all()], "webcam_url"
+        )
+
+        meteo_stmt = (
+            text(
+                """
+                SELECT meteostation_url, extracted_at
+                FROM glideator_ground_crew.meteostation_extractions
+                WHERE candidate_id IN :cids
+                  AND found = true
+                  AND NULLIF(TRIM(meteostation_url), '') IS NOT NULL
+                ORDER BY extracted_at DESC NULLS LAST
+                """
+            ).bindparams(bindparam("cids", expanding=True))
+        )
+        meteo_result = await db.execute(mete_stmt, {"cids": candidate_ids})
+        meteostation_urls = _dedupe_urls_preserve_order(
+            [dict(r) for r in meteo_result.mappings().all()], "meteostation_url"
+        )
+
+    local_resources = [schemas.SiteResourceLink(**r) for r in cand_rows]
+
+    return schemas.SiteResourcesResponse(
+        site_id=site_id,
+        source_run_id=run_id,
+        run_extracted_at=run_extracted_at,
+        local_resources=local_resources,
+        webcam_url=webcam_urls[0] if webcam_urls else None,
+        webcam_urls=webcam_urls,
+        meteostation_url=meteostation_urls[0] if meteostation_urls else None,
+        meteostation_urls=meteostation_urls,
+    )
+
 
 async def create_site(db: AsyncSession, site: schemas.SiteBase):
     db_site = models.Site(**site.dict())

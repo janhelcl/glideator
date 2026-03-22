@@ -19,6 +19,7 @@ from .extraction_io import (
     record_webcam_extraction,
 )
 from .io import load_extraction_run
+from .site_resources_query import fetch_all_site_resources, fetch_site_resources
 from .sites import format_site_details, get_sites
 from .validation import BrowserValidator, ValidationResult, ValidationStatus
 from .validation.io import (
@@ -731,6 +732,45 @@ def meteostation_run(
 
     console.print(f"[cyan]Found {len(candidates)} candidate(s) for meteostation extraction.[/cyan]")
     asyncio.run(_run_feature_extraction("meteostation", candidates, engine, output))
+
+
+@app.command("export-resources")
+def export_resources(
+    output: Path = typer.Option(
+        Path("outputs/site_resources.json"),
+        "--output",
+        "-o",
+        help="Destination file (.json array or .jsonl when --jsonl).",
+    ),
+    jsonl: bool = typer.Option(
+        False,
+        "--jsonl",
+        help="Write one JSON object per line instead of a single JSON array.",
+    ),
+    site_id: Optional[List[int]] = typer.Option(
+        None,
+        "--site-id",
+        "-s",
+        help="Restrict export to specific site IDs (repeat for multiple).",
+    ),
+):
+    """Export per-site resources from the latest extraction run (validated links + webcam/meteo URLs)."""
+    engine = get_engine()
+    if site_id:
+        payload = [fetch_site_resources(engine, sid) for sid in site_id]
+    else:
+        payload = fetch_all_site_resources(engine)
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if jsonl:
+        with output.open("w", encoding="utf-8") as f:
+            for row in payload:
+                f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+    else:
+        with output.open("w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2, default=str)
+
+    console.print(f"[green]Wrote {len(payload)} site record(s) to {output}[/green]")
 
 
 @app.command("candidate-run")

@@ -1,6 +1,9 @@
 -- Schema: glideator_ground_crew
 -- Purpose: Store extraction runs and candidate websites found by BUAgent and human operators
 -- Created: 2025-11-12
+--
+-- Legacy DBs: if extraction_runs still has column "timestamp", rename to match loaders/API:
+--   ALTER TABLE glideator_ground_crew.extraction_runs RENAME COLUMN timestamp TO extracted_at;
 
 -- Create schema
 CREATE SCHEMA IF NOT EXISTS glideator_ground_crew;
@@ -12,7 +15,7 @@ CREATE TABLE glideator_ground_crew.extraction_runs (
     site_id INTEGER NOT NULL,
     agent VARCHAR NOT NULL,  -- 'BUAgent' or 'Human'
     model VARCHAR,  -- e.g. 'gemini-2.5-flash', NULL for Human
-    timestamp TIMESTAMP NOT NULL,
+    extracted_at TIMESTAMPTZ NOT NULL,  -- when the extraction completed (was legacy column name "timestamp" in older dumps)
     duration_seconds NUMERIC,
     usage_total_prompt_tokens INTEGER,
     usage_total_prompt_cost NUMERIC,
@@ -29,8 +32,8 @@ CREATE TABLE glideator_ground_crew.extraction_runs (
 
 -- Indexes for extraction_runs
 CREATE INDEX idx_extraction_runs_site_id ON glideator_ground_crew.extraction_runs(site_id);
-CREATE INDEX idx_extraction_runs_timestamp ON glideator_ground_crew.extraction_runs(timestamp);
-CREATE INDEX idx_extraction_runs_site_timestamp ON glideator_ground_crew.extraction_runs(site_id, timestamp);
+CREATE INDEX idx_extraction_runs_extracted_at ON glideator_ground_crew.extraction_runs(extracted_at);
+CREATE INDEX idx_extraction_runs_site_extracted_at ON glideator_ground_crew.extraction_runs(site_id, extracted_at);
 CREATE INDEX idx_extraction_runs_agent ON glideator_ground_crew.extraction_runs(agent);
 
 -- Table: extraction_candidates
@@ -135,22 +138,22 @@ CREATE INDEX idx_meteostation_extractions_found ON glideator_ground_crew.meteost
 -- Get latest extraction for each site
 -- SELECT DISTINCT ON (site_id) * 
 -- FROM glideator_ground_crew.extraction_runs 
--- ORDER BY site_id, timestamp DESC;
+-- ORDER BY site_id, extracted_at DESC;
 
 -- Get all candidates from latest run for a specific site
 -- SELECT c.* 
 -- FROM glideator_ground_crew.extraction_candidates c
 -- JOIN glideator_ground_crew.extraction_runs r ON c.run_id = r.run_id
 -- WHERE r.site_id = 123
--- ORDER BY r.timestamp DESC 
+-- ORDER BY r.extracted_at DESC 
 -- LIMIT 100;
 
 -- Summary statistics
 -- SELECT 
 --     COUNT(*) as total_runs,
 --     COUNT(DISTINCT site_id) as unique_sites,
---     MIN(timestamp) as earliest_extraction,
---     MAX(timestamp) as latest_extraction,
+--     MIN(extracted_at) as earliest_extraction,
+--     MAX(extracted_at) as latest_extraction,
 --     SUM(candidate_count) as total_candidates_found,
 --     SUM(usage_total_cost) as total_cost
 -- FROM glideator_ground_crew.extraction_runs;

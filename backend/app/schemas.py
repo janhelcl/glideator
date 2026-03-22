@@ -121,6 +121,35 @@ class SiteInfoCreate(SiteInfoBase):
 class SiteInfo(SiteInfoBase):
     model_config = ConfigDict(from_attributes=True)
 
+
+class SiteResourceLink(BaseModel):
+    """Validated local resource (candidate website) from the latest extraction run."""
+
+    candidate_id: int
+    name: Optional[str] = None
+    url: str
+    host: Optional[str] = None
+    takeoff_landing_areas: Optional[bool] = None
+    rules: Optional[bool] = None
+    fees: Optional[bool] = None
+    access: Optional[bool] = None
+    meteostation: Optional[bool] = None
+    webcams: Optional[bool] = None
+
+
+class SiteResourcesResponse(BaseModel):
+    """Per-site resources from glideator_ground_crew (keep SQL in sync with ground_crew/site_resources_query.py)."""
+
+    site_id: int
+    source_run_id: Optional[int] = None
+    run_extracted_at: Optional[datetime] = None
+    local_resources: List[SiteResourceLink] = Field(default_factory=list)
+    webcam_url: Optional[str] = None
+    webcam_urls: List[str] = Field(default_factory=list)
+    meteostation_url: Optional[str] = None
+    meteostation_urls: List[str] = Field(default_factory=list)
+
+
 class SiteTagBase(BaseModel):
     site_id: int
     tag: str

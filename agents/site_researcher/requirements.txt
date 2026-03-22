@@ -1,7 +1,0 @@
-pandas
-python-dotenv
-SQLAlchemy
-pydantic
-google-generativeai
-langgraph
-psycopg2-binary 

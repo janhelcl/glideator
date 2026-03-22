@@ -12,6 +12,19 @@ Utilities for ingesting and managing candidate retrieval and validation runs.
 - `ground-crew candidate-validate-manual` records a manual decision for an existing candidate_id (handy after reviewing a link yourself).
 - `ground-crew webcam-run` runs the `WebcamExtractorAgent` on candidates flagged with webcam evidence, extracts actual webcam URLs, and persists results.
 - `ground-crew meteostation-run` runs the `MeteostationExtractorAgent` on candidates flagged with meteostation evidence, extracts actual meteostation URLs, and persists results.
+- `ground-crew export-resources` exports per-site data for the app: latest extraction run per site, validated candidate URLs, and webcam/meteostation links (deduped, newest first).
+
+### Export resources (for Glideator app / backups)
+
+Picks the **most recent extraction run that still has at least one** candidate whose latest validation is `ok` or `redirected`. (If you add a newer manual/test run whose candidates all fail validation, the export still uses the previous good run instead of exporting an empty site.) If every run is “bad”, falls back to the latest run. Local links are candidates from the chosen run with `ok`/`redirected`. Webcam/meteostation URLs come from successful extractions for those candidates, ordered by `extracted_at` (newest first).
+
+```
+poetry run ground-crew export-resources -o outputs/site_resources.json
+poetry run ground-crew export-resources --jsonl -o outputs/site_resources.jsonl
+poetry run ground-crew export-resources -s 1 -s 2 -o outputs/sample.json
+```
+
+Copy the export to **`backend/app/data/site_resources.json`** so the API loads it with the rest of the packaged data (see `backend/README.md`). Optional: `SITE_RESOURCES_JSON_PATH` for a custom path.
 
 ### Candidate Runner Options
 
