@@ -2,6 +2,32 @@
 
 Utilities for ingesting and managing candidate retrieval and validation runs.
 
+## Database model
+
+All tables live in PostgreSQL schema **`glideator_ground_crew`**. Canonical DDL: [`sql/db_schema_glideator_ground_crew.sql`](sql/db_schema_glideator_ground_crew.sql).
+
+**Join key to the rest of Glideator:** `extraction_runs.site_id` matches `sites.site_id` / `glideator_mart.dim_sites.site_id` (integer). Nothing else in this schema references the core app tables.
+
+```mermaid
+erDiagram
+  extraction_runs ||--o{ extraction_candidates : contains
+  extraction_candidates ||--o{ candidate_validations : history
+  candidate_validation_runs ||--o{ candidate_validations : batches
+  extraction_candidates ||--o{ webcam_extractions : optional
+  extraction_candidates ||--o{ meteostation_extractions : optional
+```
+
+| Table | Role |
+|--------|------|
+| **`extraction_runs`** | One row per agent/human extraction for a site. Stores LLM usage/cost, `candidate_count`, `extracted_at`. |
+| **`extraction_candidates`** | URLs discovered in that run (`name`, `url`, `host`) plus evidence booleans from the retrieval agent (`takeoff_landing_areas`, `rules`, `fees`, `access`, `meteostation`, `webcams`). |
+| **`candidate_validation_runs`** | Metadata for a batch validation (CLI/schedule), optional `filters` JSON. |
+| **`candidate_validations`** | **Append-only** checks of a candidate URL (Playwright or manual): `status` (`ok`, `redirected`, `blocked`, `timeout`, `error`, …), `http_status`, `final_url`, `latency_ms`. Latest row per `candidate_id` is used for filtering. |
+| **`webcam_extractions`** | Output of `WebcamExtractorAgent`: `found`, `webcam_url`, optional usage fields. Multiple rows per candidate allowed (re-runs). |
+| **`meteostation_extractions`** | Same pattern for `MeteostationExtractorAgent` and `meteostation_url`. |
+
+**Legacy note:** older databases may still have `extraction_runs.timestamp` instead of `extracted_at`; rename to align with loaders (see comment at top of the SQL file).
+
 ## Commands
 
 - `ground-crew load-jsonl <path>` loads a JSONL file of completed runs into the mart.
