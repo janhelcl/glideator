@@ -20,14 +20,19 @@ import {
   useTheme,
   useMediaQuery,
   Link,
-  Divider,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import InfoIcon from '@mui/icons-material/Info';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import MapIcon from '@mui/icons-material/Map';
 import LinkIcon from '@mui/icons-material/Link';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
+import CloudIcon from '@mui/icons-material/Cloud';
+import ParaglidingIcon from '@mui/icons-material/Paragliding';
+import SearchIcon from '@mui/icons-material/Search';
+import LanguageIcon from '@mui/icons-material/Language';
 import GlideatorForecast from '../components/GlideatorForecast';
 import FlightStatsChart from '../components/FlightStatsChart';
 import SiteMap from '../components/SiteMap';
@@ -44,7 +49,7 @@ import SimilarDaysPanel from '../components/SimilarDaysPanel';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
 // Define tab names for URL mapping (default tab = forecast at index 2)
-const tabNames = ['details', 'resources', 'forecast', 'season', 'map'];
+const tabNames = ['forecast', 'season', 'map', 'resources'];
 
 // TabPanel component to display tab content
 function TabPanel(props) {
@@ -81,7 +86,7 @@ const { preferredMetric } = useDefaultMetric();
   const initialTabName = searchParams.get('tab') || 'forecast';
 
   // Find the index corresponding to the initial tab name
-  const initialTabIndex = tabNames.indexOf(initialTabName) !== -1 ? tabNames.indexOf(initialTabName) : 2;
+  const initialTabIndex = tabNames.indexOf(initialTabName) !== -1 ? tabNames.indexOf(initialTabName) : 0;
   
   // State for site data and dates
   const [siteData, setSiteData] = useState(null);
@@ -427,287 +432,266 @@ const { preferredMetric } = useDefaultMetric();
   };
 
   // Render site info content
-  const renderSiteInfoContent = () => {
-    if (siteInfoLoading) {
-      return (
-        <Box display="flex" justifyContent="center" p={3}>
-          <LoadingSpinner />
-        </Box>
-      );
-    }
-
-    // Construct Windy iframe URL if site data is available
-    const windyIframeSrc = siteData && siteData[0]
-      ? `https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat=${siteData[0].latitude}&detailLon=${siteData[0].longitude}&metricTemp=°C&metricRain=mm&metricWind=m/s`
-      : '';
-
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          {siteInfo?.site_name || siteData[0]?.name}
-          {siteInfo?.country && ` (${siteInfo.country})`}
-        </Typography>
-        
-        {siteInfo?.html ? (
-          <Box 
-            sx={{ 
-              '& h2': {
-                mt: 3,
-                mb: 2,
-                color: 'black',
-                fontWeight: 'bold'
-              },
-              '& p': {
-                mb: 2
-              },
-              '& ul': {
-                pl: 2,
-                mb: 2
-              },
-              '& li': {
-                mb: 1
-              },
-              '& a': {
-                color: 'primary.main',
-                textDecoration: 'none',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
-              },
-              '& strong': {
-                color: 'text.primary',
-                fontWeight: 'bold'
-              }
-            }}
-            dangerouslySetInnerHTML={{ __html: siteInfo.html }}
-          />
-        ) : (
-          <Typography>
-            Detailed information not available for this site yet.
-          </Typography>
-        )}
-
-        {/* Conditionally render the SearchRecs component */}
-        {siteInfo && siteInfo.site_name && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Do your own research
-            </Typography>
-            <SearchRecs 
-              siteName={siteInfo.site_name} 
-              country={siteInfo.country} 
-            />
-          </Box>
-        )}
-
-        {/* Add Windy Widget */}
-        {windyIframeSrc && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Weather Forecast (Windy)
-            </Typography>
-            <iframe 
-              width="100%" // Make width responsive
-              height="200" // Adjust height slightly
-              src={windyIframeSrc} 
-              frameBorder="0"
-              style={{ border: 0, maxWidth: '1250px', display: 'block', margin: '0 auto' }} // Center and max width
-              title="Windy Forecast"
-            ></iframe>
-          </Box>
-        )}
-
-        {/* Links Section */}
-        {siteData && siteData[0] && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Links
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <a 
-                href={`https://windy.com/${siteData[0].latitude}/${siteData[0].longitude}?${siteData[0].latitude},${siteData[0].longitude},11`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                Windy.com
-              </a>
-              {/* Add xcmeteo link */}
-              <a 
-                href={`http://www.xcmeteo.net/cs?p=${siteData[0].longitude}x${siteData[0].latitude}`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                xcmeteo.net
-              </a>
-              {/* Add Windguru link */}
-              <a 
-                href={`https://www.windguru.cz/map/?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                Windguru.cz - forecast
-              </a>
-              {/* Add Windguru meteostations link */}
-              <a 
-                href={`https://www.windguru.cz/map/station?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                Windguru.cz - meteostations
-              </a>
-              {/* Add Thermal map link */}
-              <a 
-                href={`https://thermal.kk7.ch/#${siteData[0].latitude},${siteData[0].longitude},11`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                Thermal map
-              </a>
-              {/* Add xcontest recent flights link */}
-              <a 
-                href={`https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=time_start&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                xcontest.org - recent flights
-              </a>
-              {/* Add xcontest best flights link */}
-              <a 
-                href={`https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=pts&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`}
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: theme.palette.primary.main }}
-              >
-                xcontest.org - best flights
-              </a>
-              {/* Add more links here if needed */}
-            </Box>
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
   const renderResourcesContent = () => {
-    if (siteResourcesLoading) {
-      return (
-        <Box display="flex" justifyContent="center" p={3}>
-          <LoadingSpinner />
-        </Box>
-      );
-    }
-    if (siteResourcesError) {
-      return (
-        <Typography color="error" align="center">
-          {siteResourcesError}
-        </Typography>
-      );
-    }
-    if (!siteResources) {
-      return (
-        <Typography color="text.secondary" align="center">
-          No resource data available.
-        </Typography>
-      );
-    }
+    const { local_resources: localResources = [], webcam_urls: webcamUrls = [], meteostation_urls: meteoUrls = [] } = siteResources || {};
 
-    const { local_resources: localResources = [], webcam_urls: webcamUrls = [], meteostation_urls: meteoUrls = [] } = siteResources;
+    const sectionBoxSx = {
+      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)',
+      border: '1px solid',
+      borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      borderRadius: 2,
+      p: { xs: 2, sm: 2.5 },
+    };
 
-    const externalLink = (href, label) => (
-      <Link href={href} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all' }}>
+    const sectionHeaderSx = {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1,
+      mb: 1.5,
+    };
+
+    const resourceLink = (href, label, icon) => (
+      <Link
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="hover"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.75,
+          py: 0.5,
+          wordBreak: 'break-all',
+          fontSize: '0.9rem',
+        }}
+      >
+        {icon || <OpenInNewIcon sx={{ fontSize: '1rem', opacity: 0.6, flexShrink: 0 }} />}
         {label || href}
       </Link>
     );
 
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Typography variant="body2" color="text.secondary">
-          Local club or site pages we found and validated. Open links in a new tab.
-        </Typography>
-
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Local resources
+    const linkCard = ({ href, label, desc }) => (
+      <Link
+        key={href}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="none"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          p: 1.5,
+          borderRadius: 1.5,
+          border: '1px solid',
+          borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff',
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            borderColor: 'primary.main',
+            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(41,182,246,0.04)',
+          },
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', lineHeight: 1.3 }}>
+            {label}
           </Typography>
-          {localResources.length === 0 ? (
-            <Typography color="text.secondary">No local resource links on file yet.</Typography>
+          {desc && (
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+              {desc}
+            </Typography>
+          )}
+        </Box>
+        <OpenInNewIcon sx={{ fontSize: '0.9rem', opacity: 0.4, flexShrink: 0, color: 'text.secondary' }} />
+      </Link>
+    );
+
+    const weatherLinks = siteData && siteData[0] ? [
+      {
+        href: `https://windy.com/${siteData[0].latitude}/${siteData[0].longitude}?${siteData[0].latitude},${siteData[0].longitude},11`,
+        label: 'Windy.com',
+        desc: 'General weather forecast',
+      },
+      {
+        href: `https://meteo-parapente.com/#/${siteData[0].latitude},${siteData[0].longitude},7`,
+        label: 'Meteo-Parapente',
+        desc: 'PG-focused forecast',
+      },
+      {
+        href: `http://www.xcmeteo.net/cs?p=${siteData[0].longitude}x${siteData[0].latitude}`,
+        label: 'xcmeteo.net',
+        desc: 'Atmospheric profile from the GFS model',
+      },
+      {
+        href: `https://www.windguru.cz/map/?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`,
+        label: 'Windguru – forecast',
+        desc: 'Detailed wind models',
+      },
+      {
+        href: `https://www.windguru.cz/map/station?lat=${siteData[0].latitude}&lon=${siteData[0].longitude}&zoom=11`,
+        label: 'Windguru – stations',
+        desc: 'Nearby live meteostations',
+      },
+      {
+        href: `https://thermal.kk7.ch/#${siteData[0].latitude},${siteData[0].longitude},11`,
+        label: 'Thermal map',
+        desc: 'Thermal hotspots (kk7.ch)',
+      },
+    ] : [];
+
+    const flightLinks = siteData && siteData[0] ? [
+      {
+        href: `https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=time_start&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`,
+        label: 'Recent flights',
+        desc: 'Latest tracks from this area',
+      },
+      {
+        href: `https://www.xcontest.org/world/cs/vyhledavani-preletu/?list[sort]=pts&filter[point]=${siteData[0].longitude}+${siteData[0].latitude}&filter[radius]=5000`,
+        label: 'Best flights',
+        desc: 'Top-scoring XC flights nearby',
+      },
+    ] : [];
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        {/* Local Resources */}
+        <Box sx={sectionBoxSx}>
+          <Box sx={sectionHeaderSx}>
+            <LanguageIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+            <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+              Local Resources
+            </Typography>
+          </Box>
+          {siteResourcesLoading ? (
+            <Box display="flex" justifyContent="center" p={2}><LoadingSpinner /></Box>
+          ) : siteResourcesError ? (
+            <Typography variant="body2" color="text.secondary">{siteResourcesError}</Typography>
+          ) : localResources.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No local club or site pages on file yet.
+            </Typography>
           ) : (
-            <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
               {localResources.map((r) => (
-                <Box component="li" key={r.candidate_id} sx={{ mb: 1.5 }}>
-                  <Typography variant="subtitle2" component="div">
-                    {r.name || r.host || 'Resource'}
+                <Box key={r.candidate_id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                  {resourceLink(r.url, r.name || r.host || 'Resource')}
+                  <Typography variant="caption" color="text.secondary" sx={{ pl: 2.75 }}>
+                    {new URL(r.url).hostname}
                   </Typography>
-                  {externalLink(r.url, r.url)}
                 </Box>
               ))}
             </Box>
           )}
         </Box>
 
-        <Divider />
-
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Webcam
-          </Typography>
-          {webcamUrls.length === 0 ? (
-            <Typography color="text.secondary">No webcam link on file.</Typography>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {externalLink(webcamUrls[0], webcamUrls[0])}
-              {webcamUrls.length > 1 && (
-                <>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Additional webcams
-                  </Typography>
-                  <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-                    {webcamUrls.slice(1).map((u) => (
-                      <Box component="li" key={u} sx={{ mb: 0.5 }}>
-                        {externalLink(u, u)}
-                      </Box>
-                    ))}
-                  </Box>
-                </>
-              )}
+        {/* Webcams & Meteostations side by side on larger screens */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
+          {/* Webcams */}
+          <Box sx={sectionBoxSx}>
+            <Box sx={sectionHeaderSx}>
+              <VideocamIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+                Webcams
+              </Typography>
             </Box>
-          )}
+            {siteResourcesLoading ? (
+              <Box display="flex" justifyContent="center" p={2}><LoadingSpinner /></Box>
+            ) : webcamUrls.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                None found yet
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {webcamUrls.map((u) => (
+                  <Box key={u}>
+                    {resourceLink(u, new URL(u).hostname.replace(/^www\./, ''))}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+
+          {/* Meteostations */}
+          <Box sx={sectionBoxSx}>
+            <Box sx={sectionHeaderSx}>
+              <DeviceThermostatIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+                Meteostations
+              </Typography>
+            </Box>
+            {siteResourcesLoading ? (
+              <Box display="flex" justifyContent="center" p={2}><LoadingSpinner /></Box>
+            ) : meteoUrls.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                None found yet
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {meteoUrls.map((u) => (
+                  <Box key={u}>
+                    {resourceLink(u, new URL(u).hostname.replace(/^www\./, ''))}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
         </Box>
 
-        <Divider />
-
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Meteostation
-          </Typography>
-          {meteoUrls.length === 0 ? (
-            <Typography color="text.secondary">No meteostation link on file.</Typography>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {externalLink(meteoUrls[0], meteoUrls[0])}
-              {meteoUrls.length > 1 && (
-                <>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Additional meteostation pages
-                  </Typography>
-                  <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-                    {meteoUrls.slice(1).map((u) => (
-                      <Box component="li" key={u} sx={{ mb: 0.5 }}>
-                        {externalLink(u, u)}
-                      </Box>
-                    ))}
-                  </Box>
-                </>
-              )}
+        {/* Weather & Forecast Links */}
+        {weatherLinks.length > 0 && (
+          <Box sx={sectionBoxSx}>
+            <Box sx={sectionHeaderSx}>
+              <CloudIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+                Weather & Forecasts
+              </Typography>
             </Box>
-          )}
-        </Box>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 1.25,
+            }}>
+              {weatherLinks.map(linkCard)}
+            </Box>
+
+          </Box>
+        )}
+
+        {/* Flight Records */}
+        {flightLinks.length > 0 && (
+          <Box sx={sectionBoxSx}>
+            <Box sx={sectionHeaderSx}>
+              <ParaglidingIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+                Flight Records
+              </Typography>
+            </Box>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 1.25,
+            }}>
+              {flightLinks.map(linkCard)}
+            </Box>
+          </Box>
+        )}
+
+        {/* Do your own research */}
+        {siteInfo && siteInfo.site_name && (
+          <Box sx={sectionBoxSx}>
+            <Box sx={sectionHeaderSx}>
+              <SearchIcon color="primary" sx={{ fontSize: '1.3rem' }} />
+              <Typography variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 600 }}>
+                Do Your Own Research
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Quick Google searches to find more about this site.
+            </Typography>
+            <SearchRecs siteName={siteInfo.site_name} country={siteInfo.country} />
+          </Box>
+        )}
       </Box>
     );
   };
@@ -860,52 +844,37 @@ const { preferredMetric } = useDefaultMetric();
             }}
           >
             <Tab 
-              label="Details" 
-              icon={<InfoIcon />} 
+              label="Activity Forecast" 
+              icon={<TimelineIcon />} 
               iconPosition="top"
               id="site-tab-0" 
               aria-controls="site-tabpanel-0" 
             />
             <Tab 
-              label="Resources" 
-              icon={<LinkIcon />} 
+              label="Season" 
+              icon={<CalendarMonthIcon />} 
               iconPosition="top"
               id="site-tab-1" 
               aria-controls="site-tabpanel-1" 
             />
             <Tab 
-              label="Activity Forecast" 
-              icon={<TimelineIcon />} 
+              label="Site Map" 
+              icon={<MapIcon />} 
               iconPosition="top"
               id="site-tab-2" 
               aria-controls="site-tabpanel-2" 
             />
             <Tab 
-              label="Season" 
-              icon={<CalendarMonthIcon />} 
+              label="Resources" 
+              icon={<LinkIcon />} 
               iconPosition="top"
               id="site-tab-3" 
               aria-controls="site-tabpanel-3" 
-            />
-            <Tab 
-              label="Site Map" 
-              icon={<MapIcon />} 
-              iconPosition="top"
-              id="site-tab-4" 
-              aria-controls="site-tabpanel-4" 
             />
           </Tabs>
           
           {/* Tab panels */}
           <TabPanel value={activeTab} index={0}>
-            {renderSiteInfoContent()}
-          </TabPanel>
-          
-          <TabPanel value={activeTab} index={1}>
-            {renderResourcesContent()}
-          </TabPanel>
-          
-          <TabPanel value={activeTab} index={2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
               <GlideatorForecast 
                 siteData={siteData[0]}
@@ -958,7 +927,7 @@ const { preferredMetric } = useDefaultMetric();
             </Box>
           </TabPanel>
           
-          <TabPanel value={activeTab} index={3}>
+          <TabPanel value={activeTab} index={1}>
             {flightStatsLoading ? (
               <Box display="flex" justifyContent="center" p={3}>
                 <LoadingSpinner />
@@ -977,8 +946,12 @@ const { preferredMetric } = useDefaultMetric();
             )}
           </TabPanel>
           
-          <TabPanel value={activeTab} index={4}>
+          <TabPanel value={activeTab} index={2}>
             <SiteMap siteId={siteId} siteName={siteData[0]?.name} />
+          </TabPanel>
+          
+          <TabPanel value={activeTab} index={3}>
+            {renderResourcesContent()}
           </TabPanel>
         </Paper>
       )}
