@@ -894,24 +894,19 @@ const { preferredMetric } = useDefaultMetric();
                 sx={{
                   mt: 2,
                   fontStyle: 'italic',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  alignItems: 'baseline',
-                  columnGap: 0.5,
-                  rowGap: 0.25,
+                  textAlign: 'center',
+                  lineHeight: 1.55,
+                  maxWidth: 560,
+                  mx: 'auto',
                 }}
               >
-                <Box component="span">Decision support, not divine revelation.</Box>
-                <Box component="span">Always check local conditions and use your judgment.</Box>
-                <Box
-                  component="span"
-                  sx={{
-                    flexBasis: '100%',
-                    textAlign: 'center',
-                    mt: 0.25,
-                  }}
-                >
+                <Box component="span" sx={{ display: 'block' }}>
+                  Decision support, not divine revelation.
+                </Box>
+                <Box component="span" sx={{ display: 'block' }}>
+                  Always check local conditions and use your judgment.
+                </Box>
+                <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
                   See{' '}
                   <Link
                     component={RouterLink}
