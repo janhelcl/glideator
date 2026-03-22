@@ -27,7 +27,7 @@ const SCENARIOS = {
   },
 };
 
-const BASSANO = [45.7658, 11.7341];
+const BASSANO = [45.82557,11.768005];
 
 function rgbToRgba(rgb, alpha) {
   const [r, g, b] = rgb.match(/\d+/g);
