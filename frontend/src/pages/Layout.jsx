@@ -401,21 +401,45 @@ const Layout = () => {
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
-        <Toolbar 
+        <Toolbar
           variant="dense"
-          sx={{ 
+          sx={{
             minHeight: '30px',
             px: isMobile ? 1 : 2,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 1,
           }}
         >
           <Typography
-            variant={isMobile ? "caption" : "body2"}
-            color="white"
-            align="center"
-            component="div"
-            sx={{ width: '100%' }}
+            variant={isMobile ? 'caption' : 'body2'}
+            color="inherit"
+            component="span"
+            sx={{ color: 'white' }}
           >
             © {new Date().getFullYear()} Parra-Glideator
+          </Typography>
+          <Typography
+            component="span"
+            variant={isMobile ? 'caption' : 'body2'}
+            sx={{ color: 'rgba(255,255,255,0.45)', userSelect: 'none' }}
+            aria-hidden
+          >
+            ·
+          </Typography>
+          <Typography
+            component={RouterLink}
+            to="/feedback"
+            variant={isMobile ? 'caption' : 'body2'}
+            color="inherit"
+            sx={{
+              color: 'white',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            Feedback
           </Typography>
         </Toolbar>
       </AppBar>

@@ -27,10 +27,11 @@ The project is currently in **public beta** and available at [parra-glideator.co
 ## Repository Structure
 
 ```
+docker-compose.dev.yml   Local dev stack (API, Postgres, Redis, Celery, frontend)
 agents/      Ground Crew (site discovery & resources), Chat assistant
 analytics/   Notebooks, datasets, training pipeline
 art/         Brand assets (Parra-Glideator!)
-backend/     FastAPI API, MCP server, Celery workers, Docker
+backend/     FastAPI API, MCP server, Celery workers, Dockerfiles (web & worker)
 db/          dbt project building the analytics warehouse
 frontend/    React + Leaflet single-page app
 gfs/         Library for downloading & flattening NOAA GFS data
@@ -42,7 +43,7 @@ scrapers/    Scrapy spiders for XContest & Paragliding Map
 
 ## Quick Start
 
-> **Deployment note:** production runs on **Render** and Render is the source of truth for production configuration. The Docker Compose setup under `backend/docker-compose.dev.yml` is for local development only.
+> **Deployment note:** production runs on **Render** and Render is the source of truth for production configuration. The Docker Compose file `docker-compose.dev.yml` at the repository root is for local development only.
 
 ### All-in-one (Docker Compose)
 
@@ -50,7 +51,7 @@ scrapers/    Scrapy spiders for XContest & Paragliding Map
 # clone & launch everything (API + DB + Worker + Web)
 $ git clone https://github.com/janhelcl/glideator.git
 $ cd glideator
-$ docker-compose -f backend/docker-compose.dev.yml up --build
+$ docker-compose -f docker-compose.dev.yml up --build
 ```
 
 * API docs: <http://localhost:8000/docs>  
@@ -61,7 +62,7 @@ $ docker-compose -f backend/docker-compose.dev.yml up --build
 
 Each core component can be run on its own. Follow the dedicated README in the corresponding folder for setup & usage details:
 
-* [`backend/README.md`](backend/README.md) — FastAPI API, Celery worker, local dev stack, and Render deployment notes
+* [`backend/README.md`](backend/README.md) — FastAPI API, Celery worker, Docker Compose details, Render deployment notes
 * [`frontend/README.md`](frontend/README.md) — React single-page application
 * [`db/README.md`](db/README.md) — dbt analytics warehouse
 * [`scrapers/README.md`](scrapers/README.md) — Scrapy project for flight & site data

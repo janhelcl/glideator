@@ -48,9 +48,10 @@ This is the easiest way to run the application and its local dependencies for de
 
 #### Development Environment (with Hot-Reloading)
 
-This uses `docker-compose.dev.yml`.
+This uses `docker-compose.dev.yml` at the **repository root** (not inside `backend/`).
 
 ```bash
+# From the repository root (parent of backend/)
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
@@ -83,7 +84,7 @@ celery -A app.celery_app beat --loglevel=info
 
 ## Environment Variables
 
-For local development with Docker, environment variables live mainly in `docker-compose.dev.yml`. For local development without Docker, set them directly in your environment (for example via your shell or a `.env` loader if you add one):
+For local development with Docker, environment variables live mainly in the repo root `docker-compose.dev.yml`. For local development without Docker, set them directly in your environment (for example via your shell or a `.env` loader if you add one):
 
 ```plaintext
 # Example values (adjust as needed, especially for local setup)
@@ -92,9 +93,23 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ```
 
+### Feedback submissions (`POST /feedback/submit`)
+
+**Authentication required:** callers must send a valid `Authorization: Bearer <access_token>` header (same session as other `/users/me` APIs). Submissions are stored in `feedback_submissions` with the authenticated user ID.
+
+Redis enforces fixed-window limits per IP and per user. The client IP is taken from `X-Forwarded-For` (first address) when the header is set—configure your reverse proxy so this reflects the real client.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| **`RATE_LIMIT_FEEDBACK_WINDOW_MINUTES`** | `60` | Length of each window in minutes. |
+| **`RATE_LIMIT_FEEDBACK_MAX_PER_IP`** | `10` | Max submissions per IP per window. |
+| **`RATE_LIMIT_FEEDBACK_MAX_PER_USER`** | `10` | Max submissions per authenticated user ID per window (in addition to the IP limit). |
+
+If Redis is unavailable, the handler logs an error and **allows** the request (same tradeoff as auth rate limiting), so the API stays reachable.
+
 ### Site resources (`/sites/{id}/resources`)
 
-The app database used by Docker Compose (`docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:
+The app database used by Docker Compose (repo root `docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:
 
 1. Generate the export:
 

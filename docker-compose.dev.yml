@@ -1,31 +1,35 @@
+# Project name matches the old compose location (backend/) so existing
+# named volumes (e.g. backend_postgres_dev_data) keep working.
+name: backend
+
 services:
   frontend:
     build:
-      context: ../frontend # Path to the frontend directory
-      dockerfile: Dockerfile.dev # We might need to create this Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000" # Expose React dev server port
+      - "3000:3000"
     volumes:
-      - ../frontend:/app # Mount frontend source code
-      - /app/node_modules # Use container's node_modules
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true # Helps with file watching in Docker
-      - WATCHPACK_POLLING=true   # Alternative polling variable for react-scripts
-      - REACT_APP_API_BASE_URL=http://localhost:8000 # Add API base URL for development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - REACT_APP_API_BASE_URL=http://localhost:8000
       - REACT_APP_VAPID_PUBLIC_KEY=${REACT_APP_VAPID_PUBLIC_KEY:-}
     depends_on:
-      - web # Ensure backend is ready (optional, depends on startup needs)
+      - web
     command: npm start
 
   web:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.web
     ports:
-      - "8000:8000" # Expose backend port for direct access (/docs)
+      - "8000:8000"
     volumes:
-      - .:/app # Mount backend source code for hot-reloading (if using uvicorn --reload)
+      - ./backend:/app
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -33,27 +37,23 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:dev@example.com}
-      # Site resources: copy export to app/data/site_resources.json (same dir as flight_stats.csv). See backend/README.md.
-      #- SQL_ECHO=true  # Enable SQL logging in development
-      #- FORCE_INITIAL_DATA_LOAD=true
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Run migrations before starting the app; enable reload for development
     command: sh -lc "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   postgres:
     image: postgres:16
     ports:
-      - "5433:5432"  # Using 5433 on host to avoid conflict with local postgres
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=glideator
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data # Use a separate volume for dev
+      - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -71,12 +71,12 @@ services:
       timeout: 5s
       retries: 5
 
-  celery-worker-beat: # Renamed from celery-worker
+  celery-worker-beat:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.worker
     volumes:
-      - .:/app
+      - ./backend:/app
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/glideator
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -84,14 +84,12 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:dev@example.com}
-      #- SQL_ECHO=true  # Enable SQL logging in development
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # Start worker and beat; rely on web to run Alembic migrations
-    command: celery -A app.celery_app worker -B --loglevel=info 
+    command: celery -A app.celery_app worker -B --loglevel=info
 
 volumes:
-  postgres_dev_data: # Separate named volume for development database 
+  postgres_dev_data:

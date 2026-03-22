@@ -415,3 +415,19 @@ class PastDateForecastResponse(BaseModel):
     forecast_12: Dict[str, Any]
     forecast_15: Dict[str, Any]
     model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackCreate(BaseModel):
+    message: str = Field(..., min_length=1, max_length=10000)
+
+    @field_validator("message")
+    @classmethod
+    def strip_message(cls, v: str) -> str:
+        t = v.strip()
+        if not t:
+            raise ValueError("message cannot be empty")
+        return t
+
+
+class FeedbackCreated(BaseModel):
+    ok: Literal[True] = True

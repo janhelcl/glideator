@@ -27,7 +27,7 @@ const SCENARIOS = {
   },
 };
 
-const BASSANO = [45.7658, 11.7341];
+const BASSANO = [45.82557,11.768005];
 
 function rgbToRgba(rgb, alpha) {
   const [r, g, b] = rgb.match(/\d+/g);
@@ -336,6 +336,25 @@ const ScoreDemo = () => {
           />
         </Box>
       </Box>
+
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        component="div"
+        sx={{
+          mt: 2,
+          fontStyle: 'italic',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'baseline',
+          columnGap: 0.5,
+          rowGap: 0.25,
+        }}
+      >
+        <Box component="span">Decision support, not divine revelation.</Box>
+        <Box component="span">Always check local conditions and use your judgment.</Box>
+      </Typography>
     </Box>
   );
 };
