@@ -27,7 +27,7 @@ The project is currently in **public beta** and available at [parra-glideator.co
 ## Repository Structure
 
 ```
-agents/      Autonomous LangGraph agents (e.g. Site Researcher)
+agents/      Ground Crew (site discovery & resources), Chat assistant
 analytics/   Notebooks, datasets, training pipeline
 art/         Brand assets (Parra-Glideator!)
 backend/     FastAPI API, MCP server, Celery workers, Docker
@@ -68,7 +68,8 @@ Each core component can be run on its own. Follow the dedicated README in the co
 * [`gfs/README.md`](gfs/README.md) — GFS data downloader & utilities
 * [`net/README.md`](net/README.md) — PyTorch model library
 * [`analytics/training/README.md`](analytics/training/README.md) — End-to-end training pipeline
-* [`agents/site_researcher/README.md`](agents/site_researcher/README.md) — Autonomous Site Researcher agent
+* [`agents/ground_crew/README.md`](agents/ground_crew/README.md) — Ground Crew: browser agents, validation, exports for site resources
+* [`agents/chat/README.md`](agents/chat/README.md) — Parra-Glideator chat assistant
 
 ---
 
@@ -81,7 +82,8 @@ Each core component can be run on its own. Follow the dedicated README in the co
 * **Training** (`analytics/training/`) – WebDataset loaders, notebooks.
 * **Weather** (`gfs/`) – Fetches & processes NOAA GFS GRIB2 files.
 * **Scrapers** (`scrapers/`) – Flight & site data collection with Scrapy.
-* **Agents** (`agents/site_researcher/`) – LangGraph agent enriching site metadata.
+* **Ground Crew** (`agents/ground_crew/`) – Browser-use pipelines that discover and validate local site/club links, extract webcam & meteostation URLs, and export JSON for the Glideator API (`export-resources` → `backend/app/data/site_resources.json`). Supersedes the old Site Researcher agent.
+* **Chat** (`agents/chat/`) – Conversational assistant for the product.
 * **MCP Integration** – Model Context Protocol server enabling AI assistants to access paragliding data through structured tools for site information, weather forecasts, trip planning, and more.
 
 ---
