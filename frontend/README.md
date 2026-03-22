@@ -67,7 +67,7 @@ The frontend now supports browser push notifications for forecast alerts. To ena
 The service worker that handles push messages lives at `public/push-sw.js`, and the registration happens automatically once an authenticated user visits the app. Users can manage devices and notification rules on the new **Notifications** page (`/notifications`) or from the Notifications panel on their profile.
 
 > **Docker Compose (dev)**  
-> `docker-compose.dev.yml` ships with a valid sample `REACT_APP_VAPID_PUBLIC_KEY`, so push registration works out-of-the-box in development. Override it by exporting `REACT_APP_VAPID_PUBLIC_KEY` before starting the stack if you want to test with your own key pair. Remember to set the matching private key on the backend (`VAPID_PRIVATE_KEY`) so outgoing pushes succeed.
+> The repo root `docker-compose.dev.yml` ships with a valid sample `REACT_APP_VAPID_PUBLIC_KEY`, so push registration works out-of-the-box in development. Override it by exporting `REACT_APP_VAPID_PUBLIC_KEY` before starting the stack if you want to test with your own key pair. Remember to set the matching private key on the backend (`VAPID_PRIVATE_KEY`) so outgoing pushes succeed.
 
 ## Project Structure
 

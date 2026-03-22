@@ -48,9 +48,10 @@ This is the easiest way to run the application and its local dependencies for de
 
 #### Development Environment (with Hot-Reloading)
 
-This uses `docker-compose.dev.yml`.
+This uses `docker-compose.dev.yml` at the **repository root** (not inside `backend/`).
 
 ```bash
+# From the repository root (parent of backend/)
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
@@ -83,7 +84,7 @@ celery -A app.celery_app beat --loglevel=info
 
 ## Environment Variables
 
-For local development with Docker, environment variables live mainly in `docker-compose.dev.yml`. For local development without Docker, set them directly in your environment (for example via your shell or a `.env` loader if you add one):
+For local development with Docker, environment variables live mainly in the repo root `docker-compose.dev.yml`. For local development without Docker, set them directly in your environment (for example via your shell or a `.env` loader if you add one):
 
 ```plaintext
 # Example values (adjust as needed, especially for local setup)
@@ -108,7 +109,7 @@ If Redis is unavailable, the handler logs an error and **allows** the request (s
 
 ### Site resources (`/sites/{id}/resources`)
 
-The app database used by Docker Compose (`docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:
+The app database used by Docker Compose (repo root `docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:
 
 1. Generate the export:
 

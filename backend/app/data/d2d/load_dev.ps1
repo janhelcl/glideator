@@ -16,7 +16,7 @@ if (-not (Test-Path $JsonlPath)) {
     exit 1
 }
 
-# Dev database connection (from docker-compose.dev.yml)
+# Dev database connection (from repo root docker-compose.dev.yml)
 $DbUrl = "postgresql://postgres:postgres@localhost:5432/glideator"
 
 Write-Host "Step 1: Ensuring table exists..." -ForegroundColor Cyan
