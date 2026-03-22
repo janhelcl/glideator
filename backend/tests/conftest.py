@@ -20,6 +20,8 @@ def test_env_setup():
     os.environ.setdefault("RATE_LIMIT_REGISTER_ATTEMPTS", "1000")
     os.environ.setdefault("CORS_ALLOW_ORIGINS", "http://test")
     os.environ.setdefault("JWT_REFRESH_COOKIE_PATH", "/auth")
+    # Avoid loading bundled app/data/site_resources.json during tests (would skip SQL path).
+    os.environ.setdefault("SITE_RESOURCES_FROM_APP_DATA", "false")
     Base.metadata.create_all(bind=sync_engine)
     yield
 

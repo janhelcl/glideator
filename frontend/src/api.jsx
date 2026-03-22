@@ -95,6 +95,12 @@ export const fetchSiteInfo = async (siteId) => {
   return response.data;
 };
 
+// Ground-crew resources: validated local links + webcam / meteostation URLs
+export const fetchSiteResources = async (siteId) => {
+  const response = await apiClient.get(`/sites/${siteId}/resources`);
+  return response.data;
+};
+
 // Fetch predictions using site_id
 export const fetchSitePredictions = async (siteId) => {
   const response = await apiClient.get(`/sites/${siteId}/predictions`);

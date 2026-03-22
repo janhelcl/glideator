@@ -33,6 +33,7 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:dev@example.com}
+      # Site resources: copy export to app/data/site_resources.json (same dir as flight_stats.csv). See backend/README.md.
       #- SQL_ECHO=true  # Enable SQL logging in development
       #- FORCE_INITIAL_DATA_LOAD=true
     depends_on:

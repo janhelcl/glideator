@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Box, ToggleButtonGroup, ToggleButton, Typography, useTheme, useMediaQuery } from '@mui/material';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, ToggleButtonGroup, ToggleButton, Typography } from '@mui/material';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import * as d3 from 'd3';
 import { getColor } from '../utils/colorUtils';
@@ -238,8 +238,6 @@ const DemoBarChart = ({ values, selectedMetric }) => {
 };
 
 const ScoreDemo = () => {
-  const theme = useTheme();
-  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const [scenario, setScenario] = useState('average');
   const [selectedMetric, setSelectedMetric] = useState('XC0');
 

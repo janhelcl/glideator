@@ -41,41 +41,34 @@ async def list_sites() -> List[schemas.SiteListItem]:
 
 
 @mcp.tool()
-async def get_site_info(site_id: int) -> schemas.SiteInfo:
-    """Get detailed information about a specific paragliding site.
-    
-    This tool returns comprehensive site information including description, facilities,
-    access instructions, safety information, risks, limitations, and local knowledge.
-    The information is provided as HTML content that can be parsed and presented to users.
-    
+async def get_site_resources(site_id: int) -> dict:
+    """Get local resources for a paragliding site — club pages, webcams, and meteostations.
+
+    Returns curated links discovered and validated by our ground-crew agents.
+    Useful when a user wants practical links for planning a visit: live webcams to
+    check current conditions, nearby meteostations for real-time wind/weather data,
+    and local club or site pages with rules, fees, and access information.
+
     Args:
         site_id: Unique identifier of the site (get from list_sites tool)
-    
+
     Returns:
-        Site information object containing site_id, site_name, country, and detailed
-        HTML content with all available information about the site.
-    
+        SiteResourcesResponse containing:
+        - local_resources: list of validated club/site pages (name, url, and what
+          info each page covers such as rules, fees, access, webcams, meteostation)
+        - webcam_urls: live webcam links near the site
+        - meteostation_urls: nearby meteostation pages
+
     Use this when users ask about:
-    - "Tell me about [specific site name]"  
-    - "What are the conditions at [site]?"
-    - "How do I access [site name]?"
-    - "What facilities are available at [site]?"
-    - "Is [site] safe for beginners?"
-    - "What are the risks at [site]?"
+    - "Are there webcams at [site]?"
+    - "Where can I check live wind at [site]?"
+    - "Is there a local club page for [site]?"
+    - "Meteostation near [site]?"
+    - "Local resources for [site]"
     """
     async with AsyncSessionLocal() as db:
-        site_info_model = await crud.get_site_info(db, site_id)
-    
-    if site_info_model is None:
-        return None
-    # Convert SQLAlchemy model to Pydantic schema
-    site_info = schemas.SiteInfo(
-        site_id=site_info_model.site_id,
-        site_name=site_info_model.site_name,
-        country=site_info_model.country,
-        html=site_info_model.html
-    )
-    return site_info
+        resources = await crud.get_site_resources(db, site_id)
+    return resources.model_dump(exclude={"source_run_id", "run_extracted_at"})
 
 
 @mcp.tool()

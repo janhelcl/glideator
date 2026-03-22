@@ -92,6 +92,31 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ```
 
+### Site resources (`/sites/{id}/resources`)
+
+The app database used by Docker Compose (`docker-compose.dev.yml`) usually does **not** include the `glideator_ground_crew` schema. The API can serve Ground Crew data from a JSON export placed next to other static inputs:
+
+1. Generate the export:
+
+   ```bash
+   cd agents/ground_crew && poetry run ground-crew export-resources -o outputs/site_resources.json
+   ```
+
+2. Copy it into the backend package data directory (same location as `flight_stats.csv`):
+
+   ```bash
+   cp agents/ground_crew/outputs/site_resources.json backend/app/data/site_resources.json
+   ```
+
+At runtime, if **`app/data/site_resources.json`** exists (resolved from `app/crud.py`’s package directory), it is loaded automatically. No env var is required.
+
+Optional overrides:
+
+- **`SITE_RESOURCES_JSON_PATH`** — absolute path to a different JSON file (takes precedence over the bundled file).
+- **`SITE_RESOURCES_FROM_APP_DATA=false`** — do not load `app/data/site_resources.json`; use SQL only (tests set this).
+
+If neither a JSON file nor `glideator_ground_crew` is available, the endpoint returns empty resources for each site.
+
 ## Celery Tasks
 
 This project uses Celery (`app.celery_app`) for background tasks, with Redis as the broker/result backend in the active development and Render deployment paths.
