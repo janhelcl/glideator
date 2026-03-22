@@ -41,7 +41,7 @@ async def list_sites() -> List[schemas.SiteListItem]:
 
 
 @mcp.tool()
-async def get_site_resources(site_id: int) -> schemas.SiteResourcesResponse:
+async def get_site_resources(site_id: int) -> dict:
     """Get local resources for a paragliding site — club pages, webcams, and meteostations.
 
     Returns curated links discovered and validated by our ground-crew agents.
@@ -67,7 +67,8 @@ async def get_site_resources(site_id: int) -> schemas.SiteResourcesResponse:
     - "Local resources for [site]"
     """
     async with AsyncSessionLocal() as db:
-        return await crud.get_site_resources(db, site_id)
+        resources = await crud.get_site_resources(db, site_id)
+    return resources.model_dump(exclude={"source_run_id", "run_extracted_at"})
 
 
 @mcp.tool()
