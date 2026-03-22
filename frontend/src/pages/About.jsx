@@ -187,7 +187,7 @@ const About = () => {
       </Paper>
 
       {/* The Score — Interactive Demo */}
-      <Paper elevation={2} sx={{ mb: 3, borderRadius: 3, overflow: 'hidden' }}>
+      <Paper id="scores" elevation={2} sx={{ mb: 3, borderRadius: 3, overflow: 'hidden', scrollMarginTop: 88 }}>
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold', mb: 1 }}>
             What the score actually means

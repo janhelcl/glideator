@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import D3Forecast from '../components/D3Forecast';
 import {
   fetchSiteForecast,
@@ -47,7 +47,6 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import SimilarDaysPanel from '../components/SimilarDaysPanel';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
-
 // Define tab names for URL mapping (default tab = forecast at index 2)
 const tabNames = ['forecast', 'season', 'map', 'resources'];
 
@@ -905,6 +904,26 @@ const { preferredMetric } = useDefaultMetric();
               >
                 <Box component="span">Decision support, not divine revelation.</Box>
                 <Box component="span">Always check local conditions and use your judgment.</Box>
+                <Box
+                  component="span"
+                  sx={{
+                    flexBasis: '100%',
+                    textAlign: 'center',
+                    mt: 0.25,
+                  }}
+                >
+                  See{' '}
+                  <Link
+                    component={RouterLink}
+                    to="/about#scores"
+                    underline="hover"
+                    sx={{ fontWeight: 600, fontStyle: 'italic', fontSize: 'inherit' }}
+                  >
+                    How it works
+                  </Link>
+                  {' '}
+                  for more details.
+                </Box>
               </Typography>
               
               {/* Button to show weather details */}
