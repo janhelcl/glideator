@@ -203,7 +203,7 @@ test('trip planner restores filters, paginates, and opens a result', async ({ pa
   });
   expect(requestBodies[1]).toMatchObject({ offset: 10, limit: 10 });
 
-  await page.getByRole('button', { name: 'View details for Alpine 12' }).click();
+  await page.getByRole('button', { name: 'View details for Alpine 12', exact: true }).click();
   await expect(page).toHaveURL(/\/details\/12/);
   await expect(page.getByRole('heading', { name: 'Alpine 12', level: 1 })).toBeVisible();
 });
@@ -231,7 +231,10 @@ test('login allows adding a recommended site to favorites', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'My Favorites', level: 1 })).toBeVisible();
   await expect(page.getByText('Recommendation Ridge')).toBeVisible();
 
-  const addButton = page.getByRole('button', { name: 'Add Recommendation Ridge to favorites' });
+  const addButton = page.getByRole('button', {
+    name: 'Add Recommendation Ridge to favorites',
+    exact: true,
+  });
   await addButton.click();
 
   await expect(addButton).toHaveCount(0);
@@ -243,7 +246,10 @@ test('authenticated pilot creates a notification from site details', async ({ pa
 
   await mockLoginFlow(page, { favorites: [1] });
   await mockDetails(page, 1, 'Raná');
-  await mockSitesList(page, [[1, 'Raná'], [2, 'Kozákov']]);
+  await mockSitesList(page, [
+    { site_id: 1, name: 'Raná' },
+    { site_id: 2, name: 'Kozákov' },
+  ]);
   await page.route('**/api/users/me/notifications', async (route) => {
     if (route.request().method() === 'POST') {
       notificationPayload = route.request().postDataJSON();
