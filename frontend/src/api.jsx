@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+const LOG_REQUESTS = process.env.NODE_ENV === 'development';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -8,14 +9,29 @@ const apiClient = axios.create({
 });
 
 let accessToken = null;
+let requestSequence = 0;
+
+const nextRequestId = () => {
+  requestSequence += 1;
+  return `api-${requestSequence}`;
+};
+
+const getDurationMs = (config) => {
+  const startedAt = config?.metadata?.startedAt;
+  return startedAt ? Math.round(performance.now() - startedAt) : null;
+};
+
+const logRequest = (level, message, details) => {
+  if (!LOG_REQUESTS) return;
+  const logger = console[level] || console.debug;
+  logger(`[api] ${message}`, details);
+};
 
 export const setAccessToken = (token) => {
   accessToken = token;
 };
 
-export const getAccessToken = () => {
-  return accessToken;
-};
+export const getAccessToken = () => accessToken;
 
 export const hasValidSession = async () => {
   try {
@@ -27,9 +43,22 @@ export const hasValidSession = async () => {
 };
 
 apiClient.interceptors.request.use((config) => {
+  const requestId = nextRequestId();
+  config.metadata = {
+    requestId,
+    startedAt: performance.now(),
+  };
+
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  logRequest('debug', 'request', {
+    requestId,
+    method: config.method?.toUpperCase(),
+    url: config.url,
+  });
+
   return config;
 });
 
@@ -42,22 +71,33 @@ const refreshAccessToken = async () => {
     }
     return token;
   } catch (error) {
-    // Clear the access token if refresh fails
     setAccessToken(null);
     throw error;
   }
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    logRequest('debug', 'response', {
+      requestId: response.config?.metadata?.requestId,
+      method: response.config?.method?.toUpperCase(),
+      url: response.config?.url,
+      status: response.status,
+      durationMs: getDurationMs(response.config),
+    });
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || '';
+
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url.endsWith('/auth/login') &&
-      !originalRequest.url.endsWith('/auth/register') &&
-      !originalRequest.url.endsWith('/auth/refresh')
+      !requestUrl.endsWith('/auth/login') &&
+      !requestUrl.endsWith('/auth/register') &&
+      !requestUrl.endsWith('/auth/refresh')
     ) {
       originalRequest._retry = true;
       try {
@@ -66,72 +106,79 @@ apiClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return apiClient(originalRequest);
         }
-      } catch (refreshError) {
-        // If refresh fails, clear the token and don't retry
+      } catch {
         setAccessToken(null);
       }
     }
+
+    const cancelled = axios.isCancel(error) || error.code === 'ERR_CANCELED';
+    logRequest(cancelled ? 'debug' : 'warn', cancelled ? 'cancelled' : 'error', {
+      requestId: originalRequest?.metadata?.requestId,
+      method: originalRequest?.method?.toUpperCase(),
+      url: requestUrl,
+      status: error.response?.status,
+      durationMs: getDurationMs(originalRequest),
+      message: error.message,
+    });
+
     return Promise.reject(error);
   }
 );
 
-export const fetchSites = async (metric = null, date = null, limit = 1000) => {
+export const fetchSites = async (metric = null, date = null, limit = 1000, options = {}) => {
   const params = { limit };
   if (metric) params.metric = metric;
   if (date) params.date = date;
-  const response = await apiClient.get('/sites/', { params });
+  const response = await apiClient.get('/sites/', { params, signal: options.signal });
   return response.data;
 };
 
-// Fetch list of all sites (ID and Name only)
-export const fetchSitesList = async () => {
-  const response = await apiClient.get('/sites/list');
+export const fetchSitesList = async (options = {}) => {
+  const response = await apiClient.get('/sites/list', { signal: options.signal });
   return response.data;
 };
 
-// Fetch site information
-export const fetchSiteInfo = async (siteId) => {
-  const response = await apiClient.get(`/sites/${siteId}/info`);
+export const fetchSiteInfo = async (siteId, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/info`, { signal: options.signal });
   return response.data;
 };
 
-// Ground-crew resources: validated local links + webcam / meteostation URLs
-export const fetchSiteResources = async (siteId) => {
-  const response = await apiClient.get(`/sites/${siteId}/resources`);
+export const fetchSiteResources = async (siteId, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/resources`, { signal: options.signal });
   return response.data;
 };
 
-// Fetch predictions using site_id
-export const fetchSitePredictions = async (siteId) => {
-  const response = await apiClient.get(`/sites/${siteId}/predictions`);
+export const fetchSitePredictions = async (siteId, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/predictions`, { signal: options.signal });
   return response.data;
 };
 
-// Fetch forecast using site_id
-export const fetchSiteForecast = async (siteId, queryDate) => {
-  const response = await apiClient.get(`/sites/${siteId}/forecast`, { params: { query_date: queryDate } });
+export const fetchSiteForecast = async (siteId, queryDate, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/forecast`, {
+    params: { query_date: queryDate },
+    signal: options.signal,
+  });
   return response.data;
 };
 
-// Fetch flight statistics using site_id
-export const fetchFlightStats = async (siteId) => {
-  const response = await apiClient.get(`/sites/${siteId}/flight_stats`);
+export const fetchFlightStats = async (siteId, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/flight_stats`, { signal: options.signal });
   return response.data;
 };
 
-// Fetch spots using site_id
-export const fetchSiteSpots = async (siteId) => {
-  const response = await apiClient.get(`/sites/${siteId}/spots`);
+export const fetchSiteSpots = async (siteId, options = {}) => {
+  const response = await apiClient.get(`/sites/${siteId}/spots`, { signal: options.signal });
   return response.data;
 };
 
-// Fetch all unique tags
-export const fetchAllTags = async (minSites = 2) => {
-  const response = await apiClient.get('/sites/tags', { params: { min_sites: minSites } });
+export const fetchAllTags = async (minSites = 2, options = {}) => {
+  const response = await apiClient.get('/sites/tags', {
+    params: { min_sites: minSites },
+    signal: options.signal,
+  });
   return response.data;
 };
 
-// Plan trip - fetch recommended sites for date range
 export const planTrip = async (
   startDate,
   endDate,
@@ -141,7 +188,8 @@ export const planTrip = async (
   altitudeRange = null,
   offset = 0,
   limit = 10,
-  requiredTags = null
+  requiredTags = null,
+  options = {}
 ) => {
   const requestBody = {
     start_date: startDate,
@@ -151,7 +199,7 @@ export const planTrip = async (
     limit,
   };
 
-  if (userLocation?.latitude && userLocation?.longitude) {
+  if (userLocation?.latitude != null && userLocation?.longitude != null) {
     requestBody.user_latitude = userLocation.latitude;
     requestBody.user_longitude = userLocation.longitude;
   }
@@ -173,11 +221,9 @@ export const planTrip = async (
     requestBody.required_tags = requiredTags;
   }
 
-  const response = await apiClient.post('/plan-trip', requestBody);
+  const response = await apiClient.post('/plan-trip', requestBody, { signal: options.signal });
   return response.data;
 };
-
-// --- Auth API helpers ---
 
 export const registerUser = async (email, password) => {
   const response = await apiClient.post('/auth/register', { email, password });
@@ -226,8 +272,6 @@ export const removeFavorite = async (siteId) => {
   await apiClient.delete(`/users/me/favorites/${siteId}`);
 };
 
-// --- Push subscriptions ---
-
 export const fetchPushSubscriptions = async () => {
   const response = await apiClient.get('/users/me/push-subscriptions');
   return response.data;
@@ -241,8 +285,6 @@ export const registerPushSubscriptionApi = async (payload) => {
 export const deactivatePushSubscriptionApi = async (subscriptionId) => {
   await apiClient.delete(`/users/me/push-subscriptions/${subscriptionId}`);
 };
-
-// --- Notification rules ---
 
 export const fetchNotifications = async () => {
   const response = await apiClient.get('/users/me/notifications');
@@ -286,8 +328,6 @@ export const fetchNotificationHistory = async (offset = 0, limit = 20) => {
   return response.data;
 };
 
-// --- S2S Recommendations ---
-
 export const fetchSiteRecommendations = async (sourceSiteIds, topK = 5) => {
   const response = await apiClient.post('/s2s/recommendations', {
     source_site_ids: sourceSiteIds,
@@ -302,8 +342,6 @@ export const fetchSingleSiteRecommendations = async (siteId, topK = 5) => {
   });
   return response.data;
 };
-
-// --- D2D (Date-to-Date) API ---
 
 export const fetchSimilarDays = async (siteId, forecastDate, n = 3) => {
   const response = await apiClient.get(`/d2d/similar-days/${siteId}/${forecastDate}`, {

@@ -1,583 +1,371 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Box, Typography, Alert, Snackbar, Button, ButtonGroup, Paper } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Alert, Box, Button, ButtonGroup, Paper, Snackbar, Typography } from '@mui/material';
+import { Helmet } from 'react-helmet-async';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planTrip } from '../api';
-import { DEFAULT_PLANNER_STATE, getDefaultDateRange, AVAILABLE_METRICS } from '../types/ui-state';
-import { useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { AVAILABLE_METRICS, DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 import { useAuth } from '../context/AuthContext';
 
-// Cache for API requests (5 minutes)
-const REQUEST_CACHE = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 250;
 
-// Utility functions to replace date-fns
 const formatDate = (date) => {
   if (!date) return '';
   return date.toISOString().split('T')[0];
 };
 
 const getInitialStateFromURL = (searchParams, preferredMetric = 'XC0') => {
-    const state = JSON.parse(JSON.stringify(DEFAULT_PLANNER_STATE));
-    // Override the default selectedMetric with preferredMetric
-    state.selectedMetric = preferredMetric;
-    state.flightQuality.selectedValues = [preferredMetric];
+  const state = JSON.parse(JSON.stringify(DEFAULT_PLANNER_STATE));
+  state.selectedMetric = preferredMetric;
+  state.flightQuality.selectedValues = [preferredMetric];
 
-    const [defaultStart, defaultEnd] = getDefaultDateRange();
-    state.dates = [defaultStart, defaultEnd];
+  const [defaultStart, defaultEnd] = getDefaultDateRange();
+  state.dates = [defaultStart, defaultEnd];
 
-    // Dates
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
-    if (startDateParam && endDateParam) {
-        const sd = new Date(startDateParam);
-        const ed = new Date(endDateParam);
-        if (!isNaN(sd.getTime()) && !isNaN(ed.getTime())) {
-            state.dates = [sd, ed];
-        }
+  const startDateParam = searchParams.get('startDate');
+  const endDateParam = searchParams.get('endDate');
+  if (startDateParam && endDateParam) {
+    const startDate = new Date(startDateParam);
+    const endDate = new Date(endDateParam);
+    if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime())) {
+      state.dates = [startDate, endDate];
     }
+  }
 
-    // Distance
-    if (searchParams.get('distEnabled') === 'true') {
-        state.distance.enabled = true;
-        state.distance.km = parseInt(searchParams.get('distKm'), 10) || state.distance.km;
-    } else if (searchParams.get('distEnabled') === 'false') {
-        state.distance.enabled = false;
-    }
+  if (searchParams.get('distEnabled') === 'true') {
+    state.distance.enabled = true;
+    state.distance.km = Number.parseInt(searchParams.get('distKm'), 10) || state.distance.km;
+  } else if (searchParams.get('distEnabled') === 'false') {
+    state.distance.enabled = false;
+  }
 
-    // Location source (home vs current)
-    const locSrc = searchParams.get('locSrc');
-    if (locSrc === 'home' || locSrc === 'current') {
-        state.distance.locationSource = locSrc;
-    }
+  const locationSource = searchParams.get('locSrc');
+  if (locationSource === 'home' || locationSource === 'current') {
+    state.distance.locationSource = locationSource;
+  }
 
-    // Altitude
-    const altEnabledParam = searchParams.get('altEnabled');
-    if (altEnabledParam === 'false') {
-        state.altitude.enabled = false;
-    } else {
-        // Altitude is enabled by default, or if altEnabled=true
-        state.altitude.enabled = true;
-        const altMin = parseInt(searchParams.get('altMin'), 10);
-        const altMax = parseInt(searchParams.get('altMax'), 10);
-        if (!isNaN(altMin)) {
-            state.altitude.min = altMin;
-        }
-        if (!isNaN(altMax)) {
-            state.altitude.max = altMax;
-        }
-    }
+  if (searchParams.get('altEnabled') === 'false') {
+    state.altitude.enabled = false;
+  } else {
+    const altitudeMin = Number.parseInt(searchParams.get('altMin'), 10);
+    const altitudeMax = Number.parseInt(searchParams.get('altMax'), 10);
+    state.altitude.enabled = true;
+    if (!Number.isNaN(altitudeMin)) state.altitude.min = altitudeMin;
+    if (!Number.isNaN(altitudeMax)) state.altitude.max = altitudeMax;
+  }
 
-    // Flight Quality & Metric
-    const fqEnabledParam = searchParams.get('fqEnabled');
-    const metricParam = searchParams.get('metric');
+  const metricParam = searchParams.get('metric');
+  if (metricParam && AVAILABLE_METRICS.includes(metricParam)) {
+    state.selectedMetric = metricParam;
+    const metricIndex = AVAILABLE_METRICS.indexOf(metricParam);
+    state.flightQuality.selectedValues = AVAILABLE_METRICS.slice(0, metricIndex + 1);
+  }
 
-    if (metricParam) {
-        // Metric from URL is source of truth for slider value
-        state.selectedMetric = metricParam;
-        const metricIndex = AVAILABLE_METRICS.indexOf(metricParam);
-        if (metricIndex > -1) {
-            state.flightQuality.selectedValues = AVAILABLE_METRICS.slice(0, metricIndex + 1);
-        }
-    }
-    
-    // Enabled state logic: a non-default metric implies enabled, but fqEnabled param has final say.
-    if (metricParam && metricParam !== preferredMetric) {
-        state.flightQuality.enabled = true;
-    }
-    if (fqEnabledParam === 'true') {
-        state.flightQuality.enabled = true;
-    }
-    if (fqEnabledParam === 'false') {
-        state.flightQuality.enabled = false;
-    }
+  if (metricParam && metricParam !== preferredMetric) state.flightQuality.enabled = true;
+  if (searchParams.get('fqEnabled') === 'true') state.flightQuality.enabled = true;
+  if (searchParams.get('fqEnabled') === 'false') state.flightQuality.enabled = false;
 
-    // View
-    const view = searchParams.get('view');
-    if (view === 'list' || view === 'map') state.view = view;
-    
-    // SortBy
-    const sortBy = searchParams.get('sortBy');
-    if (sortBy === 'flyability' || sortBy === 'distance') state.sortBy = sortBy;
+  const view = searchParams.get('view');
+  if (view === 'list' || view === 'map') state.view = view;
 
-    // Tags
-    const tagsParam = searchParams.get('tags');
-    if (tagsParam) {
-        state.tags = tagsParam.split(',').filter(Boolean);
-    }
+  const sortBy = searchParams.get('sortBy');
+  if (sortBy === 'flyability' || sortBy === 'distance') state.sortBy = sortBy;
 
-    return state;
+  const tags = searchParams.get('tags');
+  if (tags) state.tags = tags.split(',').filter(Boolean);
+
+  return state;
+};
+
+const validateDates = (dates) => {
+  const [startDate, endDate] = dates;
+
+  if (!startDate || !endDate) return 'Please select both start and end dates';
+  if (startDate > endDate) return 'End date cannot be before start date';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const normalizedStart = new Date(startDate);
+  normalizedStart.setHours(0, 0, 0, 0);
+
+  if (normalizedStart < today) return 'Start date cannot be in the past';
+  return null;
+};
+
+const buildRequestInput = (state, userLocation) => {
+  const dateError = validateDates(state.dates);
+  if (dateError) return null;
+
+  const location = userLocation || (
+    state.distance.enabled && state.distance.coords ? state.distance.coords : null
+  );
+
+  return {
+    startDate: formatDate(state.dates[0]),
+    endDate: formatDate(state.dates[1]),
+    metric: state.selectedMetric,
+    location: location ? {
+      latitude: Number(location.latitude),
+      longitude: Number(location.longitude),
+    } : null,
+    maxDistanceKm: state.distance.enabled && state.distance.coords ? state.distance.km : null,
+    altitudeRange: state.altitude.enabled ? {
+      min: state.altitude.min,
+      max: state.altitude.max,
+    } : null,
+    requiredTags: state.tags?.length ? [...state.tags].sort() : null,
+  };
 };
 
 const TripPlannerPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { preferredMetric } = useDefaultMetric();
   const { profile } = useAuth();
 
-  // Initialize unified planner state with default values, potentially overridden by URL params
   const [plannerState, setPlannerState] = useState(() => getInitialStateFromURL(searchParams, preferredMetric));
-
-  // Initialize home coords if URL specifies home location source
+  const [sortBy, setSortBy] = useState(plannerState.sortBy);
+  const [view, setView] = useState(plannerState.view);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationRequested, setLocationRequested] = useState(false);
+  const [queryInput, setQueryInput] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [snackbarMessage, setSnackbarMessage] = useState(null);
   const initializedRef = useRef(false);
+
   useEffect(() => {
     if (initializedRef.current) return;
 
-    const hasHomeLocation = profile?.home_lat && profile?.home_lon;
-    const urlLocSrc = searchParams.get('locSrc');
+    const latitude = Number(profile?.home_lat);
+    const longitude = Number(profile?.home_lon);
+    const hasHomeLocation = Number.isFinite(latitude) && Number.isFinite(longitude);
 
-    // Only populate home coords if URL explicitly says 'home' and user has home location
-    if (urlLocSrc === 'home' && hasHomeLocation) {
-      initializedRef.current = true;
-      setPlannerState(prev => ({
-        ...prev,
+    if (searchParams.get('locSrc') === 'home' && hasHomeLocation) {
+      setPlannerState((previous) => ({
+        ...previous,
         distance: {
-          ...prev.distance,
-          coords: { latitude: profile.home_lat, longitude: profile.home_lon }
-        }
+          ...previous.distance,
+          coords: { latitude, longitude },
+        },
       }));
-    } else {
-      initializedRef.current = true;
     }
+
+    initializedRef.current = true;
   }, [profile, searchParams]);
-  
-  // Separate UI states (client-side only, don't trigger API calls)
-  const [sortBy, setSortBy] = useState(plannerState.sortBy);
-  const [view, setView] = useState(plannerState.view);
-  
-  const [sites, setSites] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [error, setError] = useState(null);
-  
-  // Error handling
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  
-  // Location detection for distance calculations
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationRequested, setLocationRequested] = useState(false);
-  
-  // Generate cache key for requests
-  const getCacheKey = (start, end, state, userLoc) => {
-    // Include user location for distance calculation
-    const userLocationStr = userLoc
-      ? `user_${userLoc.latitude.toFixed(3)}_${userLoc.longitude.toFixed(3)}`
-      : 'no_user_location';
-    // Include distance filter if enabled
-    const locationSource = state.distance.locationSource || 'current';
-    const distanceFilterStr = state.distance.enabled && state.distance.coords
-      ? `filter_${locationSource}_${state.distance.coords.latitude.toFixed(3)}_${state.distance.coords.longitude.toFixed(3)}_${state.distance.km}`
-      : 'no_distance_filter';
-    const altitudeStr = state.altitude.enabled
-      ? `${state.altitude.min}_${state.altitude.max}`
-      : 'no_altitude';
-    const flightQualityStr = state.flightQuality.enabled
-      ? state.flightQuality.selectedValues.join(',')
-      : 'no_flight_quality';
-    const tagsStr = (state.tags && state.tags.length > 0) ? state.tags.join(',') : 'no_tags';
-    return `${formatDate(start)}_${formatDate(end)}_${state.selectedMetric}_${userLocationStr}_${distanceFilterStr}_${altitudeStr}_${flightQualityStr}_${tagsStr}`;
-  };
-  
-  // Clean up expired cache entries
-  const cleanupCache = () => {
-    const now = Date.now();
-    for (const [key, value] of REQUEST_CACHE.entries()) {
-      if (now - value.timestamp > CACHE_DURATION) {
-        REQUEST_CACHE.delete(key);
-      }
-    }
-  };
 
-  // Auto-detect location on page load
   useEffect(() => {
-    if (!userLocation && !locationRequested) {
-      setLocationRequested(true);
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
-          },
-          (error) => {
-            console.log('Location detection failed:', error.message);
-            // Don't show error to user, just continue without location
-          },
-          {
-            enableHighAccuracy: false,
-            timeout: 5000,
-            maximumAge: 300000 // 5 minutes
-          }
-        );
-      }
-    }
-  }, [userLocation, locationRequested]);
+    if (userLocation || locationRequested) return;
 
-  // Update URL search params when state changes
+    setLocationRequested(true);
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 },
+    );
+  }, [locationRequested, userLocation]);
+
   useEffect(() => {
     const newParams = new URLSearchParams();
     const { dates, distance, altitude, flightQuality, selectedMetric, tags } = plannerState;
-    const defaultState = DEFAULT_PLANNER_STATE;
 
-    // Dates are always present
     newParams.set('startDate', formatDate(dates[0]));
     newParams.set('endDate', formatDate(dates[1]));
 
-    // Distance - default enabled is false
     if (distance.enabled) {
-        newParams.set('distEnabled', 'true');
-        if (distance.km !== defaultState.distance.km) {
-            newParams.set('distKm', distance.km);
-        }
-        // Location source
-        if (distance.locationSource && distance.locationSource !== 'current') {
-            newParams.set('locSrc', distance.locationSource);
-        }
+      newParams.set('distEnabled', 'true');
+      if (distance.km !== DEFAULT_PLANNER_STATE.distance.km) newParams.set('distKm', distance.km);
+      if (distance.locationSource && distance.locationSource !== 'current') {
+        newParams.set('locSrc', distance.locationSource);
+      }
     }
 
-    // Altitude - default enabled is true
     if (!altitude.enabled) {
-        newParams.set('altEnabled', 'false');
+      newParams.set('altEnabled', 'false');
     } else {
-        if (altitude.min !== defaultState.altitude.min) newParams.set('altMin', altitude.min);
-        if (altitude.max !== defaultState.altitude.max) newParams.set('altMax', altitude.max);
+      if (altitude.min !== DEFAULT_PLANNER_STATE.altitude.min) newParams.set('altMin', altitude.min);
+      if (altitude.max !== DEFAULT_PLANNER_STATE.altitude.max) newParams.set('altMax', altitude.max);
     }
 
-    // Flight Quality - default enabled is false
-    if (flightQuality.enabled) {
-        newParams.set('fqEnabled', 'true');
-    }
-
-    if (selectedMetric !== preferredMetric) {
-         newParams.set('metric', selectedMetric);
-    }
-
-    if (view !== defaultState.view) newParams.set('view', view);
-    if (sortBy !== defaultState.sortBy) newParams.set('sortBy', sortBy);
-
-    // Tags
-    if (tags && tags.length > 0) {
-      newParams.set('tags', tags.join(','));
-    }
+    if (flightQuality.enabled) newParams.set('fqEnabled', 'true');
+    if (selectedMetric !== preferredMetric) newParams.set('metric', selectedMetric);
+    if (view !== DEFAULT_PLANNER_STATE.view) newParams.set('view', view);
+    if (sortBy !== DEFAULT_PLANNER_STATE.sortBy) newParams.set('sortBy', sortBy);
+    if (tags?.length) newParams.set('tags', tags.join(','));
 
     setSearchParams(newParams, { replace: true });
-  }, [plannerState, sortBy, view, setSearchParams, preferredMetric]);
+  }, [plannerState, preferredMetric, setSearchParams, sortBy, view]);
 
-  // Function to request location permission
-  const requestLocation = useCallback(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          let errorMessage = 'Unable to get location';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location permissions.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              break;
-            default:
-              errorMessage = 'An unknown error occurred while getting location.';
-              break;
-          }
-          setError(errorMessage);
-          setSnackbarOpen(true);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        }
-      );
-    } else {
-      setError('Geolocation is not supported by this browser');
-      setSnackbarOpen(true);
-    }
-  }, []);
-  
-  // Handle trip planning
-  const handlePlanTrip = useCallback(async (dates) => {
-    cleanupCache();
-    
-    const [startDate, endDate] = dates;
-    
-    if (!startDate || !endDate) {
-      setError('Please select both start and end dates');
-      setSnackbarOpen(true);
-      return;
-    }
-    
-    if (startDate > endDate) {
-      setError('End date cannot be before start date');
-      setSnackbarOpen(true);
-      return;
-    }
-
-    // Check if start date is in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to beginning of day for fair comparison
-    const startDateCopy = new Date(startDate);
-    startDateCopy.setHours(0, 0, 0, 0);
-    
-    if (startDateCopy < today) {
-      setError('Start date cannot be in the past');
-      setSnackbarOpen(true);
-      return;
-    }
-    
-    const cacheKey = getCacheKey(startDate, endDate, plannerState, userLocation);
-    
-    // Check cache first
-    const cachedResult = REQUEST_CACHE.get(cacheKey);
-    if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
-      setSites(cachedResult.data.sites || []);
-      setHasMore(cachedResult.data.has_more || false);
-      setTotalCount(cachedResult.data.total_count || 0);
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const startDateStr = formatDate(startDate);
-      const endDateStr = formatDate(endDate);
-      
-      // Always send location if available (for distance calculation)
-      const locationForApi = userLocation || (plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null);
-      // Only apply distance filter if distance filter is enabled
-      const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
-      
-      // Prepare altitude range for API call
-      const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
-      
-      // Debug: Log what we're sending to the API
-      console.log('API Call Parameters:', {
-        startDate: startDateStr,
-        endDate: endDateStr,
-        metric: plannerState.selectedMetric,
-        location: locationForApi,
-        distance: distanceForApi,
-        altitude: altitudeForApi,
-        tags: plannerState.tags,
-        plannerState: plannerState
-      });
-      
-      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, 0, 10, plannerState.tags);
-      
-      // Debug: Log the API response to understand its structure
-      console.log('Plan Trip API Response:', result);
-      if (result.sites && result.sites.length > 0) {
-        console.log('First site example:', result.sites[0]);
-      }
-      
-      // Cache the result
-      REQUEST_CACHE.set(cacheKey, {
-        data: result,
-        timestamp: Date.now()
-      });
-      
-      setSites(result.sites || []);
-      setHasMore(result.has_more || false);
-      setTotalCount(result.total_count || 0);
-      
-      if (!result.sites || result.sites.length === 0) {
-        setError('No suitable sites found for the selected criteria');
-        setSnackbarOpen(true);
-      }
-    } catch (err) {
-      console.error('Error planning trip:', err);
-      setError('Failed to plan trip. Please try again.');
-      setSnackbarOpen(true);
-      setSites([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [
+  const filtersSignature = useMemo(() => JSON.stringify({
+    dates: plannerState.dates.map(formatDate),
+    altitude: plannerState.altitude,
+    distance: plannerState.distance,
+    flightQuality: plannerState.flightQuality,
+    metric: plannerState.selectedMetric,
+    tags: plannerState.tags,
     userLocation,
-    plannerState
-  ]);
-  
-  // Handle site click from map
-  const handleSiteClick = (site, event) => {
-    const url = `/details/${site.site_id}?metric=${plannerState.selectedMetric}`;
+  }), [plannerState, userLocation]);
 
-    // Check if middle-click or ctrl/cmd-click
-    if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
-      window.open(url, '_blank');
-    } else {
-      window.location.href = url;
-    }
-  };
-
-  // Handle loading more sites
-  const handleLoadMore = useCallback(async () => {
-    if (!hasMore || loadingMore) return;
-
-    setLoadingMore(true);
-    setError(null);
-
-    try {
-      const [startDate, endDate] = plannerState.dates;
-      const startDateStr = formatDate(startDate);
-      const endDateStr = formatDate(endDate);
-      
-      // Always send location if available (for distance calculation)
-      const locationForApi = userLocation || (plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.coords : null);
-      // Only apply distance filter if distance filter is enabled
-      const distanceForApi = plannerState.distance.enabled && plannerState.distance.coords ? plannerState.distance.km : null;
-      
-      // Prepare altitude range for API call
-      const altitudeForApi = plannerState.altitude.enabled ? plannerState.altitude : null;
-      
-      // Debug: Log what we're sending to the API for load more
-      console.log('Load More API Call Parameters:', {
-        startDate: startDateStr,
-        endDate: endDateStr,
-        metric: plannerState.selectedMetric,
-        location: locationForApi,
-        distance: distanceForApi,
-        altitude: altitudeForApi,
-        tags: plannerState.tags,
-        offset: sites.length
-      });
-      
-      const result = await planTrip(startDateStr, endDateStr, plannerState.selectedMetric, locationForApi, distanceForApi, altitudeForApi, sites.length, 10, plannerState.tags);
-      
-      // Append new sites to existing ones
-      setSites(prevSites => [...prevSites, ...(result.sites || [])]);
-      setHasMore(result.has_more || false);
-      setTotalCount(result.total_count || 0);
-      
-    } catch (err) {
-      console.error('Error loading more sites:', err);
-      setError('Failed to load more sites. Please try again.');
-      setSnackbarOpen(true);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [plannerState, sites.length, hasMore, loadingMore, userLocation]);
-
-  // Handle loading less sites (round down to nearest batch of 10)
-  const handleLoadLess = useCallback(() => {
-    if (sites.length <= 10) return; // Don't go below initial 10 sites
-    
-    // If current count is not a multiple of 10, round down to nearest multiple
-    // If current count is already a multiple of 10, subtract 10
-    const remainder = sites.length % 10;
-    let targetCount;
-    
-    if (remainder === 0) {
-      // Already a multiple of 10, remove one full batch
-      targetCount = sites.length - 10;
-    } else {
-      // Has remainder, round down to nearest multiple of 10
-      targetCount = sites.length - remainder;
-    }
-    
-    // Ensure we don't go below 10
-    targetCount = Math.max(10, targetCount);
-    
-    setSites(prevSites => prevSites.slice(0, targetCount));
-    setHasMore(true); // Since we removed sites, there might be more available
-  }, [sites.length]);
-  
-  // Auto-search on initial load with default dates
   useEffect(() => {
-    if (plannerState.dates[0] && plannerState.dates[1]) {
-      handlePlanTrip(plannerState.dates);
-    }
-  }, [handlePlanTrip, plannerState.dates]);
+    const timeoutId = window.setTimeout(() => {
+      setQueryInput(buildRequestInput(plannerState, userLocation));
+    }, SEARCH_DEBOUNCE_MS);
 
-  // Re-search when filters (not site count) change
-  const filtersSignature = useMemo(() => {
-    return JSON.stringify({
-      altitude: plannerState.altitude,
-      distance: {
-        enabled: plannerState.distance.enabled,
-        km: plannerState.distance.km,
-        locationSource: plannerState.distance.locationSource,
-        coords: plannerState.distance.coords
+    return () => window.clearTimeout(timeoutId);
+  }, [filtersSignature, plannerState, userLocation]);
+
+  const querySignature = useMemo(() => JSON.stringify(queryInput), [queryInput]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [querySignature]);
+
+  const tripQuery = useInfiniteQuery({
+    queryKey: ['trip-plan', queryInput],
+    queryFn: ({ pageParam, signal }) => planTrip(
+      queryInput.startDate,
+      queryInput.endDate,
+      queryInput.metric,
+      queryInput.location,
+      queryInput.maxDistanceKm,
+      queryInput.altitudeRange,
+      pageParam,
+      PAGE_SIZE,
+      queryInput.requiredTags,
+      { signal },
+    ),
+    enabled: Boolean(queryInput),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      if (!lastPage?.has_more) return undefined;
+      return pages.reduce((count, page) => count + (page.sites?.length || 0), 0);
+    },
+    placeholderData: (previousData) => previousData,
+  });
+
+  const allSites = useMemo(
+    () => tripQuery.data?.pages.flatMap((page) => page.sites || []) || [],
+    [tripQuery.data],
+  );
+
+  const sites = useMemo(() => allSites.slice(0, visibleCount), [allSites, visibleCount]);
+  const totalCount = tripQuery.data?.pages[0]?.total_count || 0;
+  const hasMore = visibleCount < allSites.length || tripQuery.hasNextPage;
+  const loading = Boolean(queryInput) && (tripQuery.isPending || (tripQuery.isFetching && allSites.length === 0));
+
+  useEffect(() => {
+    if (tripQuery.isError) {
+      setSnackbarMessage('Failed to plan trip. Please try again.');
+    }
+  }, [tripQuery.isError]);
+
+  useEffect(() => {
+    if (tripQuery.isSuccess && queryInput && allSites.length === 0) {
+      setSnackbarMessage('No suitable sites found for the selected criteria');
+    }
+  }, [allSites.length, queryInput, tripQuery.isSuccess]);
+
+  const showError = useCallback((message) => {
+    setSnackbarMessage(message);
+  }, []);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      showError('Geolocation is not supported by this browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setSortBy('distance');
       },
-      flightQuality: { enabled: plannerState.flightQuality.enabled, values: plannerState.flightQuality.selectedValues },
-      metric: plannerState.selectedMetric,
-      dates: plannerState.dates,
-      tags: plannerState.tags,
-    });
-  }, [
-    plannerState.altitude,
-    plannerState.distance.enabled,
-    plannerState.distance.km,
-    plannerState.distance.locationSource,
-    plannerState.distance.coords,
-    plannerState.flightQuality.enabled,
-    plannerState.flightQuality.selectedValues,
-    plannerState.selectedMetric,
-    plannerState.dates,
-    plannerState.tags,
-  ]);
+      (error) => {
+        const messages = {
+          [error.PERMISSION_DENIED]: 'Location access denied. Please enable location permissions.',
+          [error.POSITION_UNAVAILABLE]: 'Location information is unavailable.',
+          [error.TIMEOUT]: 'Location request timed out.',
+        };
+        showError(messages[error.code] || 'Unable to get location');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
+  }, [showError]);
 
-  const prevFilterSigRef = useRef(filtersSignature);
-
-  useEffect(() => {
-    if (sites.length === 0) return; // Nothing to refresh yet
-
-    if (prevFilterSigRef.current !== filtersSignature) {
-      // Filters changed – refresh data
-      handlePlanTrip(plannerState.dates);
-      prevFilterSigRef.current = filtersSignature;
+  const handlePlanTrip = useCallback((dates) => {
+    const dateError = validateDates(dates);
+    if (dateError) {
+      showError(dateError);
+      return;
     }
-  }, [filtersSignature, sites.length, handlePlanTrip, plannerState.dates]);
 
-  // Sort sites based on selected sort option
+    const nextState = { ...plannerState, dates };
+    setPlannerState(nextState);
+    setQueryInput(buildRequestInput(nextState, userLocation));
+  }, [plannerState, showError, userLocation]);
+
+  const handleSiteClick = useCallback((site, event) => {
+    const url = `/details/${site.site_id}?metric=${plannerState.selectedMetric}`;
+    if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    navigate(url);
+  }, [navigate, plannerState.selectedMetric]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (visibleCount < allSites.length) {
+      setVisibleCount((count) => Math.min(count + PAGE_SIZE, allSites.length));
+      return;
+    }
+
+    if (!tripQuery.hasNextPage || tripQuery.isFetchingNextPage) return;
+
+    const result = await tripQuery.fetchNextPage();
+    const loadedCount = result.data?.pages.reduce(
+      (count, page) => count + (page.sites?.length || 0),
+      0,
+    ) || visibleCount;
+    setVisibleCount((count) => Math.min(count + PAGE_SIZE, loadedCount));
+  }, [allSites.length, tripQuery, visibleCount]);
+
+  const handleLoadLess = useCallback(() => {
+    setVisibleCount((count) => Math.max(PAGE_SIZE, count - PAGE_SIZE));
+  }, []);
+
   const sortedSites = useMemo(() => {
-    if (!sites || sites.length === 0) return sites;
-    
-    const sitesCopy = [...sites];
-    
+    const sorted = [...sites];
+
     if (sortBy === 'distance') {
-      // Sort by distance (closest first), then by flyability as secondary sort
-      return sitesCopy.sort((a, b) => {
-        if (a.distance_km !== null && b.distance_km !== null) {
-          const distanceDiff = a.distance_km - b.distance_km;
-          if (Math.abs(distanceDiff) < 0.1) { // If distances are very close, sort by flyability
-            return b.average_flyability - a.average_flyability;
-          }
-          return distanceDiff;
+      return sorted.sort((a, b) => {
+        if (a.distance_km != null && b.distance_km != null) {
+          const distanceDifference = a.distance_km - b.distance_km;
+          if (Math.abs(distanceDifference) >= 0.1) return distanceDifference;
         }
-        // If either site doesn't have distance, sort by flyability
         return b.average_flyability - a.average_flyability;
       });
-    } else {
-      // Sort by flyability (default - highest first)
-      return sitesCopy.sort((a, b) => b.average_flyability - a.average_flyability);
     }
+
+    return sorted.sort((a, b) => b.average_flyability - a.average_flyability);
   }, [sites, sortBy]);
-  
-  // Removed useAuth hook and its destructuring
 
   return (
-    <Box sx={{ 
-      maxWidth: '1200px',
-      margin: '0 auto',
-      p: 2,
-      minHeight: '100%',  // Ensure it takes full height if content is short
-    }}>
+    <Box sx={{ maxWidth: '1200px', margin: '0 auto', p: 2, minHeight: '100%' }}>
       <Helmet>
         <title>Plan a Trip – Parra-Glideator</title>
         <meta name="description" content="Plan your paragliding trip by dates, distance, altitude, tags and flyability metrics. Discover top sites near you." />
@@ -586,34 +374,16 @@ const TripPlannerPage = () => {
         <meta property="og:description" content="Find the best paragliding sites for your dates and preferences." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <script type="application/ld+json">{JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          "name": "Parra-Glideator Trip Planner",
-          "url": "https://parra-glideator.com/trip-planner",
-          "applicationCategory": "SportsApplication",
-          "operatingSystem": "Web",
-          "about": "Paragliding trip planning"
-        })}</script>
       </Helmet>
+
       <Paper elevation={2}>
         <Box sx={{ p: 3 }}>
-          {/* Page title with logo */}
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-              Plan a Trip
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <img 
-                src="/logo192.png" 
-                alt="Glideator Logo" 
-                style={{ height: '60px', width: 'auto' }} 
-              />
-            </Box>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>Plan a Trip</Typography>
+            <img src="/logo192.png" alt="Glideator Logo" style={{ height: '60px', width: 'auto' }} />
           </Box>
-          
+
           <Box sx={{ mb: 4 }}>
-            {/* New Unified Controls */}
             <TripPlannerControls
               state={{ ...plannerState, view }}
               setState={setPlannerState}
@@ -622,70 +392,49 @@ const TripPlannerPage = () => {
               loading={loading}
             />
           </Box>
-          
-          {/* Results */}
+
           {(loading || sites.length > 0) && (
             <Box sx={{ mb: 2 }}>
               {sites.length > 0 && (
                 <Box sx={{ mb: 2 }}>
-                  {/* Title row */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    mb: { xs: 1, sm: 0 }
-                  }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 'bold',
-                        fontSize: { xs: '1.1rem', sm: '1.25rem' }
-                      }}
-                    >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, sm: 0 } }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                       Top {sites.length} sites ({totalCount} total)
                     </Typography>
-                  
-                  {/* Sort buttons - only show on desktop */}
+
+                    {view === 'list' && (
+                      <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary">Sort by:</Typography>
+                        <ButtonGroup size="small" variant="outlined">
+                          <Button
+                            variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
+                            onClick={() => setSortBy('flyability')}
+                          >
+                            Best Conditions
+                          </Button>
+                          <Button
+                            variant={sortBy === 'distance' ? 'contained' : 'outlined'}
+                            onClick={() => (userLocation ? setSortBy('distance') : requestLocation())}
+                          >
+                            Closest
+                          </Button>
+                        </ButtonGroup>
+                      </Box>
+                    )}
+                  </Box>
+
                   {view === 'list' && (
-                    <Box sx={{ 
-                      display: { xs: 'none', sm: 'flex' },
-                      alignItems: 'center', 
-                      gap: 1
-                    }}>
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
-                        sx={{ fontSize: '0.75rem' }}
-                      >
-                        Sort by:
-                      </Typography>
-                      <ButtonGroup 
-                        size="small" 
-                        variant="outlined" 
-                        sx={{ 
-                          '& .MuiButton-root': { 
-                            fontSize: '0.75rem', 
-                            px: 1.5, 
-                            py: 0.5
-                          } 
-                        }}
-                      >
+                    <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                      <ButtonGroup size="small" variant="outlined">
                         <Button
                           variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
                           onClick={() => setSortBy('flyability')}
                         >
-                          Best Conditions
+                          Best
                         </Button>
                         <Button
                           variant={sortBy === 'distance' ? 'contained' : 'outlined'}
-                          onClick={() => {
-                            if (!userLocation) {
-                              // Prompt for location if not available
-                              requestLocation();
-                            } else {
-                              setSortBy('distance');
-                            }
-                          }}
+                          onClick={() => (userLocation ? setSortBy('distance') : requestLocation())}
                         >
                           Closest
                         </Button>
@@ -693,86 +442,35 @@ const TripPlannerPage = () => {
                     </Box>
                   )}
                 </Box>
-                
-                {/* Sort buttons on mobile - below title, left aligned */}
-                {view === 'list' && (
-                  <Box sx={{ 
-                    display: { xs: 'flex', sm: 'none' },
-                    alignItems: 'center', 
-                    gap: 0.5
-                  }}>
-                    <ButtonGroup 
-                      size="small" 
-                      variant="outlined" 
-                      sx={{ 
-                        '& .MuiButton-root': { 
-                          fontSize: '0.7rem', 
-                          px: 1, 
-                          py: 0.25
-                        } 
-                      }}
-                    >
-                      <Button
-                        variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
-                        onClick={() => setSortBy('flyability')}
-                      >
-                        Best
-                      </Button>
-                      <Button
-                        variant={sortBy === 'distance' ? 'contained' : 'outlined'}
-                        onClick={() => {
-                          if (!userLocation) {
-                            // Prompt for location if not available
-                            requestLocation();
-                          } else {
-                            setSortBy('distance');
-                          }
-                        }}
-                      >
-                        Closest
-                      </Button>
-                    </ButtonGroup>
-                  </Box>
-                )}
-              </Box>
               )}
-              
+
               {view === 'list' ? (
                 sites.length > 0 ? (
-                  <SiteList 
-                    sites={sortedSites} 
+                  <SiteList
+                    sites={sortedSites}
                     onSiteClick={handleSiteClick}
                     selectedMetric={plannerState.selectedMetric}
-                    showRanking={true}
-                    // Removed isAuthenticated, toggleFavoriteSite, isFavorite
+                    showRanking
                   />
                 ) : loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-                    <LoadingSpinner />
-                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><LoadingSpinner /></Box>
                 ) : null
               ) : (
                 <PlannerMapView
                   sites={sortedSites}
                   onSiteClick={handleSiteClick}
-                  isVisible={true}
+                  isVisible
                   maxSites={sortedSites.length}
                   selectedMetric={plannerState.selectedMetric}
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
                   loading={loading && sites.length === 0}
-                  // Removed isAuthenticated, toggleFavoriteSite, isFavorite
                 />
               )}
-              
-              {sites.length > 0 && (sites.length > 10 || hasMore) && (
+
+              {sites.length > 0 && (sites.length > PAGE_SIZE || hasMore) && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
-                  {sites.length > 10 && (
-                    <Button
-                      variant="outlined"
-                      onClick={handleLoadLess}
-                      size="large"
-                      sx={{ px: 4 }}
-                    >
+                  {sites.length > PAGE_SIZE && (
+                    <Button variant="outlined" onClick={handleLoadLess} size="large" sx={{ px: 4 }}>
                       Less
                     </Button>
                   )}
@@ -780,39 +478,34 @@ const TripPlannerPage = () => {
                     <Button
                       variant="outlined"
                       onClick={handleLoadMore}
-                      disabled={loadingMore}
+                      disabled={tripQuery.isFetchingNextPage}
                       size="large"
                       sx={{ px: 4 }}
                     >
-                      {loadingMore ? 'Loading...' : 'More'}
+                      {tripQuery.isFetchingNextPage ? 'Loading...' : 'More'}
                     </Button>
                   )}
                 </Box>
               )}
             </Box>
           )}
-          
-          {!loading && sites.length === 0 && !error && (
+
+          {!loading && sites.length === 0 && !queryInput && (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="h6" color="text.secondary">
                 Select dates and click GO to find the best flying sites
               </Typography>
             </Box>
           )}
-          
-          {/* Error Snackbar */}
+
           <Snackbar
-            open={snackbarOpen}
+            open={Boolean(snackbarMessage)}
             autoHideDuration={6000}
-            onClose={() => setSnackbarOpen(false)}
+            onClose={() => setSnackbarMessage(null)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
-            <Alert 
-              onClose={() => setSnackbarOpen(false)} 
-              severity="error" 
-              sx={{ width: '100%' }}
-            >
-              {error}
+            <Alert onClose={() => setSnackbarMessage(null)} severity="error" sx={{ width: '100%' }}>
+              {snackbarMessage}
             </Alert>
           </Snackbar>
         </Box>
@@ -821,4 +514,4 @@ const TripPlannerPage = () => {
   );
 };
 
-export default TripPlannerPage; 
+export default TripPlannerPage;
