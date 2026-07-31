@@ -9,14 +9,20 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
   const clipIdRef = useRef(`clip-${Math.random().toString(36).substr(2, 9)}`);
 
   const createChart = useCallback(() => {
-    if (!forecast) return;
+    if (!forecast || !containerRef.current || !svgRef.current) return;
 
     d3.select(svgRef.current).selectAll("*").remove();
 
     const container = containerRef.current;
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    const size = Math.min(containerWidth, containerHeight);
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = Math.floor(containerRect.width);
+    const containerHeight = Math.floor(containerRect.height);
+    const size = Math.floor(Math.min(containerWidth, containerHeight));
+
+    // Collapses and accordions can temporarily report a zero-sized container.
+    // Wait for ResizeObserver to redraw once the chart has real dimensions.
+    if (!Number.isFinite(size) || size <= 0) return;
+
     const baseFontSize = Math.max(8, Math.min(12, size / 40));
 
     const margin = {
@@ -490,11 +496,19 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
   }, [createChart]);
 
   useEffect(() => {
-    const handleResize = debounce(() => {
-      createChart();
-    }, 250);
+    const handleResize = debounce(createChart, 100);
+    const container = containerRef.current;
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(handleResize)
+      : null;
+
+    if (container && resizeObserver) {
+      resizeObserver.observe(container);
+    }
     window.addEventListener('resize', handleResize);
+
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', handleResize);
       handleResize.cancel();
     };
@@ -503,11 +517,31 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', position: 'relative' }}
+      style={{
+        width: 'min(100%, 1000px, calc(100vh - 300px))',
+        height: 'auto',
+        aspectRatio: '1 / 1',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        margin: '0 auto',
+        position: 'relative',
+        overflow: 'hidden',
+        contain: 'layout paint',
+      }}
     >
       <svg
         ref={svgRef}
-        style={{ width: '100%', height: '100%', display: 'block' }}
+        aria-label="Atmospheric profile"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'block',
+          overflow: 'hidden',
+        }}
       />
       <div
         ref={tooltipRef}
