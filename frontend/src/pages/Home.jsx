@@ -53,13 +53,18 @@ const Home = () => {
     bounds: null
   });
 
-  // Attempt geolocation on mount if no location is in URL params
+  // Use URL coordinates when present; otherwise attempt browser geolocation.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const urlLat = params.get('lat');
-    const urlLng = params.get('lng');
+    const urlLat = Number(params.get('lat'));
+    const urlLng = Number(params.get('lng'));
 
-    if (!urlLat && !urlLng && "geolocation" in navigator) {
+    if (Number.isFinite(urlLat) && Number.isFinite(urlLng)) {
+      setMapState(prevState => ({ ...prevState, center: [urlLat, urlLng] }));
+      return;
+    }
+
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -71,7 +76,7 @@ const Home = () => {
         }
       );
     }
-  }, [location.search]); // Run only when search params change (effectively once on mount unless URL changes externally)
+  }, [location.search]);
 
   // Generate dates and set initial values
   useEffect(() => {
