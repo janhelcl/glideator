@@ -5,6 +5,21 @@ export const fetchAdminOverview = async () => {
   return response.data;
 };
 
+export const fetchAdminUsers = async (limit = 100) => {
+  const response = await apiClient.get('/admin/users', { params: { limit } });
+  return response.data;
+};
+
+export const fetchAdminFeedback = async (limit = 100) => {
+  const response = await apiClient.get('/admin/feedback', { params: { limit } });
+  return response.data;
+};
+
+export const fetchAdminAnalytics = async (days = 30) => {
+  const response = await apiClient.get('/admin/analytics', { params: { days } });
+  return response.data;
+};
+
 export const fetchAdminForecastRuns = async (limit = 20) => {
   const response = await apiClient.get('/admin/forecast-runs', { params: { limit } });
   return response.data;
