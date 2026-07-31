@@ -13,11 +13,13 @@ import Notifications from './pages/Notifications';
 import About from './pages/About';
 import Feedback from './pages/Feedback';
 import RequireAuth from './components/RequireAuth';
+import RequireAdmin from './components/RequireAdmin';
 import LoadingSpinner from './components/LoadingSpinner';
 import AnalyticsRouteTracker from './components/AnalyticsRouteTracker';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
+const Admin = React.lazy(() => import('./pages/Admin'));
 const Details = React.lazy(() => import('./pages/DetailsRoute'));
 const TripPlannerPage = React.lazy(() => import('./pages/TripPlannerPage'));
 
@@ -42,6 +44,14 @@ const App = () => {
                 <Route index element={<Home />} />
                 <Route path="trip-planner" element={<TripPlannerPage />} />
                 <Route path="about" element={<About />} />
+                <Route
+                  path="admin"
+                  element={(
+                    <RequireAdmin>
+                      <Admin />
+                    </RequireAdmin>
+                  )}
+                />
                 <Route
                   path="feedback"
                   element={(
