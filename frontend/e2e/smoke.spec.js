@@ -38,8 +38,31 @@ const makePlannedSite = (siteId, name) => ({
   ],
 });
 
+async function mockSitesCollection(page, sites) {
+  await page.route('**/api/sites/**', async (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname === '/api/sites/') {
+      await json(route, sites);
+      return;
+    }
+    await route.fallback();
+  });
+}
+
+async function mockSitesList(page, sites = []) {
+  await page.route('**/api/sites/**', async (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname === '/api/sites/list') {
+      await json(route, sites);
+      return;
+    }
+    await route.fallback();
+  });
+}
+
 async function mockLoggedOutSession(page) {
   await page.route('**/api/auth/refresh', (route) => json(route, { detail: 'No active session' }, 401));
+  await mockSitesList(page);
 }
 
 async function mockDetails(page, siteId, name) {
@@ -86,13 +109,13 @@ async function mockLoginFlow(page, { favorites = [1] } = {}) {
     await route.fallback();
   });
   await page.route('**/api/users/me/notification-events**', (route) => json(route, []));
-  await page.route('**/api/sites/?*', (route) => json(route, []));
+  await mockSitesCollection(page, []);
 
   await page.goto('/login');
   await page.getByLabel('Email').fill('pilot@example.com');
   await page.getByLabel('Password').fill('test-password');
   await page.getByRole('button', { name: 'Log In' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/(?:\?.*)?$/);
 }
 
 test('home map opens a site details page', async ({ page }) => {
@@ -100,7 +123,7 @@ test('home map opens a site details page', async ({ page }) => {
   const site = makePredictionSite(1, 'Raná', today);
 
   await mockLoggedOutSession(page);
-  await page.route('**/api/sites/?*', (route) => json(route, [site]));
+  await mockSitesCollection(page, [site]);
   await mockDetails(page, 1, 'Raná');
 
   await page.goto('/?lat=50.4&lng=13.8&zoom=8');
@@ -172,7 +195,7 @@ test('login allows adding a recommended site to favorites', async ({ page }) => 
   let favoriteRequest = null;
 
   await mockLoginFlow(page, { favorites: [1] });
-  await page.route('**/api/sites/?*', (route) => json(route, [favoriteSite, recommendation]));
+  await mockSitesCollection(page, [favoriteSite, recommendation]);
   await page.route('**/api/s2s/recommendations', (route) => json(route, {
     recommendations: [{ site_id: 2, similarity_score: 0.93 }],
   }));
@@ -201,7 +224,7 @@ test('authenticated pilot creates a notification from site details', async ({ pa
 
   await mockLoginFlow(page, { favorites: [1] });
   await mockDetails(page, 1, 'Raná');
-  await page.route('**/api/sites/list', (route) => json(route, [[1, 'Raná'], [2, 'Kozákov']]));
+  await mockSitesList(page, [[1, 'Raná'], [2, 'Kozákov']]);
   await page.route('**/api/users/me/notifications', async (route) => {
     if (route.request().method() === 'POST') {
       notificationPayload = route.request().postDataJSON();
