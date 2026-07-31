@@ -14,6 +14,23 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
+def get_admin_emails() -> set[str]:
+    raw = os.getenv("ADMIN_EMAILS", "")
+    return {
+        normalize_email(email)
+        for email in raw.split(",")
+        if email.strip()
+    }
+
+
+def is_admin_identity(*, email: str, role: str) -> bool:
+    return role == "admin" or normalize_email(email) in get_admin_emails()
+
+
+def effective_role(*, email: str, role: str) -> str:
+    return "admin" if is_admin_identity(email=email, role=role) else role
+
+
 def get_app_env() -> str:
     return os.getenv("APP_ENV", os.getenv("ENV", "development")).strip().lower()
 
