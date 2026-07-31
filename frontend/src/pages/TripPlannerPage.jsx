@@ -7,7 +7,9 @@ import TripPlannerControls from '../components/TripPlannerControls';
 import SiteList from '../components/SiteList';
 import PlannerMapView from '../components/PlannerMapView';
 import LoadingSpinner from '../components/LoadingSpinner';
+import QuickFeedback from '../components/QuickFeedback';
 import { planTrip } from '../api';
+import { trackEvent } from '../analytics';
 import { AVAILABLE_METRICS, DEFAULT_PLANNER_STATE, getDefaultDateRange } from '../types/ui-state';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 import { useAuth } from '../context/AuthContext';
@@ -138,6 +140,7 @@ const TripPlannerPage = () => {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [snackbarMessage, setSnackbarMessage] = useState(null);
   const initializedRef = useRef(false);
+  const lastTrackedResultsRef = useRef(null);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -266,6 +269,30 @@ const TripPlannerPage = () => {
   const loading = Boolean(queryInput) && (tripQuery.isPending || (tripQuery.isFetching && allSites.length === 0));
 
   useEffect(() => {
+    if (
+      !queryInput
+      || !tripQuery.isSuccess
+      || tripQuery.isPlaceholderData
+      || lastTrackedResultsRef.current === querySignature
+    ) {
+      return;
+    }
+
+    lastTrackedResultsRef.current = querySignature;
+    trackEvent('trip_plan_results_viewed', {
+      start_date: queryInput.startDate,
+      end_date: queryInput.endDate,
+      metric: queryInput.metric,
+      distance_enabled: queryInput.maxDistanceKm != null,
+      altitude_enabled: queryInput.altitudeRange != null,
+      tags_count: queryInput.requiredTags?.length || 0,
+      returned_count: allSites.length,
+      total_count: totalCount,
+      has_results: totalCount > 0,
+    });
+  }, [allSites.length, queryInput, querySignature, totalCount, tripQuery.isPlaceholderData, tripQuery.isSuccess]);
+
+  useEffect(() => {
     if (tripQuery.isError) {
       setSnackbarMessage('Failed to plan trip. Please try again.');
     }
@@ -315,20 +342,46 @@ const TripPlannerPage = () => {
     }
 
     const nextState = { ...plannerState, dates };
+    const nextQueryInput = buildRequestInput(nextState, userLocation);
+
+    trackEvent('trip_plan_submitted', {
+      start_date: formatDate(dates[0]),
+      end_date: formatDate(dates[1]),
+      metric: nextState.selectedMetric,
+      distance_enabled: nextState.distance.enabled,
+      max_distance_km: nextState.distance.enabled ? nextState.distance.km : null,
+      altitude_enabled: nextState.altitude.enabled,
+      tags_count: nextState.tags?.length || 0,
+    });
+
     setPlannerState(nextState);
-    setQueryInput(buildRequestInput(nextState, userLocation));
+    setQueryInput(nextQueryInput);
   }, [plannerState, showError, userLocation]);
 
   const handleSiteClick = useCallback((site, event) => {
     const url = `/details/${site.site_id}?metric=${plannerState.selectedMetric}`;
+    trackEvent('trip_plan_site_opened', {
+      site_id: Number(site.site_id),
+      metric: plannerState.selectedMetric,
+      average_flyability: site.average_flyability,
+      view,
+      sort_by: sortBy,
+      opened_in_new_tab: Boolean(event && (event.button === 1 || event.ctrlKey || event.metaKey)),
+    });
+
     if (event && (event.button === 1 || event.ctrlKey || event.metaKey)) {
       window.open(url, '_blank', 'noopener,noreferrer');
       return;
     }
     navigate(url);
-  }, [navigate, plannerState.selectedMetric]);
+  }, [navigate, plannerState.selectedMetric, sortBy, view]);
 
   const handleLoadMore = useCallback(async () => {
+    trackEvent('trip_plan_more_requested', {
+      visible_count: visibleCount,
+      total_count: totalCount,
+    });
+
     if (visibleCount < allSites.length) {
       setVisibleCount((count) => Math.min(count + PAGE_SIZE, allSites.length));
       return;
@@ -342,11 +395,31 @@ const TripPlannerPage = () => {
       0,
     ) || visibleCount;
     setVisibleCount((count) => Math.min(count + PAGE_SIZE, loadedCount));
-  }, [allSites.length, tripQuery, visibleCount]);
+  }, [allSites.length, totalCount, tripQuery, visibleCount]);
 
   const handleLoadLess = useCallback(() => {
     setVisibleCount((count) => Math.max(PAGE_SIZE, count - PAGE_SIZE));
   }, []);
+
+  const handleViewChange = useCallback((nextView) => {
+    if (nextView !== view) {
+      trackEvent('trip_plan_view_changed', {
+        previous_view: view,
+        view: nextView,
+      });
+    }
+    setView(nextView);
+  }, [view]);
+
+  const handleSortChange = useCallback((nextSort) => {
+    if (nextSort !== sortBy) {
+      trackEvent('trip_plan_sort_changed', {
+        previous_sort: sortBy,
+        sort: nextSort,
+      });
+    }
+    setSortBy(nextSort);
+  }, [sortBy]);
 
   const sortedSites = useMemo(() => {
     const sorted = [...sites];
@@ -387,7 +460,7 @@ const TripPlannerPage = () => {
             <TripPlannerControls
               state={{ ...plannerState, view }}
               setState={setPlannerState}
-              onViewChange={setView}
+              onViewChange={handleViewChange}
               onSubmit={handlePlanTrip}
               loading={loading}
             />
@@ -408,13 +481,13 @@ const TripPlannerPage = () => {
                         <ButtonGroup size="small" variant="outlined">
                           <Button
                             variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
-                            onClick={() => setSortBy('flyability')}
+                            onClick={() => handleSortChange('flyability')}
                           >
                             Best Conditions
                           </Button>
                           <Button
                             variant={sortBy === 'distance' ? 'contained' : 'outlined'}
-                            onClick={() => (userLocation ? setSortBy('distance') : requestLocation())}
+                            onClick={() => (userLocation ? handleSortChange('distance') : requestLocation())}
                           >
                             Closest
                           </Button>
@@ -428,13 +501,13 @@ const TripPlannerPage = () => {
                       <ButtonGroup size="small" variant="outlined">
                         <Button
                           variant={sortBy === 'flyability' ? 'contained' : 'outlined'}
-                          onClick={() => setSortBy('flyability')}
+                          onClick={() => handleSortChange('flyability')}
                         >
                           Best
                         </Button>
                         <Button
                           variant={sortBy === 'distance' ? 'contained' : 'outlined'}
-                          onClick={() => (userLocation ? setSortBy('distance') : requestLocation())}
+                          onClick={() => (userLocation ? handleSortChange('distance') : requestLocation())}
                         >
                           Closest
                         </Button>
@@ -465,6 +538,25 @@ const TripPlannerPage = () => {
                   userLocation={plannerState.distance.enabled ? plannerState.distance.coords : null}
                   loading={loading && sites.length === 0}
                 />
+              )}
+
+              {sites.length > 0 && queryInput && (
+                <Box sx={{ mt: 3 }}>
+                  <QuickFeedback
+                    key={querySignature}
+                    question="Were these trip suggestions useful?"
+                    context={{
+                      surface: 'trip_planner',
+                      start_date: queryInput.startDate,
+                      end_date: queryInput.endDate,
+                      metric: queryInput.metric,
+                      result_count: totalCount,
+                      distance_enabled: queryInput.maxDistanceKm != null,
+                      altitude_enabled: queryInput.altitudeRange != null,
+                      tags_count: queryInput.requiredTags?.length || 0,
+                    }}
+                  />
+                </Box>
               )}
 
               {sites.length > 0 && (sites.length > PAGE_SIZE || hasMore) && (

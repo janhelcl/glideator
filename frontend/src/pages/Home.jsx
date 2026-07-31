@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, useCallback } from 'react';
 import SuspenseDateBoxes from '../components/SuspenseDateBoxes';
 import DateBoxesPlaceholder from '../components/DateBoxesPlaceholder';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -10,6 +10,7 @@ import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { createSitesResource } from '../utils/suspenseResource';
 import { Helmet } from 'react-helmet-async';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
+import { trackEvent } from '../analytics';
 
 // Define metrics outside the component to maintain a stable reference
 const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
@@ -173,6 +174,27 @@ const Home = () => {
     markerRefs.current[siteId] = ref;
   };
 
+  const handleMetricChange = useCallback((metric) => {
+    if (metric !== selectedMetric) {
+      trackEvent('map_metric_changed', {
+        previous_metric: selectedMetric,
+        metric,
+      });
+    }
+    setSelectedMetric(metric);
+  }, [selectedMetric]);
+
+  const handleDateChange = useCallback((date) => {
+    if (date !== selectedDate) {
+      trackEvent('map_date_changed', {
+        previous_date: selectedDate || null,
+        date,
+        metric: selectedMetric,
+      });
+    }
+    setSelectedDate(date);
+  }, [selectedDate, selectedMetric]);
+
   return (
     <div style={{ 
       display: 'flex',
@@ -212,7 +234,7 @@ const Home = () => {
             <MapView
               sites={filteredSites}
               selectedMetric={selectedMetric}
-              setSelectedMetric={setSelectedMetric}
+              setSelectedMetric={handleMetricChange}
               selectedDate={selectedDate}
               metrics={METRICS}
               center={mapState.center}
@@ -231,7 +253,7 @@ const Home = () => {
                 sitesResource={sitesResource}
                 dates={dates}
                 selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
+                setSelectedDate={handleDateChange}
                 center={mapState.center}
                 zoom={mapState.zoom}
                 bounds={mapState.bounds}

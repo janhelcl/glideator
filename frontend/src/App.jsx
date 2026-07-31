@@ -14,10 +14,11 @@ import About from './pages/About';
 import Feedback from './pages/Feedback';
 import RequireAuth from './components/RequireAuth';
 import LoadingSpinner from './components/LoadingSpinner';
+import AnalyticsRouteTracker from './components/AnalyticsRouteTracker';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
-const Details = React.lazy(() => import('./pages/Details'));
+const Details = React.lazy(() => import('./pages/DetailsRoute'));
 const TripPlannerPage = React.lazy(() => import('./pages/TripPlannerPage'));
 
 const RouteFallback = () => (
@@ -31,6 +32,7 @@ const App = () => {
     <AuthProvider>
       <NotificationProvider>
         <Router>
+          <AnalyticsRouteTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/declined" element={<Declined />} />

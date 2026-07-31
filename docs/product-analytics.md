@@ -1,0 +1,104 @@
+# Product analytics
+
+Glideator records a small first-party event stream in the `product_events` table. The goal is to understand whether people reach useful forecasts and recommendations without introducing a third-party analytics SDK.
+
+## Privacy properties
+
+- No IP address, user agent, email address, account ID, or precise coordinates are stored.
+- The frontend sends only `window.location.pathname`, never the URL query string.
+- Property keys that look like coordinates, IP addresses, emails, or user-agent data are removed client-side.
+- Anonymous browser and session IDs are random identifiers stored in `localStorage` and `sessionStorage`.
+- Global Privacy Control and Do Not Track are respected.
+- Set `REACT_APP_ANALYTICS_ENABLED=false` to disable frontend collection entirely.
+
+The ingestion endpoint is `POST /analytics/events`. Payloads and event names are validated, property size is capped, and Redis-backed rate limits protect the endpoint.
+
+## Event catalog
+
+| Event | Meaning | Important properties |
+| --- | --- | --- |
+| `page_view` | A route was displayed | `route` |
+| `map_metric_changed` | The map XC threshold changed | `previous_metric`, `metric` |
+| `map_date_changed` | The map forecast date changed | `previous_date`, `date`, `metric` |
+| `site_detail_viewed` | A site detail route opened | `site_id`, `date`, `metric`, `tab` |
+| `site_date_changed` | The selected site forecast date changed | `site_id`, `previous_date`, `date`, `metric` |
+| `site_metric_changed` | The selected site XC threshold changed | `site_id`, `previous_metric`, `metric`, `date` |
+| `site_tab_changed` | The site detail tab changed | `site_id`, `previous_tab`, `tab` |
+| `trip_plan_submitted` | The user explicitly submitted Trip Planner criteria | dates, metric, enabled filter flags, tag count |
+| `trip_plan_results_viewed` | A distinct Trip Planner query returned | dates, metric, counts, enabled filter flags |
+| `trip_plan_site_opened` | A suggested site was opened | `site_id`, metric, view, sort, flyability |
+| `trip_plan_view_changed` | Trip Planner switched between list and map | `previous_view`, `view` |
+| `trip_plan_sort_changed` | Trip Planner sorting changed | `previous_sort`, `sort` |
+| `trip_plan_more_requested` | More recommendations were requested | visible and total counts |
+| `recommendation_feedback_submitted` | Contextual helpful/not-helpful feedback | `surface`, `rating`, and recommendation context |
+
+## Starter queries
+
+Daily active anonymous visitors:
+
+```sql
+select
+    date_trunc('day', created_at) as day,
+    count(distinct anonymous_id) as visitors
+from product_events
+group by 1
+order by 1 desc;
+```
+
+Trip Planner funnel by day:
+
+```sql
+select
+    date_trunc('day', created_at) as day,
+    count(*) filter (where event_name = 'trip_plan_submitted') as submitted,
+    count(*) filter (where event_name = 'trip_plan_results_viewed') as results_viewed,
+    count(*) filter (where event_name = 'trip_plan_site_opened') as sites_opened
+from product_events
+where event_name in (
+    'trip_plan_submitted',
+    'trip_plan_results_viewed',
+    'trip_plan_site_opened'
+)
+group by 1
+order by 1 desc;
+```
+
+Feedback by surface:
+
+```sql
+select
+    properties ->> 'surface' as surface,
+    properties ->> 'rating' as rating,
+    count(*) as responses
+from product_events
+where event_name = 'recommendation_feedback_submitted'
+group by 1, 2
+order by 1, 2;
+```
+
+Forecast feedback by site and metric:
+
+```sql
+select
+    (properties ->> 'site_id')::integer as site_id,
+    properties ->> 'metric' as metric,
+    count(*) filter (where properties ->> 'rating' = 'helpful') as helpful,
+    count(*) filter (where properties ->> 'rating' = 'not_helpful') as not_helpful
+from product_events
+where event_name = 'recommendation_feedback_submitted'
+  and properties ->> 'surface' = 'site_forecast'
+group by 1, 2
+having count(*) >= 5
+order by not_helpful desc, helpful asc;
+```
+
+## Suggested first dashboard
+
+Start with four panels:
+
+1. Daily active anonymous visitors and sessions.
+2. Map-to-site engagement: site-detail views divided by map page views.
+3. Trip Planner funnel: submitted → results viewed → site opened.
+4. Helpful rate by `surface`, then by site and metric once sample sizes are meaningful.
+
+Treat low-volume slices cautiously. A minimum of five responses is a useful display threshold, not a statistical guarantee.
