@@ -212,15 +212,19 @@ test('login allows adding a recommended site to favorites', async ({ page }) => 
   const favoriteSite = makePredictionSite(1, 'Favorite Ridge');
   const recommendation = makePredictionSite(2, 'Recommendation Ridge');
   let favoriteRequest = null;
+  let recommendationAdded = false;
 
   await mockLoginFlow(page, { favorites: [1] });
   await mockSitesCollection(page, [favoriteSite, recommendation]);
   await page.route('**/api/s2s/recommendations', (route) => json(route, {
-    recommendations: [{ site_id: 2, similarity_score: 0.93 }],
+    recommendations: recommendationAdded
+      ? []
+      : [{ site_id: 2, similarity_score: 0.93 }],
   }));
   await page.route('**/api/users/me/favorites', async (route) => {
     if (route.request().method() === 'POST') {
       favoriteRequest = route.request().postDataJSON();
+      recommendationAdded = true;
       await route.fulfill({ status: 204 });
       return;
     }
@@ -237,7 +241,7 @@ test('login allows adding a recommended site to favorites', async ({ page }) => 
   });
   await addButton.click();
 
-  await expect(addButton).toHaveCount(0);
+  await expect(page.getByText('Recommendation Ridge')).toHaveCount(0);
   expect(favoriteRequest).toEqual({ site_id: 2 });
 });
 
@@ -265,8 +269,12 @@ test('authenticated pilot creates a notification from site details', async ({ pa
 
   await page.goto(`/details/1?date=${futureDate(1)}&metric=XC20`);
   await expect(page.getByRole('heading', { name: 'Raná', level: 1 })).toBeVisible();
-  await page.getByRole('button', { name: 'Create notification' }).click();
+  const notificationButton = page
+    .getByTestId('NotificationsActiveIcon')
+    .locator('xpath=ancestor::button');
+  await notificationButton.click();
 
+  await expect(page).toHaveURL(/\/notifications/);
   await expect(page.getByRole('dialog', { name: 'Create notification' })).toBeVisible();
   await page.getByLabel('Threshold (%)').fill('65');
   await page.getByRole('button', { name: 'Save' }).click();
