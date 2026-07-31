@@ -11,7 +11,7 @@ let inMemoryAnonymousId = null;
 let inMemorySessionId = null;
 
 const createId = (prefix) => {
-  const randomValue = globalThis.crypto?.randomUUID?.()
+  const randomValue = window.crypto?.randomUUID?.()
     || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   return `${prefix}-${randomValue}`;
 };
@@ -31,14 +31,14 @@ const getStoredId = (storage, key, prefix) => {
 
 const getAnonymousId = () => {
   if (!inMemoryAnonymousId) {
-    inMemoryAnonymousId = getStoredId(globalThis.localStorage, ANONYMOUS_ID_KEY, 'anon');
+    inMemoryAnonymousId = getStoredId(window.localStorage, ANONYMOUS_ID_KEY, 'anon');
   }
   return inMemoryAnonymousId;
 };
 
 const getSessionId = () => {
   if (!inMemorySessionId) {
-    inMemorySessionId = getStoredId(globalThis.sessionStorage, SESSION_ID_KEY, 'session');
+    inMemorySessionId = getStoredId(window.sessionStorage, SESSION_ID_KEY, 'session');
   }
   return inMemorySessionId;
 };
@@ -70,9 +70,9 @@ const sanitizeValue = (value, depth = 0) => {
 
 export const analyticsEnabled = () => {
   if (process.env.REACT_APP_ANALYTICS_ENABLED === 'false') return false;
-  if (globalThis.navigator?.globalPrivacyControl === true) return false;
+  if (navigator.globalPrivacyControl === true) return false;
 
-  const doNotTrack = globalThis.navigator?.doNotTrack || globalThis.doNotTrack;
+  const doNotTrack = navigator.doNotTrack || window.doNotTrack;
   return doNotTrack !== '1' && doNotTrack !== 'yes';
 };
 
@@ -83,7 +83,7 @@ export const trackEvent = (eventName, properties = {}) => {
     event_name: eventName,
     anonymous_id: getAnonymousId(),
     session_id: getSessionId(),
-    path: globalThis.location?.pathname || null,
+    path: window.location?.pathname || null,
     properties: sanitizeValue(properties),
   };
 
