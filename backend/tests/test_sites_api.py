@@ -1,7 +1,7 @@
 import os
 from datetime import date, datetime
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -107,7 +107,7 @@ async def test_forecast_endpoint_serializes_forecast_payloads(monkeypatch):
     assert payload["forecast_12"] == {"wind_speed": 4.1}
     assert payload["forecast_15"] == {"wind_speed": 5.0}
     get_forecast.assert_awaited_once_with(
-        pytest.ANY,
+        ANY,
         date(2026, 8, 3),
         50.0,
         14.0,
