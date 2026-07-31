@@ -96,7 +96,7 @@ async def plan_trip_service(
     all_sites = await crud.get_sites(db, skip=0, limit=1000)  # Get all sites with coordinates
 
     if not all_sites:
-        return []
+        return schemas.TripPlanResponse(sites=[], total_count=0, has_more=False)
 
     # --- 2. Pre-process Data into Lookup Maps ---
 
