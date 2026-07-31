@@ -77,7 +77,7 @@ export const analyticsEnabled = () => {
 };
 
 export const trackEvent = (eventName, properties = {}) => {
-  if (!analyticsEnabled()) return Promise.resolve(null);
+  if (!analyticsEnabled() || !apiClient?.post) return Promise.resolve(null);
 
   const payload = {
     event_name: eventName,
@@ -87,7 +87,13 @@ export const trackEvent = (eventName, properties = {}) => {
     properties: sanitizeValue(properties),
   };
 
-  return apiClient.post('/analytics/events', payload, { timeout: 3000 }).catch(() => null);
+  try {
+    return Promise.resolve(
+      apiClient.post('/analytics/events', payload, { timeout: 3000 }),
+    ).catch(() => null);
+  } catch {
+    return Promise.resolve(null);
+  }
 };
 
 export const resetAnalyticsIdsForTests = () => {
