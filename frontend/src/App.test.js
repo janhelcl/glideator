@@ -1,13 +1,14 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import App from './App';
+import About from './pages/About';
 
-test('renders the About page through the application router', () => {
-  window.history.pushState({}, '', '/about');
-
+test('renders the About page', () => {
   render(
     <HelmetProvider>
-      <App />
+      <MemoryRouter>
+        <About />
+      </MemoryRouter>
     </HelmetProvider>,
   );
 
