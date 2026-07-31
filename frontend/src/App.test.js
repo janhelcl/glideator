@@ -3,6 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import About from './pages/About';
 
+jest.mock('./components/ScoreDemo', () => () => <div data-testid="score-demo" />);
+
 test('renders the About page', () => {
   render(
     <HelmetProvider>
