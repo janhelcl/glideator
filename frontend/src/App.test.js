@@ -1,8 +1,19 @@
 import { render, screen } from '@testing-library/react';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('renders the About page through the application router', () => {
+  window.history.pushState({}, '', '/about');
+
+  render(
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>,
+  );
+
+  expect(
+    screen.getByRole('heading', {
+      name: /find the promising days\. verify the details\. make the call yourself\./i,
+    }),
+  ).toBeInTheDocument();
 });
