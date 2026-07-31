@@ -4,8 +4,12 @@ import { MemoryRouter } from 'react-router-dom';
 import NotificationManager from '../NotificationManager';
 import { useNotifications } from '../../context/NotificationContext';
 
+jest.mock('../../api', () => ({
+  fetchSitesList: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ user: null, profile: null }),
+  useAuth: () => ({ user: null, profile: null, favorites: [] }),
 }));
 
 jest.mock('../../context/NotificationContext', () => {
