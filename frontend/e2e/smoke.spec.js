@@ -241,7 +241,11 @@ test('login allows adding a recommended site to favorites', async ({ page }) => 
   });
   await addButton.click();
 
-  await expect(page.getByText('Recommendation Ridge')).toHaveCount(0);
+  await expect(addButton).toHaveCount(0);
+  await expect(page.getByRole('button', {
+    name: 'Remove Recommendation Ridge from favorites',
+    exact: true,
+  })).toBeVisible();
   expect(favoriteRequest).toEqual({ site_id: 2 });
 });
 
@@ -276,7 +280,7 @@ test('authenticated pilot creates a notification from site details', async ({ pa
 
   await expect(page).toHaveURL(/\/notifications/);
   await expect(page.getByRole('dialog', { name: 'Create notification' })).toBeVisible();
-  await page.getByLabel('Threshold (%)').fill('65');
+  await page.getByRole('spinbutton', { name: 'Threshold (%)', exact: true }).fill('65');
   await page.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByText('Notification saved.')).toBeVisible();
