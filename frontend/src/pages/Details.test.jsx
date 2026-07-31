@@ -13,6 +13,11 @@ import {
   fetchSiteResources,
 } from '../api';
 
+jest.mock('@mui/material', () => ({
+  ...jest.requireActual('@mui/material'),
+  useMediaQuery: () => false,
+}));
+
 jest.mock('../api', () => ({
   fetchFlightStats: jest.fn(),
   fetchSiteForecast: jest.fn(),
@@ -83,22 +88,6 @@ const renderDetails = () => {
 };
 
 describe('Details data loading', () => {
-  beforeAll(() => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: jest.fn().mockImplementation((query) => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      })),
-    });
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
 
