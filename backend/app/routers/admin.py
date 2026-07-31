@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -11,7 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .. import crud, models
 from ..celery_client import celery
 from ..database import AsyncSessionLocal
-from ..security import decode_token, is_admin_identity
+from ..security import decode_token, effective_role, is_admin_identity
+from .analytics import ProductEvent
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,11 @@ class AdminOverview(BaseModel):
     forecast_end_date: Optional[str] = None
     resource_sites: Optional[int] = None
     resource_coverage_percent: Optional[float] = None
+    total_users: int = 0
+    new_users_30d: int = 0
+    feedback_count: int = 0
+    visitors_30d: int = 0
+    sessions_30d: int = 0
 
 
 class ForecastRunSummary(BaseModel):
@@ -128,6 +134,101 @@ class AdminResourcePage(BaseModel):
     limit: int
 
 
+class AdminUserRow(BaseModel):
+    user_id: int
+    email: str
+    display_name: Optional[str] = None
+    is_active: bool
+    role: str
+    created_at: datetime
+    favorite_count: int = 0
+    notification_count: int = 0
+    active_push_subscriptions: int = 0
+
+
+class AdminUsersResponse(BaseModel):
+    total_users: int
+    active_users: int
+    new_users_7d: int
+    new_users_30d: int
+    users_with_favorites: int
+    users_with_notifications: int
+    users_with_push: int
+    items: List[AdminUserRow]
+
+
+class AdminFeedbackRow(BaseModel):
+    id: int
+    message: str
+    user_id: Optional[int] = None
+    user_email: Optional[str] = None
+    display_name: Optional[str] = None
+    created_at: datetime
+
+
+class AdminFeedbackResponse(BaseModel):
+    total: int
+    items: List[AdminFeedbackRow]
+
+
+class AnalyticsDailyPoint(BaseModel):
+    day: str
+    visitors: int
+    sessions: int
+    events: int
+
+
+class AnalyticsEventCount(BaseModel):
+    event_name: str
+    events: int
+    visitors: int
+
+
+class AnalyticsPathCount(BaseModel):
+    path: str
+    events: int
+    visitors: int
+
+
+class AnalyticsFunnel(BaseModel):
+    submitted_sessions: int = 0
+    results_sessions: int = 0
+    opened_site_sessions: int = 0
+    results_rate: float = 0
+    site_open_rate: float = 0
+
+
+class AnalyticsFeedbackSurface(BaseModel):
+    surface: str
+    helpful: int = 0
+    not_helpful: int = 0
+    total: int = 0
+    helpful_rate: Optional[float] = None
+
+
+class AnalyticsSiteInteraction(BaseModel):
+    site_id: Optional[int] = None
+    site_name: Optional[str] = None
+    interactions: int
+    visitors: int
+
+
+class AdminAnalyticsResponse(BaseModel):
+    window_days: int
+    total_events: int
+    unique_visitors: int
+    unique_sessions: int
+    map_sessions: int
+    site_detail_sessions: int
+    map_to_site_rate: float
+    daily: List[AnalyticsDailyPoint]
+    event_counts: List[AnalyticsEventCount]
+    top_paths: List[AnalyticsPathCount]
+    trip_planner: AnalyticsFunnel
+    recommendation_feedback: List[AnalyticsFeedbackSurface]
+    top_sites: List[AnalyticsSiteInteraction]
+
+
 class AdminOperation(BaseModel):
     operation: str
     task_id: str
@@ -178,6 +279,12 @@ def _coverage_percent(covered: int, total: int) -> float:
     return round(100 * covered / total, 1)
 
 
+def _rate(numerator: int, denominator: int) -> float:
+    if denominator <= 0:
+        return 0.0
+    return round(100 * numerator / denominator, 1)
+
+
 @router.get("/overview", response_model=AdminOverview)
 async def get_overview(
     _: models.User = Depends(require_admin),
@@ -207,6 +314,29 @@ async def get_overview(
         forecast_end_date = row[3].isoformat() if row[3] else None
 
     resource_sites = await _resource_site_count(db)
+    cutoff_30d = datetime.now(timezone.utc) - timedelta(days=30)
+    total_users = int((await db.execute(select(func.count(models.User.user_id)))).scalar_one() or 0)
+    new_users_30d = int(
+        (
+            await db.execute(
+                select(func.count(models.User.user_id)).where(models.User.created_at >= cutoff_30d)
+            )
+        ).scalar_one()
+        or 0
+    )
+    feedback_count = int(
+        (await db.execute(select(func.count(models.FeedbackSubmission.id)))).scalar_one() or 0
+    )
+    analytics_row = (
+        await db.execute(
+            select(
+                func.count(ProductEvent.event_id),
+                func.count(func.distinct(ProductEvent.anonymous_id)),
+                func.count(func.distinct(ProductEvent.session_id)),
+            ).where(ProductEvent.created_at >= cutoff_30d)
+        )
+    ).one()
+
     return AdminOverview(
         total_sites=total_sites,
         latest_gfs_forecast_at=latest_cycle,
@@ -219,6 +349,350 @@ async def get_overview(
         resource_coverage_percent=(
             _coverage_percent(resource_sites, total_sites) if resource_sites is not None else None
         ),
+        total_users=total_users,
+        new_users_30d=new_users_30d,
+        feedback_count=feedback_count,
+        visitors_30d=int(analytics_row[1] or 0),
+        sessions_30d=int(analytics_row[2] or 0),
+    )
+
+
+@router.get("/users", response_model=AdminUsersResponse)
+async def list_users(
+    limit: int = Query(default=100, ge=1, le=500),
+    _: models.User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    cutoff_7d = now - timedelta(days=7)
+    cutoff_30d = now - timedelta(days=30)
+
+    summary_row = (
+        await db.execute(
+            select(
+                func.count(models.User.user_id),
+                func.count(models.User.user_id).filter(models.User.is_active.is_(True)),
+                func.count(models.User.user_id).filter(models.User.created_at >= cutoff_7d),
+                func.count(models.User.user_id).filter(models.User.created_at >= cutoff_30d),
+            )
+        )
+    ).one()
+    users_with_favorites = int(
+        (
+            await db.execute(select(func.count(func.distinct(models.UserFavorite.user_id))))
+        ).scalar_one()
+        or 0
+    )
+    users_with_notifications = int(
+        (
+            await db.execute(select(func.count(func.distinct(models.UserNotification.user_id))))
+        ).scalar_one()
+        or 0
+    )
+    users_with_push = int(
+        (
+            await db.execute(
+                select(func.count(func.distinct(models.PushSubscription.user_id))).where(
+                    models.PushSubscription.is_active.is_(True)
+                )
+            )
+        ).scalar_one()
+        or 0
+    )
+
+    favorite_counts = (
+        select(
+            models.UserFavorite.user_id.label("user_id"),
+            func.count().label("favorite_count"),
+        )
+        .group_by(models.UserFavorite.user_id)
+        .subquery()
+    )
+    notification_counts = (
+        select(
+            models.UserNotification.user_id.label("user_id"),
+            func.count().label("notification_count"),
+        )
+        .group_by(models.UserNotification.user_id)
+        .subquery()
+    )
+    push_counts = (
+        select(
+            models.PushSubscription.user_id.label("user_id"),
+            func.count().label("push_count"),
+        )
+        .where(models.PushSubscription.is_active.is_(True))
+        .group_by(models.PushSubscription.user_id)
+        .subquery()
+    )
+
+    result = await db.execute(
+        select(
+            models.User,
+            models.UserProfile.display_name,
+            func.coalesce(favorite_counts.c.favorite_count, 0),
+            func.coalesce(notification_counts.c.notification_count, 0),
+            func.coalesce(push_counts.c.push_count, 0),
+        )
+        .outerjoin(models.UserProfile, models.UserProfile.user_id == models.User.user_id)
+        .outerjoin(favorite_counts, favorite_counts.c.user_id == models.User.user_id)
+        .outerjoin(notification_counts, notification_counts.c.user_id == models.User.user_id)
+        .outerjoin(push_counts, push_counts.c.user_id == models.User.user_id)
+        .order_by(models.User.created_at.desc())
+        .limit(limit)
+    )
+
+    items = [
+        AdminUserRow(
+            user_id=user.user_id,
+            email=user.email,
+            display_name=display_name,
+            is_active=user.is_active,
+            role=effective_role(email=user.email, role=user.role),
+            created_at=user.created_at,
+            favorite_count=int(favorite_count or 0),
+            notification_count=int(notification_count or 0),
+            active_push_subscriptions=int(push_count or 0),
+        )
+        for user, display_name, favorite_count, notification_count, push_count in result.all()
+    ]
+
+    return AdminUsersResponse(
+        total_users=int(summary_row[0] or 0),
+        active_users=int(summary_row[1] or 0),
+        new_users_7d=int(summary_row[2] or 0),
+        new_users_30d=int(summary_row[3] or 0),
+        users_with_favorites=users_with_favorites,
+        users_with_notifications=users_with_notifications,
+        users_with_push=users_with_push,
+        items=items,
+    )
+
+
+@router.get("/feedback", response_model=AdminFeedbackResponse)
+async def list_feedback(
+    limit: int = Query(default=100, ge=1, le=500),
+    _: models.User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    total = int(
+        (await db.execute(select(func.count(models.FeedbackSubmission.id)))).scalar_one() or 0
+    )
+    result = await db.execute(
+        select(
+            models.FeedbackSubmission,
+            models.User.email,
+            models.UserProfile.display_name,
+        )
+        .outerjoin(models.User, models.User.user_id == models.FeedbackSubmission.user_id)
+        .outerjoin(models.UserProfile, models.UserProfile.user_id == models.FeedbackSubmission.user_id)
+        .order_by(models.FeedbackSubmission.created_at.desc())
+        .limit(limit)
+    )
+    return AdminFeedbackResponse(
+        total=total,
+        items=[
+            AdminFeedbackRow(
+                id=feedback.id,
+                message=feedback.message,
+                user_id=feedback.user_id,
+                user_email=email,
+                display_name=display_name,
+                created_at=feedback.created_at,
+            )
+            for feedback, email, display_name in result.all()
+        ],
+    )
+
+
+@router.get("/analytics", response_model=AdminAnalyticsResponse)
+async def get_analytics(
+    days: int = Query(default=30, ge=1, le=365),
+    _: models.User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    summary = (
+        await db.execute(
+            select(
+                func.count(ProductEvent.event_id),
+                func.count(func.distinct(ProductEvent.anonymous_id)),
+                func.count(func.distinct(ProductEvent.session_id)),
+            ).where(ProductEvent.created_at >= cutoff)
+        )
+    ).one()
+
+    daily_result = await db.execute(
+        text(
+            """
+            SELECT
+                date_trunc('day', created_at)::date AS day,
+                COUNT(DISTINCT anonymous_id) AS visitors,
+                COUNT(DISTINCT session_id) AS sessions,
+                COUNT(*) AS events
+            FROM product_events
+            WHERE created_at >= :cutoff
+            GROUP BY 1
+            ORDER BY 1
+            """
+        ),
+        {"cutoff": cutoff},
+    )
+    daily = [
+        AnalyticsDailyPoint(
+            day=row["day"].isoformat(),
+            visitors=int(row["visitors"] or 0),
+            sessions=int(row["sessions"] or 0),
+            events=int(row["events"] or 0),
+        )
+        for row in daily_result.mappings().all()
+    ]
+
+    event_result = await db.execute(
+        text(
+            """
+            SELECT
+                event_name,
+                COUNT(*) AS events,
+                COUNT(DISTINCT anonymous_id) AS visitors
+            FROM product_events
+            WHERE created_at >= :cutoff
+            GROUP BY event_name
+            ORDER BY events DESC, event_name
+            """
+        ),
+        {"cutoff": cutoff},
+    )
+    event_counts = [AnalyticsEventCount(**dict(row)) for row in event_result.mappings().all()]
+
+    path_result = await db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(NULLIF(path, ''), '(unknown)') AS path,
+                COUNT(*) AS events,
+                COUNT(DISTINCT anonymous_id) AS visitors
+            FROM product_events
+            WHERE created_at >= :cutoff
+            GROUP BY 1
+            ORDER BY events DESC, path
+            LIMIT 20
+            """
+        ),
+        {"cutoff": cutoff},
+    )
+    top_paths = [AnalyticsPathCount(**dict(row)) for row in path_result.mappings().all()]
+
+    engagement_row = (
+        await db.execute(
+            text(
+                """
+                SELECT
+                    COUNT(DISTINCT session_id) FILTER (
+                        WHERE event_name = 'page_view' AND path = '/'
+                    ) AS map_sessions,
+                    COUNT(DISTINCT session_id) FILTER (
+                        WHERE event_name = 'site_detail_viewed'
+                    ) AS site_detail_sessions,
+                    COUNT(DISTINCT session_id) FILTER (
+                        WHERE event_name = 'trip_plan_submitted'
+                    ) AS submitted_sessions,
+                    COUNT(DISTINCT session_id) FILTER (
+                        WHERE event_name = 'trip_plan_results_viewed'
+                    ) AS results_sessions,
+                    COUNT(DISTINCT session_id) FILTER (
+                        WHERE event_name = 'trip_plan_site_opened'
+                    ) AS opened_site_sessions
+                FROM product_events
+                WHERE created_at >= :cutoff
+                """
+            ),
+            {"cutoff": cutoff},
+        )
+    ).mappings().one()
+    map_sessions = int(engagement_row["map_sessions"] or 0)
+    site_detail_sessions = int(engagement_row["site_detail_sessions"] or 0)
+    submitted_sessions = int(engagement_row["submitted_sessions"] or 0)
+    results_sessions = int(engagement_row["results_sessions"] or 0)
+    opened_site_sessions = int(engagement_row["opened_site_sessions"] or 0)
+
+    feedback_result = await db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(NULLIF(properties ->> 'surface', ''), '(unknown)') AS surface,
+                COUNT(*) FILTER (WHERE properties ->> 'rating' = 'helpful') AS helpful,
+                COUNT(*) FILTER (WHERE properties ->> 'rating' = 'not_helpful') AS not_helpful,
+                COUNT(*) AS total
+            FROM product_events
+            WHERE created_at >= :cutoff
+              AND event_name = 'recommendation_feedback_submitted'
+            GROUP BY 1
+            ORDER BY total DESC, surface
+            """
+        ),
+        {"cutoff": cutoff},
+    )
+    recommendation_feedback = []
+    for row in feedback_result.mappings().all():
+        helpful = int(row["helpful"] or 0)
+        total = int(row["total"] or 0)
+        recommendation_feedback.append(
+            AnalyticsFeedbackSurface(
+                surface=row["surface"],
+                helpful=helpful,
+                not_helpful=int(row["not_helpful"] or 0),
+                total=total,
+                helpful_rate=_rate(helpful, total) if total else None,
+            )
+        )
+
+    top_sites_result = await db.execute(
+        text(
+            """
+            SELECT
+                NULLIF(e.properties ->> 'site_id', '')::integer AS site_id,
+                MAX(s.name) AS site_name,
+                COUNT(*) AS interactions,
+                COUNT(DISTINCT e.anonymous_id) AS visitors
+            FROM product_events e
+            LEFT JOIN sites s
+              ON s.site_id = NULLIF(e.properties ->> 'site_id', '')::integer
+            WHERE e.created_at >= :cutoff
+              AND e.event_name IN ('site_detail_viewed', 'trip_plan_site_opened')
+              AND NULLIF(e.properties ->> 'site_id', '') IS NOT NULL
+            GROUP BY 1
+            ORDER BY interactions DESC, site_id
+            LIMIT 15
+            """
+        ),
+        {"cutoff": cutoff},
+    )
+    top_sites = [
+        AnalyticsSiteInteraction(**dict(row)) for row in top_sites_result.mappings().all()
+    ]
+
+    return AdminAnalyticsResponse(
+        window_days=days,
+        total_events=int(summary[0] or 0),
+        unique_visitors=int(summary[1] or 0),
+        unique_sessions=int(summary[2] or 0),
+        map_sessions=map_sessions,
+        site_detail_sessions=site_detail_sessions,
+        map_to_site_rate=_rate(site_detail_sessions, map_sessions),
+        daily=daily,
+        event_counts=event_counts,
+        top_paths=top_paths,
+        trip_planner=AnalyticsFunnel(
+            submitted_sessions=submitted_sessions,
+            results_sessions=results_sessions,
+            opened_site_sessions=opened_site_sessions,
+            results_rate=_rate(results_sessions, submitted_sessions),
+            site_open_rate=_rate(opened_site_sessions, results_sessions),
+        ),
+        recommendation_feedback=recommendation_feedback,
+        top_sites=top_sites,
     )
 
 
