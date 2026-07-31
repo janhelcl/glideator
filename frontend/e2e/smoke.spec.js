@@ -38,6 +38,12 @@ const makePlannedSite = (siteId, name) => ({
   ],
 });
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('disclaimerAccepted', 'true');
+  });
+});
+
 async function mockSitesCollection(page, sites) {
   await page.route('**/api/sites/**', async (route) => {
     const { pathname } = new URL(route.request().url());
@@ -78,11 +84,24 @@ async function mockDetails(page, siteId, name) {
 
 async function mockLoginFlow(page, { favorites = [1] } = {}) {
   await mockLoggedOutSession(page);
+  let authenticated = false;
 
-  await page.route('**/api/auth/login', (route) => json(route, {
-    access_token: 'e2e-access-token',
-    token_type: 'bearer',
-  }));
+  await page.route('**/api/auth/refresh', (route) => {
+    if (authenticated) {
+      return json(route, {
+        access_token: 'e2e-refreshed-access-token',
+        token_type: 'bearer',
+      });
+    }
+    return json(route, { detail: 'No active session' }, 401);
+  });
+  await page.route('**/api/auth/login', (route) => {
+    authenticated = true;
+    return json(route, {
+      access_token: 'e2e-access-token',
+      token_type: 'bearer',
+    });
+  });
   await page.route('**/api/auth/me', (route) => json(route, {
     user_id: 7,
     email: 'pilot@example.com',
