@@ -17,11 +17,11 @@ def _clear_site_resources_json_cache():
 
 @pytest.mark.asyncio
 async def test_get_site_resources_no_extraction_run():
-    """When no extraction run exists, return empty payload."""
+    """When neither preferred nor fallback extraction run exists, return an empty payload."""
     db = AsyncMock()
-    first_result = MagicMock()
-    first_result.mappings.return_value.first.return_value = None
-    db.execute = AsyncMock(return_value=first_result)
+    empty_result = MagicMock()
+    empty_result.mappings.return_value.first.return_value = None
+    db.execute = AsyncMock(return_value=empty_result)
 
     out = await crud.get_site_resources(db, 42)
 
@@ -31,7 +31,7 @@ async def test_get_site_resources_no_extraction_run():
     assert out.local_resources == []
     assert out.webcam_urls == []
     assert out.meteostation_urls == []
-    db.execute.assert_awaited_once()
+    assert db.execute.await_count == 2
 
 
 @pytest.mark.asyncio

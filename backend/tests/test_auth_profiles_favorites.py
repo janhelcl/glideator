@@ -11,6 +11,8 @@ os.environ.setdefault("RATE_LIMIT_LOGIN_ATTEMPTS", "100")
 os.environ.setdefault("RATE_LIMIT_REGISTER_ATTEMPTS", "100")
 
 from app.main import app
+from app.database import AsyncSessionLocal
+from app.models import Site
 from app.routers import auth as auth_router
 
 
@@ -98,6 +100,21 @@ async def test_register_rate_limit(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_profiles_and_favorites():
+    site_id = uuid.uuid4().int % 1_000_000_000
+    async with AsyncSessionLocal() as db:
+        db.add(
+            Site(
+                site_id=site_id,
+                name=f"CI test site {uuid.uuid4().hex}",
+                latitude=50.0,
+                longitude=14.0,
+                altitude=300,
+                lat_gfs=50.0,
+                lon_gfs=14.0,
+            )
+        )
+        await db.commit()
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # register + login
         email = f"t2+{uuid.uuid4().hex[:8]}@example.com"
@@ -124,16 +141,18 @@ async def test_profiles_and_favorites():
         assert r.status_code == 200
         assert r.json() == []
 
-        # add favorite (assumes site_id 1 exists in dev DB; if not, just ensure endpoint works)
-        await ac.post("/users/me/favorites", headers=auth, json={"site_id": 1})
+        # add favorite using a site created by this test
+        r = await ac.post("/users/me/favorites", headers=auth, json={"site_id": site_id})
+        assert r.status_code == 200
         r = await ac.get("/users/me/favorites", headers=auth)
         assert r.status_code == 200
-        assert 1 in r.json()
+        assert site_id in r.json()
 
         # remove favorite
-        await ac.delete("/users/me/favorites/1", headers=auth)
+        r = await ac.delete(f"/users/me/favorites/{site_id}", headers=auth)
+        assert r.status_code == 200
         r = await ac.get("/users/me/favorites", headers=auth)
         assert r.status_code == 200
-        assert 1 not in r.json()
+        assert site_id not in r.json()
 
 

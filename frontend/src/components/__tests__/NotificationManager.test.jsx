@@ -1,10 +1,15 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import NotificationManager from '../NotificationManager';
 import { useNotifications } from '../../context/NotificationContext';
 
+jest.mock('../../api', () => ({
+  fetchSitesList: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ user: null, profile: null }),
+  useAuth: () => ({ user: null, profile: null, favorites: [] }),
 }));
 
 jest.mock('../../context/NotificationContext', () => {
@@ -38,7 +43,11 @@ describe('NotificationManager', () => {
       clearError: jest.fn(),
     });
 
-    render(<NotificationManager />);
+    render(
+      <MemoryRouter>
+        <NotificationManager />
+      </MemoryRouter>,
+    );
 
     expect(
       screen.getByText(/push notifications are not supported in this browser/i),

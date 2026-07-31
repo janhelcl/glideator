@@ -1,8 +1,22 @@
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import { MemoryRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
+import About from './pages/About';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+jest.mock('./components/ScoreDemo', () => () => <div data-testid="score-demo" />);
+
+test('renders the About page', () => {
+  render(
+    <HelmetProvider>
+      <MemoryRouter>
+        <About />
+      </MemoryRouter>
+    </HelmetProvider>,
+  );
+
+  expect(
+    screen.getByRole('heading', {
+      name: /find the promising days\. verify the details\. make the call yourself\./i,
+    }),
+  ).toBeInTheDocument();
 });
