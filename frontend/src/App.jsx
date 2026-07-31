@@ -18,7 +18,7 @@ import AnalyticsRouteTracker from './components/AnalyticsRouteTracker';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
-const Details = React.lazy(() => import('./pages/Details'));
+const Details = React.lazy(() => import('./pages/DetailsRoute'));
 const TripPlannerPage = React.lazy(() => import('./pages/TripPlannerPage'));
 
 const RouteFallback = () => (
