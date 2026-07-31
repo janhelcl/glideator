@@ -46,6 +46,11 @@ import {
   triggerAdminForecastCheck,
   updateAdminSite,
 } from '../adminApi';
+import {
+  AdminAnalyticsPanel,
+  AdminFeedbackPanel,
+  AdminUsersPanel,
+} from '../components/admin/AdminInsightPanels';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -127,7 +132,7 @@ const Admin = () => {
   }, [loadPrimaryData]);
 
   useEffect(() => {
-    if (tab === 3) {
+    if (tab === 6) {
       loadResources();
     }
   }, [tab, loadResources]);
@@ -135,7 +140,7 @@ const Admin = () => {
   const handleRefresh = async () => {
     setNotice('');
     await loadPrimaryData();
-    if (tab === 3) {
+    if (tab === 6) {
       await loadResources();
     }
   };
@@ -215,7 +220,7 @@ const Admin = () => {
             </Typography>
           </Stack>
           <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            Forecast operations, site data and Ground Crew resources.
+            Product insight, user feedback, forecasts, site data and Ground Crew resources.
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
@@ -250,6 +255,9 @@ const Admin = () => {
           sx={{ px: 1, borderBottom: 1, borderColor: 'divider' }}
         >
           <Tab label="Overview" />
+          <Tab label="Analytics" />
+          <Tab label="Users" />
+          <Tab label="Feedback" />
           <Tab label="Forecast runs" />
           <Tab label="Sites" />
           <Tab label="Resources" />
@@ -275,6 +283,20 @@ const Admin = () => {
                 </Grid>
                 <Grid item xs={12} sm={6} lg={3}>
                   <MetricCard
+                    label="Registered users"
+                    value={overview.total_users}
+                    detail={`${overview.new_users_30d} joined in 30 days`}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    label="Anonymous visitors"
+                    value={overview.visitors_30d}
+                    detail={`${overview.sessions_30d} sessions in 30 days`}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} lg={3}>
+                  <MetricCard
                     label="Forecast horizon"
                     value={overview.forecast_start_date || '—'}
                     detail={overview.forecast_end_date ? `through ${overview.forecast_end_date}` : null}
@@ -287,6 +309,13 @@ const Admin = () => {
                     detail={overview.resource_coverage_percent == null
                       ? 'Ground Crew data unavailable'
                       : `${overview.resource_coverage_percent}% coverage`}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    label="Written feedback"
+                    value={overview.feedback_count}
+                    detail="Authenticated submissions"
                   />
                 </Grid>
               </Grid>
@@ -302,7 +331,11 @@ const Admin = () => {
             </Stack>
           )}
 
-          {tab === 1 && (
+          {tab === 1 && <AdminAnalyticsPanel />}
+          {tab === 2 && <AdminUsersPanel />}
+          {tab === 3 && <AdminFeedbackPanel />}
+
+          {tab === 4 && (
             <TableContainer>
               <Table size="small">
                 <TableHead>
@@ -344,7 +377,7 @@ const Admin = () => {
             </TableContainer>
           )}
 
-          {tab === 2 && (
+          {tab === 5 && (
             <TableContainer sx={{ maxHeight: '65vh' }}>
               <Table stickyHeader size="small">
                 <TableHead>
@@ -394,7 +427,7 @@ const Admin = () => {
             </TableContainer>
           )}
 
-          {tab === 3 && (
+          {tab === 6 && (
             <Stack spacing={2}>
               <FormControlLabel
                 control={(
