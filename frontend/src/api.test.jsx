@@ -1,21 +1,25 @@
-const mockApiClient = jest.fn();
-mockApiClient.get = jest.fn();
-mockApiClient.post = jest.fn();
-mockApiClient.patch = jest.fn();
-mockApiClient.delete = jest.fn();
-mockApiClient.interceptors = {
-  request: { use: jest.fn() },
-  response: { use: jest.fn() },
-};
+jest.mock('axios', () => {
+  const client = jest.fn();
+  client.get = jest.fn();
+  client.post = jest.fn();
+  client.patch = jest.fn();
+  client.delete = jest.fn();
+  client.interceptors = {
+    request: { use: jest.fn() },
+    response: { use: jest.fn() },
+  };
 
-jest.mock('axios', () => ({
-  __esModule: true,
-  default: {
-    create: jest.fn(() => mockApiClient),
-    isCancel: jest.fn(() => false),
-  },
-}));
+  return {
+    __esModule: true,
+    default: {
+      create: jest.fn(() => client),
+      isCancel: jest.fn(() => false),
+      __mockClient: client,
+    },
+  };
+});
 
+import axios from 'axios';
 import {
   fetchSiteForecast,
   getAccessToken,
@@ -25,6 +29,7 @@ import {
   setAccessToken,
 } from './api';
 
+const mockApiClient = axios.__mockClient;
 const requestInterceptor = mockApiClient.interceptors.request.use.mock.calls[0][0];
 const responseErrorInterceptor = mockApiClient.interceptors.response.use.mock.calls[0][1];
 
