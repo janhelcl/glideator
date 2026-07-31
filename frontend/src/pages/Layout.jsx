@@ -19,6 +19,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CloseIcon from '@mui/icons-material/Close';
 import ExploreIcon from '@mui/icons-material/Explore';
 import HomeIcon from '@mui/icons-material/Home';
@@ -32,11 +33,10 @@ import SearchBar from '../components/SearchBar';
 import DisclaimerModal from '../components/DisclaimerModal';
 import NotificationDropdown from '../components/NotificationDropdown';
 import useDisclaimer from '../hooks/useDisclaimer';
-import { fetchSitesList } from '../api';  // Reverted back to fetchSitesList
+import { fetchSitesList } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 const Layout = () => {
-  // This state and function will be passed down to components that need it
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
   const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
@@ -47,7 +47,6 @@ const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Update these values - make header taller on mobile for better touch targets
   const headerHeight = isMobile ? '56px' : '64px';
   const footerHeight = '30px';
 
@@ -99,11 +98,10 @@ const Layout = () => {
   };
 
   const displayLabel = profile?.display_name || user?.email;
+  const isAdmin = user?.role === 'admin';
 
-  // Mobile drawer content
   const mobileDrawerContent = (
     <Box sx={{ width: 280 }}>
-      {/* Header with logo and close button */}
       <Box
         sx={{
           display: 'flex',
@@ -126,27 +124,25 @@ const Layout = () => {
         </IconButton>
       </Box>
 
-      {/* Search Bar */}
       <Box sx={{ px: 2, py: 1.5 }}>
-        <SearchBar 
+        <SearchBar
           sites={sites}
           onSiteSelect={(site) => {
             setSelectedSite(site);
             setMobileDrawerOpen(false);
           }}
-          mobile={true}
+          mobile
         />
       </Box>
 
       <Divider />
 
-      {/* Main Navigation */}
       <List sx={{ py: 1 }}>
         <ListItemButton onClick={() => handleMobileMenuClick('/')}>
           <ListItemIcon><HomeIcon /></ListItemIcon>
           <ListItemText primary="Home" />
         </ListItemButton>
-        
+
         <ListItemButton onClick={() => handleMobileMenuClick('/trip-planner')}>
           <ListItemIcon><ExploreIcon /></ListItemIcon>
           <ListItemText primary="Plan a Trip" />
@@ -160,7 +156,6 @@ const Layout = () => {
 
       <Divider />
 
-      {/* User Section */}
       <List sx={{ py: 1 }}>
         {isAuthenticated ? (
           <>
@@ -172,6 +167,12 @@ const Layout = () => {
               <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary="Profile" />
             </ListItemButton>
+            {isAdmin && (
+              <ListItemButton onClick={() => handleMobileMenuClick('/admin')}>
+                <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
+                <ListItemText primary="Admin cockpit" />
+              </ListItemButton>
+            )}
           </>
         ) : (
           <>
@@ -187,7 +188,6 @@ const Layout = () => {
         )}
       </List>
 
-      {/* Logout at bottom */}
       {isAuthenticated && (
         <>
           <Divider />
@@ -204,14 +204,12 @@ const Layout = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      {/* Disclaimer Modal */}
-      <DisclaimerModal 
-        open={showDisclaimer} 
-        onAccept={handleAccept} 
-        onDecline={handleDecline} 
+      <DisclaimerModal
+        open={showDisclaimer}
+        onAccept={handleAccept}
+        onDecline={handleDecline}
       />
 
-      {/* Mobile Navigation Drawer */}
       <Drawer
         anchor="left"
         open={mobileDrawerOpen}
@@ -220,18 +218,16 @@ const Layout = () => {
       >
         {mobileDrawerContent}
       </Drawer>
-      
-      {/* Top Navigation Bar */}
+
       <AppBar
         position="static"
         sx={{
           backgroundColor: '#424242',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (themeValue) => themeValue.zIndex.drawer + 1,
           height: headerHeight,
         }}
       >
         <Toolbar>
-          {/* Mobile: Hamburger menu */}
           {isMobile && (
             <IconButton
               color="inherit"
@@ -242,8 +238,7 @@ const Layout = () => {
               <MenuIcon />
             </IconButton>
           )}
-          
-          {/* Logo - links to home */}
+
           <Box
             component={RouterLink}
             to="/"
@@ -269,11 +264,10 @@ const Layout = () => {
               </Typography>
             )}
           </Box>
-          
-          {/* Desktop: Search bar */}
+
           {!isMobile && (
             <Box sx={{ ml: 3, flexGrow: 1, maxWidth: 400 }}>
-              <SearchBar 
+              <SearchBar
                 sites={sites}
                 onSiteSelect={setSelectedSite}
               />
@@ -282,9 +276,7 @@ const Layout = () => {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* Right side icons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {/* Desktop: Plan a Trip */}
             {!isMobile && (
               <Tooltip title="Plan a Trip">
                 <IconButton
@@ -297,7 +289,6 @@ const Layout = () => {
               </Tooltip>
             )}
 
-            {/* Desktop: How It Works */}
             {!isMobile && (
               <Tooltip title="How It Works">
                 <IconButton
@@ -310,7 +301,6 @@ const Layout = () => {
               </Tooltip>
             )}
 
-            {/* Desktop: Favorites (authenticated only) */}
             {!isMobile && isAuthenticated && (
               <Tooltip title="Favorites">
                 <IconButton
@@ -323,10 +313,8 @@ const Layout = () => {
               </Tooltip>
             )}
 
-            {/* Notifications - always visible */}
             <NotificationDropdown iconColor="inherit" />
 
-            {/* Profile menu */}
             {isAuthenticated ? (
               <>
                 <Tooltip title="Account">
@@ -347,6 +335,12 @@ const Layout = () => {
                     </Typography>
                   </MenuItem>
                   <Divider />
+                  {isAdmin && (
+                    <MenuItem component={RouterLink} to="/admin" onClick={handleMenuClose}>
+                      <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+                      Admin cockpit
+                    </MenuItem>
+                  )}
                   <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
                     <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
                     Profile
@@ -358,7 +352,6 @@ const Layout = () => {
                 </Menu>
               </>
             ) : (
-              /* Not authenticated - show login icon on desktop */
               !isMobile && (
                 <Tooltip title="Log In">
                   <IconButton
@@ -375,7 +368,6 @@ const Layout = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content */}
       <Box
         component="main"
         sx={{
@@ -384,21 +376,18 @@ const Layout = () => {
           overflow: 'auto',
           backgroundColor: '#f5f5f5',
           padding: 0,
-          // Ensure proper touch scrolling on mobile
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* This is where child routes will be rendered */}
         <Outlet context={{ selectedSite, setSelectedSite }} />
       </Box>
 
-      {/* Bottom Footer Bar */}
       <AppBar
         position="static"
         sx={{
           backgroundColor: '#424242',
           height: footerHeight,
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (themeValue) => themeValue.zIndex.drawer + 1,
         }}
       >
         <Toolbar
