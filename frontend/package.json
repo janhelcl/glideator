@@ -47,6 +47,14 @@
   "jest": {
     "moduleNameMapper": {
       "^axios$": "<rootDir>/node_modules/axios/dist/node/axios.cjs"
+    },
+    "coverageThreshold": {
+      "global": {
+        "branches": 14,
+        "functions": 10,
+        "lines": 14,
+        "statements": 14
+      }
     }
   },
   "browserslist": {
