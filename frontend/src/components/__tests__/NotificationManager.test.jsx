@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import NotificationManager from '../NotificationManager';
 import { useNotifications } from '../../context/NotificationContext';
 
@@ -38,7 +39,11 @@ describe('NotificationManager', () => {
       clearError: jest.fn(),
     });
 
-    render(<NotificationManager />);
+    render(
+      <MemoryRouter>
+        <NotificationManager />
+      </MemoryRouter>,
+    );
 
     expect(
       screen.getByText(/push notifications are not supported in this browser/i),
