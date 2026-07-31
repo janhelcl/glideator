@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 
@@ -11,13 +11,24 @@ import { useAuth } from '../context/AuthContext';
 
 const NotificationsPage = () => {
   const { profile, user } = useAuth();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultMetric = profile?.preferred_metric || 'XC0';
   const identityLabel = profile?.display_name || user?.email || undefined;
+  const setupRequested = Boolean(location.state?.notificationSetup);
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') || (setupRequested ? 'settings' : 'history'),
+  );
 
-  const activeTab = searchParams.get('tab') || 'history';
+  useEffect(() => {
+    if (setupRequested) {
+      setActiveTab('settings');
+    }
+  }, [setupRequested]);
 
   const handleTabChange = (event, newValue) => {
+    void event;
+    setActiveTab(newValue);
     setSearchParams({ tab: newValue });
   };
 
