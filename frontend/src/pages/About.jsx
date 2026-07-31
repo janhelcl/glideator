@@ -232,7 +232,7 @@ const About = () => {
                 icon={<PlaceIcon />}
                 title="Inspect the evidence"
                 description="Open any site to dig into hourly forecasts, flight-quality distributions, seasonal patterns, and similar historical days with real XContest flights."
-                to="/details/133?tab=activity"
+                to="/details/133?tab=forecast"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
