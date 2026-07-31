@@ -128,11 +128,11 @@ jobs:
           CI: "false"
         run: npm run build:e2e
 
-      - name: Install Playwright tooling
-        run: npm install --no-save --no-package-lock @playwright/test@1.54.1 serve@14.2.4
+      - name: Install isolated Playwright tooling
+        run: npm install --prefix e2e --no-package-lock
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: cd e2e && npx playwright install --with-deps chromium
 
       - name: Run Playwright smoke tests
         env:
@@ -145,7 +145,7 @@ jobs:
         with:
           name: playwright-report
           path: |
-            frontend/playwright-report
-            frontend/test-results
+            frontend/e2e/playwright-report
+            frontend/e2e/test-results
           if-no-files-found: ignore
           retention-days: 7
