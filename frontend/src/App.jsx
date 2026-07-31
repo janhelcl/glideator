@@ -14,6 +14,7 @@ import About from './pages/About';
 import Feedback from './pages/Feedback';
 import RequireAuth from './components/RequireAuth';
 import LoadingSpinner from './components/LoadingSpinner';
+import AnalyticsRouteTracker from './components/AnalyticsRouteTracker';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
@@ -31,6 +32,7 @@ const App = () => {
     <AuthProvider>
       <NotificationProvider>
         <Router>
+          <AnalyticsRouteTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/declined" element={<Declined />} />
