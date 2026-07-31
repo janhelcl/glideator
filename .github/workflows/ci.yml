@@ -123,16 +123,16 @@ jobs:
       - name: Install application dependencies
         run: npm ci
 
+      - name: Build frontend for browser tests
+        env:
+          CI: "false"
+        run: npm run build:e2e
+
       - name: Install Playwright tooling
         run: npm install --no-save --no-package-lock @playwright/test@1.54.1 serve@14.2.4
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-
-      - name: Build frontend for browser tests
-        env:
-          CI: "false"
-        run: npm run build:e2e
 
       - name: Run Playwright smoke tests
         env:
