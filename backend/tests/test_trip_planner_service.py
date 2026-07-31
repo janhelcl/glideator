@@ -1,7 +1,7 @@
 import calendar
 import datetime
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 
 import pytest
 
@@ -93,7 +93,7 @@ async def test_plan_trip_prefers_forecasts_then_falls_back_and_ranks(monkeypatch
     ]
     assert [day.probability for day in response.sites[1].daily_probabilities] == [0.9, 0.3]
     get_predictions.assert_awaited_once_with(
-        pytest.ANY,
+        ANY,
         start_date=start_date,
         end_date=end_date,
         metric=metric,
@@ -141,7 +141,7 @@ async def test_plan_trip_applies_tags_altitude_and_distance_together(monkeypatch
     assert response.has_more is False
     assert response.sites[0].site_name == "Matching Site"
     assert response.sites[0].distance_km == pytest.approx(11.1, abs=0.1)
-    get_tags.assert_awaited_once_with(pytest.ANY, [1, 2, 3, 4])
+    get_tags.assert_awaited_once_with(ANY, [1, 2, 3, 4])
 
 
 @pytest.mark.asyncio
