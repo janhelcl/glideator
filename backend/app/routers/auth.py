@@ -12,6 +12,7 @@ from ..security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    effective_role,
     get_access_token_exp_minutes,
     get_refresh_token_exp_days,
     is_cookie_secure,
@@ -139,7 +140,12 @@ async def me(authorization: Optional[str] = Header(default=None), db: AsyncSessi
     user = await db.get(models.User, user_id)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
-    return user
+    return schemas.UserOut(
+        user_id=user.user_id,
+        email=user.email,
+        is_active=user.is_active,
+        role=effective_role(email=user.email, role=user.role),
+    )
 
 
 @router.post("/refresh", response_model=schemas.TokenOut)
