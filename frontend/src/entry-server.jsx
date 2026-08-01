@@ -1,24 +1,24 @@
-const React = require('react');
-const { PassThrough } = require('stream');
-const { renderToPipeableStream } = require('react-dom/server');
-const { StaticRouter } = require('react-router-dom/server');
-const {
+import React from 'react';
+import { PassThrough } from 'stream';
+import { renderToPipeableStream } from 'react-dom/server';
+import { StaticRouter } from 'react-router-dom/server';
+import {
   dehydrate,
   HydrationBoundary,
   QueryClientProvider,
-} = require('@tanstack/react-query');
-const { HelmetProvider } = require('react-helmet-async');
+} from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 
-const api = require('./api');
-const { AppContent, AppProviders } = require('./App.jsx');
-const { createQueryClient } = require('./queryClient');
+import api, { fetchSiteInfo, fetchSitePredictions, fetchSites } from './api';
+import { AppContent, AppProviders } from './App.jsx';
+import { createQueryClient } from './queryClient';
 
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || 'https://www.parra-glideator.com';
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://glideator-web.onrender.com';
 const SSR_TIMEOUT_MS = Number(process.env.SSR_TIMEOUT_MS || 10000);
 
-api.default.defaults.baseURL = BACKEND_API_URL;
-api.default.defaults.withCredentials = false;
+api.defaults.baseURL = BACKEND_API_URL;
+api.defaults.withCredentials = false;
 
 const createServerWindow = (url) => ({
   location: {
@@ -97,7 +97,7 @@ const prefetchPageData = async (url, queryClient) => {
   if (url.pathname === '/') {
     tasks.push(queryClient.prefetchQuery({
       queryKey: ['sites', 'map'],
-      queryFn: () => api.fetchSites(null, null, 1000),
+      queryFn: () => fetchSites(null, null, 1000),
     }));
   }
 
@@ -108,11 +108,11 @@ const prefetchPageData = async (url, queryClient) => {
     tasks.push(
       queryClient.prefetchQuery({
         queryKey: ['site', numericSiteId, 'predictions'],
-        queryFn: () => api.fetchSitePredictions(siteId),
+        queryFn: () => fetchSitePredictions(siteId),
       }),
       queryClient.prefetchQuery({
         queryKey: ['site', numericSiteId, 'info'],
-        queryFn: () => api.fetchSiteInfo(siteId),
+        queryFn: () => fetchSiteInfo(siteId),
       }),
     );
   }
@@ -177,10 +177,8 @@ const renderPageInternal = async (requestUrl = '/') => {
 
 let renderQueue = Promise.resolve();
 
-const renderPage = (requestUrl = '/') => {
+export const renderPage = (requestUrl = '/') => {
   const currentRender = renderQueue.then(() => renderPageInternal(requestUrl));
   renderQueue = currentRender.catch(() => undefined);
   return currentRender;
 };
-
-module.exports = { renderPage };
