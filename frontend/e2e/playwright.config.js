@@ -2,7 +2,7 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'smoke.spec.js',
+  testMatch: ['smoke.spec.js', 'crawler.spec.js'],
   timeout: 30_000,
   expect: {
     timeout: 7_000,
@@ -26,8 +26,8 @@ module.exports = defineConfig({
     ...devices['Desktop Chrome'],
   },
   webServer: {
-    command: 'npx serve -s ../build -l 4173',
-    url: 'http://127.0.0.1:4173',
+    command: 'node ssr-test-server.js',
+    url: 'http://127.0.0.1:4173/health',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
