@@ -14,6 +14,7 @@ vi.mock('../api', () => ({
 
 vi.mock('../analytics', () => ({ trackEvent: vi.fn() }));
 vi.mock('../components/AccessibleSiteForecast', () => ({ default: () => null }));
+vi.mock('../components/AccessibleSitePlanningContext', () => ({ default: () => null }));
 vi.mock('../components/QuickFeedback', () => ({ default: () => null }));
 vi.mock('../components/SiteMetadata', () => ({ default: () => null }));
 vi.mock('./Details', () => ({ default: () => <div>Rendered site details</div> }));

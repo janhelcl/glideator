@@ -6,6 +6,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { trackEvent } from '../analytics';
 import { fetchSiteInfo, fetchSitePredictions } from '../api';
 import AccessibleSiteForecast from '../components/AccessibleSiteForecast';
+import AccessibleSitePlanningContext from '../components/AccessibleSitePlanningContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import QuickFeedback from '../components/QuickFeedback';
 import SiteMetadata from '../components/SiteMetadata';
@@ -130,10 +131,18 @@ const DetailsRoute = () => {
   }
 
   const site = predictionsQuery.data[0];
+  const displayName = siteInfoQuery.data?.site_name || site.name;
 
   return (
     <>
       <AccessibleSiteForecast siteId={siteId} selectedDate={date} />
+      <AccessibleSitePlanningContext
+        siteId={siteId}
+        site={site}
+        siteName={displayName}
+        selectedDate={date}
+        selectedMetric={metric}
+      />
       <Details />
       <SiteMetadata siteId={siteId} site={site} siteInfo={siteInfoQuery.data} />
       {tab === 'forecast' && date && (
