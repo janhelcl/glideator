@@ -41,6 +41,6 @@ describe('ShareForecastButton compatibility helpers', () => {
     );
 
     await waitFor(() => expect(container.firstChild.style.display).toBe('none'));
-    expect(container.firstChild.style.minHeight).toBe('0');
+    expect(container.firstChild.style.minHeight).toBe('0px');
   });
 });
