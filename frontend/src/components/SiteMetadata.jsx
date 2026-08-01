@@ -1,31 +1,16 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
+import {
+  formatShareDate,
+  getChanceLabel,
+  getFlightPhrase,
+  getForecastProbability,
+  getPluralFlightPhrase,
+  normalizeMetric,
+} from '../utils/shareUtils';
+
 const CONFIGURED_PUBLIC_ORIGIN = process.env.REACT_APP_PUBLIC_ORIGIN || 'https://www.parra-glideator.com';
-const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
-
-const formatDate = (date) => {
-  if (!date) return null;
-
-  const parsed = new Date(`${date}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return date;
-
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(parsed);
-};
-
-const getProbability = (site, selectedDate, selectedMetric) => {
-  const metricIndex = METRICS.indexOf(selectedMetric);
-  if (metricIndex < 0 || !selectedDate) return null;
-
-  const prediction = site?.predictions?.find((item) => item?.date === selectedDate);
-  const value = prediction?.values?.[metricIndex];
-  return Number.isFinite(value) ? value : null;
-};
 
 const SiteMetadata = ({
   siteId,
@@ -33,6 +18,7 @@ const SiteMetadata = ({
   siteInfo,
   selectedDate = null,
   selectedMetric = 'XC0',
+  selectedTab = 'forecast',
 }) => {
   if (!site) return null;
 
@@ -41,21 +27,43 @@ const SiteMetadata = ({
     : CONFIGURED_PUBLIC_ORIGIN;
   const displayName = siteInfo?.site_name || site.name || `Site ${siteId}`;
   const canonicalUrl = `${publicOrigin}/details/${siteId}`;
-  const validMetric = METRICS.includes(selectedMetric) ? selectedMetric : 'XC0';
-  const probability = getProbability(site, selectedDate, validMetric);
-  const formattedDate = formatDate(selectedDate);
+  const metric = normalizeMetric(selectedMetric);
+  const tab = ['forecast', 'season', 'map', 'resources'].includes(selectedTab)
+    ? selectedTab
+    : 'forecast';
+  const probability = getForecastProbability({
+    predictions: site.predictions,
+    selectedDate,
+    selectedMetric: metric,
+  });
   const percentage = probability == null ? null : Math.round(probability * 100);
-  const title = selectedDate
-    ? `${displayName}: ${percentage == null ? validMetric : `${percentage}% for ${validMetric}`} on ${formattedDate} – Parra-Glideator`
-    : `${displayName} – Parra-Glideator`;
-  const description = selectedDate
-    ? percentage == null
-      ? `Glideator activity forecast for ${validMetric} at ${displayName} on ${formattedDate}. Decision support, not a safety forecast.`
-      : `Glideator estimates a ${percentage}% probability for ${validMetric} activity at ${displayName} on ${formattedDate}. Decision support, not a safety forecast.`
-    : `Paragliding activity forecasts, seasonality and site information for ${displayName}.`;
+  const formattedDate = selectedDate ? formatShareDate(selectedDate, { includeYear: true }) : null;
+
+  let title = `${displayName} – Parra-Glideator`;
+  let description = `Paragliding activity forecasts, seasonality and site information for ${displayName}.`;
+
+  if (tab === 'forecast' && selectedDate) {
+    title = percentage == null
+      ? `${displayName}: ${getChanceLabel(metric)} – Parra-Glideator`
+      : `${displayName}: ${percentage}% chance of ${getFlightPhrase(metric)} – Parra-Glideator`;
+    description = percentage == null
+      ? `${getChanceLabel(metric)} at ${displayName} on ${formattedDate}.`
+      : `Glideator estimates a ${percentage}% chance of ${getFlightPhrase(metric)} at ${displayName} on ${formattedDate}.`;
+  } else if (tab === 'season') {
+    title = `${displayName} flying season – Parra-Glideator`;
+    description = metric === 'XC0'
+      ? `See ${displayName}’s typical flying season, based on historical activity.`
+      : `See when ${displayName} is typically active for ${getPluralFlightPhrase(metric)}, based on historical activity.`;
+  } else if (tab === 'map') {
+    title = `${displayName} site map – Parra-Glideator`;
+    description = `See takeoffs and landings for ${displayName}.`;
+  } else if (tab === 'resources') {
+    title = `${displayName} flying resources – Parra-Glideator`;
+    description = `Local clubs, weather links, webcams and other flying resources for ${displayName}.`;
+  }
+
   const imageUrl = `${publicOrigin}/logo512.png`;
   const country = siteInfo?.country || site.tags?.find((tag) => typeof tag === 'string') || undefined;
-
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Place',
