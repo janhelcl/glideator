@@ -22,6 +22,7 @@ const DetailsRoute = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const previousSelection = useRef(null);
+  const hasExplicitForecastDate = useRef(searchParams.has('date')).current;
   const numericSiteId = Number(siteId);
 
   const date = searchParams.get('date') || null;
@@ -149,7 +150,7 @@ const DetailsRoute = () => {
         siteId={siteId}
         site={site}
         siteInfo={siteInfoQuery.data}
-        selectedDate={date}
+        selectedDate={hasExplicitForecastDate ? date : null}
         selectedMetric={metric}
       />
       {tab === 'forecast' && date && (
