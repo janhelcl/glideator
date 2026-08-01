@@ -19,6 +19,8 @@ const urlBase64ToUint8Array = (base64String) => {
 };
 
 export const supportsPush = () =>
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
   'serviceWorker' in navigator &&
   'PushManager' in window &&
   'Notification' in window;
