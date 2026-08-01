@@ -1,6 +1,6 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
 import App from './App.jsx';
 import reportWebVitals from './reportWebVitals';
@@ -8,15 +8,25 @@ import 'leaflet/dist/leaflet.css';
 import { HelmetProvider } from 'react-helmet-async';
 import { queryClient } from './queryClient';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+const rootElement = document.getElementById('root');
+const dehydratedState = window.__REACT_QUERY_STATE__ || undefined;
+
+const application = (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
+      <HydrationBoundary state={dehydratedState}>
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
+      </HydrationBoundary>
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+if (rootElement.hasChildNodes()) {
+  hydrateRoot(rootElement, application);
+} else {
+  createRoot(rootElement).render(application);
+}
 
 reportWebVitals();
