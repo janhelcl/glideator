@@ -39,19 +39,28 @@ describe('SiteMetadata', () => {
     document.head.innerHTML = '';
   });
 
-  it('keeps canonical URLs stable while exposing selected forecast context in preview text', async () => {
+  it('uses human forecast wording while keeping canonical URLs stable', async () => {
     renderMetadata({ selectedDate: '2026-08-03', selectedMetric: 'XC20' });
 
-    await waitFor(() => expect(document.title).toContain('70% for XC20'));
+    await waitFor(() => expect(document.title).toContain('70% chance of a 20+ point flight'));
 
+    expect(document.title).not.toContain('XC20');
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href'))
       .toBe(`${window.location.origin}/details/1`);
     expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content'))
       .toBe(`${window.location.origin}/details/1`);
     expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content'))
-      .toContain('70% probability for XC20 activity at Raná');
+      .toContain('70% chance of a 20+ point flight at Raná');
     expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content'))
       .toBe(`${window.location.origin}/logo512.png`);
+  });
+
+  it('describes the selected site section', async () => {
+    renderMetadata({ selectedTab: 'season', selectedMetric: 'XC20' });
+
+    await waitFor(() => expect(document.title).toBe('Raná flying season – Parra-Glideator'));
+    expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content'))
+      .toContain('20+ point flights');
   });
 
   it('uses generic site metadata when no forecast date is selected', async () => {

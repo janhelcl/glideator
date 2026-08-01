@@ -1,9 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Box } from '@mui/material';
-import { fetchSiteInfo, fetchSitePredictions } from '../api';
 
-const METRICS = ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50', 'XC60', 'XC70', 'XC80', 'XC90', 'XC100'];
+import { fetchSiteInfo, fetchSitePredictions } from '../api';
+import { getChanceLabel, METRICS } from '../utils/shareUtils';
 
 const SCREEN_READER_ONLY = {
   position: 'absolute',
@@ -48,9 +48,9 @@ const AccessibleSiteForecast = ({ siteId, selectedDate = null }) => {
       </p>
       {site.tags?.length > 0 && <p>Site tags: {site.tags.join(', ')}.</p>}
       <p>
-        XC0 is the probability of any recorded flying activity. XC10 through XC100 are probabilities of
-        exceeding progressively higher XC-point thresholds. Higher values indicate more promising historical
-        flight patterns, not guaranteed safe flying conditions. Always verify current weather and local rules.
+        The forecast shows the chance of any recorded flying activity and the chance of flights reaching
+        progressively higher point thresholds. Higher values indicate more promising historical flight patterns,
+        not guaranteed flying conditions.
       </p>
       <table aria-label={`${displayName} seven-day forecast probabilities`}>
         <caption>
@@ -59,9 +59,11 @@ const AccessibleSiteForecast = ({ siteId, selectedDate = null }) => {
         <thead>
           <tr>
             <th scope="col">Date</th>
-            {METRICS.map((metric) => <th scope="col" key={metric}>{metric}</th>)}
+            {METRICS.map((metric) => (
+              <th scope="col" key={metric}>{getChanceLabel(metric)}</th>
+            ))}
             <th scope="col">Forecast computed</th>
-            <th scope="col">GFS forecast cycle</th>
+            <th scope="col">Weather forecast cycle</th>
           </tr>
         </thead>
         <tbody>
