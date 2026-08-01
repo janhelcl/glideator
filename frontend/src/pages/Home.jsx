@@ -17,6 +17,7 @@ import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 import { trackEvent } from '../analytics';
+import { parseMapCenter } from '../utils/mapLocation';
 
 const MapView = React.lazy(() => import('../components/MapView'));
 
@@ -103,12 +104,10 @@ const Home = () => {
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const urlLat = Number(params.get('lat'));
-    const urlLng = Number(params.get('lng'));
+    const urlCenter = parseMapCenter(location.search);
 
-    if (Number.isFinite(urlLat) && Number.isFinite(urlLng)) {
-      setMapState((previous) => ({ ...previous, center: [urlLat, urlLng] }));
+    if (urlCenter) {
+      setMapState((previous) => ({ ...previous, center: urlCenter }));
       return;
     }
 
