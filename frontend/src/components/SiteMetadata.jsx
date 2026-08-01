@@ -1,13 +1,16 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-const PUBLIC_ORIGIN = process.env.REACT_APP_PUBLIC_ORIGIN || 'https://www.parra-glideator.com';
+const CONFIGURED_PUBLIC_ORIGIN = process.env.REACT_APP_PUBLIC_ORIGIN || 'https://www.parra-glideator.com';
 
 const SiteMetadata = ({ siteId, site, siteInfo }) => {
   if (!site) return null;
 
+  const publicOrigin = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : CONFIGURED_PUBLIC_ORIGIN;
   const displayName = siteInfo?.site_name || site.name || `Site ${siteId}`;
-  const canonicalUrl = `${PUBLIC_ORIGIN}/details/${siteId}`;
+  const canonicalUrl = `${publicOrigin}/details/${siteId}`;
   const description = `Paragliding activity forecasts, seasonality and site information for ${displayName}.`;
   const country = siteInfo?.country || site.tags?.find((tag) => typeof tag === 'string') || undefined;
 
