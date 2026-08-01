@@ -8,6 +8,7 @@ import { fetchSiteInfo, fetchSitePredictions } from '../api';
 import AccessibleSiteForecast from '../components/AccessibleSiteForecast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import QuickFeedback from '../components/QuickFeedback';
+import SiteMetadata from '../components/SiteMetadata';
 import Details from './Details';
 
 const isNotFound = (error) => (
@@ -33,7 +34,7 @@ const DetailsRoute = () => {
 
   // Site descriptions are optional. A valid forecast site must not become a 404
   // merely because no enriched sites_info row exists yet.
-  useQuery({
+  const siteInfoQuery = useQuery({
     queryKey: ['site', numericSiteId, 'info'],
     queryFn: async ({ signal }) => {
       try {
@@ -128,10 +129,13 @@ const DetailsRoute = () => {
     return null;
   }
 
+  const site = predictionsQuery.data[0];
+
   return (
     <>
       <AccessibleSiteForecast siteId={siteId} selectedDate={date} />
       <Details />
+      <SiteMetadata siteId={siteId} site={site} siteInfo={siteInfoQuery.data} />
       {tab === 'forecast' && date && (
         <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 2, pb: 2 }}>
           <QuickFeedback

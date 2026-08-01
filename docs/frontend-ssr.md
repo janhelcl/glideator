@@ -14,6 +14,15 @@ The hidden tables are accessibility alternatives to visual maps and charts. They
 
 Only the public information routes above use SSR. Trip Planner, login, registration, profile, favorites, notifications, feedback, and admin receive the client application shell and follow the existing client-side rendering path.
 
+## Discovery contract
+
+- `robots.txt` allows all public pages and keeps application APIs and MCP out of the crawl surface.
+- `sitemap.xml` uses `https://www.parra-glideator.com` consistently and includes the homepage, About page, and every numeric site-detail page.
+- sitemap generation reads the site list from the backend and fails the build rather than publishing an incomplete site directory.
+- site-detail pages publish canonical URLs, Open Graph URLs, and Schema.org `Place` data.
+- a missing numeric site returns HTTP 404 from SSR.
+- SSR output does not vary by crawler user agent.
+
 ## Development
 
 ```bash
@@ -70,6 +79,10 @@ The Playwright crawler tests disable JavaScript and verify that:
 - the homepage exposes a ranked comparison of Raná and Kozákov with normal links to their detail pages;
 - `/details/1` exposes Raná forecast probabilities and timestamps;
 - the two normal detail pages can be compared using XC0;
+- site metadata is canonical and contains structured place data;
+- `robots.txt` advertises the canonical sitemap;
+- missing sites return HTTP 404;
+- representative AI-search user agents receive the same public HTML;
 - none of these flows request MCP.
 
 The JavaScript-enabled Playwright smoke tests run against the hydrated application to guard the normal human experience.

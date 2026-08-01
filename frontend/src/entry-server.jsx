@@ -91,33 +91,54 @@ const renderReactTree = (element) => new Promise((resolve, reject) => {
   }, SSR_TIMEOUT_MS);
 });
 
-const prefetchPageData = async (url, queryClient) => {
-  const tasks = [];
+const isNotFoundError = (error) => error?.response?.status === 404;
 
+const prefetchPageData = async (url, queryClient) => {
   if (url.pathname === '/') {
-    tasks.push(queryClient.prefetchQuery({
-      queryKey: ['sites', 'map'],
-      queryFn: () => fetchSites(null, null, 1000),
-    }));
+    await Promise.allSettled([
+      queryClient.prefetchQuery({
+        queryKey: ['sites', 'map'],
+        queryFn: () => fetchSites(null, null, 1000),
+      }),
+    ]);
+    return 200;
   }
 
   const detailMatch = url.pathname.match(/^\/details\/(\d+)\/?$/);
-  if (detailMatch) {
-    const siteId = detailMatch[1];
-    const numericSiteId = Number(siteId);
-    tasks.push(
-      queryClient.prefetchQuery({
-        queryKey: ['site', numericSiteId, 'predictions'],
-        queryFn: () => fetchSitePredictions(siteId),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['site', numericSiteId, 'info'],
-        queryFn: () => fetchSiteInfo(siteId),
-      }),
-    );
+  if (!detailMatch) return 200;
+
+  const siteId = detailMatch[1];
+  const numericSiteId = Number(siteId);
+  const [predictionsResult] = await Promise.allSettled([
+    queryClient.fetchQuery({
+      queryKey: ['site', numericSiteId, 'predictions'],
+      queryFn: () => fetchSitePredictions(siteId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['site', numericSiteId, 'info'],
+      queryFn: async () => {
+        try {
+          return await fetchSiteInfo(siteId);
+        } catch (error) {
+          if (isNotFoundError(error)) return null;
+          throw error;
+        }
+      },
+    }),
+  ]);
+
+  if (predictionsResult.status === 'rejected' && isNotFoundError(predictionsResult.reason)) {
+    return 404;
   }
 
-  await Promise.allSettled(tasks);
+  if (
+    predictionsResult.status === 'fulfilled'
+    && (!Array.isArray(predictionsResult.value) || predictionsResult.value.length === 0)
+  ) {
+    return 404;
+  }
+
+  return 200;
 };
 
 const helmetToString = (helmet) => {
@@ -140,7 +161,7 @@ const renderPageInternal = async (requestUrl = '/') => {
   const helmetContext = {};
 
   try {
-    await prefetchPageData(url, queryClient);
+    const statusCode = await prefetchPageData(url, queryClient);
     const dehydratedState = dehydrate(queryClient);
 
     const application = (
@@ -163,7 +184,7 @@ const renderPageInternal = async (requestUrl = '/') => {
       html,
       dehydratedState,
       head: helmetToString(helmetContext.helmet),
-      statusCode: 200,
+      statusCode,
     };
   } finally {
     queryClient.clear();

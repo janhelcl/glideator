@@ -1,29 +1,27 @@
-// Minimal sitemap generator for CRA
-// Usage:
-//   SITEMAP_BASE_URL=https://parra-glideator.com \
-//   SITEMAP_API_URL=https://parra-glideator.com/api \
-//   node scripts/generate-sitemap.mjs
-
 import { writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const BASE_URL = (process.env.SITEMAP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
-const API_URL = (process.env.SITEMAP_API_URL || `${BASE_URL}/api`).replace(/\/$/, '');
+const DEFAULT_BASE_URL = 'https://www.parra-glideator.com';
+const DEFAULT_API_URL = 'https://glideator-web.onrender.com';
+
+export const STATIC_ROUTES = ['/', '/about'];
+
+const stripTrailingSlash = (value) => value.replace(/\/$/, '');
 
 async function fetchJson(url) {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching ${url}`);
+  const response = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} fetching ${url}`);
   }
-  return res.json();
+  return response.json();
 }
 
-function escapeXml(str) {
-  return String(str)
+function escapeXml(value) {
+  return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -31,43 +29,49 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
-function buildUrl(loc, changefreq = 'weekly', priority = '0.7') {
+export function buildUrl(loc, changefreq = 'weekly', priority = '0.7') {
   return `  <url>\n    <loc>${escapeXml(loc)}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
 }
 
-async function main() {
-  const staticRoutes = ['/', '/trip-planner'];
-
-  let siteList = [];
-  try {
-    const list = await fetchJson(`${API_URL}/sites/list`);
-    // Expecting array of { site_id, name, ... } or { id, name }
-    siteList = Array.isArray(list) ? list : [];
-  } catch (err) {
-    console.error('Failed to fetch site list for sitemap:', err.message);
+export function buildSitemapXml(siteList, baseUrl = DEFAULT_BASE_URL) {
+  if (!Array.isArray(siteList) || siteList.length === 0) {
+    throw new Error('Cannot generate a site sitemap without site records');
   }
 
-  const detailRoutes = siteList
-    .map((s) => s?.site_id || s?.id)
-    .filter(Boolean)
-    .map((id) => `/details/${encodeURIComponent(id)}`);
+  const origin = stripTrailingSlash(baseUrl);
+  const siteIds = [...new Set(siteList
+    .map((site) => site?.site_id || site?.id)
+    .filter(Boolean))];
 
-  const urls = [
-    ...staticRoutes.map((p) => `${BASE_URL}${p}`),
-    ...detailRoutes.map((p) => `${BASE_URL}${p}`),
+  const entries = [
+    buildUrl(`${origin}/`, 'daily', '1.0'),
+    buildUrl(`${origin}/about`, 'monthly', '0.6'),
+    ...siteIds.map((id) => buildUrl(`${origin}/details/${encodeURIComponent(id)}`, 'daily', '0.8')),
   ];
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+  return `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    urls.map((u) => buildUrl(u, 'daily', '0.8')).join('\n') +
+    entries.join('\n') +
     `\n</urlset>\n`;
-
-  const outPath = resolve(__dirname, '../public/sitemap.xml');
-  await writeFile(outPath, xml, 'utf8');
-  console.log(`Sitemap written to ${outPath} with ${urls.length} URLs.`);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+export async function main() {
+  const baseUrl = stripTrailingSlash(process.env.SITEMAP_BASE_URL || DEFAULT_BASE_URL);
+  const apiUrl = stripTrailingSlash(
+    process.env.SITEMAP_API_URL || process.env.BACKEND_API_URL || DEFAULT_API_URL,
+  );
+  const siteList = await fetchJson(`${apiUrl}/sites/list`);
+  const xml = buildSitemapXml(siteList, baseUrl);
+  const outputPath = resolve(__dirname, '../public/sitemap.xml');
+
+  await writeFile(outputPath, xml, 'utf8');
+  console.log(`Sitemap written to ${outputPath} with ${siteList.length + STATIC_ROUTES.length} URLs.`);
+}
+
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : null;
+if (invokedPath === import.meta.url) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.use({ javaScriptEnabled: false });
 
 const today = new Date().toISOString().slice(0, 10);
+const baseUrl = 'http://127.0.0.1:4173';
 
 const isMcpPath = (pathname) => pathname.startsWith('/mcp');
 
@@ -75,4 +76,71 @@ test('two sites can be compared from their normal HTML pages', async ({ page }) 
   expect(kozakovXc0).toBe(55);
   expect(ranaXc0).toBeGreaterThan(kozakovXc0);
   expect(requestedPaths.some(isMcpPath)).toBe(false);
+});
+
+test('crawler-facing metadata uses canonical URLs and structured place data', async ({ page }) => {
+  const response = await page.goto(`/details/1?date=${today}&metric=XC0`);
+  expect(response.status()).toBe(200);
+
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    `${baseUrl}/details/1`,
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    `${baseUrl}/details/1`,
+  );
+
+  const structuredData = JSON.parse(
+    await page.locator('script[type="application/ld+json"]').last().textContent(),
+  );
+  expect(structuredData['@type']).toBe('Place');
+  expect(structuredData.name).toBe('Raná');
+  expect(structuredData.geo).toMatchObject({
+    '@type': 'GeoCoordinates',
+    latitude: 50.403,
+    longitude: 13.764,
+    elevation: 457,
+  });
+});
+
+test('robots.txt allows public crawling and points to the canonical sitemap', async ({ request }) => {
+  const response = await request.get('/robots.txt');
+  expect(response.status()).toBe(200);
+
+  const text = await response.text();
+  expect(text).toContain('User-agent: *');
+  expect(text).toContain('Allow: /');
+  expect(text).toContain('Disallow: /api/');
+  expect(text).toContain('Disallow: /mcp');
+  expect(text).toContain('Sitemap: https://www.parra-glideator.com/sitemap.xml');
+});
+
+test('missing numeric site pages return an HTTP 404', async ({ page }) => {
+  const response = await page.goto('/details/999999');
+  expect(response.status()).toBe(404);
+});
+
+test('representative AI search crawlers receive the same public HTML', async ({ browser }) => {
+  const userAgents = [
+    'OAI-SearchBot/1.0',
+    'Claude-SearchBot/1.0',
+    'PerplexityBot/1.0',
+  ];
+
+  for (const userAgent of userAgents) {
+    const context = await browser.newContext({
+      baseURL: baseUrl,
+      javaScriptEnabled: false,
+      userAgent,
+    });
+    const page = await context.newPage();
+    const response = await page.goto(`/?date=${today}&metric=XC0`);
+
+    expect(response.status()).toBe(200);
+    await expect(
+      page.locator(`table[aria-label="Paragliding site ranking for ${today} using XC0"]`),
+    ).toHaveCount(1);
+    await context.close();
+  }
 });

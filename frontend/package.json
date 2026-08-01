@@ -39,7 +39,7 @@
     "start:ssr": "node server/index.js",
     "build:client": "vite build --outDir dist/client",
     "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist/server",
-    "build": "SITEMAP_BASE_URL=https://parra-glideator.com SITEMAP_API_URL=https://parra-glideator.com/api node scripts/generate-sitemap.mjs && npm run build:client && npm run build:ssr",
+    "build": "SITEMAP_BASE_URL=https://www.parra-glideator.com node scripts/generate-sitemap.mjs && npm run build:client && npm run build:ssr",
     "build:e2e": "npm run build:client && npm run build:ssr",
     "test": "vitest run",
     "test:watch": "vitest",
