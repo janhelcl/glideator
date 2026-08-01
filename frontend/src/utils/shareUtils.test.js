@@ -68,6 +68,6 @@ describe('shareUtils', () => {
   });
 
   it('formats compact ranges for share copy', () => {
-    expect(formatShareDateRange('2026-08-03', '2026-08-05')).toBe('3–5 August 2026');
+    expect(formatShareDateRange('2030-08-03', '2030-08-05')).toBe('3–5 August 2030');
   });
 });
