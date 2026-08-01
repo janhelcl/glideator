@@ -31,7 +31,11 @@ test('copies a clean dated forecast URL that restores the shared state', async (
   await expect(page).toHaveTitle(/Raná: 52% for XC20/);
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     'content',
-    `http://127.0.0.1:4173/details/1?date=${date}&metric=XC20`,
+    'http://127.0.0.1:4173/details/1',
+  );
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+    'content',
+    /52% probability for XC20 activity at Raná/,
   );
 
   await page.getByRole('button', { name: 'Share forecast for Raná' }).click();
