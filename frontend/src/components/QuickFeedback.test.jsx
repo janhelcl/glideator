@@ -1,16 +1,17 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { trackEvent } from '../analytics';
 import QuickFeedback from './QuickFeedback';
 
-jest.mock('../analytics', () => ({
-  trackEvent: jest.fn(),
+vi.mock('../analytics', () => ({
+  trackEvent: vi.fn(),
 }));
 
 describe('QuickFeedback', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('submits a contextual helpful rating once', () => {

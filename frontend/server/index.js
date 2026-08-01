@@ -5,14 +5,14 @@ const fsp = require('fs/promises');
 const http = require('http');
 const https = require('https');
 const path = require('path');
-
-const { renderPage } = require('../server-build/entry-server.cjs');
+const { pathToFileURL } = require('url');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://glideator-web.onrender.com';
-const BUILD_DIR = path.resolve(__dirname, '../build');
+const BUILD_DIR = path.resolve(__dirname, '../dist/client');
 const INDEX_PATH = path.join(BUILD_DIR, 'index.html');
+const SERVER_ENTRY_PATH = path.resolve(__dirname, '../dist/server/entry-server.mjs');
 
 const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
@@ -24,6 +24,7 @@ const MIME_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.txt': 'text/plain; charset=utf-8',
@@ -40,6 +41,19 @@ const getIndexTemplate = () => {
     indexTemplatePromise = fsp.readFile(INDEX_PATH, 'utf8');
   }
   return indexTemplatePromise;
+};
+
+let renderPagePromise;
+const getRenderPage = () => {
+  if (!renderPagePromise) {
+    renderPagePromise = import(pathToFileURL(SERVER_ENTRY_PATH).href)
+      .then((module) => module.renderPage)
+      .catch((error) => {
+        renderPagePromise = null;
+        throw error;
+      });
+  }
+  return renderPagePromise;
 };
 
 const serializeState = (value) => JSON.stringify(value)
@@ -102,7 +116,7 @@ const serveStaticFile = async (request, response, pathname) => {
   response.setHeader('Content-Type', MIME_TYPES[extension] || 'application/octet-stream');
   response.setHeader(
     'Cache-Control',
-    pathname.startsWith('/static/')
+    pathname.startsWith('/assets/')
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=300',
   );
@@ -199,6 +213,7 @@ const server = http.createServer(async (request, response) => {
 
     try {
       const template = await getIndexTemplate();
+      const renderPage = await getRenderPage();
       const rendered = await renderPage(`${pathname}${requestUrl.search}`);
       const document = injectSsrMarkup(template, rendered);
 

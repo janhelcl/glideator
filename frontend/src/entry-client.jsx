@@ -1,11 +1,11 @@
 import React from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import './index.css';
-import App from './App.jsx';
-import reportWebVitals from './reportWebVitals';
-import 'leaflet/dist/leaflet.css';
 import { HelmetProvider } from 'react-helmet-async';
+import 'leaflet/dist/leaflet.css';
+import './index.css';
+
+import App from './App.jsx';
 import { queryClient } from './queryClient';
 
 const rootElement = document.getElementById('root');
@@ -28,5 +28,3 @@ if (rootElement.hasChildNodes()) {
 } else {
   createRoot(rootElement).render(application);
 }
-
-reportWebVitals();

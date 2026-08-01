@@ -1,22 +1,24 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+
 import NotificationManager from '../NotificationManager';
 import { useNotifications } from '../../context/NotificationContext';
 
-jest.mock('../../api', () => ({
-  fetchSitesList: jest.fn().mockResolvedValue([]),
+vi.mock('../../api', () => ({
+  fetchSitesList: vi.fn().mockResolvedValue([]),
 }));
 
-jest.mock('../../context/AuthContext', () => ({
+vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ user: null, profile: null, favorites: [] }),
 }));
 
-jest.mock('../../context/NotificationContext', () => {
-  const actual = jest.requireActual('../../context/NotificationContext');
+vi.mock('../../context/NotificationContext', async () => {
+  const actual = await vi.importActual('../../context/NotificationContext');
   return {
     ...actual,
-    useNotifications: jest.fn(),
+    useNotifications: vi.fn(),
   };
 });
 
@@ -32,15 +34,15 @@ describe('NotificationManager', () => {
       subscriptions: [],
       notifications: [],
       eventsByNotification: {},
-      registerCurrentDevice: jest.fn(),
-      deactivateSubscription: jest.fn(),
-      createRule: jest.fn(),
-      updateRule: jest.fn(),
-      deleteRule: jest.fn(),
-      loadNotificationEvents: jest.fn(),
+      registerCurrentDevice: vi.fn(),
+      deactivateSubscription: vi.fn(),
+      createRule: vi.fn(),
+      updateRule: vi.fn(),
+      deleteRule: vi.fn(),
+      loadNotificationEvents: vi.fn(),
       isLoading: false,
       error: null,
-      clearError: jest.fn(),
+      clearError: vi.fn(),
     });
 
     render(

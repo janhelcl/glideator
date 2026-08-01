@@ -3,19 +3,23 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi } from 'vitest';
 
 import TripPlannerPage from './TripPlannerPage';
 import { planTrip } from '../api';
 
-jest.mock('../api', () => ({
-  planTrip: jest.fn(),
+vi.mock('../api', () => ({
+  default: {
+    post: vi.fn().mockResolvedValue({ data: { accepted: true } }),
+  },
+  planTrip: vi.fn(),
 }));
 
-jest.mock('../hooks/useDefaultMetric', () => ({
+vi.mock('../hooks/useDefaultMetric', () => ({
   useDefaultMetric: () => ({ preferredMetric: 'XC0' }),
 }));
 
-jest.mock('../context/AuthContext', () => ({
+vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     profile: {
       home_lat: 50.1,
@@ -24,81 +28,93 @@ jest.mock('../context/AuthContext', () => ({
   }),
 }));
 
-jest.mock('../components/TripPlannerControls', () => {
-  const React = require('react');
+vi.mock('../components/TripPlannerControls', async () => {
+  const ReactModule = await import('react');
+  const ReactImpl = ReactModule.default;
 
-  return function MockTripPlannerControls({ setState, onSubmit }) {
-    return React.createElement(
-      'div',
-      null,
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          onClick: () => setState((previous) => ({
-            ...previous,
-            selectedMetric: 'XC50',
-            flightQuality: {
-              ...previous.flightQuality,
-              enabled: true,
-              selectedValues: ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50'],
-            },
-            altitude: {
-              enabled: true,
-              min: 800,
-              max: 1600,
-            },
-            tags: ['ridge'],
-          })),
-        },
-        'Apply filters',
-      ),
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          onClick: () => onSubmit([
-            new Date('2000-01-02T12:00:00Z'),
-            new Date('2000-01-01T12:00:00Z'),
-          ]),
-        },
-        'Submit invalid dates',
-      ),
-    );
+  return {
+    default: function MockTripPlannerControls({ setState, onSubmit }) {
+      return ReactImpl.createElement(
+        'div',
+        null,
+        ReactImpl.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => setState((previous) => ({
+              ...previous,
+              selectedMetric: 'XC50',
+              flightQuality: {
+                ...previous.flightQuality,
+                enabled: true,
+                selectedValues: ['XC0', 'XC10', 'XC20', 'XC30', 'XC40', 'XC50'],
+              },
+              altitude: {
+                enabled: true,
+                min: 800,
+                max: 1600,
+              },
+              tags: ['ridge'],
+            })),
+          },
+          'Apply filters',
+        ),
+        ReactImpl.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => onSubmit([
+              new Date('2000-01-02T12:00:00Z'),
+              new Date('2000-01-01T12:00:00Z'),
+            ]),
+          },
+          'Submit invalid dates',
+        ),
+      );
+    },
   };
 });
 
-jest.mock('../components/SiteList', () => {
-  const React = require('react');
+vi.mock('../components/SiteList', async () => {
+  const ReactModule = await import('react');
+  const ReactImpl = ReactModule.default;
 
-  return function MockSiteList({ sites, onSiteClick }) {
-    return React.createElement(
-      'div',
-      { 'data-testid': 'site-list' },
-      sites.map((site) => React.createElement(
-        'button',
-        {
-          type: 'button',
-          key: site.site_id,
-          onClick: (event) => onSiteClick(site, event),
-        },
-        site.site_name,
-      )),
-    );
+  return {
+    default: function MockSiteList({ sites, onSiteClick }) {
+      return ReactImpl.createElement(
+        'div',
+        { 'data-testid': 'site-list' },
+        sites.map((site) => ReactImpl.createElement(
+          'button',
+          {
+            type: 'button',
+            key: site.site_id,
+            onClick: (event) => onSiteClick(site, event),
+          },
+          site.site_name,
+        )),
+      );
+    },
   };
 });
 
-jest.mock('../components/PlannerMapView', () => {
-  const React = require('react');
-  return function MockPlannerMapView({ sites }) {
-    return React.createElement('div', null, `Map with ${sites.length} sites`);
+vi.mock('../components/PlannerMapView', async () => {
+  const ReactModule = await import('react');
+  const ReactImpl = ReactModule.default;
+  return {
+    default: function MockPlannerMapView({ sites }) {
+      return ReactImpl.createElement('div', null, `Map with ${sites.length} sites`);
+    },
   };
 });
 
-jest.mock('../components/LoadingSpinner', () => {
-  const React = require('react');
-  return function MockLoadingSpinner() {
-    return React.createElement('div', null, 'Loading planner');
+vi.mock('../components/LoadingSpinner', async () => {
+  const ReactModule = await import('react');
+  const ReactImpl = ReactModule.default;
+  return {
+    default: function MockLoadingSpinner() {
+      return ReactImpl.createElement('div', null, 'Loading planner');
+    },
   };
 });
 
@@ -168,25 +184,25 @@ describe('TripPlannerPage', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       writable: true,
-      value: jest.fn().mockImplementation((query) => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
       })),
     });
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: {
-        getCurrentPosition: jest.fn(),
+        getCurrentPosition: vi.fn(),
       },
     });
   });

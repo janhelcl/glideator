@@ -2,72 +2,49 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "dependencies": {
-    "@date-io/date-fns": "^3.0.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^5.15.11",
-    "@mui/lab": "^5.0.0-alpha.165",
     "@mui/material": "^5.15.11",
     "@mui/x-date-pickers": "^8.5.1",
     "@tanstack/react-query": "^5.101.4",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
     "d3": "^7.9.0",
     "date-fns": "^3.6.0",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
-    "plotly.js": "^2.35.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
     "react-leaflet": "^4.2.1",
-    "react-plotly.js": "^2.6.0",
-    "react-router-dom": "^6.26.2",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^6.0.4",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^30.0.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "vite --host 0.0.0.0 --port 3000",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "start:ssr": "node server/index.js",
-    "build": "SITEMAP_BASE_URL=https://parra-glideator.com SITEMAP_API_URL=https://parra-glideator.com/api node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && react-scripts build && node scripts/build-ssr.js",
-    "build:e2e": "react-scripts build && node scripts/build-ssr.js",
-    "test": "react-scripts test",
+    "build:client": "vite build --outDir dist/client",
+    "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist/server",
+    "build": "SITEMAP_BASE_URL=https://parra-glideator.com SITEMAP_API_URL=https://parra-glideator.com/api node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && npm run build:client && npm run build:ssr",
+    "build:e2e": "npm run build:client && npm run build:ssr",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "cd e2e && npx playwright test",
-    "eject": "react-scripts eject",
     "sitemap": "node scripts/generate-sitemap.mjs"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "^axios$": "<rootDir>/node_modules/axios/dist/node/axios.cjs"
-    },
-    "coverageThreshold": {
-      "global": {
-        "branches": 14,
-        "functions": 10,
-        "lines": 14,
-        "statements": 14
-      }
-    }
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }

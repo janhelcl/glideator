@@ -1,9 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { vi } from 'vitest';
+
 import About from './pages/About';
 
-jest.mock('./components/ScoreDemo', () => () => <div data-testid="score-demo" />);
+vi.mock('./components/ScoreDemo', () => ({
+  default: () => <div data-testid="score-demo" />,
+}));
 
 test('renders the About page', () => {
   render(

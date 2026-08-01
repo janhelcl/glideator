@@ -1,111 +1,98 @@
-# Glideator Frontend
+# Glideator frontend
 
-## Overview
+React frontend for Parra-Glideator, including the forecast map, site details, trip planner, accounts, notifications, feedback, and the administrator cockpit.
 
-This project contains the frontend web application for the Glideator project. It provides a user interface likely used for visualizing gliding data, potentially involving maps and various data plots. It is bootstrapped using Create React App.
+## Stack
 
-## Tech Stack
+- React 18
+- Vite for development, client builds, and SSR builds
+- Vitest and React Testing Library
+- Playwright smoke and crawler tests
+- Material UI
+- React Router
+- TanStack Query
+- Leaflet / React Leaflet
+- D3
+- Axios
 
-*   **Framework:** [React](https://reactjs.org/)
-*   **UI Library:** [Material UI (MUI)](https://mui.com/)
-*   **Routing:** [React Router](https://reactrouter.com/)
-*   **State Management:** (Implicitly React Context API or component state, consider adding a dedicated library if complexity grows)
-*   **HTTP Client:** [Axios](https://axios-http.com/)
-*   **Mapping:** [Leaflet](https://leafletjs.com/) with [React Leaflet](https://react-leaflet.js.org/)
-*   **Plotting:** [Plotly.js](https://plotly.com/javascript/) with [react-plotly.js](https://github.com/plotly/react-plotly.js), [D3.js](https://d3js.org/)
-*   **Date Handling:** [date-fns](https://date-fns.org/)
-*   **Utilities:** [Lodash](https://lodash.com/)
-*   **Build Tool:** [Create React App](https://create-react-app.dev/) (using `react-scripts`)
-*   **Package Manager:** [npm](https://www.npmjs.com/)
+## Requirements
 
-## Getting Started
+- Node.js 22.12 or newer
+- npm
+- A running Glideator backend for API-backed development
 
-### Prerequisites
-
-*   [Node.js](https://nodejs.org/) (Version 18 or later recommended, as per `Dockerfile.dev`)
-*   [npm](https://www.npmjs.com/) (Usually comes with Node.js)
-
-### Installation
-
-1.  Clone the repository:
-    ```bash
-    git clone <repository-url>
-    cd glideator/frontend
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-### Running Locally
-
-To start the development server:
+## Local development
 
 ```bash
+npm ci
 npm start
 ```
 
-This runs the app in development mode. Open [http://localhost:3000](http://localhost:3000) to view it in your browser. The page will reload automatically when you make edits. Lint errors will also be visible in the console.
+The Vite development server listens on port 3000 and proxies `/api` and `/mcp` to `BACKEND_API_URL`, which defaults to `http://localhost:8000`.
 
-## Available Scripts
+The root `docker-compose.dev.yml` also runs the frontend and backend together.
 
-In the project directory, you can run:
+## Environment variables
 
-*   `npm start`: Runs the app in development mode.
-*   `npm test`: Launches the test runner in interactive watch mode.
-*   `npm run build`: Builds the app for production to the `build` folder.
-*   `npm run eject`: **(Use with caution!)** Removes the single build dependency and copies configuration files (webpack, Babel, ESLint, etc.) into your project for full control. This is a one-way operation.
+The frontend accepts both the existing CRA-style names and their Vite equivalents during the migration:
 
-## Push Notifications
+| Existing name | Vite equivalent | Purpose |
+|---|---|---|
+| `REACT_APP_API_BASE_URL` | `VITE_API_BASE_URL` | Browser API base URL; defaults to `/api` |
+| `REACT_APP_PUBLIC_ORIGIN` | `VITE_PUBLIC_ORIGIN` | Canonical public origin |
+| `REACT_APP_VAPID_PUBLIC_KEY` | `VITE_VAPID_PUBLIC_KEY` | Browser push public key |
+| `REACT_APP_ANALYTICS_ENABLED` | `VITE_ANALYTICS_ENABLED` | Set to `false` to disable product analytics |
 
-The frontend now supports browser push notifications for forecast alerts. To enable them:
+Server-only settings remain ordinary Node environment variables:
 
-1. Generate a VAPID key pair (for example with `npx web-push generate-vapid-keys`) and expose the public key to the app by setting `REACT_APP_VAPID_PUBLIC_KEY` in your environment (or `.env` file).
-2. Serve the frontend over HTTPS (or `http://localhost` during development). Browsers require a secure origin to register push service workers.
-3. Ensure the backend exposes the notification endpoints and the matching VAPID private key.
+- `BACKEND_API_URL`
+- `PUBLIC_ORIGIN`
+- `SSR_TIMEOUT_MS`
+- `PORT`
+- `HOST`
 
-The service worker that handles push messages lives at `public/push-sw.js`, and the registration happens automatically once an authenticated user visits the app. Users can manage devices and notification rules on the new **Notifications** page (`/notifications`) or from the Notifications panel on their profile.
+## Tests
 
-> **Docker Compose (dev)**  
-> The repo root `docker-compose.dev.yml` ships with a valid sample `REACT_APP_VAPID_PUBLIC_KEY`, so push registration works out-of-the-box in development. Override it by exporting `REACT_APP_VAPID_PUBLIC_KEY` before starting the stack if you want to test with your own key pair. Remember to set the matching private key on the backend (`VAPID_PRIVATE_KEY`) so outgoing pushes succeed.
-
-## Project Structure
-
-The frontend codebase is organized as follows:
-
-```
-frontend/
-├── public/           # Static assets and index.html template
-├── src/              # Main application source code
-│   ├── components/   # Reusable UI components
-│   ├── pages/        # Top-level page components (routed views)
-│   ├── hooks/        # Custom React hooks
-│   ├── utils/        # Utility functions
-│   ├── api.jsx       # Functions for interacting with the backend API
-│   ├── App.jsx       # Main application component (routing setup)
-│   ├── index.jsx     # Entry point, renders App component
-│   ├── App.css       # Global styles for App component
-│   ├── index.css     # Global base styles
-│   └── ...           # Other configuration/setup files (tests, web vitals)
-├── build/            # Production build output (generated by `npm run build`)
-├── node_modules/     # Project dependencies (managed by npm)
-├── .dockerignore     # Specifies files/dirs to ignore in Docker builds
-├── Dockerfile.dev    # Docker configuration for development environment
-├── package.json      # Project metadata and dependencies
-├── package-lock.json # Exact dependency versions
-└── README.md         # This file
+```bash
+npm test
+npm run test:coverage
+npm run test:e2e
 ```
 
-## Building for Production
+The Playwright command expects the production client and SSR bundles. Build them first with:
 
-To create an optimized production build:
+```bash
+npm run build:e2e
+```
+
+## Production build
 
 ```bash
 npm run build
 ```
 
-This command bundles React in production mode and outputs the static files to the `build/` directory. The build is minified, and filenames include hashes for caching purposes. These files are ready for deployment to a static file server or hosting platform.
+This generates:
 
-## Docker
+- `dist/client` — browser bundle and public assets
+- `dist/server` — Node SSR bundle
 
-A `Dockerfile.dev` is included to facilitate setting up a containerized development environment. It uses Node.js 18, installs dependencies, and sets up the application to run on port 3000. This can be used with tools like Docker Compose for a consistent development setup.
+It also generates `sitemap.xml` and `llms.txt` before compiling the application.
+
+Run the production frontend server with:
+
+```bash
+BACKEND_API_URL=https://glideator-web.onrender.com \
+PUBLIC_ORIGIN=https://www.parra-glideator.com \
+npm run start:ssr
+```
+
+The server:
+
+- serves Vite's hashed assets;
+- proxies `/api` and `/mcp` to the backend;
+- server-renders `/`, `/about`, and `/details/:siteId`;
+- serves the client application shell for the remaining routes;
+- exposes `/health` for Render health checks;
+- falls back to the client application if SSR fails.
+
+See `docs/frontend-ssr.md` for deployment and SSR details.
