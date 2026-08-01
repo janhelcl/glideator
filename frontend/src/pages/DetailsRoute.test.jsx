@@ -2,19 +2,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi } from 'vitest';
 
 import { fetchSiteInfo, fetchSitePredictions } from '../api';
 import DetailsRoute from './DetailsRoute';
 
-jest.mock('../api', () => ({
-  fetchSiteInfo: jest.fn(),
-  fetchSitePredictions: jest.fn(),
+vi.mock('../api', () => ({
+  fetchSiteInfo: vi.fn(),
+  fetchSitePredictions: vi.fn(),
 }));
 
-jest.mock('../analytics', () => ({ trackEvent: jest.fn() }));
-jest.mock('../components/AccessibleSiteForecast', () => () => null);
-jest.mock('../components/QuickFeedback', () => () => null);
-jest.mock('./Details', () => () => <div>Rendered site details</div>);
+vi.mock('../analytics', () => ({ trackEvent: vi.fn() }));
+vi.mock('../components/AccessibleSiteForecast', () => ({ default: () => null }));
+vi.mock('../components/QuickFeedback', () => ({ default: () => null }));
+vi.mock('./Details', () => ({ default: () => <div>Rendered site details</div> }));
 
 const renderRoute = (initialEntry) => {
   const queryClient = new QueryClient({
@@ -37,7 +38,7 @@ const renderRoute = (initialEntry) => {
 
 describe('DetailsRoute', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('keeps a valid site page when optional site info is missing', async () => {
