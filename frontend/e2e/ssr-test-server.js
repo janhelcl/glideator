@@ -19,41 +19,63 @@ const dates = Array.from({ length: 7 }, (_, index) => {
   return date.toISOString().slice(0, 10);
 });
 
-const site = {
-  site_id: 1,
-  name: 'Raná',
-  latitude: 50.403,
-  longitude: 13.764,
-  altitude: 457,
-  tags: ['Czechia', 'flats'],
+const makeSite = ({ siteId, name, latitude, longitude, altitude, xc0 }) => ({
+  site_id: siteId,
+  name,
+  latitude,
+  longitude,
+  altitude,
+  tags: ['Czechia'],
   predictions: dates.map((date, index) => ({
     date,
-    values: [0.72 - index * 0.03, 0.61, 0.52, 0.43, 0.35, 0.28, 0.21, 0.16, 0.11, 0.07, 0.04],
+    values: [xc0 - index * 0.03, 0.61, 0.52, 0.43, 0.35, 0.28, 0.21, 0.16, 0.11, 0.07, 0.04],
     computed_at: '2026-08-01T09:30:00Z',
     gfs_forecast_at: '2026-08-01T06:00:00Z',
   })),
+});
+
+const sites = {
+  1: makeSite({
+    siteId: 1,
+    name: 'Raná',
+    latitude: 50.403,
+    longitude: 13.764,
+    altitude: 457,
+    xc0: 0.72,
+  }),
+  3: makeSite({
+    siteId: 3,
+    name: 'Kozákov',
+    latitude: 50.593,
+    longitude: 15.263,
+    altitude: 744,
+    xc0: 0.55,
+  }),
 };
 
 const backend = http.createServer((request, response) => {
   const url = new URL(request.url, `http://127.0.0.1:${backendPort}`);
+  const predictionMatch = url.pathname.match(/^\/sites\/(\d+)\/predictions$/);
+  const infoMatch = url.pathname.match(/^\/sites\/(\d+)\/info$/);
 
-  if (request.method === 'GET' && url.pathname === '/sites/1/predictions') {
-    json(response, 200, [site]);
+  if (request.method === 'GET' && predictionMatch && sites[predictionMatch[1]]) {
+    json(response, 200, [sites[predictionMatch[1]]]);
     return;
   }
 
-  if (request.method === 'GET' && url.pathname === '/sites/1/info') {
+  if (request.method === 'GET' && infoMatch && sites[infoMatch[1]]) {
+    const matchedSite = sites[infoMatch[1]];
     json(response, 200, {
-      site_id: 1,
-      site_name: 'Raná',
+      site_id: matchedSite.site_id,
+      site_name: matchedSite.name,
       country: 'Czechia',
-      overview: 'Raná is a well-known Czech paragliding site.',
+      overview: `${matchedSite.name} test overview.`,
     });
     return;
   }
 
   if (request.method === 'GET' && url.pathname === '/sites/list') {
-    json(response, 200, [{ site_id: 1, name: 'Raná' }]);
+    json(response, 200, Object.values(sites).map(({ site_id, name }) => ({ site_id, name })));
     return;
   }
 
