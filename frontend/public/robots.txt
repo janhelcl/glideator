@@ -1,9 +1,6 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-# Allow AI assistants and bots to access LLM-friendly content
-Allow: /llms.txt
-Allow: /api/llms/
-# Disallow other API endpoints
+# Public pages are crawlable; application APIs and MCP are not discovery surfaces.
 Disallow: /api/
 Disallow: /mcp
 Allow: /
