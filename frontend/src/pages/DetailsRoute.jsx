@@ -151,6 +151,7 @@ const DetailsRoute = () => {
         siteInfo={siteInfoQuery.data}
         selectedDate={hasExplicitForecastDate ? date : null}
         selectedMetric={metric}
+        selectedTab={tab}
       />
       {tab === 'forecast' && date && (
         <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 2, pb: 2 }}>
