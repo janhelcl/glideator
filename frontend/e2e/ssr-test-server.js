@@ -58,6 +58,11 @@ const backend = http.createServer((request, response) => {
   const predictionMatch = url.pathname.match(/^\/sites\/(\d+)\/predictions$/);
   const infoMatch = url.pathname.match(/^\/sites\/(\d+)\/info$/);
 
+  if (request.method === 'GET' && url.pathname === '/sites/') {
+    json(response, 200, Object.values(sites));
+    return;
+  }
+
   if (request.method === 'GET' && predictionMatch && sites[predictionMatch[1]]) {
     json(response, 200, [sites[predictionMatch[1]]]);
     return;
