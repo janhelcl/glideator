@@ -10,7 +10,7 @@ const shouldRetry = (failureCount, error) => {
   return failureCount < 1;
 };
 
-export const queryClient = new QueryClient({
+export const createQueryClient = () => new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
@@ -20,3 +20,5 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export const queryClient = createQueryClient();
