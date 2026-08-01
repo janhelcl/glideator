@@ -46,8 +46,10 @@ const SiteMetadata = ({
   const formattedDate = formatDate(selectedDate);
   const shareParams = new URLSearchParams();
 
-  if (selectedDate) shareParams.set('date', selectedDate);
-  if (validMetric) shareParams.set('metric', validMetric);
+  if (selectedDate) {
+    shareParams.set('date', selectedDate);
+    shareParams.set('metric', validMetric);
+  }
 
   const shareUrl = shareParams.size
     ? `${canonicalUrl}?${shareParams.toString()}`
