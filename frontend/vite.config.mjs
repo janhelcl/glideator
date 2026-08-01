@@ -17,6 +17,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     envPrefix: ['VITE_', 'REACT_APP_'],
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+      'process.env.PUBLIC_URL': JSON.stringify(readFirst(env, 'VITE_PUBLIC_URL', 'PUBLIC_URL')),
       'process.env.REACT_APP_API_BASE_URL': JSON.stringify(
         readFirst(env, 'VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL'),
       ),

@@ -139,6 +139,7 @@ describe('Details data loading', () => {
     const queryClient = renderDetails();
 
     expect(await screen.findByRole('heading', { name: 'Raná' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Glideator' })).toHaveAttribute('src', '/logo192.png');
     expect(fetchSitePredictions).toHaveBeenCalledTimes(1);
     expect(fetchSiteInfo).toHaveBeenCalledTimes(1);
     expect(fetchSiteForecast).not.toHaveBeenCalled();
