@@ -11,3 +11,8 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Temporary drawers must remain above app bars so their close controls and backdrop stay interactive. */
+.MuiDrawer-root.MuiModal-root {
+  z-index: 1202 !important;
+}
