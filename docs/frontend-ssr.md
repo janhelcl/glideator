@@ -16,6 +16,10 @@ Public routes now contain useful HTML before JavaScript executes. In particular:
 The hidden tables are accessibility alternatives to visual maps and charts. They contain the same data and are
 not selected by user agent.
 
+Only the public information routes above use SSR. Trip Planner, login, registration, profile, favorites,
+notifications, feedback, and admin continue to receive the original CRA application shell and follow the existing
+client-side rendering path.
+
 ## Build and run
 
 ```bash
@@ -58,5 +62,12 @@ A deployment can be rolled back to static hosting because `npm run build` contin
 
 ## Acceptance test
 
-The Playwright crawler test disables JavaScript and verifies that `/details/1` exposes Raná forecast probabilities
-and timestamps without requesting MCP, `llms.txt`, or the LLM-specific API.
+The Playwright crawler tests disable JavaScript and verify that:
+
+- the homepage exposes a ranked comparison of Raná and Kozákov with normal links to their detail pages;
+- `/details/1` exposes Raná forecast probabilities and timestamps;
+- the two normal detail pages can be compared using XC0;
+- none of these flows request MCP, `llms.txt`, or the LLM-specific API.
+
+The existing JavaScript-enabled Playwright smoke tests run against the hydrated application to guard the normal
+human experience.
