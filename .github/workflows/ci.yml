@@ -81,7 +81,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -89,15 +89,9 @@ jobs:
         run: npm ci
 
       - name: Run frontend tests
-        env:
-          CI: "true"
-        run: npm test -- --watchAll=false --coverage --coverageReporters=text-summary --collectCoverageFrom='src/**/*.{js,jsx}'
+        run: npm run test:coverage
 
       - name: Build frontend
-        # CRA promotes all lint warnings to build failures when CI=true. Keep
-        # compilation errors fatal while legacy warnings are cleaned up separately.
-        env:
-          CI: "false"
         run: npm run build
 
   e2e:
@@ -116,7 +110,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -124,8 +118,6 @@ jobs:
         run: npm ci
 
       - name: Build frontend for browser tests
-        env:
-          CI: "false"
         run: npm run build:e2e
 
       - name: Install isolated Playwright tooling
