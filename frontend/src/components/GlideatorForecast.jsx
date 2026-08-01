@@ -161,7 +161,7 @@ const GlideatorForecast = ({
       .attr('stroke-width', 3);
 
     // Bar Chart Title - with adjusted positioning and responsive font size
-    const titleLine1 = `Will There Be a Flight on ${selectedDate}?`;
+    const titleLine1 = `Chances of a Flight on ${selectedDate}`;
     const titleLine2 = 'How Far Might It Go?';
     
     svg.append('text')
@@ -500,7 +500,7 @@ const GlideatorForecast = ({
         <Box 
           ref={lineContainerRef}
           sx={{ 
-            flex: 1, 
+            flex: 1,
             height: isMobile ? '280px' : '400px',
             position: 'relative',
             minWidth: 0,
@@ -510,7 +510,7 @@ const GlideatorForecast = ({
         >
           {/* Metric control positioned above the chart */}
           <Box sx={{ 
-            position: 'absolute', 
+            position: 'absolute',
             top: '-30px',
             right: '10px'
           }}>
@@ -524,7 +524,7 @@ const GlideatorForecast = ({
           <svg 
             ref={lineChartRef}
             style={{ 
-              width: '100%', 
+              width: '100%',
               height: '100%',
               overflow: 'visible',
               display: 'block'
