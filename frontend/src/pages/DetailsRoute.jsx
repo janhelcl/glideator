@@ -9,6 +9,7 @@ import AccessibleSiteForecast from '../components/AccessibleSiteForecast';
 import AccessibleSitePlanningContext from '../components/AccessibleSitePlanningContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import QuickFeedback from '../components/QuickFeedback';
+import ShareForecastButton from '../components/ShareForecastButton';
 import SiteMetadata from '../components/SiteMetadata';
 import Details from './Details';
 
@@ -144,7 +145,22 @@ const DetailsRoute = () => {
         selectedMetric={metric}
       />
       <Details />
-      <SiteMetadata siteId={siteId} site={site} siteInfo={siteInfoQuery.data} />
+      <SiteMetadata
+        siteId={siteId}
+        site={site}
+        siteInfo={siteInfoQuery.data}
+        selectedDate={date}
+        selectedMetric={metric}
+      />
+      {tab === 'forecast' && date && (
+        <ShareForecastButton
+          siteId={siteId}
+          siteName={displayName}
+          selectedDate={date}
+          selectedMetric={metric}
+          predictions={site.predictions}
+        />
+      )}
       {tab === 'forecast' && date && (
         <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 2, pb: 2 }}>
           <QuickFeedback
