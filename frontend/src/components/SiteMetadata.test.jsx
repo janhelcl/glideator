@@ -39,7 +39,7 @@ describe('SiteMetadata', () => {
     document.head.innerHTML = '';
   });
 
-  it('keeps the canonical URL stable while exposing selected forecast state to social previews', async () => {
+  it('keeps canonical URLs stable while exposing selected forecast context in preview text', async () => {
     renderMetadata({ selectedDate: '2026-08-03', selectedMetric: 'XC20' });
 
     await waitFor(() => expect(document.title).toContain('70% for XC20'));
@@ -47,7 +47,7 @@ describe('SiteMetadata', () => {
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href'))
       .toBe(`${window.location.origin}/details/1`);
     expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content'))
-      .toBe(`${window.location.origin}/details/1?date=2026-08-03&metric=XC20`);
+      .toBe(`${window.location.origin}/details/1`);
     expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content'))
       .toContain('70% probability for XC20 activity at Raná');
     expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content'))
