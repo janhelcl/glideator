@@ -15,7 +15,6 @@ from .routers import (
     d2d,
     favorites,
     feedback,
-    llms,
     notifications,
     profiles,
     s2s,
@@ -170,7 +169,6 @@ app.include_router(favorites.router)
 app.include_router(notifications.router)
 app.include_router(notifications.subscriptions_router)
 app.include_router(notifications.events_router)
-app.include_router(llms.router)
 app.include_router(s2s.router)
 app.include_router(d2d.router)
 app.include_router(feedback.router)
