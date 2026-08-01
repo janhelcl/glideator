@@ -53,10 +53,39 @@ const sites = {
   }),
 };
 
+const flightStats = {
+  0: [0.2, 0.5, 2.1, 5.4, 8.2, 9.1, 8.7, 7.9, 5.8, 2.6, 0.7, 0.2],
+  10: [0.1, 0.2, 1.1, 3.2, 5.4, 6.2, 5.9, 5.1, 3.4, 1.2, 0.2, 0.1],
+  20: [0, 0.1, 0.5, 1.8, 3.7, 4.5, 4.2, 3.6, 2.1, 0.6, 0.1, 0],
+  30: [], 40: [], 50: [], 60: [], 70: [], 80: [], 90: [], 100: [],
+};
+
+const makeForecastValues = (hour) => ({
+  temperature_2m_c: 15 + hour / 6,
+  dewpoint_2m_c: 8 + hour / 12,
+  wind_speed_10m_ms: 3 + hour / 12,
+  wind_direction_10m_dgr: 220 + hour,
+  wind_gust_sfc_ms: 6 + hour / 10,
+  pressure_sfc_pa: 101200 - hour * 10,
+  geopotential_height_sfc_m: 430,
+  geopotential_height_iso_m: [3000, 2500, 2000, 1500, 1000, 500],
+  temperature_iso_c: [-5, -1, 3, 7, 11, 14],
+  dewpoint_iso_c: [-12, -8, -2, 2, 5, 8],
+  wind_speed_iso_ms: [12, 10, 8, 6, 5, 4],
+  wind_direction_iso_dgr: [240, 235, 230, 225, 220, 215],
+  relative_humidity_iso_pct: [40, 45, 50, 55, 60, 65],
+  hpa_lvls: [700, 750, 800, 850, 900, 950],
+});
+
 const backend = http.createServer((request, response) => {
   const url = new URL(request.url, `http://127.0.0.1:${backendPort}`);
   const predictionMatch = url.pathname.match(/^\/sites\/(\d+)\/predictions$/);
   const infoMatch = url.pathname.match(/^\/sites\/(\d+)\/info$/);
+  const statsMatch = url.pathname.match(/^\/sites\/(\d+)\/flight_stats$/);
+  const spotsMatch = url.pathname.match(/^\/sites\/(\d+)\/spots$/);
+  const resourcesMatch = url.pathname.match(/^\/sites\/(\d+)\/resources$/);
+  const forecastMatch = url.pathname.match(/^\/sites\/(\d+)\/forecast$/);
+  const similarDaysMatch = url.pathname.match(/^\/d2d\/similar-days\/(\d+)\/(\d{4}-\d{2}-\d{2})$/);
 
   if (request.method === 'GET' && url.pathname === '/sites/') {
     json(response, 200, Object.values(sites));
@@ -74,7 +103,85 @@ const backend = http.createServer((request, response) => {
       site_id: matchedSite.site_id,
       site_name: matchedSite.name,
       country: 'Czechia',
-      overview: `${matchedSite.name} test overview.`,
+      html: `<p>${matchedSite.name} test overview.</p>`,
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && statsMatch && sites[statsMatch[1]]) {
+    json(response, 200, flightStats);
+    return;
+  }
+
+  if (request.method === 'GET' && spotsMatch && sites[spotsMatch[1]]) {
+    json(response, 200, [
+      {
+        spot_id: Number(spotsMatch[1]) * 10 + 1,
+        site_id: Number(spotsMatch[1]),
+        name: 'South launch',
+        latitude: sites[spotsMatch[1]].latitude,
+        longitude: sites[spotsMatch[1]].longitude,
+        altitude: sites[spotsMatch[1]].altitude,
+        type: 'takeoff',
+        wind_direction: 'S-SW',
+      },
+      {
+        spot_id: Number(spotsMatch[1]) * 10 + 2,
+        site_id: Number(spotsMatch[1]),
+        name: 'Main landing',
+        latitude: sites[spotsMatch[1]].latitude - 0.01,
+        longitude: sites[spotsMatch[1]].longitude + 0.01,
+        altitude: sites[spotsMatch[1]].altitude - 120,
+        type: 'landing',
+        wind_direction: null,
+      },
+    ]);
+    return;
+  }
+
+  if (request.method === 'GET' && resourcesMatch && sites[resourcesMatch[1]]) {
+    json(response, 200, {
+      site_id: Number(resourcesMatch[1]),
+      source_run_id: 42,
+      run_extracted_at: '2026-07-31T18:00:00Z',
+      local_resources: [
+        {
+          candidate_id: 101,
+          name: `${sites[resourcesMatch[1]].name} flying club`,
+          url: 'https://example.com/local-club',
+          host: 'example.com',
+          rules: true,
+          access: true,
+        },
+      ],
+      webcam_urls: ['https://example.com/webcam'],
+      meteostation_urls: ['https://example.com/meteo'],
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && forecastMatch && sites[forecastMatch[1]]) {
+    json(response, 200, {
+      date: url.searchParams.get('query_date') || dates[0],
+      computed_at: '2026-08-01T09:30:00Z',
+      gfs_forecast_at: '2026-08-01T06:00:00Z',
+      lat_gfs: sites[forecastMatch[1]].latitude,
+      lon_gfs: sites[forecastMatch[1]].longitude,
+      forecast_9: makeForecastValues(9),
+      forecast_12: makeForecastValues(12),
+      forecast_15: makeForecastValues(15),
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && similarDaysMatch && sites[similarDaysMatch[1]]) {
+    json(response, 200, {
+      site_id: Number(similarDaysMatch[1]),
+      forecast_date: similarDaysMatch[2],
+      similar_days: [
+        { past_date: '2025-07-15', similarity: 0.91 },
+        { past_date: '2024-08-03', similarity: 0.84 },
+      ],
     });
     return;
   }

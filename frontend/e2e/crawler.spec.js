@@ -60,6 +60,32 @@ test('site forecast is answerable from normal HTML without MCP', async ({ page }
   expect(requestedPaths.some(isMcpPath)).toBe(false);
 });
 
+test('site HTML exposes seasonality, spots, resources, weather drivers and analog days', async ({ page }) => {
+  const response = await page.goto(`/details/1?date=${today}&metric=XC0`);
+  expect(response.status()).toBe(200);
+
+  const context = page.locator('section[aria-label="Raná planning context"]');
+  await expect(context).toHaveCount(1);
+
+  const seasonality = page.locator('table[aria-label="Raná monthly XC0 seasonality"]');
+  await expect(seasonality).toHaveCount(1);
+  expect(await seasonality.textContent()).toContain('April');
+  expect(await seasonality.textContent()).toContain('5.4 days');
+
+  expect(await context.textContent()).toContain('South launch');
+  expect(await context.textContent()).toContain('Main landing');
+  await expect(context.locator('a[href="https://example.com/local-club"]')).toHaveCount(1);
+
+  const weatherDrivers = page.locator(`table[aria-label="Raná weather drivers for ${today}"]`);
+  await expect(weatherDrivers).toHaveCount(1);
+  expect(await weatherDrivers.textContent()).toContain('12:00');
+  expect(await weatherDrivers.textContent()).toContain('4.0 m/s');
+
+  expect(await context.textContent()).toContain('2025-07-15');
+  const xcontestLink = context.getByRole('link', { name: 'View flights near Raná on XContest' }).first();
+  await expect(xcontestLink).toHaveAttribute('href', /2025-07-15/);
+});
+
 test('two sites can be compared from their normal HTML pages', async ({ page }) => {
   const requestedPaths = [];
   page.on('request', (request) => {
@@ -82,11 +108,11 @@ test('crawler-facing metadata uses canonical URLs and structured place data', as
   const response = await page.goto(`/details/1?date=${today}&metric=XC0`);
   expect(response.status()).toBe(200);
 
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+  await expect(page.locator('link[rel="canonical"]').last()).toHaveAttribute(
     'href',
     `${baseUrl}/details/1`,
   );
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+  await expect(page.locator('meta[property="og:url"]').last()).toHaveAttribute(
     'content',
     `${baseUrl}/details/1`,
   );

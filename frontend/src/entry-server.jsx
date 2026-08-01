@@ -9,7 +9,16 @@ import {
 } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 
-import api, { fetchSiteInfo, fetchSitePredictions, fetchSites } from './api';
+import api, {
+  fetchFlightStats,
+  fetchSimilarDays,
+  fetchSiteForecast,
+  fetchSiteInfo,
+  fetchSitePredictions,
+  fetchSiteResources,
+  fetchSiteSpots,
+  fetchSites,
+} from './api';
 import { AppContent, AppProviders } from './App.jsx';
 import { createQueryClient } from './queryClient';
 
@@ -109,7 +118,8 @@ const prefetchPageData = async (url, queryClient) => {
 
   const siteId = detailMatch[1];
   const numericSiteId = Number(siteId);
-  const [predictionsResult] = await Promise.allSettled([
+  const selectedDate = url.searchParams.get('date');
+  const tasks = [
     queryClient.fetchQuery({
       queryKey: ['site', numericSiteId, 'predictions'],
       queryFn: () => fetchSitePredictions(siteId),
@@ -125,7 +135,34 @@ const prefetchPageData = async (url, queryClient) => {
         }
       },
     }),
-  ]);
+    queryClient.prefetchQuery({
+      queryKey: ['site', numericSiteId, 'flight-stats'],
+      queryFn: () => fetchFlightStats(siteId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['site', numericSiteId, 'spots'],
+      queryFn: () => fetchSiteSpots(siteId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['site', numericSiteId, 'resources'],
+      queryFn: () => fetchSiteResources(siteId),
+    }),
+  ];
+
+  if (selectedDate) {
+    tasks.push(
+      queryClient.prefetchQuery({
+        queryKey: ['site', numericSiteId, 'forecast', selectedDate],
+        queryFn: () => fetchSiteForecast(siteId, selectedDate),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['site', numericSiteId, 'similar-days', selectedDate],
+        queryFn: () => fetchSimilarDays(siteId, selectedDate, 3),
+      }),
+    );
+  }
+
+  const [predictionsResult] = await Promise.allSettled(tasks);
 
   if (predictionsResult.status === 'rejected' && isNotFoundError(predictionsResult.reason)) {
     return 404;

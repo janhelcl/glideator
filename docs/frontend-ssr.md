@@ -7,12 +7,27 @@ The frontend uses Vite for both the browser bundle and the Node SSR bundle. The 
 Public routes contain useful HTML before JavaScript executes. In particular:
 
 - `/` contains a semantic, screen-reader-only equivalent of the forecast map with normal links to site pages.
-- `/details/:siteId` contains the site heading and a semantic forecast table with dates, XC probabilities, forecast timestamps, site coordinates, and the decision-support caveat.
+- `/details/:siteId` contains the site heading, seven-day forecast probabilities, seasonality, takeoff and landing information, validated local resources, selected-day weather drivers, and similar historical weather days.
 - `/about` is rendered from the existing React page.
 
-The hidden tables are accessibility alternatives to visual maps and charts. They contain the same data and are not selected by user agent.
+The semantic tables and lists are accessibility alternatives to visual maps, charts and collapsed panels. They contain the same planning information and are not selected by user agent.
 
 Only the public information routes above use SSR. Trip Planner, login, registration, profile, favorites, notifications, feedback, and admin receive the client application shell and follow the existing client-side rendering path.
+
+## Site-detail data strategy
+
+A server-rendered site-detail request prefetches the public planning data in parallel and dehydrates it into the normal TanStack Query cache:
+
+- predictions and optional site information;
+- monthly flight statistics;
+- takeoff and landing spots;
+- validated resources, webcams and meteostations;
+- the selected date's 09:00, 12:00 and 15:00 weather forecast;
+- similar historical weather days for the selected date.
+
+The semantic planning component reads those prefetched query keys with disabled queries. This is deliberate: hydration receives the complete SSR markup, while a normal client-side visit does not restore the eager requests removed by the frontend data-loading refactor. Interactive tabs continue to fetch their data only when opened and reuse any SSR cache entries already present.
+
+Optional enrichment failures do not turn a valid forecast site into an error page. Only a missing predictions site produces an HTTP 404.
 
 ## Discovery contract
 
@@ -77,7 +92,8 @@ Rollback is performed by deploying an earlier Render build or reverting the migr
 The Playwright crawler tests disable JavaScript and verify that:
 
 - the homepage exposes a ranked comparison of Raná and Kozákov with normal links to their detail pages;
-- `/details/1` exposes Raná forecast probabilities and timestamps;
+- `/details/1` exposes Raná forecast probabilities and forecast timestamps;
+- site HTML also exposes monthly seasonality, takeoffs and landings, validated links, weather drivers and similar historical days;
 - the two normal detail pages can be compared using XC0;
 - site metadata is canonical and contains structured place data;
 - `robots.txt` advertises the canonical sitemap;
@@ -85,4 +101,4 @@ The Playwright crawler tests disable JavaScript and verify that:
 - representative AI-search user agents receive the same public HTML;
 - none of these flows request MCP.
 
-The JavaScript-enabled Playwright smoke tests run against the hydrated application to guard the normal human experience.
+A focused unit test also verifies that the planning component renders from prefetched cache data without starting browser requests. The JavaScript-enabled Playwright smoke tests continue to guard the normal human experience.
