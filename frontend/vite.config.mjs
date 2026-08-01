@@ -45,6 +45,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         },
       },
     },
+    ssr: {
+      noExternal: ['react-helmet-async'],
+    },
     build: isSsrBuild
       ? {
           copyPublicDir: false,
