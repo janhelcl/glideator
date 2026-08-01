@@ -173,8 +173,8 @@ export const buildTripPlanShareUrl = ({
   } else if (approximateOrigin) {
     params.set('distEnabled', 'true');
     params.set('locSrc', 'current');
-    params.set('originLat', Number(approximateOrigin.latitude).toFixed(2));
-    params.set('originLng', Number(approximateOrigin.longitude).toFixed(2));
+    params.set('originLat', Number(approximateOrigin.latitude).toFixed(1));
+    params.set('originLng', Number(approximateOrigin.longitude).toFixed(1));
   }
 
   return `${normalizeOrigin(origin)}/trip-planner?${params.toString()}`;
