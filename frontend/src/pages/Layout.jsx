@@ -1,48 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   AppBar,
-  Toolbar,
-  Typography,
   Box,
+  Divider,
+  Drawer,
   IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
-  Drawer,
-  List,
-  ListItemText,
-  ListItemIcon,
+  Toolbar,
+  Tooltip,
+  Typography,
   useMediaQuery,
   useTheme,
-  Divider,
-  ListItemButton,
-  Tooltip,
 } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CloseIcon from '@mui/icons-material/Close';
 import ExploreIcon from '@mui/icons-material/Explore';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import HomeIcon from '@mui/icons-material/Home';
 import InfoIcon from '@mui/icons-material/Info';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import PersonIcon from '@mui/icons-material/Person';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import SearchBar from '../components/SearchBar';
-import DisclaimerModal from '../components/DisclaimerModal';
-import NotificationDropdown from '../components/NotificationDropdown';
-import useDisclaimer from '../hooks/useDisclaimer';
+
 import { fetchSitesList } from '../api';
+import DisclaimerModal from '../components/DisclaimerModal';
+import GlobalShareAction from '../components/GlobalShareAction';
+import NotificationDropdown from '../components/NotificationDropdown';
+import SearchBar from '../components/SearchBar';
 import { useAuth } from '../context/AuthContext';
+import useDisclaimer from '../hooks/useDisclaimer';
 
 const Layout = () => {
   const [selectedSite, setSelectedSite] = useState(null);
   const [sites, setSites] = useState([]);
-  const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
-  const { isAuthenticated, logout, user, profile } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const { showDisclaimer, handleAccept, handleDecline } = useDisclaimer();
+  const { isAuthenticated, logout, user, profile } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -58,32 +59,20 @@ const Layout = () => {
   useEffect(() => {
     const loadSites = async () => {
       try {
-        const sitesData = await fetchSitesList();
-        setSites(sitesData);
+        setSites(await fetchSitesList());
       } catch (error) {
         console.error('Error loading sites:', error);
       }
     };
-
-    loadSites();
+    void loadSites();
   }, []);
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = async () => {
     await logout();
     handleMenuClose();
     navigate('/');
-  };
-
-  const handleMobileDrawerToggle = () => {
-    setMobileDrawerOpen(!mobileDrawerOpen);
   };
 
   const handleMobileMenuClick = (path) => {
@@ -136,18 +125,15 @@ const Layout = () => {
       </Box>
 
       <Divider />
-
       <List sx={{ py: 1 }}>
         <ListItemButton onClick={() => handleMobileMenuClick('/')}>
           <ListItemIcon><HomeIcon /></ListItemIcon>
           <ListItemText primary="Home" />
         </ListItemButton>
-
         <ListItemButton onClick={() => handleMobileMenuClick('/trip-planner')}>
           <ListItemIcon><ExploreIcon /></ListItemIcon>
           <ListItemText primary="Plan a Trip" />
         </ListItemButton>
-
         <ListItemButton onClick={() => handleMobileMenuClick('/about')}>
           <ListItemIcon><InfoIcon /></ListItemIcon>
           <ListItemText primary="How It Works" />
@@ -155,7 +141,6 @@ const Layout = () => {
       </List>
 
       <Divider />
-
       <List sx={{ py: 1 }}>
         {isAuthenticated ? (
           <>
@@ -204,11 +189,7 @@ const Layout = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <DisclaimerModal
-        open={showDisclaimer}
-        onAccept={handleAccept}
-        onDecline={handleDecline}
-      />
+      <DisclaimerModal open={showDisclaimer} onAccept={handleAccept} onDecline={handleDecline} />
 
       <Drawer
         anchor="left"
@@ -233,7 +214,7 @@ const Layout = () => {
               color="inherit"
               aria-label="open menu"
               edge="start"
-              onClick={handleMobileDrawerToggle}
+              onClick={() => setMobileDrawerOpen((open) => !open)}
             >
               <MenuIcon />
             </IconButton>
@@ -256,10 +237,7 @@ const Layout = () => {
               style={{ height: 32, marginRight: isMobile ? 0 : 8 }}
             />
             {!isMobile && (
-              <Typography
-                variant="h6"
-                sx={{ color: 'white', fontWeight: 'bold' }}
-              >
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
                 Parra-Glideator
               </Typography>
             )}
@@ -267,10 +245,7 @@ const Layout = () => {
 
           {!isMobile && (
             <Box sx={{ ml: 3, flexGrow: 1, maxWidth: 400 }}>
-              <SearchBar
-                sites={sites}
-                onSiteSelect={setSelectedSite}
-              />
+              <SearchBar sites={sites} onSiteSelect={setSelectedSite} />
             </Box>
           )}
 
@@ -279,46 +254,33 @@ const Layout = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {!isMobile && (
               <Tooltip title="Plan a Trip">
-                <IconButton
-                  component={RouterLink}
-                  to="/trip-planner"
-                  color="inherit"
-                >
+                <IconButton component={RouterLink} to="/trip-planner" color="inherit">
                   <ExploreIcon />
                 </IconButton>
               </Tooltip>
             )}
-
             {!isMobile && (
               <Tooltip title="How It Works">
-                <IconButton
-                  component={RouterLink}
-                  to="/about"
-                  color="inherit"
-                >
+                <IconButton component={RouterLink} to="/about" color="inherit">
                   <InfoIcon />
                 </IconButton>
               </Tooltip>
             )}
-
             {!isMobile && isAuthenticated && (
               <Tooltip title="Favorites">
-                <IconButton
-                  component={RouterLink}
-                  to="/favorites"
-                  color="inherit"
-                >
+                <IconButton component={RouterLink} to="/favorites" color="inherit">
                   <FavoriteIcon />
                 </IconButton>
               </Tooltip>
             )}
 
+            <GlobalShareAction />
             <NotificationDropdown iconColor="inherit" />
 
             {isAuthenticated ? (
               <>
                 <Tooltip title="Account">
-                  <IconButton color="inherit" onClick={handleMenuOpen}>
+                  <IconButton color="inherit" onClick={(event) => setAnchorEl(event.currentTarget)}>
                     <AccountCircle />
                   </IconButton>
                 </Tooltip>
@@ -330,9 +292,7 @@ const Layout = () => {
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   <MenuItem disabled sx={{ opacity: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {displayLabel}
-                    </Typography>
+                    <Typography variant="body2" color="text.secondary">{displayLabel}</Typography>
                   </MenuItem>
                   <Divider />
                   {isAdmin && (
@@ -354,11 +314,7 @@ const Layout = () => {
             ) : (
               !isMobile && (
                 <Tooltip title="Log In">
-                  <IconButton
-                    component={RouterLink}
-                    to="/login"
-                    color="inherit"
-                  >
+                  <IconButton component={RouterLink} to="/login" color="inherit">
                     <PersonIcon />
                   </IconButton>
                 </Tooltip>
@@ -422,11 +378,7 @@ const Layout = () => {
             to="/feedback"
             variant={isMobile ? 'caption' : 'body2'}
             color="inherit"
-            sx={{
-              color: 'white',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
+            sx={{ color: 'white', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
             Feedback
           </Typography>
