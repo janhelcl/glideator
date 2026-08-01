@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -99,6 +100,7 @@ const GlobalShareAction = () => {
   const [resolvingLocation, setResolvingLocation] = useState(false);
   const [message, setMessage] = useState(null);
   const [severity, setSeverity] = useState('success');
+  const sharedOriginRef = useRef(null);
 
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const detailMatch = location.pathname.match(/^\/details\/(\d+)$/);
@@ -125,8 +127,20 @@ const GlobalShareAction = () => {
 
   const sharedLatitude = Number(params.get('originLat'));
   const sharedLongitude = Number(params.get('originLng'));
-  const hasSharedOrigin = location.pathname === '/trip-planner'
-    && isValidOrigin(sharedLatitude, sharedLongitude);
+  if (
+    location.pathname === '/trip-planner'
+    && isValidOrigin(sharedLatitude, sharedLongitude)
+  ) {
+    sharedOriginRef.current = {
+      latitude: sharedLatitude,
+      longitude: sharedLongitude,
+    };
+  }
+
+  const effectiveSharedOrigin = location.pathname === '/trip-planner'
+    ? sharedOriginRef.current
+    : null;
+  const hasSharedOrigin = Boolean(effectiveSharedOrigin);
 
   useIsomorphicLayoutEffect(() => {
     if (!hasSharedOrigin || typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -138,8 +152,8 @@ const GlobalShareAction = () => {
     const sharedGetCurrentPosition = (success) => {
       window.setTimeout(() => success({
         coords: {
-          latitude: sharedLatitude,
-          longitude: sharedLongitude,
+          latitude: effectiveSharedOrigin.latitude,
+          longitude: effectiveSharedOrigin.longitude,
           accuracy: 10000,
           altitude: null,
           altitudeAccuracy: null,
@@ -163,7 +177,20 @@ const GlobalShareAction = () => {
         // Nothing else to restore when the browser exposes a read-only implementation.
       }
     };
-  }, [hasSharedOrigin, sharedLatitude, sharedLongitude]);
+  }, [effectiveSharedOrigin, hasSharedOrigin]);
+
+  useEffect(() => {
+    if (!hasSharedOrigin || typeof window === 'undefined') return;
+
+    // TripPlannerPage rebuilds its own query string. Keep the coarse shared
+    // origin in the address bar so a refresh or second share stays reproducible.
+    const currentUrl = new URL(window.location.href);
+    if (!currentUrl.searchParams.has('originLat')) {
+      currentUrl.searchParams.set('originLat', effectiveSharedOrigin.latitude.toFixed(1));
+      currentUrl.searchParams.set('originLng', effectiveSharedOrigin.longitude.toFixed(1));
+      window.history.replaceState(window.history.state, '', currentUrl.toString());
+    }
+  }, [effectiveSharedOrigin, hasSharedOrigin, location.search]);
 
   useEffect(() => {
     if (hasSharedOrigin) {
@@ -385,9 +412,7 @@ const GlobalShareAction = () => {
   }, [pageConfig, performShare]);
 
   const resolveApproximateOrigin = useCallback(async () => {
-    if (hasSharedOrigin) {
-      return { latitude: sharedLatitude, longitude: sharedLongitude };
-    }
+    if (effectiveSharedOrigin) return effectiveSharedOrigin;
 
     const latitude = Number(profile?.home_lat);
     const longitude = Number(profile?.home_lon);
@@ -396,7 +421,7 @@ const GlobalShareAction = () => {
     }
 
     return getGeolocation();
-  }, [hasSharedOrigin, params, profile, sharedLatitude, sharedLongitude]);
+  }, [effectiveSharedOrigin, params, profile]);
 
   const handleIncludeArea = useCallback(async () => {
     if (!pageConfig?.buildPayload) return;
