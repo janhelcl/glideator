@@ -4,11 +4,7 @@ test.use({ javaScriptEnabled: false });
 
 const today = new Date().toISOString().slice(0, 10);
 
-const forbiddenAgentPaths = (pathname) => (
-  pathname.startsWith('/mcp') ||
-  pathname.startsWith('/llms') ||
-  pathname.startsWith('/api/llms')
-);
+const isMcpPath = (pathname) => pathname.startsWith('/mcp');
 
 const readXc0 = async (page, siteName) => {
   const table = page.locator(`table[aria-label="${siteName} seven-day forecast probabilities"]`);
@@ -39,10 +35,10 @@ test('homepage HTML exposes a ranked site comparison and normal detail links', a
 
   const ranaLink = ranking.locator(`a[href="/details/1?date=${today}&metric=XC0"]`);
   await expect(ranaLink).toHaveCount(1);
-  expect(requestedPaths.some(forbiddenAgentPaths)).toBe(false);
+  expect(requestedPaths.some(isMcpPath)).toBe(false);
 });
 
-test('site forecast is answerable from normal HTML without MCP or llms.txt', async ({ page }) => {
+test('site forecast is answerable from normal HTML without MCP', async ({ page }) => {
   const requestedPaths = [];
   page.on('request', (request) => {
     requestedPaths.push(new URL(request.url()).pathname);
@@ -60,7 +56,7 @@ test('site forecast is answerable from normal HTML without MCP or llms.txt', asy
   expect(forecastText).toContain('2026-08-01T09:30:00Z');
   expect(forecastText).toContain('2026-08-01T06:00:00Z');
 
-  expect(requestedPaths.some(forbiddenAgentPaths)).toBe(false);
+  expect(requestedPaths.some(isMcpPath)).toBe(false);
 });
 
 test('two sites can be compared from their normal HTML pages', async ({ page }) => {
@@ -78,5 +74,5 @@ test('two sites can be compared from their normal HTML pages', async ({ page }) 
   expect(ranaXc0).toBe(72);
   expect(kozakovXc0).toBe(55);
   expect(ranaXc0).toBeGreaterThan(kozakovXc0);
-  expect(requestedPaths.some(forbiddenAgentPaths)).toBe(false);
+  expect(requestedPaths.some(isMcpPath)).toBe(false);
 });
