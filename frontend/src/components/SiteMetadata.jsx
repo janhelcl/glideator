@@ -44,16 +44,6 @@ const SiteMetadata = ({
   const validMetric = METRICS.includes(selectedMetric) ? selectedMetric : 'XC0';
   const probability = getProbability(site, selectedDate, validMetric);
   const formattedDate = formatDate(selectedDate);
-  const shareParams = new URLSearchParams();
-
-  if (selectedDate) {
-    shareParams.set('date', selectedDate);
-    shareParams.set('metric', validMetric);
-  }
-
-  const shareUrl = shareParams.size
-    ? `${canonicalUrl}?${shareParams.toString()}`
-    : canonicalUrl;
   const percentage = probability == null ? null : Math.round(probability * 100);
   const title = selectedDate
     ? `${displayName}: ${percentage == null ? validMetric : `${percentage}% for ${validMetric}`} on ${formattedDate} – Parra-Glideator`
@@ -108,7 +98,7 @@ const SiteMetadata = ({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="article" />
-      <meta property="og:url" content={shareUrl} />
+      <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={imageUrl} />
       <meta property="og:image:alt" content="Parra-Glideator paragliding forecast" />
       <meta name="twitter:card" content="summary_large_image" />
