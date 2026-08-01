@@ -5,7 +5,7 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Collapse,
+  Fade,
   IconButton,
   Link,
   Paper,
@@ -222,9 +222,8 @@ const Details = () => {
 
         <Box sx={{
           width: '100%',
-          aspectRatio: '1/1',
-          maxHeight: 'calc(100vh - 300px)',
-          maxWidth: '1000px',
+          display: 'flex',
+          justifyContent: 'center',
           position: 'relative',
         }}>
           <D3Forecast
@@ -542,9 +541,11 @@ const Details = () => {
               </Button>
             </Box>
 
-            <Collapse in={showWeatherDetails} timeout="auto">
-              <Box sx={{ mt: 2, pt: 1 }}>{renderForecastContent()}</Box>
-            </Collapse>
+            <Fade in={showWeatherDetails} timeout={200} unmountOnExit>
+              <Box data-testid="weather-details-panel" sx={{ mt: 2, pt: 1 }}>
+                {renderForecastContent()}
+              </Box>
+            </Fade>
 
             {selectedDate && (
               <SimilarDaysPanel
