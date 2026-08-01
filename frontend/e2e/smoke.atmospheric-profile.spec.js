@@ -10,10 +10,10 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('atmospheric profile has full height on its first expansion', async ({ page }) => {
+test('atmospheric profile is not clipped on its first expansion', async ({ page }) => {
   await page.route('**/api/sites/1/forecast**', async (route) => {
-    // Keep the loading state visible while the MUI Collapse measures its first expansion.
-    // The regression only appeared when the chart replaced that shorter content.
+    // Reproduce the production sequence: the details panel opens with a short
+    // loading state, then asynchronously receives the much taller chart.
     await new Promise((resolve) => setTimeout(resolve, 200));
     const response = await route.fetch();
     await route.fulfill({ response });
@@ -31,7 +31,9 @@ test('atmospheric profile has full height on its first expansion', async ({ page
 
   await page.getByRole('button', { name: /see what's driving this/i }).click();
 
+  const panel = page.getByTestId('weather-details-panel');
   const chart = page.locator('svg[aria-label="Atmospheric profile"]');
+  await expect(panel).toBeVisible();
   await expect(chart).toBeVisible();
 
   await expect.poll(async () => {
@@ -39,8 +41,18 @@ test('atmospheric profile has full height on its first expansion', async ({ page
     return box?.height || 0;
   }).toBeGreaterThan(250);
 
-  const box = await chart.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box.width / box.height).toBeGreaterThan(0.95);
-  expect(box.width / box.height).toBeLessThan(1.05);
+  const similarDaysHeading = page.getByText('Similar Days in the Past', { exact: true }).last();
+  await expect(similarDaysHeading).toBeVisible();
+
+  await expect.poll(async () => {
+    const chartBox = await chart.boundingBox();
+    const headingBox = await similarDaysHeading.boundingBox();
+    if (!chartBox || !headingBox) return -1;
+    return headingBox.y - (chartBox.y + chartBox.height);
+  }).toBeGreaterThan(20);
+
+  const chartBox = await chart.boundingBox();
+  expect(chartBox).not.toBeNull();
+  expect(chartBox.width / chartBox.height).toBeGreaterThan(0.95);
+  expect(chartBox.width / chartBox.height).toBeLessThan(1.05);
 });
