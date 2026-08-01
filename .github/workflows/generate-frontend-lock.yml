@@ -19,9 +19,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Generate package lock
+      - name: Generate package lock from scratch
         working-directory: frontend
-        run: npm install --package-lock-only
+        run: |
+          rm package-lock.json
+          npm install --package-lock-only
 
       - name: Upload package lock
         uses: actions/upload-artifact@v4
