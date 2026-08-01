@@ -84,11 +84,11 @@ test('crawler-facing metadata uses canonical URLs and structured place data', as
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    'https://www.parra-glideator.com/details/1',
+    `${baseUrl}/details/1`,
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     'content',
-    'https://www.parra-glideator.com/details/1',
+    `${baseUrl}/details/1`,
   );
 
   const structuredData = JSON.parse(
