@@ -9,6 +9,9 @@ import TripPlannerPage from './TripPlannerPage';
 import { planTrip } from '../api';
 
 vi.mock('../api', () => ({
+  default: {
+    post: vi.fn().mockResolvedValue({ data: { accepted: true } }),
+  },
   planTrip: vi.fn(),
 }));
 
