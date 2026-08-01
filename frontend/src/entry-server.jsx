@@ -131,7 +131,7 @@ const helmetToString = (helmet) => {
   ].filter(Boolean).join('');
 };
 
-const renderPage = async (requestUrl = '/') => {
+const renderPageInternal = async (requestUrl = '/') => {
   const url = new URL(requestUrl, PUBLIC_ORIGIN);
   const previousWindow = global.window;
   global.window = createServerWindow(url);
@@ -173,6 +173,14 @@ const renderPage = async (requestUrl = '/') => {
       global.window = previousWindow;
     }
   }
+};
+
+let renderQueue = Promise.resolve();
+
+const renderPage = (requestUrl = '/') => {
+  const currentRender = renderQueue.then(() => renderPageInternal(requestUrl));
+  renderQueue = currentRender.catch(() => undefined);
+  return currentRender;
 };
 
 module.exports = { renderPage };
