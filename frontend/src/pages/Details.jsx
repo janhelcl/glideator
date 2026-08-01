@@ -41,6 +41,7 @@ import {
 } from '../api';
 import GlideatorForecast from '../components/GlideatorForecast';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ShareForecastButton from '../components/ShareForecastButton';
 import { useAuth } from '../context/AuthContext';
 import { useDefaultMetric } from '../hooks/useDefaultMetric';
 
@@ -502,6 +503,18 @@ const Details = () => {
 
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
+            {selectedDate && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', minHeight: 32 }}>
+                <ShareForecastButton
+                  siteId={siteId}
+                  siteName={displayName}
+                  selectedDate={selectedDate}
+                  selectedMetric={selectedMetric}
+                  predictions={site.predictions}
+                />
+              </Box>
+            )}
+
             <GlideatorForecast
               siteData={site}
               selectedDate={selectedDate}

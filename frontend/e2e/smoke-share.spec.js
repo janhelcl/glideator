@@ -29,6 +29,7 @@ test('copies a clean dated forecast URL that restores the shared state', async (
 
   await expect(page.getByRole('heading', { name: 'Raná', level: 1 })).toBeVisible();
   await expect(page).toHaveTitle(/Raná: 52% for XC20/);
+  await expect(page.getByText(`Chances of a Flight on ${date}`, { exact: true })).toBeVisible();
   await expect(page.locator('meta[property="og:url"]').last()).toHaveAttribute(
     'content',
     'http://127.0.0.1:4173/details/1',
@@ -38,7 +39,10 @@ test('copies a clean dated forecast URL that restores the shared state', async (
     /52% probability for XC20 activity at Raná/,
   );
 
-  await page.getByRole('button', { name: 'Share forecast for Raná' }).click();
+  const shareButton = page.getByRole('button', { name: 'Share forecast for Raná' });
+  await expect(shareButton).toBeVisible();
+  await expect(shareButton).toHaveText('Share');
+  await shareButton.click();
   await expect(page.getByText('Forecast link copied')).toBeVisible();
 
   const copiedUrl = await page.evaluate(() => window.__copiedForecastLink);
