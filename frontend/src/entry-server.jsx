@@ -9,11 +9,16 @@ const {
 } = require('@tanstack/react-query');
 const { HelmetProvider } = require('react-helmet-async');
 
+const api = require('./api');
+const { AppContent, AppProviders } = require('./App.jsx');
 const { createQueryClient } = require('./queryClient');
 
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || 'https://www.parra-glideator.com';
 const BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://glideator-web.onrender.com';
 const SSR_TIMEOUT_MS = Number(process.env.SSR_TIMEOUT_MS || 10000);
+
+api.default.defaults.baseURL = BACKEND_API_URL;
+api.default.defaults.withCredentials = false;
 
 const createServerWindow = (url) => ({
   location: {
@@ -86,7 +91,7 @@ const renderReactTree = (element) => new Promise((resolve, reject) => {
   }, SSR_TIMEOUT_MS);
 });
 
-const prefetchPageData = async (url, queryClient, api) => {
+const prefetchPageData = async (url, queryClient) => {
   const tasks = [];
 
   if (url.pathname === '/') {
@@ -135,14 +140,9 @@ const renderPage = async (requestUrl = '/') => {
   const helmetContext = {};
 
   try {
-    const api = require('./api');
-    api.default.defaults.baseURL = BACKEND_API_URL;
-    api.default.defaults.withCredentials = false;
-
-    await prefetchPageData(url, queryClient, api);
+    await prefetchPageData(url, queryClient);
     const dehydratedState = dehydrate(queryClient);
 
-    const { AppContent, AppProviders } = require('./App.jsx');
     const application = (
       <StaticRouter location={`${url.pathname}${url.search}`}>
         <QueryClientProvider client={queryClient}>
