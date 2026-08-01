@@ -60,7 +60,7 @@ describe('SiteMetadata', () => {
     await waitFor(() => expect(document.title).toBe('Raná – Parra-Glideator'));
 
     expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content'))
-      .toBe(`${window.location.origin}/details/1?metric=XC0`);
+      .toBe(`${window.location.origin}/details/1`);
     expect(document.querySelector('meta[property="og:description"]')?.getAttribute('content'))
       .toContain('Paragliding activity forecasts, seasonality and site information');
   });
