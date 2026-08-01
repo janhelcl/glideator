@@ -1,19 +1,20 @@
-jest.mock('axios', () => {
-  const client = jest.fn();
-  client.get = jest.fn();
-  client.post = jest.fn();
-  client.patch = jest.fn();
-  client.delete = jest.fn();
+import { vi } from 'vitest';
+
+vi.mock('axios', () => {
+  const client = vi.fn();
+  client.get = vi.fn();
+  client.post = vi.fn();
+  client.patch = vi.fn();
+  client.delete = vi.fn();
   client.interceptors = {
-    request: { use: jest.fn() },
-    response: { use: jest.fn() },
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
   };
 
   return {
-    __esModule: true,
     default: {
-      create: jest.fn(() => client),
-      isCancel: jest.fn(() => false),
+      create: vi.fn(() => client),
+      isCancel: vi.fn(() => false),
       __mockClient: client,
     },
   };
