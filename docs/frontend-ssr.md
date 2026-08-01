@@ -38,7 +38,7 @@ npm run start:ssr
 
 The build creates:
 
-- `frontend/dist/client`: browser HTML, JavaScript, CSS, and public assets;
+- `frontend/dist/client`: browser HTML, JavaScript, CSS, public assets, and the generated sitemap;
 - `frontend/dist/server`: the Vite SSR entry and its server-side chunks.
 
 ## Render configuration
@@ -70,6 +70,6 @@ The Playwright crawler tests disable JavaScript and verify that:
 - the homepage exposes a ranked comparison of Raná and Kozákov with normal links to their detail pages;
 - `/details/1` exposes Raná forecast probabilities and timestamps;
 - the two normal detail pages can be compared using XC0;
-- none of these flows request MCP, `llms.txt`, or the LLM-specific API.
+- none of these flows request MCP.
 
 The JavaScript-enabled Playwright smoke tests run against the hydrated application to guard the normal human experience.

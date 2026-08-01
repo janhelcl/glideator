@@ -75,8 +75,7 @@ This generates:
 
 - `dist/client` — browser bundle and public assets
 - `dist/server` — Node SSR bundle
-
-It also generates `sitemap.xml` and `llms.txt` before compiling the application.
+- `sitemap.xml` — public discovery URLs
 
 Run the production frontend server with:
 
