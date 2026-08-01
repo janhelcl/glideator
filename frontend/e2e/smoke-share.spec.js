@@ -29,11 +29,11 @@ test('copies a clean dated forecast URL that restores the shared state', async (
 
   await expect(page.getByRole('heading', { name: 'Raná', level: 1 })).toBeVisible();
   await expect(page).toHaveTitle(/Raná: 52% for XC20/);
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+  await expect(page.locator('meta[property="og:url"]').last()).toHaveAttribute(
     'content',
     'http://127.0.0.1:4173/details/1',
   );
-  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+  await expect(page.locator('meta[property="og:description"]').last()).toHaveAttribute(
     'content',
     /52% probability for XC20 activity at Raná/,
   );
