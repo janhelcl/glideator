@@ -46,7 +46,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       },
     },
     ssr: {
-      noExternal: ['react-helmet-async'],
+      noExternal: ['react-helmet-async', 'lodash'],
     },
     build: isSsrBuild
       ? {
