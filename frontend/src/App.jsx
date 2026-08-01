@@ -29,6 +29,12 @@ export const RouteFallback = () => (
   </Box>
 );
 
+const LazyRoute = ({ children }) => (
+  <Suspense fallback={<RouteFallback />}>
+    {children}
+  </Suspense>
+);
+
 export const AppProviders = ({ children }) => (
   <AuthProvider>
     <NotificationProvider>{children}</NotificationProvider>
@@ -42,9 +48,25 @@ export const AppRoutes = () => (
     <Route path="/register" element={<Register />} />
     <Route path="/" element={<Layout />}>
       <Route index element={<Home />} />
-      <Route path="trip-planner" element={<TripPlannerPage />} />
+      <Route
+        path="trip-planner"
+        element={(
+          <LazyRoute>
+            <TripPlannerPage />
+          </LazyRoute>
+        )}
+      />
       <Route path="about" element={<About />} />
-      <Route path="admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+      <Route
+        path="admin"
+        element={(
+          <RequireAdmin>
+            <LazyRoute>
+              <Admin />
+            </LazyRoute>
+          </RequireAdmin>
+        )}
+      />
       <Route path="feedback" element={<RequireAuth><Feedback /></RequireAuth>} />
       <Route path="details/:siteId" element={<DetailsRoute />} />
       <Route path="profile" element={<RequireAuth><Profile /></RequireAuth>} />
@@ -58,9 +80,7 @@ export const AppRoutes = () => (
 export const AppContent = () => (
   <>
     <AnalyticsRouteTracker />
-    <Suspense fallback={<RouteFallback />}>
-      <AppRoutes />
-    </Suspense>
+    <AppRoutes />
   </>
 );
 
