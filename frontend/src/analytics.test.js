@@ -1,20 +1,20 @@
+import { vi } from 'vitest';
+
 import apiClient from './api';
 import { analyticsEnabled, resetAnalyticsIdsForTests, trackEvent } from './analytics';
 
-jest.mock('./api', () => ({
-  __esModule: true,
+vi.mock('./api', () => ({
   default: {
-    post: jest.fn(),
+    post: vi.fn(),
   },
 }));
 
 describe('product analytics', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
     sessionStorage.clear();
     resetAnalyticsIdsForTests();
-    process.env.REACT_APP_ANALYTICS_ENABLED = 'true';
     Object.defineProperty(navigator, 'doNotTrack', {
       configurable: true,
       value: null,
