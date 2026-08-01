@@ -519,10 +519,8 @@ const D3Forecast = ({ forecast, selectedHour, date, gfs_forecast_at, computed_at
       ref={containerRef}
       style={{
         width: 'min(100%, 1000px, calc(100vh - 300px))',
-        height: 'auto',
         aspectRatio: '1 / 1',
         maxWidth: '100%',
-        maxHeight: '100%',
         margin: '0 auto',
         position: 'relative',
         overflow: 'hidden',
