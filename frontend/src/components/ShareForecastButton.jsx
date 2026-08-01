@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Fab, Snackbar } from '@mui/material';
+import { Alert, Button, Snackbar } from '@mui/material';
 import ShareIcon from '@mui/icons-material/Share';
 
 import { trackEvent } from '../analytics';
@@ -128,24 +128,28 @@ const ShareForecastButton = ({
 
   return (
     <>
-      <Fab
-        variant="extended"
-        color="primary"
-        size="medium"
+      <Button
+        variant="text"
+        size="small"
+        startIcon={<ShareIcon fontSize="small" />}
         onClick={handleShare}
         aria-label={`Share forecast for ${siteName}`}
-        sx={(theme) => ({
-          position: 'fixed',
-          right: { xs: 16, sm: 24 },
-          bottom: { xs: 72, sm: 24 },
-          zIndex: theme.zIndex.speedDial,
+        sx={{
+          minWidth: 0,
+          px: 1,
+          py: 0.5,
+          color: 'text.secondary',
+          borderRadius: 1.5,
           textTransform: 'none',
-          fontWeight: 600,
-        })}
+          fontWeight: 500,
+          '&:hover': {
+            bgcolor: 'action.hover',
+            color: 'text.primary',
+          },
+        }}
       >
-        <ShareIcon sx={{ mr: 1 }} />
-        Share forecast
-      </Fab>
+        Share
+      </Button>
 
       <Snackbar
         open={Boolean(message)}
