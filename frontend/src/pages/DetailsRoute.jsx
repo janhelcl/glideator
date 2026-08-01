@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { trackEvent } from '../analytics';
+import AccessibleSiteForecast from '../components/AccessibleSiteForecast';
 import QuickFeedback from '../components/QuickFeedback';
 import Details from './Details';
 
@@ -61,6 +62,7 @@ const DetailsRoute = () => {
 
   return (
     <>
+      <AccessibleSiteForecast siteId={siteId} selectedDate={date} />
       <Details />
       {tab === 'forecast' && date && (
         <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 2, pb: 2 }}>
