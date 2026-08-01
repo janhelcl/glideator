@@ -155,9 +155,19 @@ const proxyRequest = (request, response, { stripApiPrefix = false } = {}) => {
   request.pipe(upstream);
 };
 
-const isPublicCacheableRoute = (pathname) => (
+const shouldServerRender = (pathname) => (
   pathname === '/' || pathname === '/about' || /^\/details\/\d+\/?$/.test(pathname)
 );
+
+const sendClientApplication = async (request, response) => {
+  const template = await getIndexTemplate();
+  response.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  response.end(request.method === 'HEAD' ? undefined : template);
+};
 
 const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
@@ -182,6 +192,11 @@ const server = http.createServer(async (request, response) => {
   if (request.method === 'GET' || request.method === 'HEAD') {
     if (await serveStaticFile(request, response, pathname)) return;
 
+    if (!shouldServerRender(pathname)) {
+      await sendClientApplication(request, response);
+      return;
+    }
+
     try {
       const template = await getIndexTemplate();
       const rendered = await renderPage(`${pathname}${requestUrl.search}`);
@@ -189,12 +204,7 @@ const server = http.createServer(async (request, response) => {
 
       response.statusCode = rendered.statusCode;
       response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      response.setHeader(
-        'Cache-Control',
-        isPublicCacheableRoute(pathname)
-          ? 'public, max-age=300, stale-while-revalidate=600'
-          : 'no-cache',
-      );
+      response.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
       response.setHeader('X-Content-Type-Options', 'nosniff');
 
       if (request.method === 'HEAD') {
@@ -204,12 +214,7 @@ const server = http.createServer(async (request, response) => {
       }
     } catch (error) {
       console.error(`SSR failed for ${request.url}; serving the client application:`, error);
-      const template = await getIndexTemplate();
-      response.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      });
-      response.end(request.method === 'HEAD' ? undefined : template);
+      await sendClientApplication(request, response);
     }
     return;
   }
