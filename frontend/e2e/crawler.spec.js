@@ -52,7 +52,9 @@ test('site forecast is answerable from normal HTML without MCP', async ({ page }
 
   const forecastTable = page.locator('table[aria-label="Raná seven-day forecast probabilities"]');
   const forecastText = await forecastTable.textContent();
-  expect(forecastText).toContain('XC0');
+  expect(forecastText).toContain('Chance of a flight');
+  expect(forecastText).toContain('Chance of a 20+ point flight');
+  expect(forecastText).not.toContain('XC20');
   expect(forecastText).toContain('72%');
   expect(forecastText).toContain('2026-08-01T09:30:00Z');
   expect(forecastText).toContain('2026-08-01T06:00:00Z');
