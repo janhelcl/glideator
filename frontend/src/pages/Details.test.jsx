@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi } from 'vitest';
 
 import Details from './Details';
 import {
@@ -13,51 +14,53 @@ import {
   fetchSiteResources,
 } from '../api';
 
-jest.mock('@mui/material', () => ({
-  ...jest.requireActual('@mui/material'),
-  useMediaQuery: () => false,
+vi.mock('@mui/material', async () => {
+  const actual = await vi.importActual('@mui/material');
+  return {
+    ...actual,
+    useMediaQuery: () => false,
+  };
+});
+
+vi.mock('../api', () => ({
+  fetchFlightStats: vi.fn(),
+  fetchSiteForecast: vi.fn(),
+  fetchSiteInfo: vi.fn(),
+  fetchSitePredictions: vi.fn(),
+  fetchSiteResources: vi.fn(),
 }));
 
-jest.mock('../api', () => ({
-  fetchFlightStats: jest.fn(),
-  fetchSiteForecast: jest.fn(),
-  fetchSiteInfo: jest.fn(),
-  fetchSitePredictions: jest.fn(),
-  fetchSiteResources: jest.fn(),
-}));
-
-jest.mock('../context/AuthContext', () => ({
+vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     isAuthenticated: false,
-    toggleFavoriteSite: jest.fn(),
-    isFavorite: jest.fn(() => false),
+    toggleFavoriteSite: vi.fn(),
+    isFavorite: vi.fn(() => false),
   }),
 }));
 
-jest.mock('../hooks/useDefaultMetric', () => ({
+vi.mock('../hooks/useDefaultMetric', () => ({
   useDefaultMetric: () => ({ preferredMetric: 'XC0' }),
 }));
 
-jest.mock('../components/GlideatorForecast', () => () => <div>Forecast summary</div>);
-jest.mock('../components/LoadingSpinner', () => () => <div>Loading</div>);
-jest.mock('../components/D3Forecast', () => ({
-  __esModule: true,
+vi.mock('../components/GlideatorForecast', () => ({
+  default: () => <div>Forecast summary</div>,
+}));
+vi.mock('../components/LoadingSpinner', () => ({
+  default: () => <div>Loading</div>,
+}));
+vi.mock('../components/D3Forecast', () => ({
   default: () => <div>Atmospheric profile</div>,
 }));
-jest.mock('../components/FlightStatsChart', () => ({
-  __esModule: true,
+vi.mock('../components/FlightStatsChart', () => ({
   default: () => <div>Season chart</div>,
 }));
-jest.mock('../components/SearchRecs', () => ({
-  __esModule: true,
+vi.mock('../components/SearchRecs', () => ({
   default: () => <div>Search recommendations</div>,
 }));
-jest.mock('../components/SimilarDaysPanel', () => ({
-  __esModule: true,
+vi.mock('../components/SimilarDaysPanel', () => ({
   default: () => <div>Similar days</div>,
 }));
-jest.mock('../components/SiteMap', () => ({
-  __esModule: true,
+vi.mock('../components/SiteMap', () => ({
   default: () => <div>Site map</div>,
 }));
 
@@ -89,7 +92,7 @@ const renderDetails = () => {
 
 describe('Details data loading', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     fetchSitePredictions.mockResolvedValue([
       {
