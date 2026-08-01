@@ -110,7 +110,7 @@ const prefetchPageData = async (url, queryClient) => {
   const siteId = detailMatch[1];
   const numericSiteId = Number(siteId);
   const [predictionsResult] = await Promise.allSettled([
-    queryClient.prefetchQuery({
+    queryClient.fetchQuery({
       queryKey: ['site', numericSiteId, 'predictions'],
       queryFn: () => fetchSitePredictions(siteId),
     }),
