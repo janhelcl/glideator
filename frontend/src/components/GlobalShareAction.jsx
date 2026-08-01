@@ -125,10 +125,12 @@ const GlobalShareAction = () => {
     enabled: Number.isFinite(siteId),
   });
 
-  const sharedLatitude = Number(params.get('originLat'));
-  const sharedLongitude = Number(params.get('originLng'));
+  const hasSharedCoordinates = params.has('originLat') && params.has('originLng');
+  const sharedLatitude = hasSharedCoordinates ? Number(params.get('originLat')) : Number.NaN;
+  const sharedLongitude = hasSharedCoordinates ? Number(params.get('originLng')) : Number.NaN;
   if (
     location.pathname === '/trip-planner'
+    && hasSharedCoordinates
     && isValidOrigin(sharedLatitude, sharedLongitude)
   ) {
     sharedOriginRef.current = {
@@ -191,13 +193,6 @@ const GlobalShareAction = () => {
       window.history.replaceState(window.history.state, '', currentUrl.toString());
     }
   }, [effectiveSharedOrigin, hasSharedOrigin, location.search]);
-
-  useEffect(() => {
-    if (hasSharedOrigin) {
-      setSeverity('info');
-      setMessage('Using the approximate starting area from the shared trip plan');
-    }
-  }, [hasSharedOrigin]);
 
   const pageConfig = useMemo(() => {
     const origin = getBrowserOrigin();
