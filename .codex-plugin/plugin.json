@@ -16,6 +16,7 @@
     "displayName": "Parra-Glideator",
     "shortDescription": "Compare paragliding sites and forecast-derived XC potential.",
     "longDescription": "Use Parra-Glideator's read-only MCP tools to compare paragliding sites for specific dates, inspect forecast-derived XC potential and historical seasonality, find takeoffs and landings, and discover curated local resources. Decision support only: verify current conditions, local rules, airspace, access, and pilot suitability before flying.",
+    "category": "Travel",
     "capabilities": [
       "Read"
     ],
