@@ -28,7 +28,7 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.txt': 'text/plain; charset=utf-8',
-  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json',
   '.webp': 'image/webp',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
@@ -170,7 +170,12 @@ const proxyRequest = (request, response, { stripApiPrefix = false } = {}) => {
 };
 
 const shouldServerRender = (pathname) => (
-  pathname === '/' || pathname === '/about' || /^\/details\/\d+\/?$/.test(pathname)
+  pathname === '/'
+  || pathname === '/about'
+  || pathname === '/privacy'
+  || pathname === '/terms'
+  || pathname === '/support'
+  || /^\/details\/\d+\/?$/.test(pathname)
 );
 
 const sendClientApplication = async (request, response) => {
@@ -183,6 +188,22 @@ const sendClientApplication = async (request, response) => {
   response.end(request.method === 'HEAD' ? undefined : template);
 };
 
+const serveOpenAIAppsChallenge = (request, response) => {
+  const token = process.env.OPENAI_APPS_CHALLENGE_TOKEN?.trim();
+  if (!token) {
+    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    response.end('Not configured');
+    return;
+  }
+
+  response.writeHead(200, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  response.end(request.method === 'HEAD' ? undefined : token);
+};
+
 const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
   const { pathname } = requestUrl;
@@ -190,6 +211,14 @@ const server = http.createServer(async (request, response) => {
   if (pathname === '/health') {
     response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     response.end(JSON.stringify({ status: 'ok' }));
+    return;
+  }
+
+  if (
+    pathname === '/.well-known/openai-apps-challenge'
+    && (request.method === 'GET' || request.method === 'HEAD')
+  ) {
+    serveOpenAIAppsChallenge(request, response);
     return;
   }
 
@@ -246,4 +275,5 @@ module.exports = {
   injectSsrMarkup,
   serializeState,
   server,
+  serveOpenAIAppsChallenge,
 };
