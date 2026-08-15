@@ -13,6 +13,7 @@ import Notifications from './pages/Notifications';
 import About from './pages/About';
 import Feedback from './pages/Feedback';
 import DetailsRoute from './pages/DetailsRoute';
+import { Privacy, Support, Terms } from './pages/Legal';
 import RequireAuth from './components/RequireAuth';
 import RequireAdmin from './components/RequireAdmin';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -57,6 +58,9 @@ export const AppRoutes = () => (
         )}
       />
       <Route path="about" element={<About />} />
+      <Route path="privacy" element={<Privacy />} />
+      <Route path="terms" element={<Terms />} />
+      <Route path="support" element={<Support />} />
       <Route
         path="admin"
         element={(
