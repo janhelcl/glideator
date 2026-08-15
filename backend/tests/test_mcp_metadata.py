@@ -10,6 +10,7 @@ from app.mcp import mcp
 EXPECTED_TOOLS = {
     "find_sites",
     "list_sites",
+    "get_site_info",
     "get_site_resources",
     "get_site_seasonal_stats",
     "get_site_predictions",

@@ -14,8 +14,8 @@
   ],
   "interface": {
     "displayName": "Parra-Glideator",
-    "shortDescription": "Compare paragliding sites and forecast-derived XC potential.",
-    "longDescription": "Use Parra-Glideator's read-only MCP tools to compare paragliding sites for specific dates, inspect forecast-derived XC potential and historical seasonality, find takeoffs and landings, and discover curated local resources. Decision support only: verify current conditions, local rules, airspace, access, and pilot suitability before flying.",
+    "shortDescription": "Rank paragliding sites by forecast-derived XC potential.",
+    "longDescription": "Use Parra-Glideator's read-only tools to rank and compare paragliding sites for specific dates by forecast-derived XC potential, then inspect site forecasts, historical seasonality, takeoffs and landings, and curated local resources. Decision support only: verify current conditions, local rules, airspace, access, and pilot suitability before flying.",
     "category": "Travel",
     "capabilities": [
       "Read"
@@ -24,9 +24,11 @@
     "privacyPolicyURL": "https://www.parra-glideator.com/privacy",
     "termsOfServiceURL": "https://www.parra-glideator.com/terms",
     "defaultPrompt": [
-      "Use Parra-Glideator to find the most promising paragliding sites for this weekend.",
-      "Use Parra-Glideator to compare 50-point XC potential for paragliding sites near me next week."
+      "Use Parra-Glideator to find the most promising paragliding sites within 300 km of Prague this weekend.",
+      "Use Parra-Glideator to compare 50-point XC potential at Bassano and Meduno next week."
     ],
-    "brandColor": "#2E7D32"
+    "brandColor": "#2E7D32",
+    "composerIcon": "./frontend/public/logo192.png",
+    "logo": "./frontend/public/logo512.png"
   }
 }
