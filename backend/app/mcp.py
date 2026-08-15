@@ -35,6 +35,11 @@ def _normalize_site_name(value: str) -> str:
     return "".join(char for char in normalized if not unicodedata.combining(char))
 
 
+def _serialize_site_info(value: object) -> schemas.SiteInfo:
+    """Convert the ORM site-info record to the public Pydantic response shape."""
+    return schemas.SiteInfo.model_validate(value)
+
+
 mcp = FastMCP(
     "Parra-Glideator",
     instructions=(
@@ -121,7 +126,7 @@ async def get_site_info(site_id: int) -> schemas.SiteInfo:
 
     if not site_info:
         raise ValueError(f"No stored site overview found for site {site_id}")
-    return site_info
+    return _serialize_site_info(site_info)
 
 
 @mcp.tool(title="Get site resources", annotations=READ_ONLY_ANNOTATIONS)
