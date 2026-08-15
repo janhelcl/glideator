@@ -60,6 +60,10 @@ Travel
 
 Use the existing Parra-Glideator mascot/logo. Export the required review size from the existing project artwork rather than introducing a second brand mark.
 
+### Initial release notes
+
+Initial public submission of the Parra-Glideator MCP plugin. It exposes read-only tools for paragliding-site discovery, date-based trip ranking, forecast-derived XC potential, historical seasonality, launches/landings, and curated local resources. No authentication or custom ChatGPT UI is required. Results are decision support and are not a safety or legality determination.
+
 ## Starter prompts
 
 1. `Where should I look at flying this weekend within 300 km of Prague?`
@@ -69,11 +73,17 @@ Use the existing Parra-Glideator mascot/logo. Export the required review size fr
 
 ## Required positive review test cases
 
+All positive cases use the public production dataset and require no account or credentials. Because forecast values change, reviewers should validate the tool choice and result shape rather than expect hard-coded probabilities.
+
 ### Positive 1 — date + distance ranking
 
 **Prompt:** `Where should I look at flying this weekend within 300 km of Prague?`
 
 **Expected behavior:** Resolve the user's intended dates and Prague coordinates, call `plan_trip` with the date range and distance constraint, rank the returned sites, explain the forecast-derived signal, and remind the user to verify current/local conditions rather than calling a result "safe".
+
+**Expected result shape:** A ranked list of matching sites from `TripPlanResponse`, including per-site aggregate potential and daily values/sources for the requested date range; distance information should be present when the origin coordinates are supplied.
+
+**Fixture/data:** No login. Use the current production site directory and forecast/historical data. Resolve "this weekend" relative to the review date and use Prague, Czechia as the origin.
 
 ### Positive 2 — named site forecast
 
@@ -81,11 +91,19 @@ Use the existing Parra-Glideator mascot/logo. Export the required review size fr
 
 **Expected behavior:** Call `find_sites` for Bassano, then `get_site_predictions` for the resolved site ID/date. Focus on the XC50 probability and nearby thresholds when useful. Do not turn the probability into a safety determination.
 
+**Expected result shape:** `find_sites` returns one or more `{site_id, name}` matches; `get_site_predictions` returns a date-keyed object whose values contain XC-threshold probability fields, including the 50-point threshold when forecast data is available.
+
+**Fixture/data:** No login. Bassano is present in the production site directory. Resolve "next Friday" relative to the review date; it should fall inside the normal near-term forecast horizon. If that exact day's forecast is temporarily unavailable, the assistant should say so rather than invent a probability.
+
 ### Positive 3 — historical seasonality
 
 **Prompt:** `What are historically the best months for 50+ XC days at Tolmin?`
 
 **Expected behavior:** Call `find_sites`, then `get_site_seasonal_stats`, and summarize the strongest months for the 50-point threshold while identifying the data as historical rather than a forecast.
+
+**Expected result shape:** `find_sites` returns the Tolmin site ID; `get_site_seasonal_stats` returns month-name keys with average-days fields for XC thresholds from 0 through 100, including `days_over_50XC_points_or_more`.
+
+**Fixture/data:** No login. Use the current production historical statistics for Tolmin. Values are expected to be stable enough for a reviewer to reproduce the workflow, but the test does not require specific hard-coded month values.
 
 ### Positive 4 — launch and landing orientation
 
@@ -93,11 +111,19 @@ Use the existing Parra-Glideator mascot/logo. Export the required review size fr
 
 **Expected behavior:** Call `find_sites`, then `get_site_takeoffs_and_landings`. Return the stored locations and orientation information, while telling the user to verify current site rules, access, hazards, and local information.
 
+**Expected result shape:** `find_sites` returns the relevant Annecy site ID; `get_site_takeoffs_and_landings` returns a list of spot records containing the stored spot type and available coordinates/elevation/wind-direction metadata.
+
+**Fixture/data:** No login. Use the current production site and spot records. If multiple Annecy-name matches exist, the assistant may disambiguate before fetching spot data.
+
 ### Positive 5 — local resources
 
 **Prompt:** `Can you find me the local club page, webcams, or meteostations for Kössen?`
 
 **Expected behavior:** Call `find_sites`, then `get_site_resources`. Return the curated links. The plugin itself must not claim to have opened or verified the live content during that request.
+
+**Expected result shape:** `find_sites` returns the matching site ID; `get_site_resources` returns the stored local-resources collection and available webcam/meteostation URL collections, without internal extraction-run identifiers.
+
+**Fixture/data:** No login. Use the current production resource records for Kössen. Individual external URLs may evolve; the reproducible requirement is that the tool returns the currently curated records stored by Parra-Glideator.
 
 ## Required negative review test cases
 
@@ -107,17 +133,23 @@ Use the existing Parra-Glideator mascot/logo. Export the required review size fr
 
 **Expected behavior:** The plugin may retrieve forecast/site information if it helps, but the assistant must not provide a definitive safety verdict. Explain that the forecast-derived signal is not a pilot/site safety assessment and that current conditions, instruction, local rules, skill, and equipment must be checked.
 
+**Why the plugin should not complete the requested action:** None of the MCP tools assesses pilot competence, real-time local hazards, full airspace/legal status, or all other inputs required for a defensible go/no-go safety decision.
+
 ### Negative 2 — unsupported transaction
 
 **Prompt:** `Book me a hotel next to the best site for this weekend.`
 
 **Expected behavior:** Parra-Glideator may help identify promising sites if relevant, but it has no hotel search or booking/write capability. It must not pretend to book, reserve, message, or purchase anything.
 
+**Why the plugin should not complete the requested action:** Every Parra-Glideator tool is read-only and there is no accommodation inventory, payment, reservation, or messaging tool.
+
 ### Negative 3 — unrelated general weather
 
 **Prompt:** `What will the weather be in New York tomorrow?`
 
 **Expected behavior:** Do not invoke Parra-Glideator merely because the prompt mentions weather. The plugin is for paragliding-site planning within its covered site data, not a general-purpose weather service.
+
+**Why the plugin should not complete the requested action:** The MCP exposes forecast-derived signals for covered paragliding sites, not general city weather observations or forecasts.
 
 ## Domain verification
 
@@ -145,7 +177,7 @@ Do not invent or pre-populate a token in source control.
 4. Replay the starter prompts and all eight review test cases. Record tool selection and arguments; tune metadata if the wrong tool is selected.
 5. In the OpenAI Platform organization that will publish the plugin, complete individual or business identity verification and ensure the submitter has Apps Management write permission.
 6. Create an MCP-backed plugin submission and use the universal MCP URL above.
-7. Enter the listing copy and policy URLs from this document.
+7. Enter the listing copy, initial release notes, and policy URLs from this document.
 8. Use Scan Tools and verify the seven tools, their input/output schemas, server instructions, and the three required annotations.
 9. When the portal shows the domain token, set `OPENAI_APPS_CHALLENGE_TOKEN` on the frontend Render service and redeploy before completing domain verification.
 10. Add the five positive and three negative test cases above, choose the intended country availability, complete the policy attestations, and submit for review.
@@ -174,4 +206,5 @@ The public submission itself must submit the MCP server through the OpenAI plugi
 - [ ] Exact OpenAI domain token configured and verified
 - [ ] Listing logo uploaded
 - [ ] Country availability selected
+- [ ] Initial release notes entered
 - [ ] Submission sent for review
