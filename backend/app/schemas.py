@@ -181,7 +181,7 @@ class DailyProbability(BaseModel):
 class SiteSuggestion(BaseModel):
     site_name: str
     average_flyability: float # Based on XC0
-    site_id: str
+    site_id: int
     latitude: float
     longitude: float
     altitude: int
