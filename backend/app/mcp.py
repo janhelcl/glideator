@@ -1,9 +1,10 @@
+import unicodedata
 from datetime import datetime
 from typing import Dict, List, Literal, Optional
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
-from pydantic import TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 
 from app import crud, schemas
 from app.database import AsyncSessionLocal
@@ -15,6 +16,24 @@ READ_ONLY_ANNOTATIONS = ToolAnnotations(
     destructiveHint=False,
     openWorldHint=False,
 )
+
+
+class PublicSiteResources(BaseModel):
+    """Public MCP shape for curated site resources without extraction-run metadata."""
+
+    site_id: int
+    local_resources: List[schemas.SiteResourceLink] = Field(default_factory=list)
+    webcam_url: Optional[str] = None
+    webcam_urls: List[str] = Field(default_factory=list)
+    meteostation_url: Optional[str] = None
+    meteostation_urls: List[str] = Field(default_factory=list)
+
+
+def _normalize_site_name(value: str) -> str:
+    """Normalize case and accents so e.g. 'Rana' matches 'Raná'."""
+    normalized = unicodedata.normalize("NFKD", value.strip().casefold())
+    return "".join(char for char in normalized if not unicodedata.combining(char))
+
 
 mcp = FastMCP(
     "Parra-Glideator",
@@ -38,14 +57,14 @@ mcp = FastMCP(
 async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
     """Use this when the user names or searches for a paragliding site and you need its site ID.
 
-    Performs a case-insensitive name match against Parra-Glideator's site directory. Prefer this
-    over list_sites when the user already supplied a site or place name.
+    Performs a case-insensitive, accent-insensitive name match against Parra-Glideator's site
+    directory. Prefer this over list_sites when the user already supplied a site or place name.
 
     Args:
         query: Full or partial site name, for example "Bassano", "Rana", or "Annecy".
         limit: Maximum matches to return. Must be between 1 and 50.
     """
-    cleaned_query = query.strip().casefold()
+    cleaned_query = _normalize_site_name(query)
     if not cleaned_query:
         raise ValueError("query must not be empty")
     if limit < 1 or limit > 50:
@@ -57,13 +76,13 @@ async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
     matches = [
         {"site_id": row.site_id, "name": row.name}
         for row in sites_raw
-        if cleaned_query in row.name.casefold()
+        if cleaned_query in _normalize_site_name(row.name)
     ]
     matches.sort(
         key=lambda site: (
-            not site["name"].casefold().startswith(cleaned_query),
+            not _normalize_site_name(site["name"]).startswith(cleaned_query),
             len(site["name"]),
-            site["name"].casefold(),
+            _normalize_site_name(site["name"]),
         )
     )
 
@@ -106,18 +125,21 @@ async def get_site_info(site_id: int) -> schemas.SiteInfo:
 
 
 @mcp.tool(title="Get site resources", annotations=READ_ONLY_ANNOTATIONS)
-async def get_site_resources(site_id: int) -> dict:
+async def get_site_resources(site_id: int) -> PublicSiteResources:
     """Use this when the user wants practical local links for a known paragliding site.
 
     Returns curated club/site pages, webcams, and meteostation links already stored by
-    Parra-Glideator. This tool does not browse those external sites or change external state.
+    Parra-Glideator as structured data. This tool does not browse those external sites or change
+    external state.
 
     Args:
         site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
     """
     async with AsyncSessionLocal() as db:
         resources = await crud.get_site_resources(db, site_id)
-    return resources.model_dump(exclude={"source_run_id", "run_extracted_at"})
+
+    public_data = resources.model_dump(exclude={"source_run_id", "run_extracted_at"})
+    return PublicSiteResources.model_validate(public_data)
 
 
 @mcp.tool(title="Get site seasonal statistics", annotations=READ_ONLY_ANNOTATIONS)
