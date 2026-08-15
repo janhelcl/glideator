@@ -39,7 +39,7 @@ async def test_plan_trip_forwards_filters_and_pagination(monkeypatch):
             {
                 "site_name": "Rana",
                 "average_flyability": 0.76,
-                "site_id": "1",
+                "site_id": 1,
                 "latitude": 50.404,
                 "longitude": 13.771,
                 "altitude": 457,
