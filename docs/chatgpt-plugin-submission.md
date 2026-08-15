@@ -23,6 +23,7 @@ Every tool is read-only and accesses Parra-Glideator data without creating, upda
 | --- | --- | --- | --- | --- |
 | `find_sites` | Find site IDs from a partial/full name | `true` | `false` | `false` |
 | `list_sites` | Browse the full covered site directory | `true` | `false` | `false` |
+| `get_site_info` | Return the stored overview/guide for a known site | `true` | `false` | `false` |
 | `get_site_resources` | Return already-curated local links | `true` | `false` | `false` |
 | `get_site_seasonal_stats` | Return historical monthly XC-activity statistics | `true` | `false` | `false` |
 | `get_site_predictions` | Return forecast-derived XC-activity probabilities | `true` | `false` | `false` |
@@ -39,11 +40,11 @@ Parra-Glideator
 
 ### Short description
 
-Compare paragliding sites and forecast-derived XC potential.
+Rank paragliding sites by forecast-derived XC potential.
 
 ### Long description
 
-Parra-Glideator helps pilots narrow down where and when conditions look most promising. Its read-only tools rank sites for selected dates, compare forecast-derived XC potential, show historical seasonality, return launch and landing information, and surface curated local resources such as club pages, webcams, and meteostations. Results are decision support only: pilots must verify current conditions, local rules, airspace, access, and suitability for their skills and equipment before flying.
+Parra-Glideator helps pilots narrow down where and when conditions look most promising. Its read-only tools rank sites for selected dates, compare forecast-derived XC potential, show stored site overviews and historical seasonality, return launch and landing information, and surface curated local resources such as club pages, webcams, and meteostations. Results are decision support only: pilots must verify current conditions, local rules, airspace, access, and suitability for their skills and equipment before flying.
 
 ### Suggested category
 
@@ -58,11 +59,16 @@ Travel
 
 ### Logo
 
-Use the existing Parra-Glideator mascot/logo. Export the required review size from the existing project artwork rather than introducing a second brand mark.
+Use the existing Parra-Glideator brand assets:
+
+- Public listing/full logo: `frontend/public/logo512.png`
+- Composer icon: `frontend/public/logo192.png`
+
+The plugin manifest references both files. Use the same `logo512.png` when the OpenAI submission form asks for the listing logo rather than introducing a separate brand mark.
 
 ### Initial release notes
 
-Initial public submission of the Parra-Glideator MCP plugin. It exposes read-only tools for paragliding-site discovery, date-based trip ranking, forecast-derived XC potential, historical seasonality, launches/landings, and curated local resources. No authentication or custom ChatGPT UI is required. Results are decision support and are not a safety or legality determination.
+Initial public submission of the Parra-Glideator MCP plugin. It exposes read-only tools for paragliding-site discovery and overviews, date-based trip ranking, forecast-derived XC potential, historical seasonality, launches/landings, and curated local resources. No authentication or custom ChatGPT UI is required. Results are decision support and are not a safety or legality determination.
 
 ## Starter prompts
 
@@ -71,7 +77,7 @@ Initial public submission of the Parra-Glideator MCP plugin. It exposes read-onl
 3. `Compare the next week at Bassano and Meduno.`
 4. `What are historically the best months for 50+ XC days at Tolmin?`
 
-## Required positive review test cases
+## Positive review test cases
 
 All positive cases use the public production dataset and require no account or credentials. Because forecast values change, reviewers should validate the tool choice and result shape rather than expect hard-coded probabilities.
 
@@ -91,7 +97,7 @@ All positive cases use the public production dataset and require no account or c
 
 **Expected behavior:** Call `find_sites` for Bassano, then `get_site_predictions` for the resolved site ID/date. Focus on the XC50 probability and nearby thresholds when useful. Do not turn the probability into a safety determination.
 
-**Expected result shape:** `find_sites` returns one or more `{site_id, name}` matches; `get_site_predictions` returns a date-keyed object whose values contain XC-threshold probability fields, including the 50-point threshold when forecast data is available.
+**Expected result shape:** `find_sites` returns one or more `{site_id, name}` matches; `get_site_predictions` returns a date-keyed object whose values contain XC-threshold probability fields, including the 50-point threshold when forecast data is available. Dates and XC thresholds are returned in deterministic ascending order.
 
 **Fixture/data:** No login. Bassano is present in the production site directory. Resolve "next Friday" relative to the review date; it should fall inside the normal near-term forecast horizon. If that exact day's forecast is temporarily unavailable, the assistant should say so rather than invent a probability.
 
@@ -124,6 +130,16 @@ All positive cases use the public production dataset and require no account or c
 **Expected result shape:** `find_sites` returns the matching site ID; `get_site_resources` returns the stored local-resources collection and available webcam/meteostation URL collections, without internal extraction-run identifiers.
 
 **Fixture/data:** No login. Use the current production resource records for Kössen. Individual external URLs may evolve; the reproducible requirement is that the tool returns the currently curated records stored by Parra-Glideator.
+
+### Positive 6 — site overview
+
+**Prompt:** `What should I know about flying at Bassano?`
+
+**Expected behavior:** Call `find_sites`, then `get_site_info`. Summarize the stored Parra-Glideator site guide and clearly distinguish reference/editorial information from live conditions. If current rules or conditions matter, tell the user to verify them locally.
+
+**Expected result shape:** `find_sites` returns the Bassano site ID; `get_site_info` returns the stored site information object with site identifier/name/country and guide content.
+
+**Fixture/data:** No login. Use the current production site-information record for Bassano. The stored guide may evolve as Parra-Glideator content is updated.
 
 ## Required negative review test cases
 
@@ -174,17 +190,17 @@ Do not invent or pre-populate a token in source control.
    - `https://www.parra-glideator.com/terms`
    - `https://www.parra-glideator.com/support`
 3. In ChatGPT, enable Developer mode and register `https://www.parra-glideator.com/mcp` as an MCP connection.
-4. Replay the starter prompts and all eight review test cases. Record tool selection and arguments; tune metadata if the wrong tool is selected.
+4. Replay the starter prompts and all review test cases. Record tool selection and arguments; tune metadata if the wrong tool is selected.
 5. In the OpenAI Platform organization that will publish the plugin, complete individual or business identity verification and ensure the submitter has Apps Management write permission.
 6. Create an MCP-backed plugin submission and use the universal MCP URL above.
-7. Enter the listing copy, initial release notes, and policy URLs from this document.
-8. Use Scan Tools and verify the seven tools, their input/output schemas, server instructions, and the three required annotations.
+7. Enter the listing copy, initial release notes, policy URLs, and `frontend/public/logo512.png` from this document.
+8. Use Scan Tools and verify all eight tools, their input/output schemas, server instructions, and the three required annotations.
 9. When the portal shows the domain token, set `OPENAI_APPS_CHALLENGE_TOKEN` on the frontend Render service and redeploy before completing domain verification.
-10. Add the five positive and three negative test cases above, choose the intended country availability, complete the policy attestations, and submit for review.
+10. Add at least five positive and three negative test cases above, choose the intended country availability, complete the policy attestations, and submit for review.
 
 ## Repo plugin package and `.app.json`
 
-The repository now contains `.codex-plugin/plugin.json` for the plugin package and install-surface metadata.
+The repository contains `.codex-plugin/plugin.json` for the plugin package and install-surface metadata. The manifest references the existing 192px and 512px Parra-Glideator logos.
 
 Do **not** commit a fake `.app.json`. For local/repo marketplace testing, ChatGPT first needs to register the MCP server in Developer mode. ChatGPT then generates a technical connection ID beginning with `plugin_asdk_app`. Once that real ID exists, create `.app.json` from the registered connection and add `"apps": "./.app.json"` to `.codex-plugin/plugin.json`.
 
@@ -195,7 +211,7 @@ The public submission itself must submit the MCP server through the OpenAI plugi
 - [ ] Backend MCP changes deployed
 - [ ] Frontend legal/support pages deployed
 - [ ] `https://www.parra-glideator.com/mcp` connects from ChatGPT Developer mode
-- [ ] Tool scan shows all seven tools
+- [ ] Tool scan shows all eight tools
 - [ ] Every tool shows `readOnlyHint=true`
 - [ ] Every tool shows `destructiveHint=false`
 - [ ] Every tool shows `openWorldHint=false`
@@ -204,7 +220,7 @@ The public submission itself must submit the MCP server through the OpenAI plugi
 - [ ] Publisher identity verified in OpenAI Platform
 - [ ] Apps Management write permission available
 - [ ] Exact OpenAI domain token configured and verified
-- [ ] Listing logo uploaded
+- [ ] Listing logo uploaded from `frontend/public/logo512.png`
 - [ ] Country availability selected
 - [ ] Initial release notes entered
 - [ ] Submission sent for review
