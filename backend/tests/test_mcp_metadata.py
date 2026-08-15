@@ -1,11 +1,12 @@
 import os
+from types import SimpleNamespace
 
 import pytest
 
 os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/glideator")
 
 from app import schemas
-from app.mcp import _normalize_site_name, mcp
+from app.mcp import _normalize_site_name, _serialize_site_info, mcp
 
 
 EXPECTED_TOOLS = {
@@ -28,6 +29,25 @@ def test_mcp_uses_stateless_json_http_transport():
 def test_site_search_normalization_is_accent_insensitive():
     assert _normalize_site_name("Rana") == _normalize_site_name("Raná")
     assert _normalize_site_name("  KÖSSEN ") == _normalize_site_name("Kossen")
+
+
+def test_site_info_orm_is_converted_to_public_schema():
+    orm_record = SimpleNamespace(
+        site_id=1,
+        site_name="Raná",
+        country="Czechia",
+        html="<p>Site guide</p>",
+    )
+
+    result = _serialize_site_info(orm_record)
+
+    assert isinstance(result, schemas.SiteInfo)
+    assert result.model_dump() == {
+        "site_id": 1,
+        "site_name": "Raná",
+        "country": "Czechia",
+        "html": "<p>Site guide</p>",
+    }
 
 
 def test_trip_plan_site_ids_are_integers():
