@@ -20,10 +20,11 @@ mcp = FastMCP(
     "Parra-Glideator",
     instructions=(
         "Read-only paragliding planning data from Parra-Glideator. Use these tools to compare "
-        "forecast-derived flight and XC potential, historical seasonality, launch/landing data, "
-        "and curated local resources. The results are decision support, not a determination that "
-        "conditions are safe or legal to fly. Users must verify current weather, local rules, "
-        "airspace, site access, and suitability for their skills and equipment before flying."
+        "forecast-derived flight and XC potential, site descriptions, historical seasonality, "
+        "launch/landing data, and curated local resources. The results are decision support, not "
+        "a determination that conditions are safe or legal to fly. Users must verify current "
+        "weather, local rules, airspace, site access, and suitability for their skills and "
+        "equipment before flying."
     ),
     # Remote MCP clients should not depend on an in-memory session surviving
     # proxies, reconnects, or deploys. JSON responses also avoid an SSE stream
@@ -83,6 +84,25 @@ async def list_sites() -> List[schemas.SiteListItem]:
     adapter = TypeAdapter(List[schemas.SiteListItem])
     sites_data = [{"site_id": row.site_id, "name": row.name} for row in sites_raw]
     return adapter.validate_python(sites_data)
+
+
+@mcp.tool(title="Get site overview", annotations=READ_ONLY_ANNOTATIONS)
+async def get_site_info(site_id: int) -> schemas.SiteInfo:
+    """Use this when the user asks for a general overview or description of a known site.
+
+    Returns Parra-Glideator's stored site guide, including descriptive information such as local
+    characteristics, access, facilities, and rules where available. This is editorial/reference
+    information, not a live safety assessment; verify current local rules and conditions before use.
+
+    Args:
+        site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
+    """
+    async with AsyncSessionLocal() as db:
+        site_info = await crud.get_site_info(db, site_id)
+
+    if not site_info:
+        raise ValueError(f"No stored site overview found for site {site_id}")
+    return site_info
 
 
 @mcp.tool(title="Get site resources", annotations=READ_ONLY_ANNOTATIONS)
@@ -178,7 +198,17 @@ async def get_site_predictions(
         return {}
 
     result = {}
-    for pred in predictions:
+    ordered_predictions = sorted(
+        predictions,
+        key=lambda pred: (
+            pred.date,
+            int(pred.metric[2:])
+            if pred.metric.startswith("XC") and pred.metric[2:].isdigit()
+            else 10_000,
+            pred.metric,
+        ),
+    )
+    for pred in ordered_predictions:
         date_str = pred.date.strftime("%Y-%m-%d")
         if date_str not in result:
             result[date_str] = {}
