@@ -18,6 +18,11 @@ EXPECTED_TOOLS = {
 }
 
 
+def test_mcp_uses_stateless_json_http_transport():
+    assert mcp.settings.stateless_http is True
+    assert mcp.settings.json_response is True
+
+
 @pytest.mark.asyncio
 async def test_all_mcp_tools_declare_public_review_annotations():
     tools = await mcp.list_tools()

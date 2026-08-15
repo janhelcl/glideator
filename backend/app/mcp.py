@@ -25,6 +25,11 @@ mcp = FastMCP(
         "conditions are safe or legal to fly. Users must verify current weather, local rules, "
         "airspace, site access, and suitability for their skills and equipment before flying."
     ),
+    # Remote MCP clients should not depend on an in-memory session surviving
+    # proxies, reconnects, or deploys. JSON responses also avoid an SSE stream
+    # for ordinary read-only tool calls.
+    stateless_http=True,
+    json_response=True,
 )
 
 
