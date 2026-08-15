@@ -8,7 +8,7 @@ const __dirname = dirname(__filename);
 const DEFAULT_BASE_URL = 'https://www.parra-glideator.com';
 const DEFAULT_API_URL = 'https://glideator-web.onrender.com';
 
-export const STATIC_ROUTES = ['/', '/about'];
+export const STATIC_ROUTES = ['/', '/about', '/privacy', '/terms', '/support'];
 
 const stripTrailingSlash = (value) => value.replace(/\/$/, '');
 
@@ -43,9 +43,16 @@ export function buildSitemapXml(siteList, baseUrl = DEFAULT_BASE_URL) {
     .map((site) => site?.site_id || site?.id)
     .filter(Boolean))];
 
-  const entries = [
+  const staticEntries = [
     buildUrl(`${origin}/`, 'daily', '1.0'),
     buildUrl(`${origin}/about`, 'monthly', '0.6'),
+    buildUrl(`${origin}/privacy`, 'monthly', '0.3'),
+    buildUrl(`${origin}/terms`, 'monthly', '0.3'),
+    buildUrl(`${origin}/support`, 'monthly', '0.4'),
+  ];
+
+  const entries = [
+    ...staticEntries,
     ...siteIds.map((id) => buildUrl(`${origin}/details/${encodeURIComponent(id)}`, 'daily', '0.8')),
   ];
 

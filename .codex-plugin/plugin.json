@@ -1,0 +1,32 @@
+{
+  "name": "parra-glideator",
+  "version": "0.1.0",
+  "description": "Read-only paragliding planning tools powered by Parra-Glideator forecast-derived XC potential and site data.",
+  "homepage": "https://www.parra-glideator.com/about#mcp",
+  "repository": "https://github.com/janhelcl/glideator",
+  "license": "MIT",
+  "keywords": [
+    "paragliding",
+    "weather",
+    "forecast",
+    "xc",
+    "trip-planning"
+  ],
+  "interface": {
+    "displayName": "Parra-Glideator",
+    "shortDescription": "Compare paragliding sites and forecast-derived XC potential.",
+    "longDescription": "Use Parra-Glideator's read-only MCP tools to compare paragliding sites for specific dates, inspect forecast-derived XC potential and historical seasonality, find takeoffs and landings, and discover curated local resources. Decision support only: verify current conditions, local rules, airspace, access, and pilot suitability before flying.",
+    "category": "Travel",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://www.parra-glideator.com",
+    "privacyPolicyURL": "https://www.parra-glideator.com/privacy",
+    "termsOfServiceURL": "https://www.parra-glideator.com/terms",
+    "defaultPrompt": [
+      "Use Parra-Glideator to find the most promising paragliding sites for this weekend.",
+      "Use Parra-Glideator to compare 50-point XC potential for paragliding sites near me next week."
+    ],
+    "brandColor": "#2E7D32"
+  }
+}

@@ -1,115 +1,128 @@
-from typing import List, Dict, Optional
 from datetime import datetime
+from typing import Dict, List, Literal, Optional
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from pydantic import TypeAdapter
-from app import crud
+
+from app import crud, schemas
 from app.database import AsyncSessionLocal
-from app import schemas
 from app.services import trip_planner_service
 
 
-mcp = FastMCP("Glideator-MCP")
+READ_ONLY_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    openWorldHint=False,
+)
+
+mcp = FastMCP(
+    "Parra-Glideator",
+    instructions=(
+        "Read-only paragliding planning data from Parra-Glideator. Use these tools to compare "
+        "forecast-derived flight and XC potential, historical seasonality, launch/landing data, "
+        "and curated local resources. The results are decision support, not a determination that "
+        "conditions are safe or legal to fly. Users must verify current weather, local rules, "
+        "airspace, site access, and suitability for their skills and equipment before flying."
+    ),
+)
 
 
-@mcp.tool()
+@mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
+async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
+    """Use this when the user names or searches for a paragliding site and you need its site ID.
+
+    Performs a case-insensitive name match against Parra-Glideator's site directory. Prefer this
+    over list_sites when the user already supplied a site or place name.
+
+    Args:
+        query: Full or partial site name, for example "Bassano", "Rana", or "Annecy".
+        limit: Maximum matches to return. Must be between 1 and 50.
+    """
+    cleaned_query = query.strip().casefold()
+    if not cleaned_query:
+        raise ValueError("query must not be empty")
+    if limit < 1 or limit > 50:
+        raise ValueError("limit must be between 1 and 50")
+
+    async with AsyncSessionLocal() as db:
+        sites_raw = await crud.get_site_list(db)
+
+    matches = [
+        {"site_id": row.site_id, "name": row.name}
+        for row in sites_raw
+        if cleaned_query in row.name.casefold()
+    ]
+    matches.sort(
+        key=lambda site: (
+            not site["name"].casefold().startswith(cleaned_query),
+            len(site["name"]),
+            site["name"].casefold(),
+        )
+    )
+
+    adapter = TypeAdapter(List[schemas.SiteListItem])
+    return adapter.validate_python(matches[:limit])
+
+
+@mcp.tool(title="List paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
 async def list_sites() -> List[schemas.SiteListItem]:
-    """Get a complete list of all available paragliding sites with their IDs and names.
-    
-    This tool provides a directory of all paragliding sites in the database. Use this
-    when users want to browse available sites, need to find a specific site by name,
-    or want to get site IDs for use with other tools.
-    
-    Returns:
-        List of sites with site_id and name. Use the site_id with other tools to get
-        detailed information, forecasts, or statistics for specific sites.
-    
-    Use this when users ask about:
-    - "What paragliding sites are available?"
-    - "Show me all flying sites"
-    - "List paragliding locations"
-    - "What sites do you have data for?"
+    """Use this when the user wants to browse all paragliding sites covered by Parra-Glideator.
+
+    Returns the complete site directory with stable site IDs and names. If the user already named
+    a specific site, prefer find_sites to avoid returning the full directory.
     """
     async with AsyncSessionLocal() as db:
         sites_raw = await crud.get_site_list(db)
-    
-    # Use TypeAdapter to convert SQLAlchemy Row objects to Pydantic schemas
+
     adapter = TypeAdapter(List[schemas.SiteListItem])
     sites_data = [{"site_id": row.site_id, "name": row.name} for row in sites_raw]
-    sites = adapter.validate_python(sites_data)
-    return sites
+    return adapter.validate_python(sites_data)
 
 
-@mcp.tool()
+@mcp.tool(title="Get site resources", annotations=READ_ONLY_ANNOTATIONS)
 async def get_site_resources(site_id: int) -> dict:
-    """Get local resources for a paragliding site — club pages, webcams, and meteostations.
+    """Use this when the user wants practical local links for a known paragliding site.
 
-    Returns curated links discovered and validated by our ground-crew agents.
-    Useful when a user wants practical links for planning a visit: live webcams to
-    check current conditions, nearby meteostations for real-time wind/weather data,
-    and local club or site pages with rules, fees, and access information.
+    Returns curated club/site pages, webcams, and meteostation links already stored by
+    Parra-Glideator. This tool does not browse those external sites or change external state.
 
     Args:
-        site_id: Unique identifier of the site (get from list_sites tool)
-
-    Returns:
-        SiteResourcesResponse containing:
-        - local_resources: list of validated club/site pages (name, url, and what
-          info each page covers such as rules, fees, access, webcams, meteostation)
-        - webcam_urls: live webcam links near the site
-        - meteostation_urls: nearby meteostation pages
-
-    Use this when users ask about:
-    - "Are there webcams at [site]?"
-    - "Where can I check live wind at [site]?"
-    - "Is there a local club page for [site]?"
-    - "Meteostation near [site]?"
-    - "Local resources for [site]"
+        site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
     """
     async with AsyncSessionLocal() as db:
         resources = await crud.get_site_resources(db, site_id)
     return resources.model_dump(exclude={"source_run_id", "run_extracted_at"})
 
 
-@mcp.tool()
+@mcp.tool(title="Get site seasonal statistics", annotations=READ_ONLY_ANNOTATIONS)
 async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
-    """Get historical flying statistics showing seasonal patterns for a paragliding site.
-    
-    This tool provides historical data showing how many flyable days each month typically
-    has at a specific site, broken down by different XC (cross-country) performance levels.
-    Perfect for understanding the best months to visit a site or comparing seasonal patterns.
-    
+    """Use this when the user asks when a paragliding site historically performs best.
+
+    Returns average days per month reaching XC activity thresholds from 0 through 100 points.
+    These are historical flight-activity statistics, not a safety assessment or future forecast.
+
     Args:
-        site_id: Unique identifier of the site (get from list_sites tool)
-    
-    Returns:
-        Dictionary with month names as keys ("January" to "December"), each containing
-        XC threshold statistics:
-        - 'days_over_0XC_points_or_more': average days with any flyable conditions
-        - 'days_over_10XC_points_or_more': average days suitable for 10+ XC point flights  
-        - 'days_over_20XC_points_or_more': average days for 20+ XC point flights
-        - ... up to 'days_over_100XC_points_or_more' for exceptional conditions
-        
-        Higher XC thresholds indicate better thermal/soaring conditions for longer flights.
-    
-    Use this when users ask about:
-    - "What's the best season to fly at [site]?"
-    - "When is [site] most flyable?"
-    - "How many flying days per month at [site]?"
-    - "Compare seasonal conditions at [site]"
-    - "Is [site] good in winter/summer?"
+        site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
     """
     async with AsyncSessionLocal() as db:
         site_seasonal_stats = await crud.get_flight_stats_by_site_id(db, site_id)
-    
-    # Month mapping
+
     month_names = {
-        1: "January", 2: "February", 3: "March", 4: "April",
-        5: "May", 6: "June", 7: "July", 8: "August", 
-        9: "September", 10: "October", 11: "November", 12: "December"
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December",
     }
-    
-    # Build the result dictionary
+
     result = {}
     for stats in site_seasonal_stats:
         month_name = month_names[stats.month]
@@ -126,115 +139,91 @@ async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
             "days_over_90XC_points_or_more": stats.avg_days_over_90,
             "days_over_100XC_points_or_more": stats.avg_days_over_100,
         }
-    
+
     return result
 
 
-@mcp.tool()
-async def get_site_predictions(site_id: int, query_date: Optional[str] = None) -> Dict[str, Dict[str, float]]:
-    """Get weather-based flying forecasts for a specific paragliding site.
-    
-    This tool provides ML-powered predictions of flyability conditions based on weather
-    forecasts. Shows probability of different flight performance levels for upcoming days.
-    Forecasts are typically available for the next 7 days from today.
-    
+@mcp.tool(title="Get site flight-potential forecast", annotations=READ_ONLY_ANNOTATIONS)
+async def get_site_predictions(
+    site_id: int,
+    query_date: Optional[str] = None,
+) -> Dict[str, Dict[str, float]]:
+    """Use this when the user asks about forecast-derived paragliding potential at one site.
+
+    Returns modelled probabilities for XC activity thresholds from 0 through 100 points. Forecasts
+    are typically available for the next seven days. A high probability means the forecast looks
+    similar to weather associated with that level of past flight activity; it does not mean the
+    site is safe, legal, or suitable for a particular pilot.
+
     Args:
-        site_id: Unique identifier of the site (get from list_sites tool)
-        query_date: Optional specific date to get forecast for, in 'YYYY-MM-DD' format
-                   (e.g., '2024-03-15'). If not provided, returns all available forecasts.
-    
-    Returns:
-        Dictionary with ISO dates ('YYYY-MM-DD') as keys, each containing probability
-        predictions for different XC performance thresholds:
-        - 'probability_of_flight_over_0XC_points_or_more': probability of any flyable conditions
-        - 'probability_of_flight_over_10XC_points_or_more': probability of 10+ XC point flights
-        - 'probability_of_flight_over_20XC_points_or_more': probability of 20+ XC point flights  
-        - ... up to 'probability_of_flight_over_100XC_points_or_more'
-        
-        Probabilities range from 0.0 (impossible) to 1.0 (certain). Higher XC thresholds
-        indicate better thermal conditions for cross-country flying.
-    
-    Use this when users ask about:
-    - "What's the weather forecast for [site]?"
-    - "Will it be flyable at [site] tomorrow?"
-    - "Flying conditions for [site] this week"
-    - "Probability of good thermals at [site]"
-    - "Should I go to [site] on [specific date]?"
+        site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
+        query_date: Optional date in YYYY-MM-DD format. Omit to return all available forecast dates.
     """
     async with AsyncSessionLocal() as db:
-        # Convert string date to date object if provided
         date_filter = None
         if query_date:
             try:
                 date_filter = datetime.strptime(query_date, "%Y-%m-%d").date()
-            except ValueError:
-                raise ValueError("Date must be in YYYY-MM-DD format")
-        
+            except ValueError as exc:
+                raise ValueError("query_date must be in YYYY-MM-DD format") from exc
+
         predictions = await crud.get_predictions(db, site_id, query_date=date_filter)
-    
+
     if not predictions:
         return {}
-    
-    # Group predictions by date
+
     result = {}
     for pred in predictions:
         date_str = pred.date.strftime("%Y-%m-%d")
         if date_str not in result:
             result[date_str] = {}
-        
-        # Transform metric name to more descriptive key
-        # Extract the number from metric like "XC0", "XC10", etc.
+
         if pred.metric.startswith("XC"):
-            points = pred.metric[2:]  # Remove "XC" prefix
+            points = pred.metric[2:]
             descriptive_key = f"probability_of_flight_over_{points}XC_points_or_more"
         else:
-            # Fallback for any non-XC metrics
             descriptive_key = pred.metric
-            
+
         result[date_str][descriptive_key] = pred.value
-    
+
     return result
 
 
-@mcp.tool()
+@mcp.tool(title="Get site takeoffs and landings", annotations=READ_ONLY_ANNOTATIONS)
 async def get_site_takeoffs_and_landings(site_id: int) -> List[schemas.Spot]:
-    """Get all takeoff and landing locations associated with a paragliding site.
-    
-    This tool provides detailed information about all launch and landing spots at a site,
-    including their exact coordinates, elevation, directions, and characteristics.
-    Essential for flight planning and understanding site layout.
-    
+    """Use this when the user asks where launches or landings are at a known paragliding site.
+
+    Returns stored coordinates, elevation, spot type, and suitable wind-direction metadata where
+    available. Treat this as orientation data only; users must verify current site rules, access,
+    obstacles, and local conditions before use.
+
     Args:
-        site_id: Unique identifier of the site (get from list_sites tool)
-    
-    Returns:
-        List of Spot objects containing detailed information for each takeoff/landing:
-        - Coordinates (latitude/longitude) 
-        - Elevation
-        - Spot type (takeoff/landing)
-        - Suitable wind direction
-    
-    Use this when users ask about:
-    - "Where are the takeoffs at [site]?"
-    - "Show me landing options for [site]"
-    - "What are the coordinates of [site] launch points?"
-    - "Which direction does [site] face?"
-    - "How many takeoffs does [site] have?"
-    - "Where can I land at [site]?"
+        site_id: Parra-Glideator site ID. Use find_sites when the ID is unknown.
     """
     async with AsyncSessionLocal() as db:
         spots_models = await crud.get_spots_by_site_id(db, site_id)
-    
+
     adapter = TypeAdapter(List[schemas.Spot])
-    spots = adapter.validate_python(spots_models)
-    return spots
+    return adapter.validate_python(spots_models)
 
 
-@mcp.tool()
+@mcp.tool(title="Plan a paragliding trip", annotations=READ_ONLY_ANNOTATIONS)
 async def plan_trip(
     start_date: str,
     end_date: str,
-    metric: str = 'XC0',
+    metric: Literal[
+        "XC0",
+        "XC10",
+        "XC20",
+        "XC30",
+        "XC40",
+        "XC50",
+        "XC60",
+        "XC70",
+        "XC80",
+        "XC90",
+        "XC100",
+    ] = "XC0",
     user_latitude: Optional[float] = None,
     user_longitude: Optional[float] = None,
     max_distance_km: Optional[float] = None,
@@ -242,55 +231,55 @@ async def plan_trip(
     max_altitude_m: Optional[int] = None,
     required_tags: Optional[List[str]] = None,
     offset: int = 0,
-    limit: int = 10
+    limit: int = 10,
 ) -> schemas.TripPlanResponse:
-    """Find the best paragliding sites for a trip over a specific date range.
-    
-    This tool analyzes both weather forecasts (next 7 days) and historical flight data 
-    to recommend paragliding sites with the highest flyability probability. Perfect for 
-    planning paragliding trips, finding good flying conditions, or comparing sites.
-    
+    """Use this when the user wants to compare or rank paragliding sites for specific dates.
+
+    Combines forecast-derived flight/XC potential for near-term dates with historical fallback data
+    and ranks matching sites. This is the primary tool for questions such as "Where should I look
+    at flying this weekend?" or "Which sites have the strongest 50-point XC signal next week?"
+
+    Do not present the ranking as a safety or go/no-go recommendation. The user must still verify
+    current weather, airspace, local rules, access, and suitability for their skills and equipment.
+
     Args:
-        start_date: Trip start date in 'YYYY-MM-DD' format (e.g., '2024-03-15')
-        end_date: Trip end date in 'YYYY-MM-DD' format (e.g., '2024-03-20')
-        metric: XC points threshold - 'XC0' for any flyable day, 'XC10' for 10+ XC points,
-                up to 'XC100'. Higher thresholds = better/longer flight conditions.
-        user_latitude: Your latitude in decimal degrees (e.g., 46.8182) to calculate distances
-        user_longitude: Your longitude in decimal degrees (e.g., 8.2275) to calculate distances  
-        max_distance_km: Only show sites within this distance from your location (kilometers)
-        min_altitude_m: Minimum site altitude in meters (useful for avoiding low valleys)
-        max_altitude_m: Maximum site altitude in meters (useful for avoiding extreme elevations)
-        required_tags: List of required site characteristics. Common tags include:
-                - 'car': takeoff accessible by car
-                - 'lift': takeoff accessible by lift/chair or cable car  
-                - 'shuttle': official shuttle service available
-                - 'Alps': site located in the Alps
-                - 'Pyrenees': site located in the Pyrenees
-                - 'Appennines': site located in the Apennines
-                - 'flats': site located in flatlands
-                - 'mountaines': site located in mountains
-        offset: Skip this many results (for pagination)
-        limit: Maximum number of sites to return (default 10)
-    
-    Returns:
-        Ranked list of sites with their average flyability probability, daily forecasts,
-        coordinates, altitude, and distance from user location if provided. Sites are 
-        sorted by flyability score (highest probability first).
-    
-    Use this when users ask about:
-    - "Where should I fly next week?"
-    - "Best sites for a 3-day paragliding trip"  
-    - "Flying spots near [location] with good weather"
-    - "Compare sites for specific dates"
+        start_date: Trip start date in YYYY-MM-DD format.
+        end_date: Trip end date in YYYY-MM-DD format.
+        metric: XC activity threshold to optimize, from XC0 through XC100 in 10-point steps.
+        user_latitude: Optional origin latitude used for distance filtering/ranking.
+        user_longitude: Optional origin longitude used for distance filtering/ranking.
+        max_distance_km: Optional maximum straight-line distance from the supplied origin.
+        min_altitude_m: Optional minimum site altitude in metres.
+        max_altitude_m: Optional maximum site altitude in metres.
+        required_tags: Optional site tags such as "car", "lift", "shuttle", "Alps", or "flats".
+        offset: Number of ranked results to skip for pagination.
+        limit: Maximum number of ranked sites to return.
     """
     try:
         start = datetime.strptime(start_date, "%Y-%m-%d").date()
         end = datetime.strptime(end_date, "%Y-%m-%d").date()
-    except ValueError:
-        raise ValueError("Dates must be in YYYY-MM-DD format")
+    except ValueError as exc:
+        raise ValueError("start_date and end_date must be in YYYY-MM-DD format") from exc
+
+    if start > end:
+        raise ValueError("start_date must be on or before end_date")
+    if (user_latitude is None) != (user_longitude is None):
+        raise ValueError("user_latitude and user_longitude must be supplied together")
+    if user_latitude is not None and not -90 <= user_latitude <= 90:
+        raise ValueError("user_latitude must be between -90 and 90")
+    if user_longitude is not None and not -180 <= user_longitude <= 180:
+        raise ValueError("user_longitude must be between -180 and 180")
+    if max_distance_km is not None and max_distance_km <= 0:
+        raise ValueError("max_distance_km must be greater than 0")
+    if min_altitude_m is not None and max_altitude_m is not None and min_altitude_m > max_altitude_m:
+        raise ValueError("min_altitude_m must be on or below max_altitude_m")
+    if offset < 0:
+        raise ValueError("offset must be 0 or greater")
+    if limit < 1 or limit > 100:
+        raise ValueError("limit must be between 1 and 100")
 
     async with AsyncSessionLocal() as db:
-        response = await trip_planner_service.plan_trip_service(
+        return await trip_planner_service.plan_trip_service(
             db=db,
             start_date=start,
             end_date=end,
@@ -302,7 +291,5 @@ async def plan_trip(
             max_altitude_m=max_altitude_m,
             required_tags=required_tags,
             offset=offset,
-            limit=limit
+            limit=limit,
         )
-
-    return response
