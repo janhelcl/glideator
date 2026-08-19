@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
 from .routers import (
     admin,
+    admin_analytics,
     admin_bot_analytics,
     analytics,
     auth,
@@ -174,6 +175,8 @@ app.include_router(s2s.router)
 app.include_router(d2d.router)
 app.include_router(feedback.router)
 app.include_router(analytics.router)
+# Keep corrected analytics route ahead of the legacy admin router so it owns GET /admin/analytics.
+app.include_router(admin_analytics.router)
 app.include_router(admin.router)
 app.include_router(admin_bot_analytics.router)
 

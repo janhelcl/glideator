@@ -46,9 +46,9 @@ import {
   triggerAdminForecastCheck,
   updateAdminSite,
 } from '../adminApi';
+import AdminAnalyticsPanel from '../components/admin/AdminAnalyticsPanel';
 import AdminBotAnalyticsPanel from '../components/admin/AdminBotAnalyticsPanel';
 import {
-  AdminAnalyticsPanel,
   AdminFeedbackPanel,
   AdminUsersPanel,
 } from '../components/admin/AdminInsightPanels';
