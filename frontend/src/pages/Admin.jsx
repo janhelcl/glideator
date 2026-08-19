@@ -37,7 +37,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   fetchAdminForecastRuns,
   fetchAdminOverview,
@@ -46,9 +45,9 @@ import {
   triggerAdminForecastCheck,
   updateAdminSite,
 } from '../adminApi';
+import AdminAnalyticsPanel from '../components/admin/AdminAnalyticsPanel';
 import AdminBotAnalyticsPanel from '../components/admin/AdminBotAnalyticsPanel';
 import {
-  AdminAnalyticsPanel,
   AdminFeedbackPanel,
   AdminUsersPanel,
 } from '../components/admin/AdminInsightPanels';
