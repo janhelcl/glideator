@@ -9,6 +9,7 @@ from sqlalchemy import Column, DateTime, Integer, JSON, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
+from ..bot_detection import detect_known_bot
 from ..cache import get_redis_client
 from ..database import AsyncSessionLocal, Base
 
@@ -27,6 +28,24 @@ class ProductEvent(Base):
     __tablename__ = "product_events"
 
     event_id = Column(Integer, primary_key=True, index=True)
+    event_name = Column(String(80), nullable=False, index=True)
+    anonymous_id = Column(String(64), nullable=False, index=True)
+    session_id = Column(String(64), nullable=False, index=True)
+    path = Column(String(500), nullable=True)
+    properties = Column(JSON, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+
+
+class BotEvent(Base):
+    __tablename__ = "bot_events"
+
+    event_id = Column(Integer, primary_key=True, index=True)
+    bot_name = Column(String(80), nullable=False, index=True)
     event_name = Column(String(80), nullable=False, index=True)
     anonymous_id = Column(String(64), nullable=False, index=True)
     session_id = Column(String(64), nullable=False, index=True)
@@ -140,20 +159,23 @@ async def create_product_event(
         anonymous_id=payload.anonymous_id,
     )
 
-    event = ProductEvent(
-        event_name=payload.event_name,
-        anonymous_id=payload.anonymous_id,
-        session_id=payload.session_id,
-        path=payload.path,
-        properties=payload.properties,
-    )
+    bot_name = detect_known_bot(request.headers.get("user-agent"))
+    common_fields = {
+        "event_name": payload.event_name,
+        "anonymous_id": payload.anonymous_id,
+        "session_id": payload.session_id,
+        "path": payload.path,
+        "properties": payload.properties,
+    }
+    event = BotEvent(bot_name=bot_name, **common_fields) if bot_name else ProductEvent(**common_fields)
     db.add(event)
     await db.commit()
 
     logger.debug(
-        "Product event accepted event_name=%s anonymous_id=%s session_id=%s",
+        "Analytics event accepted event_name=%s anonymous_id=%s session_id=%s bot_name=%s",
         payload.event_name,
         payload.anonymous_id,
         payload.session_id,
+        bot_name,
     )
     return ProductEventAccepted()

@@ -2,16 +2,19 @@
 
 Glideator records a small first-party event stream in the `product_events` table. The goal is to understand whether people reach useful forecasts and recommendations without introducing a third-party analytics SDK.
 
+Known crawler traffic is classified at ingestion from the request User-Agent and stored separately in `bot_events`. This keeps the normal product analytics stream human-focused while preserving a lightweight view of crawler activity and the canonical bot identity.
+
 ## Privacy properties
 
-- No IP address, user agent, email address, account ID, or precise coordinates are stored.
+- No IP address, raw user agent, email address, account ID, or precise coordinates are stored.
+- The request User-Agent is inspected transiently only to classify known bots; only the canonical bot name (for example `Googlebot` or `GPTBot`) is persisted in `bot_events`.
 - The frontend sends only `window.location.pathname`, never the URL query string.
 - Property keys that look like coordinates, IP addresses, emails, or user-agent data are removed client-side.
 - Anonymous browser and session IDs are random identifiers stored in `localStorage` and `sessionStorage`.
 - Global Privacy Control and Do Not Track are respected.
 - Set `REACT_APP_ANALYTICS_ENABLED=false` to disable frontend collection entirely.
 
-The ingestion endpoint is `POST /analytics/events`. Payloads and event names are validated, property size is capped, and Redis-backed rate limits protect the endpoint.
+The ingestion endpoint is `POST /analytics/events`. Payloads and event names are validated, property size is capped, and Redis-backed rate limits protect the endpoint. Known bots are diverted into `bot_events`; all other accepted events go to `product_events`.
 
 ## Event catalog
 
@@ -32,6 +35,12 @@ The ingestion endpoint is `POST /analytics/events`. Payloads and event names are
 | `trip_plan_more_requested` | More recommendations were requested | visible and total counts |
 | `recommendation_feedback_submitted` | Contextual helpful/not-helpful feedback | `surface`, `rating`, and recommendation context |
 
+## Bot detection
+
+Known bots are matched against explicit User-Agent signatures and stored with a canonical name. The list covers major search crawlers, AI crawlers/fetchers, social preview bots, and common SEO crawlers. Unknown automation is intentionally left in the normal stream rather than guessed from broad strings such as `bot` or `crawler`.
+
+The administrator cockpit exposes a dedicated **Bots** tab with bot events, sessions, anonymous visitor IDs, and a per-bot breakdown for the selected time window.
+
 ## Starter queries
 
 Daily active anonymous visitors:
@@ -43,6 +52,19 @@ select
 from product_events
 group by 1
 order by 1 desc;
+```
+
+Bot traffic by crawler:
+
+```sql
+select
+    bot_name,
+    count(*) as events,
+    count(distinct session_id) as sessions,
+    count(distinct anonymous_id) as visitors
+from bot_events
+group by 1
+order by events desc, bot_name;
 ```
 
 Trip Planner funnel by day:
