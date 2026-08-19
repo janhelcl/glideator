@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from .database import AsyncSessionLocal, SessionLocal
 from .routers import (
     admin,
+    admin_bot_analytics,
     analytics,
     auth,
     d2d,
@@ -174,6 +175,7 @@ app.include_router(d2d.router)
 app.include_router(feedback.router)
 app.include_router(analytics.router)
 app.include_router(admin.router)
+app.include_router(admin_bot_analytics.router)
 
 @app.get("/health")
 async def healthcheck():
