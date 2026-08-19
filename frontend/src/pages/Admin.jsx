@@ -46,6 +46,7 @@ import {
   triggerAdminForecastCheck,
   updateAdminSite,
 } from '../adminApi';
+import AdminBotAnalyticsPanel from '../components/admin/AdminBotAnalyticsPanel';
 import {
   AdminAnalyticsPanel,
   AdminFeedbackPanel,
@@ -261,6 +262,7 @@ const Admin = () => {
           <Tab label="Forecast runs" />
           <Tab label="Sites" />
           <Tab label="Resources" />
+          <Tab label="Bots" />
         </Tabs>
 
         <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -497,6 +499,8 @@ const Admin = () => {
               )}
             </Stack>
           )}
+
+          {tab === 7 && <AdminBotAnalyticsPanel />}
         </Box>
       </Paper>
 
