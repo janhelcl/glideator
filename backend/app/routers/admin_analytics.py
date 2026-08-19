@@ -1,53 +1,24 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
-from sqlalchemy import func, select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import models
-from .admin import (
-    AnalyticsDailyPoint,
-    AnalyticsEventCount,
-    AnalyticsFeedbackSurface,
-    AnalyticsPathCount,
-    AnalyticsSiteInteraction,
-    get_db,
-    require_admin,
-    _rate,
-)
-from .analytics import ProductEvent
+from . import admin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
-class AnalyticsFunnel(BaseModel):
+class AnalyticsFunnel(admin.AnalyticsFunnel):
     planner_sessions: int = 0
-    submitted_sessions: int = 0
-    results_sessions: int = 0
-    opened_site_sessions: int = 0
-    results_rate: float = 0
-    site_open_rate: float = 0
 
 
-class AdminAnalyticsResponse(BaseModel):
-    window_days: int
-    total_events: int
-    unique_visitors: int
-    unique_sessions: int
-    map_sessions: int
-    site_detail_sessions: int
-    map_to_site_sessions: int
-    map_site_open_events: int
-    sites_opened_per_map_session: float
-    map_to_site_rate: float
-    daily: List[AnalyticsDailyPoint]
-    event_counts: List[AnalyticsEventCount]
-    top_paths: List[AnalyticsPathCount]
+class AdminAnalyticsResponse(admin.AdminAnalyticsResponse):
+    map_to_site_sessions: int = 0
+    map_site_open_events: int = 0
+    sites_opened_per_map_session: float = 0
     trip_planner: AnalyticsFunnel
-    recommendation_feedback: List[AnalyticsFeedbackSurface]
-    top_sites: List[AnalyticsSiteInteraction]
 
 
 def _ratio(numerator: int, denominator: int) -> float:
@@ -59,81 +30,13 @@ def _ratio(numerator: int, denominator: int) -> float:
 @router.get("/analytics", response_model=AdminAnalyticsResponse)
 async def get_analytics(
     days: int = Query(default=30, ge=1, le=365),
-    _: models.User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
+    _: models.User = Depends(admin.require_admin),
+    db: AsyncSession = Depends(admin.get_db),
 ):
+    # Reuse the legacy endpoint for the broad analytics payload and replace only
+    # the engagement metrics whose denominators need session sequencing.
+    base = await admin.get_analytics(days=days, _=_, db=db)
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-
-    summary = (
-        await db.execute(
-            select(
-                func.count(ProductEvent.event_id),
-                func.count(func.distinct(ProductEvent.anonymous_id)),
-                func.count(func.distinct(ProductEvent.session_id)),
-            ).where(ProductEvent.created_at >= cutoff)
-        )
-    ).one()
-
-    daily_result = await db.execute(
-        text(
-            """
-            SELECT
-                date_trunc('day', created_at)::date AS day,
-                COUNT(DISTINCT anonymous_id) AS visitors,
-                COUNT(DISTINCT session_id) AS sessions,
-                COUNT(*) AS events
-            FROM product_events
-            WHERE created_at >= :cutoff
-            GROUP BY 1
-            ORDER BY 1
-            """
-        ),
-        {"cutoff": cutoff},
-    )
-    daily = [
-        AnalyticsDailyPoint(
-            day=row["day"].isoformat(),
-            visitors=int(row["visitors"] or 0),
-            sessions=int(row["sessions"] or 0),
-            events=int(row["events"] or 0),
-        )
-        for row in daily_result.mappings().all()
-    ]
-
-    event_result = await db.execute(
-        text(
-            """
-            SELECT
-                event_name,
-                COUNT(*) AS events,
-                COUNT(DISTINCT anonymous_id) AS visitors
-            FROM product_events
-            WHERE created_at >= :cutoff
-            GROUP BY event_name
-            ORDER BY events DESC, event_name
-            """
-        ),
-        {"cutoff": cutoff},
-    )
-    event_counts = [AnalyticsEventCount(**dict(row)) for row in event_result.mappings().all()]
-
-    path_result = await db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(NULLIF(path, ''), '(unknown)') AS path,
-                COUNT(*) AS events,
-                COUNT(DISTINCT anonymous_id) AS visitors
-            FROM product_events
-            WHERE created_at >= :cutoff
-            GROUP BY 1
-            ORDER BY events DESC, path
-            LIMIT 20
-            """
-        ),
-        {"cutoff": cutoff},
-    )
-    top_paths = [AnalyticsPathCount(**dict(row)) for row in path_result.mappings().all()]
 
     engagement_row = (
         await db.execute(
@@ -189,11 +92,6 @@ async def get_analytics(
                 SELECT
                     (SELECT COUNT(*) FROM map_entries) AS map_sessions,
                     (
-                        SELECT COUNT(DISTINCT session_id)
-                        FROM scoped
-                        WHERE event_name = 'site_detail_viewed'
-                    ) AS site_detail_sessions,
-                    (
                         SELECT COUNT(*)
                         FROM map_activity
                         WHERE site_open_events > 0
@@ -225,7 +123,6 @@ async def get_analytics(
     ).mappings().one()
 
     map_sessions = int(engagement_row["map_sessions"] or 0)
-    site_detail_sessions = int(engagement_row["site_detail_sessions"] or 0)
     map_to_site_sessions = int(engagement_row["map_to_site_sessions"] or 0)
     map_site_open_events = int(engagement_row["map_site_open_events"] or 0)
     planner_sessions = int(engagement_row["planner_sessions"] or 0)
@@ -233,84 +130,21 @@ async def get_analytics(
     results_sessions = int(engagement_row["results_sessions"] or 0)
     opened_site_sessions = int(engagement_row["opened_site_sessions"] or 0)
 
-    feedback_result = await db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(NULLIF(properties ->> 'surface', ''), '(unknown)') AS surface,
-                COUNT(*) FILTER (WHERE properties ->> 'rating' = 'helpful') AS helpful,
-                COUNT(*) FILTER (WHERE properties ->> 'rating' = 'not_helpful') AS not_helpful,
-                COUNT(*) AS total
-            FROM product_events
-            WHERE created_at >= :cutoff
-              AND event_name = 'recommendation_feedback_submitted'
-            GROUP BY 1
-            ORDER BY total DESC, surface
-            """
-        ),
-        {"cutoff": cutoff},
-    )
-    recommendation_feedback = []
-    for row in feedback_result.mappings().all():
-        helpful = int(row["helpful"] or 0)
-        total = int(row["total"] or 0)
-        recommendation_feedback.append(
-            AnalyticsFeedbackSurface(
-                surface=row["surface"],
-                helpful=helpful,
-                not_helpful=int(row["not_helpful"] or 0),
-                total=total,
-                helpful_rate=_rate(helpful, total) if total else None,
-            )
-        )
-
-    top_sites_result = await db.execute(
-        text(
-            """
-            SELECT
-                NULLIF(e.properties ->> 'site_id', '')::integer AS site_id,
-                MAX(s.name) AS site_name,
-                COUNT(*) AS interactions,
-                COUNT(DISTINCT e.anonymous_id) AS visitors
-            FROM product_events e
-            LEFT JOIN sites s
-              ON s.site_id = NULLIF(e.properties ->> 'site_id', '')::integer
-            WHERE e.created_at >= :cutoff
-              AND e.event_name IN ('site_detail_viewed', 'trip_plan_site_opened')
-              AND NULLIF(e.properties ->> 'site_id', '') IS NOT NULL
-            GROUP BY 1
-            ORDER BY interactions DESC, site_id
-            LIMIT 15
-            """
-        ),
-        {"cutoff": cutoff},
-    )
-    top_sites = [
-        AnalyticsSiteInteraction(**dict(row)) for row in top_sites_result.mappings().all()
-    ]
-
-    return AdminAnalyticsResponse(
-        window_days=days,
-        total_events=int(summary[0] or 0),
-        unique_visitors=int(summary[1] or 0),
-        unique_sessions=int(summary[2] or 0),
+    payload = base.model_dump()
+    payload.update(
         map_sessions=map_sessions,
-        site_detail_sessions=site_detail_sessions,
         map_to_site_sessions=map_to_site_sessions,
         map_site_open_events=map_site_open_events,
         sites_opened_per_map_session=_ratio(map_site_open_events, map_sessions),
-        map_to_site_rate=_rate(map_to_site_sessions, map_sessions),
-        daily=daily,
-        event_counts=event_counts,
-        top_paths=top_paths,
-        trip_planner=AnalyticsFunnel(
-            planner_sessions=planner_sessions,
-            submitted_sessions=submitted_sessions,
-            results_sessions=results_sessions,
-            opened_site_sessions=opened_site_sessions,
-            results_rate=_rate(results_sessions, planner_sessions),
-            site_open_rate=_rate(opened_site_sessions, results_sessions),
-        ),
-        recommendation_feedback=recommendation_feedback,
-        top_sites=top_sites,
+        map_to_site_rate=admin._rate(map_to_site_sessions, map_sessions),
+        trip_planner={
+            **base.trip_planner.model_dump(),
+            "planner_sessions": planner_sessions,
+            "submitted_sessions": submitted_sessions,
+            "results_sessions": results_sessions,
+            "opened_site_sessions": opened_site_sessions,
+            "results_rate": admin._rate(results_sessions, planner_sessions),
+            "site_open_rate": admin._rate(opened_site_sessions, results_sessions),
+        },
     )
+    return AdminAnalyticsResponse(**payload)
