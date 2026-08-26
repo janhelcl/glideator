@@ -3,26 +3,67 @@ import { TextField, Autocomplete, Box } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import apiClient from '../api';
+
+const buildOptions = (sites, favorites, boostFavorites = false) => {
+  const favoriteSet = new Set(favorites);
+  const sortedSites = [...(sites || [])].sort((a, b) => {
+    if (boostFavorites) {
+      const favoriteDifference = Number(favoriteSet.has(b.site_id)) - Number(favoriteSet.has(a.site_id));
+      if (favoriteDifference !== 0) return favoriteDifference;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
+  return sortedSites.map(site => ({
+    label: site.name,
+    site,
+    favorite: favoriteSet.has(site.site_id),
+  }));
+};
 
 const SearchBar = ({ sites, onSiteSelect, mobile = false }) => {
   const [options, setOptions] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, favorites } = useAuth();
 
   useEffect(() => {
-    const sortedSites = sites && sites.length > 0
-      ? [...sites].sort((a, b) => a.name.localeCompare(b.name))
-      : [];
+    const cleanedQuery = inputValue.trim();
 
-    const favoriteSet = new Set(favorites);
-    const siteOptions = sortedSites.map(site => ({
-      label: site.name,
-      site,
-      favorite: favoriteSet.has(site.site_id),
-    }));
-    setOptions(siteOptions);
-  }, [sites, favorites]);
+    if (!cleanedQuery) {
+      setOptions(buildOptions(sites, favorites, true));
+      setLoading(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get('/sites/search', {
+          params: { query: cleanedQuery, limit: 10 },
+          signal: controller.signal,
+        });
+        setOptions(buildOptions(response.data, favorites));
+      } catch (error) {
+        if (error?.code !== 'ERR_CANCELED') {
+          console.error('Error searching sites:', error);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [sites, favorites, inputValue]);
 
   const handleSelect = (event, value) => {
     if (!value) return;
@@ -44,7 +85,12 @@ const SearchBar = ({ sites, onSiteSelect, mobile = false }) => {
     }}>
       <Autocomplete
         options={options}
+        inputValue={inputValue}
+        loading={loading}
+        filterOptions={(availableOptions) => availableOptions}
+        onInputChange={(event, value) => setInputValue(value)}
         onChange={handleSelect}
+        isOptionEqualToValue={(option, value) => option.site.site_id === value.site.site_id}
         renderOption={(props, option) => (
           <li {...props}>
             {isAuthenticated && option.favorite && (
