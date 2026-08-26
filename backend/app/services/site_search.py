@@ -5,8 +5,8 @@ consistent without coupling the public MCP contract to web-only changes.
 """
 
 from difflib import SequenceMatcher
-import unicodedata
 from typing import Iterable, List
+import unicodedata
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,25 @@ def normalize_site_search_text(value: str) -> str:
     return " ".join(without_accents.split())
 
 
+def _fuzzy_ratio(cleaned_query: str, cleaned_name: str) -> float:
+    """Compare against both the full name and similarly sized word windows.
+
+    Word-window matching keeps typo tolerance useful for partial names such as
+    "Basano" -> "Monte Grappa Bassano" without making ordinary substring ranking fuzzy.
+    """
+    query_word_count = len(cleaned_query.split())
+    name_words = cleaned_name.split()
+    candidates = [cleaned_name]
+
+    if query_word_count <= len(name_words):
+        candidates.extend(
+            " ".join(name_words[index:index + query_word_count])
+            for index in range(len(name_words) - query_word_count + 1)
+        )
+
+    return max(SequenceMatcher(None, cleaned_query, candidate).ratio() for candidate in candidates)
+
+
 def _match_rank(name: str, cleaned_query: str):
     """Return a sortable rank tuple, or None when the candidate should not match."""
     cleaned_name = normalize_site_search_text(name)
@@ -40,7 +59,7 @@ def _match_rank(name: str, cleaned_query: str):
     if len(cleaned_query) < _MIN_FUZZY_QUERY_LENGTH:
         return None
 
-    ratio = SequenceMatcher(None, cleaned_query, cleaned_name).ratio()
+    ratio = _fuzzy_ratio(cleaned_query, cleaned_name)
     if ratio < _MIN_FUZZY_RATIO:
         return None
 
