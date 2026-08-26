@@ -39,6 +39,17 @@ def test_typo_tolerant_search_finds_close_site_name():
     assert [result.name for result in results] == ["Bassano"]
 
 
+def test_typo_tolerance_works_for_partial_multiword_site_names():
+    sites = [
+        _site(1, "Monte Grappa Bassano"),
+        _site(2, "Monte Baldo"),
+    ]
+
+    results = rank_site_matches(sites, "Basano")
+
+    assert [result.name for result in results] == ["Monte Grappa Bassano"]
+
+
 def test_short_queries_do_not_enable_fuzzy_matching():
     sites = [_site(1, "Raná"), _site(2, "Rasa")]
 
