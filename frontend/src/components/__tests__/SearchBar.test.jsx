@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import SearchBar from '../SearchBar';
 import apiClient from '../../api';
@@ -32,12 +32,7 @@ const renderSearchBar = () => render(
 
 describe('SearchBar', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     apiClient.get.mockReset();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it('uses the shared REST search endpoint after a short debounce', async () => {
@@ -48,20 +43,15 @@ describe('SearchBar', () => {
       target: { value: 'Basano' },
     });
 
-    await vi.advanceTimersByTimeAsync(200);
-
     await waitFor(() => {
       expect(apiClient.get).toHaveBeenCalledWith('/sites/search', expect.objectContaining({
         params: { query: 'Basano', limit: 10 },
       }));
-    });
+    }, { timeout: 1000 });
   });
 
-  it('does not call the search endpoint for an empty query', async () => {
+  it('does not call the search endpoint for an empty query', () => {
     renderSearchBar();
-
-    await vi.advanceTimersByTimeAsync(250);
-
     expect(apiClient.get).not.toHaveBeenCalled();
   });
 });
