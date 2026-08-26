@@ -8,6 +8,7 @@ from datetime import date
 
 from .. import schemas, crud
 from ..database import AsyncSessionLocal
+from ..services import site_search
 
 router = APIRouter(
     prefix="/sites",
@@ -26,6 +27,20 @@ async def read_site_list(db: AsyncSession = Depends(get_db)):
     """
     sites = await crud.get_site_list(db)
     return sites
+
+
+@router.get("/search", response_model=List[schemas.SiteListItem])
+async def search_site_list(
+    query: str = Query(..., description="Full or partial site name"),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """Search sites using the same matching and ranking semantics as MCP find_sites."""
+    try:
+        return await site_search.search_sites(db, query=query, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 @router.get("/", response_model=List[schemas.SiteResponse])
 async def read_sites(
