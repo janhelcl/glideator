@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 from app import crud, schemas
 from app.database import AsyncSessionLocal
-from app.services import trip_planner_service
+from app.services import site_search, trip_planner_service
 
 
 READ_ONLY_ANNOTATIONS = ToolAnnotations(
@@ -69,30 +69,8 @@ async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
         query: Full or partial site name, for example "Bassano", "Rana", or "Annecy".
         limit: Maximum matches to return. Must be between 1 and 50.
     """
-    cleaned_query = _normalize_site_name(query)
-    if not cleaned_query:
-        raise ValueError("query must not be empty")
-    if limit < 1 or limit > 50:
-        raise ValueError("limit must be between 1 and 50")
-
     async with AsyncSessionLocal() as db:
-        sites_raw = await crud.get_site_list(db)
-
-    matches = [
-        {"site_id": row.site_id, "name": row.name}
-        for row in sites_raw
-        if cleaned_query in _normalize_site_name(row.name)
-    ]
-    matches.sort(
-        key=lambda site: (
-            not _normalize_site_name(site["name"]).startswith(cleaned_query),
-            len(site["name"]),
-            _normalize_site_name(site["name"]),
-        )
-    )
-
-    adapter = TypeAdapter(List[schemas.SiteListItem])
-    return adapter.validate_python(matches[:limit])
+        return await site_search.search_sites(db, query=query, limit=limit)
 
 
 @mcp.tool(title="List paragliding sites", annotations=READ_ONLY_ANNOTATIONS)

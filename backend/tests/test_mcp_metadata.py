@@ -73,6 +73,25 @@ async def test_all_mcp_tools_declare_public_review_annotations():
 
 
 @pytest.mark.asyncio
+async def test_find_sites_public_schema_stays_stable():
+    """Guard the plugin-review contract while search internals evolve."""
+    tools = await mcp.list_tools()
+    find_sites = next(tool for tool in tools if tool.name == "find_sites")
+
+    properties = find_sites.inputSchema["properties"]
+    assert set(properties) == {"query", "limit"}
+    assert properties["query"]["type"] == "string"
+    assert properties["limit"]["type"] == "integer"
+    assert properties["limit"]["default"] == 10
+    assert find_sites.inputSchema["required"] == ["query"]
+
+    site_item_schema = schemas.SiteListItem.model_json_schema()
+    assert site_item_schema["required"] == ["site_id", "name"]
+    assert site_item_schema["properties"]["site_id"]["type"] == "integer"
+    assert site_item_schema["properties"]["name"]["type"] == "string"
+
+
+@pytest.mark.asyncio
 async def test_site_resources_exposes_structured_public_output():
     tools = await mcp.list_tools()
     resources = next(tool for tool in tools if tool.name == "get_site_resources")
