@@ -57,6 +57,7 @@ def test_researched_aliases_are_present():
 
     expected = {
         (22, "Mokropsy"),
+        (34, "Greifenburg"),
         (38, "Unterberghorn"),
         (44, "Kreuzjoch"),
         (72, "Ostrý"),
