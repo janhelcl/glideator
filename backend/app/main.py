@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .security import is_production
 
 from .services.sites_loader import load_sites_from_csv
+from .services.site_aliases_loader import load_site_aliases_from_csv
 from .services.flight_stats_loader import load_flight_stats_from_csv
 from .services.spots_loader import load_spots_from_csv
 from .services.sites_info_loader import load_sites_info_from_jsonl
@@ -73,6 +74,9 @@ def startup_logic():
             try:
                 logger.info("Loading sites data...")
                 load_sites_from_csv(db, 'sites.csv')
+
+                logger.info("Loading site aliases data...")
+                load_site_aliases_from_csv(db)
                 
                 logger.info("Loading flight stats data...")
                 load_flight_stats_from_csv(db)
