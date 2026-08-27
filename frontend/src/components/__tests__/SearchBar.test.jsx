@@ -12,12 +12,16 @@ vi.mock('../../api', () => ({
   },
 }));
 
-vi.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({
-    isAuthenticated: true,
-    favorites: [2],
-  }),
-}));
+vi.mock('../../context/AuthContext', () => {
+  const stableFavorites = [2];
+
+  return {
+    useAuth: () => ({
+      isAuthenticated: true,
+      favorites: stableFavorites,
+    }),
+  };
+});
 
 const sites = [
   { site_id: 1, name: 'Bassano' },
