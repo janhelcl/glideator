@@ -254,8 +254,8 @@ const About = () => {
             <Grid item xs={12} sm={6}>
               <FeatureCard
                 icon={<SmartToyIcon />}
-                title="Ask your AI"
-                description={'Use Glideator through any MCP-compatible assistant when you want to ask things like “Where should I fly this weekend?” in plain language.'}
+                title="Ask ChatGPT"
+                description={'Use the public Parra-Glideator ChatGPT plugin to ask things like “Where should I fly this weekend?” in plain language. The same tools also work with other MCP-compatible assistants.'}
                 to="/about#mcp"
               />
             </Grid>
@@ -269,11 +269,11 @@ const About = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <SmartToyIcon color="primary" />
             <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-              Talk to your AI about flying
+              Talk to ChatGPT about flying
             </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" paragraph>
-            Parra-Glideator exposes an MCP server, so compatible AI assistants can query forecasts and site data directly. That means you can ask normal planning questions instead of forcing a chatbot to improvise about valley winds.
+            Parra-Glideator is now available as a public ChatGPT plugin. ChatGPT can query Glideator forecasts, XC potential, trip rankings, site information, historical seasonality, launches and landings, and curated local resources directly. If you use another MCP-compatible assistant, the same read-only tools are available through the MCP server below.
           </Typography>
 
           <Box sx={{
@@ -297,6 +297,9 @@ const About = () => {
           </Box>
 
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, backgroundColor: 'grey.50' }}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ChatGPT: use the public Parra-Glideator plugin.
+            </Typography>
             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
               MCP server URL:{' '}
               <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
@@ -304,7 +307,7 @@ const About = () => {
               </Box>
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-              Add this URL to Claude Desktop, ChatGPT, or any MCP-compatible client.
+              For Claude Desktop and other MCP-compatible clients, add the MCP URL above.
             </Typography>
           </Paper>
         </Box>
