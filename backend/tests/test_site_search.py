@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.services import site_search
 from app.services.site_search import normalize_site_search_text, rank_site_matches
 
 
@@ -142,3 +143,30 @@ def test_fuzzy_matching_works_through_aliases():
     )
 
     assert [(result.site_id, result.name) for result in results] == [(1, "Meduno")]
+
+
+
+@pytest.mark.asyncio
+async def test_search_sites_loads_aliases_from_database(monkeypatch):
+    async def fake_get_site_list(db):
+        return [_site(133, "Bassano"), _site(135, "Meduno")]
+
+    class AliasResult:
+        def all(self):
+            return [
+                (133, "Monte Grappa"),
+                (135, "Monte Valinis"),
+            ]
+
+    class FakeDb:
+        async def execute(self, statement):
+            return AliasResult()
+
+    monkeypatch.setattr(site_search.crud, "get_site_list", fake_get_site_list)
+
+    results = await site_search.search_sites(
+        FakeDb(),
+        query="Monte Grappa",
+    )
+
+    assert [(result.site_id, result.name) for result in results] == [(133, "Bassano")]
