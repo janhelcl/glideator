@@ -12,6 +12,8 @@ Meet **Parra-Glideator**, our charming, paragliding gladiator parrot who traded 
 
 The project is currently in **public beta** and available at [parra-glideator.com](https://www.parra-glideator.com/). Try it out, plan your next flight adventure, and help us refine this pilot-friendly tool!
 
+🤖 **Now available in ChatGPT:** Parra-Glideator has been approved as a public ChatGPT plugin. Ask ChatGPT where and when to fly, compare sites and dates, inspect forecast-derived XC potential, check historical seasonality, or pull up launches, landings, and curated local resources using Glideator's live tools.
+
 
 ---
 
@@ -85,7 +87,7 @@ Each core component can be run on its own. Follow the dedicated README in the co
 * **Scrapers** (`scrapers/`) – Flight & site data collection with Scrapy.
 * **Ground Crew** (`agents/ground_crew/`) – Browser-use pipelines that discover and validate local site/club links, extract webcam & meteostation URLs, and export JSON for the Glideator API (`export-resources` → `backend/app/data/site_resources.json`). Supersedes the old Site Researcher agent.
 * **Chat** (`agents/chat/`) – Conversational assistant for the product.
-* **MCP Integration** – Model Context Protocol server enabling AI assistants to access paragliding data through structured tools for site information, weather forecasts, trip planning, and more.
+* **ChatGPT & MCP Integration** – The approved public Parra-Glideator ChatGPT plugin gives ChatGPT structured access to site discovery, forecasts, XC potential, trip planning, historical seasonality, launches/landings, and curated local resources. The same read-only tools remain available through the MCP server for other compatible assistants.
 
 ---
 
