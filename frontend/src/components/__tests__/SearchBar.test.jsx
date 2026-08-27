@@ -1,5 +1,6 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -40,12 +41,11 @@ describe('SearchBar', () => {
   });
 
   it('uses the shared REST search endpoint after a short debounce', async () => {
+    const user = userEvent.setup();
     apiClient.get.mockResolvedValue({ data: [{ site_id: 1, name: 'Bassano' }] });
     renderSearchBar();
 
-    fireEvent.change(screen.getByLabelText('Search sites'), {
-      target: { value: 'Basano' },
-    });
+    await user.type(screen.getByRole('combobox', { name: 'Search sites' }), 'Basano');
 
     await waitFor(() => {
       expect(apiClient.get).toHaveBeenCalledWith('/sites/search', expect.objectContaining({
