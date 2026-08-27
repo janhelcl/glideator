@@ -328,3 +328,21 @@ class FeedbackSubmission(Base):
     message = Column(Text, nullable=False)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+class SiteAlias(Base):
+    __tablename__ = "site_aliases"
+    __table_args__ = (
+        UniqueConstraint("site_id", "alias_normalized", name="uq_site_alias_site_normalized"),
+    )
+
+    alias_id = Column(Integer, primary_key=True, index=True)
+    site_id = Column(
+        Integer,
+        ForeignKey("sites.site_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    alias = Column(String, nullable=False)
+    alias_normalized = Column(String, nullable=False, index=True)
+
+    site = relationship("Site", backref="aliases")
