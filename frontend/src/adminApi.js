@@ -25,6 +25,11 @@ export const fetchAdminBotAnalytics = async (days = 30) => {
   return response.data;
 };
 
+export const fetchAdminMcpAnalytics = async (days = 30) => {
+  const response = await apiClient.get('/admin/mcp-analytics', { params: { days } });
+  return response.data;
+};
+
 export const fetchAdminForecastRuns = async (limit = 20) => {
   const response = await apiClient.get('/admin/forecast-runs', { params: { limit } });
   return response.data;
