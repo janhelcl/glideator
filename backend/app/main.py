@@ -12,6 +12,7 @@ from .routers import (
     admin,
     admin_analytics,
     admin_bot_analytics,
+    admin_mcp_analytics,
     analytics,
     auth,
     d2d,
@@ -183,6 +184,7 @@ app.include_router(analytics.router)
 app.include_router(admin_analytics.router)
 app.include_router(admin.router)
 app.include_router(admin_bot_analytics.router)
+app.include_router(admin_mcp_analytics.router)
 
 @app.get("/health")
 async def healthcheck():

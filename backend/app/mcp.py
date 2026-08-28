@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 from app import crud, schemas
 from app.database import AsyncSessionLocal
+from app.mcp_analytics import track_mcp_tool
 from app.services import site_search, trip_planner_service
 
 
@@ -59,6 +60,7 @@ mcp = FastMCP(
 
 
 @mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("find_sites")
 async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
     """Use this when the user names or searches for a paragliding site and you need its site ID.
 
@@ -74,6 +76,7 @@ async def find_sites(query: str, limit: int = 10) -> List[schemas.SiteListItem]:
 
 
 @mcp.tool(title="List paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("list_sites")
 async def list_sites() -> List[schemas.SiteListItem]:
     """Use this when the user wants to browse all paragliding sites covered by Parra-Glideator.
 
@@ -89,6 +92,7 @@ async def list_sites() -> List[schemas.SiteListItem]:
 
 
 @mcp.tool(title="Get site overview", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("get_site_info")
 async def get_site_info(site_id: int) -> schemas.SiteInfo:
     """Use this when the user asks for a general overview or description of a known site.
 
@@ -108,6 +112,7 @@ async def get_site_info(site_id: int) -> schemas.SiteInfo:
 
 
 @mcp.tool(title="Get site resources", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("get_site_resources")
 async def get_site_resources(site_id: int) -> PublicSiteResources:
     """Use this when the user wants practical local links for a known paragliding site.
 
@@ -126,6 +131,7 @@ async def get_site_resources(site_id: int) -> PublicSiteResources:
 
 
 @mcp.tool(title="Get site seasonal statistics", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("get_site_seasonal_stats")
 async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
     """Use this when the user asks when a paragliding site historically performs best.
 
@@ -174,6 +180,7 @@ async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
 
 
 @mcp.tool(title="Get site flight-potential forecast", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("get_site_predictions")
 async def get_site_predictions(
     site_id: int,
     query_date: Optional[str] = None,
@@ -230,6 +237,7 @@ async def get_site_predictions(
 
 
 @mcp.tool(title="Get site takeoffs and landings", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("get_site_takeoffs_and_landings")
 async def get_site_takeoffs_and_landings(site_id: int) -> List[schemas.Spot]:
     """Use this when the user asks where launches or landings are at a known paragliding site.
 
@@ -248,6 +256,7 @@ async def get_site_takeoffs_and_landings(site_id: int) -> List[schemas.Spot]:
 
 
 @mcp.tool(title="Plan a paragliding trip", annotations=READ_ONLY_ANNOTATIONS)
+@track_mcp_tool("plan_trip")
 async def plan_trip(
     start_date: str,
     end_date: str,

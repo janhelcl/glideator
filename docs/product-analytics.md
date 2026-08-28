@@ -4,6 +4,8 @@ Glideator records a small first-party event stream in the `product_events` table
 
 Known crawler traffic is classified at ingestion from the request User-Agent and stored separately in `bot_events`. This keeps the normal product analytics stream human-focused while preserving a lightweight view of crawler activity and the canonical bot identity.
 
+MCP tool usage is also stored separately in `mcp_tool_events`. Each tool invocation records only the tool name, success/failure, execution duration, error class on failure, and timestamp. Prompts, tool arguments, IP addresses, MCP client metadata, and response payloads are not stored.
+
 ## Privacy properties
 
 - No IP address, raw user agent, email address, account ID, or precise coordinates are stored.
@@ -11,8 +13,9 @@ Known crawler traffic is classified at ingestion from the request User-Agent and
 - The frontend sends only `window.location.pathname`, never the URL query string.
 - Property keys that look like coordinates, IP addresses, emails, or user-agent data are removed client-side.
 - Anonymous browser and session IDs are random identifiers stored in `localStorage` and `sessionStorage`.
-- Global Privacy Control and Do Not Track are respected.
+- Global Privacy Control and Do Not Track are respected for frontend analytics.
 - Set `REACT_APP_ANALYTICS_ENABLED=false` to disable frontend collection entirely.
+- MCP analytics contain no browser identifiers and do not attempt to infer unique users or sessions.
 
 The ingestion endpoint is `POST /analytics/events`. Payloads and event names are validated, property size is capped, and Redis-backed rate limits protect the endpoint. Known bots are diverted into `bot_events`; all other accepted events go to `product_events`.
 
@@ -40,6 +43,25 @@ The ingestion endpoint is `POST /analytics/events`. Payloads and event names are
 Known bots are matched against explicit User-Agent signatures and stored with a canonical name. The list covers major search crawlers, AI crawlers/fetchers, social preview bots, and common SEO crawlers. Unknown automation is intentionally left in the normal stream rather than guessed from broad strings such as `bot` or `crawler`.
 
 The administrator cockpit exposes a dedicated **Bots** tab with bot events, sessions, anonymous visitor IDs, and a per-bot breakdown for the selected time window.
+
+## MCP usage analytics
+
+All eight public MCP tools are instrumented at the tool boundary. Analytics writes are fail-open: if the analytics database write fails, the underlying MCP call still succeeds or fails exactly as it otherwise would.
+
+The administrator cockpit exposes a dedicated **MCP** tab showing total tool calls, success rate, average execution duration, distinct tools used, and a per-tool breakdown. This stream intentionally does not report "users" or "sessions" because the server does not have a stable privacy-preserving MCP identity to support those metrics.
+
+Example query:
+
+```sql
+select
+    tool_name,
+    count(*) as calls,
+    count(*) filter (where success) as successful_calls,
+    round(avg(duration_ms), 1) as avg_duration_ms
+from mcp_tool_events
+group by 1
+order by calls desc, tool_name;
+```
 
 ## Starter queries
 
