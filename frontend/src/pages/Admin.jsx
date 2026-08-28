@@ -48,6 +48,7 @@ import {
 } from '../adminApi';
 import AdminAnalyticsPanel from '../components/admin/AdminAnalyticsPanel';
 import AdminBotAnalyticsPanel from '../components/admin/AdminBotAnalyticsPanel';
+import AdminMcpAnalyticsPanel from '../components/admin/AdminMcpAnalyticsPanel';
 import {
   AdminFeedbackPanel,
   AdminUsersPanel,
@@ -263,6 +264,7 @@ const Admin = () => {
           <Tab label="Sites" />
           <Tab label="Resources" />
           <Tab label="Bots" />
+          <Tab label="MCP" />
         </Tabs>
 
         <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -501,6 +503,7 @@ const Admin = () => {
           )}
 
           {tab === 7 && <AdminBotAnalyticsPanel />}
+          {tab === 8 && <AdminMcpAnalyticsPanel />}
         </Box>
       </Paper>
 
