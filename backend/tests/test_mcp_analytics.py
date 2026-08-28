@@ -26,7 +26,7 @@ async def test_track_mcp_tool_records_success_without_arguments(monkeypatch):
     assert len(recorded) == 1
     assert recorded[0]["tool_name"] == "example_tool"
     assert recorded[0]["success"] is True
-    assert recorded[0]["error_type"] if "error_type" in recorded[0] else None is None
+    assert recorded[0].get("error_type") is None
     assert isinstance(recorded[0]["duration_ms"], int)
     assert "secret_value" not in recorded[0]
 
