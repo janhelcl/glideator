@@ -148,6 +148,16 @@ fingerprint, metrics, Git SHA, and artifacts to MLflow. SVD and contrastive
 artifacts are directly production-compatible; DeepSets artifacts additionally
 require scorer-aware serving.
 
+If training and evaluation finish but MLflow is temporarily unavailable, restore
+the configured tracking service and backfill the saved run without retraining:
+
+```bash
+glideator-ml backfill s2s --config configs/s2s/deepsets.yaml
+```
+
+Backfill is idempotent after the resulting `mlflow_run_id` has been saved to the
+local evaluation report.
+
 To inspect local runs:
 
 ```bash

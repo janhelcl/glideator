@@ -43,6 +43,40 @@ def _split_seed(config: dict[str, Any]) -> int:
     return int(config["data"].get("split_seed", config.get("seed", 42)))
 
 
+def _write_report(path: Path, report: dict[str, Any]) -> None:
+    path.write_text(
+        json.dumps(report, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+
+def _tracking_tags(
+    config: dict[str, Any],
+    report: dict[str, Any],
+) -> dict[str, str]:
+    benchmark = report["benchmark"]
+    tags = {
+        "task": "s2s",
+        "model_family": str(
+            config["model"].get(
+                "name",
+                report["model"].get("model_type", "svd"),
+            )
+        ),
+        "benchmark_id": str(report["benchmark_id"]),
+        "dataset_fingerprint": str(report["dataset_fingerprint"]),
+        "eval_set_fingerprint": str(report["eval_set_fingerprint"]),
+        "model_seed": str(report["model_seed"]),
+        "git_sha": str(report["git_sha"]),
+        "split_strategy": str(benchmark["split_strategy"]),
+    }
+    if "split_seed" in benchmark:
+        tags["split_seed"] = str(benchmark["split_seed"])
+    if "temporal_cutoff" in benchmark:
+        tags["temporal_cutoff"] = str(benchmark["temporal_cutoff"])
+    return tags
+
+
 def _benchmark(
     config: dict[str, Any],
     visits,
@@ -210,31 +244,46 @@ def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
         # Preserve the v1 report contract for existing comparisons/scripts.
         report["split_seed"] = benchmark_metadata["split_seed"]
 
-    report_path.write_text(
-        json.dumps(report, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
-
-    tags = {
-        "task": "s2s",
-        "model_family": str(config["model"].get("name", "svd")),
-        "benchmark_id": benchmark_id,
-        "dataset_fingerprint": fingerprint,
-        "eval_set_fingerprint": eval_fingerprint,
-        "model_seed": str(model_seed),
-        "git_sha": git_sha,
-        "split_strategy": str(benchmark_metadata["split_strategy"]),
-    }
-    if "split_seed" in benchmark_metadata:
-        tags["split_seed"] = str(benchmark_metadata["split_seed"])
-    if "temporal_cutoff" in benchmark_metadata:
-        tags["temporal_cutoff"] = str(benchmark_metadata["temporal_cutoff"])
+    _write_report(report_path, report)
 
     run_id = log_experiment(
         config=config,
         metrics=metrics,
-        tags=tags,
+        tags=_tracking_tags(config, report),
         artifacts=[artifact_path, report_path],
     )
     report["mlflow_run_id"] = run_id
+    if run_id is not None:
+        _write_report(report_path, report)
+    return report
+
+
+def backfill_s2s_tracking(config: dict[str, Any]) -> dict[str, Any]:
+    output_dir = Path(config["artifact"].get("output_dir", "outputs/s2s"))
+    report_path = output_dir / "evaluation.json"
+    artifact_path = output_dir / config["artifact"].get(
+        "filename",
+        "s2s_embeddings.pkl",
+    )
+
+    if not report_path.is_file():
+        raise FileNotFoundError(f"Missing S2S evaluation report: {report_path}")
+    if not artifact_path.is_file():
+        raise FileNotFoundError(f"Missing S2S model artifact: {artifact_path}")
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if report.get("mlflow_run_id"):
+        return report
+
+    run_id = log_experiment(
+        config=config,
+        metrics=report["metrics"],
+        tags=_tracking_tags(config, report),
+        artifacts=[artifact_path, report_path],
+    )
+    if run_id is None:
+        raise RuntimeError("MLflow tracking is disabled; cannot backfill S2S run")
+
+    report["mlflow_run_id"] = run_id
+    _write_report(report_path, report)
     return report
