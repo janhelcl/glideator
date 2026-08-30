@@ -8,6 +8,7 @@ from typing import Any
 
 from ..tracking import log_experiment
 from .artifact import S2SArtifact
+from .asymmetric import fit_asymmetric
 from .data import (
     dataset_fingerprint,
     events_fingerprint,
@@ -166,6 +167,26 @@ def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SA
             phi_hidden_dim=int(model.get("phi_hidden_dim", 128)),
             rho_hidden_dim=int(model.get("rho_hidden_dim", 128)),
             pooling=str(model.get("pooling", "mean")),
+            epochs=int(model.get("epochs", 50)),
+            learning_rate=float(model.get("learning_rate", 5e-3)),
+            weight_decay=float(model.get("weight_decay", 1e-4)),
+            temperature=float(model.get("temperature", 0.1)),
+            batch_size=int(model.get("batch_size", 256)),
+            negative_samples=int(model.get("negative_samples", 50)),
+            negative_sampling_power=float(
+                model.get("negative_sampling_power", 0.75)
+            ),
+            add_inbatch_negatives=bool(
+                model.get("add_inbatch_negatives", False)
+            ),
+            device=str(model.get("device", "auto")),
+            seed=seed,
+            metadata=metadata,
+        )
+    if name == "asymmetric":
+        return fit_asymmetric(
+            train_visits,
+            n_factors=int(model.get("n_factors", 64)),
             epochs=int(model.get("epochs", 50)),
             learning_rate=float(model.get("learning_rate", 5e-3)),
             weight_decay=float(model.get("weight_decay", 1e-4)),
