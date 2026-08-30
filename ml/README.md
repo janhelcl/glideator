@@ -73,7 +73,8 @@ examples, so accidentally incomparable runs are visible in MLflow.
 
 The harness supports truncated SVD, the contrastive architecture used by the
 current production model, a DeepSets history encoder, an asymmetric additive
-model, and a transformed-additive model. SVD and contrastive artifacts remain directly
+model, a transformed-additive model, and a residual candidate-attention model.
+SVD and contrastive artifacts remain directly
 production-compatible: item embeddings are normalized and exported using the
 keys `site_to_idx`, `idx_to_site`, and `matrix`.
 
@@ -91,6 +92,13 @@ form as DeepSets; for longer histories it preserves additive composition instead
 of applying `rho` after pooling. Do not promote DeepSets, asymmetric, or
 transformed-additive artifacts to the current backend until serving understands
 their scorer payloads.
+
+Candidate attention keeps the normalized summed-history query as a residual base,
+then computes a separate single-head attention correction for each candidate site.
+Q/K/V projections are learned, the attention scale is learned from a small 0.1
+initial value, and the full catalog can be scored directly because S2S has only a
+few hundred sites. Its artifact stores the raw history embedding table plus the
+attention weights in `scorer`, so it also requires scorer-aware serving.
 
 ## Setup
 
@@ -144,6 +152,17 @@ Run the transformed-additive v1 benchmark:
 glideator-ml run s2s --config configs/s2s/transformed-additive.yaml
 ```
 
+Run the residual candidate-attention v1 benchmark:
+
+```bash
+glideator-ml run s2s --config configs/s2s/candidate-attention.yaml
+```
+
+This model keeps the strong additive contrastive history representation and learns
+only a candidate-specific correction. For each candidate, one attention head
+weights the visited sites differently; the resulting context is added to the
+normalized additive base before cosine scoring.
+
 This ablation keeps the DeepSets `phi` and `rho` dimensions and all contrastive
 training hyperparameters, but changes composition from
 `rho(mean(phi(site)))` to `sum(rho(phi(site)))`. It is intended to isolate
@@ -176,8 +195,9 @@ For v2 seed comparisons, keep `temporal_cutoff` unchanged and vary only
 The command writes an S2S artifact plus an evaluation report under `outputs/`,
 and logs the config, dataset fingerprint, benchmark identity, evaluation-set
 fingerprint, metrics, Git SHA, and artifacts to MLflow. SVD and contrastive
-artifacts are directly production-compatible; DeepSets, asymmetric, and
-transformed-additive artifacts require scorer-aware serving.
+artifacts are directly production-compatible; DeepSets, asymmetric,
+transformed-additive, and candidate-attention artifacts require scorer-aware
+serving.
 
 If training and evaluation finish but MLflow is temporarily unavailable, restore
 the configured tracking service and backfill the saved run without retraining:
