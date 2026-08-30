@@ -72,16 +72,20 @@ fingerprint, and an `eval_set_fingerprint` derived from the exact walk-forward
 examples, so accidentally incomparable runs are visible in MLflow.
 
 The harness supports truncated SVD, the contrastive architecture used by the
-current production model, and a DeepSets history encoder. SVD and contrastive
-artifacts remain directly production-compatible: item embeddings are normalized
-and exported using the keys `site_to_idx`, `idx_to_site`, and `matrix`.
+current production model, a DeepSets history encoder, and an asymmetric additive
+contrastive model. SVD and contrastive artifacts remain directly
+production-compatible: item embeddings are normalized and exported using the
+keys `site_to_idx`, `idx_to_site`, and `matrix`.
 
 DeepSets learns a nonlinear permutation-invariant history encoder
 `rho(pool(phi(site)))`. Its artifact preserves the same three legacy keys and
 adds a small optional `scorer` payload containing the learned history-encoder
 weights. The experiment evaluator uses that scorer so inference matches training.
-Do not promote a DeepSets artifact to the current backend until serving also
-understands the optional scorer payload.
+The asymmetric model keeps additive history composition but learns separate
+source and target site embeddings. Its target embeddings remain in `matrix`,
+while the source embedding table is stored in the optional `scorer` payload.
+Do not promote DeepSets or asymmetric artifacts to the current backend until
+serving also understands their scorer payloads.
 
 ## Setup
 
@@ -123,6 +127,16 @@ Run the DeepSets v1 benchmark on the same held-out-pilot split:
 glideator-ml run s2s --config configs/s2s/deepsets.yaml
 ```
 
+Run the asymmetric additive v1 benchmark:
+
+```bash
+glideator-ml run s2s --config configs/s2s/asymmetric.yaml
+```
+
+The asymmetric config matches the production-equivalent contrastive hyperparameters
+and benchmark. The sole architectural change is untied source and target embedding
+tables; history is still summed and normalized before candidate scoring.
+
 The checked-in DeepSets config keeps the contrastive optimizer, negative sampling,
 embedding dimension, and benchmark identity aligned with the production-equivalent
 contrastive config. Its new degrees of freedom are the per-site `phi` MLP, the
@@ -145,7 +159,7 @@ For v2 seed comparisons, keep `temporal_cutoff` unchanged and vary only
 The command writes an S2S artifact plus an evaluation report under `outputs/`,
 and logs the config, dataset fingerprint, benchmark identity, evaluation-set
 fingerprint, metrics, Git SHA, and artifacts to MLflow. SVD and contrastive
-artifacts are directly production-compatible; DeepSets artifacts additionally
+artifacts are directly production-compatible; DeepSets and asymmetric artifacts
 require scorer-aware serving.
 
 If training and evaluation finish but MLflow is temporarily unavailable, restore
