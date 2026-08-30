@@ -12,6 +12,7 @@ from glideator_ml.s2s.data import (
     temporal_walk_forward_events,
     walk_forward_events,
 )
+from glideator_ml.s2s.deepsets import fit_deepsets
 from glideator_ml.s2s.evaluation import evaluate
 from glideator_ml.s2s.models import fit_contrastive, fit_svd
 from glideator_ml.s2s.run import _model_seed, _split_seed
@@ -196,3 +197,76 @@ def test_contrastive_model_exports_backend_compatible_embeddings():
     )
     assert artifact.metadata["model_type"] == "contrastive"
     assert artifact.metadata["negative_sampling_power"] == 0.5
+
+
+def test_deepsets_scorer_changes_history_query_ranking():
+    artifact = S2SArtifact(
+        site_to_idx={1: 0, 2: 1, 3: 2},
+        idx_to_site=[1, 2, 3],
+        matrix=np.asarray(
+            [
+                [1.0, 0.0],
+                [0.8, 0.6],
+                [0.0, 1.0],
+            ],
+            dtype=np.float32,
+        ),
+        metadata={"model_type": "deepsets"},
+        scorer={
+            "type": "deepsets",
+            "pooling": "mean",
+            "phi_w1": np.eye(2, dtype=np.float32),
+            "phi_b1": np.zeros(2, dtype=np.float32),
+            "phi_w2": np.eye(2, dtype=np.float32),
+            "phi_b2": np.zeros(2, dtype=np.float32),
+            "rho_w1": np.eye(2, dtype=np.float32),
+            "rho_b1": np.zeros(2, dtype=np.float32),
+            "rho_w2": np.asarray([[0.0, 1.0], [1.0, 0.0]], dtype=np.float32),
+            "rho_b2": np.zeros(2, dtype=np.float32),
+        },
+    )
+    artifact.validate()
+
+    assert recommend(artifact, [1], top_k=1)[0][0] == 3
+
+
+def test_deepsets_model_roundtrips_learned_history_encoder(tmp_path):
+    visits = first_visits(_raw_visits())
+    artifact = fit_deepsets(
+        visits,
+        n_factors=4,
+        phi_hidden_dim=8,
+        rho_hidden_dim=8,
+        pooling="mean",
+        epochs=1,
+        learning_rate=5e-3,
+        weight_decay=1e-4,
+        temperature=0.1,
+        batch_size=4,
+        negative_samples=1,
+        negative_sampling_power=0.5,
+        add_inbatch_negatives=False,
+        seed=42,
+        device="cpu",
+    )
+
+    assert artifact.matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(artifact.matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+    assert artifact.metadata["model_type"] == "deepsets"
+    assert artifact.metadata["requires_learned_scorer"] is True
+    assert artifact.scorer is not None
+    assert artifact.scorer["type"] == "deepsets"
+
+    before = recommend(artifact, [1, 2], top_k=2)
+    loaded = S2SArtifact.load(artifact.save(tmp_path / "deepsets.pkl"))
+    after = recommend(loaded, [1, 2], top_k=2)
+
+    assert [site for site, _ in before] == [site for site, _ in after]
+    np.testing.assert_allclose(
+        [score for _, score in before],
+        [score for _, score in after],
+    )
