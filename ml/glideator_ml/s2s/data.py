@@ -122,6 +122,38 @@ def split_pilots(
     )
 
 
+def _as_cutoff(value: str) -> pd.Timestamp:
+    cutoff = pd.Timestamp(value)
+    if pd.isna(cutoff):
+        raise ValueError(f"Invalid temporal cutoff: {value!r}")
+    if cutoff.tzinfo is not None:
+        cutoff = cutoff.tz_localize(None)
+    return cutoff
+
+
+def split_temporal(
+    visits: pd.DataFrame,
+    *,
+    cutoff: str,
+) -> S2SSplit:
+    """Split by information availability at a fixed point in time.
+
+    Training contains only first visits known before the cutoff. eval_visits is
+    the post-cutoff portion and is used for reporting; temporal walk-forward
+    events are built from the full visit history so legitimate pre-cutoff source
+    history is retained.
+    """
+    cutoff_at = _as_cutoff(cutoff)
+    mask = visits["visit_at"] < cutoff_at
+    train_visits = visits.loc[mask].reset_index(drop=True)
+    eval_visits = visits.loc[~mask].reset_index(drop=True)
+    if train_visits.empty:
+        raise ValueError("Temporal S2S split produced an empty training set")
+    if eval_visits.empty:
+        raise ValueError("Temporal S2S split produced an empty evaluation set")
+    return S2SSplit(train_visits=train_visits, eval_visits=eval_visits)
+
+
 def walk_forward_events(
     eval_visits: pd.DataFrame,
     *,
@@ -132,6 +164,32 @@ def walk_forward_events(
     for pilot, group in ordered.groupby("pilot", sort=True):
         sites = group["site_id"].astype(int).tolist()
         for index in range(min_history, len(sites)):
+            events.append((str(pilot), tuple(sites[:index]), sites[index]))
+    return events
+
+
+def temporal_walk_forward_events(
+    visits: pd.DataFrame,
+    *,
+    cutoff: str,
+    min_history: int = 1,
+) -> list[tuple[str, tuple[int, ...], int]]:
+    """Build post-cutoff targets with only history available before each target.
+
+    Unlike applying walk_forward_events to the post-cutoff rows alone, this
+    preserves sites a pilot had already discovered before the cutoff. Later
+    post-cutoff first visits become valid history for subsequent targets, which
+    matches production recommendation semantics at each point in time.
+    """
+    cutoff_at = _as_cutoff(cutoff)
+    events: list[tuple[str, tuple[int, ...], int]] = []
+    ordered = visits.sort_values(["pilot", "visit_at", "site_id"], kind="mergesort")
+    for pilot, group in ordered.groupby("pilot", sort=True):
+        sites = group["site_id"].astype(int).tolist()
+        visit_times = group["visit_at"].tolist()
+        for index in range(min_history, len(sites)):
+            if pd.Timestamp(visit_times[index]) < cutoff_at:
+                continue
             events.append((str(pilot), tuple(sites[:index]), sites[index]))
     return events
 
