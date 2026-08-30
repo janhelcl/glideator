@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -133,6 +134,20 @@ def walk_forward_events(
         for index in range(min_history, len(sites)):
             events.append((str(pilot), tuple(sites[:index]), sites[index]))
     return events
+
+
+def events_fingerprint(
+    events: list[tuple[str, tuple[int, ...], int]],
+) -> str:
+    """Fingerprint the exact ordered benchmark examples used for evaluation."""
+    hasher = hashlib.sha256()
+    for pilot, source_ids, target_id in events:
+        payload = [pilot, list(source_ids), int(target_id)]
+        hasher.update(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        )
+        hasher.update(b"\n")
+    return f"sha256:{hasher.hexdigest()}"
 
 
 def dataset_fingerprint(visits: pd.DataFrame) -> str:
