@@ -27,10 +27,11 @@ Every evaluation pilot then contributes walk-forward examples:
 This prevents a held-out pilot's future visits from leaking into learned site
 embeddings.
 
-The first model is truncated SVD over the binary pilot-site matrix. Its item
-embeddings are normalized and exported using the production-compatible keys
-`site_to_idx`, `idx_to_site`, and `matrix`. Extra metadata is additive, so the
-artifact can later replace the existing S2S pickle without changing serving code.
+The harness supports truncated SVD and the contrastive architecture used by the
+current production model. Item embeddings are normalized and exported using the
+production-compatible keys `site_to_idx`, `idx_to_site`, and `matrix`. Extra
+metadata is additive, so an artifact can replace the existing S2S pickle without
+changing serving code.
 
 ## Setup
 
@@ -38,7 +39,7 @@ artifact can later replace the existing S2S pickle without changing serving code
 cd ml
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[test,tracking]'
+pip install -e '.[contrastive,test,tracking]'
 ```
 
 Point the experiment runner at the analytics database:
@@ -47,7 +48,8 @@ Point the experiment runner at the analytics database:
 export ML_DATABASE_URL='postgresql://...'
 ```
 
-By default MLflow logs to `./mlruns`. A remote server can be used with:
+By default MLflow logs to the SQLite database under `./mlruns`. A remote server
+can be used with:
 
 ```bash
 export MLFLOW_TRACKING_URI='http://localhost:5000'
@@ -59,6 +61,12 @@ Run the baseline:
 glideator-ml run s2s --config configs/s2s/svd.yaml
 ```
 
+Retrain the production-equivalent contrastive benchmark:
+
+```bash
+glideator-ml run s2s --config configs/s2s/contrastive-prod-equivalent.yaml
+```
+
 The command writes a production-compatible pickle plus an evaluation report under
 `outputs/`, and logs the config, dataset fingerprint, metrics, Git SHA, and
 artifacts to MLflow.
@@ -66,14 +74,16 @@ artifacts to MLflow.
 To inspect local runs:
 
 ```bash
-mlflow ui --backend-store-uri ./mlruns
+mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
 
 ## Data contract
 
-The database loader reads `mart.fact_flights` and joins `mart.dim_sites` by the
-XContest site name to obtain `site_id`. It reduces raw flights to one first-visit
-event per pilot/site before any split or model fitting.
+The database loader reads `fact_flights` and joins `dim_sites` by the XContest
+site name to obtain `site_id`. The schema is configurable with `data.schema`
+(`mart` by default; the production-equivalent config uses `glideator_mart`).
+It reduces raw flights to one first-visit event per pilot/site before any split
+or model fitting.
 
 For isolated experiments and tests, the same runner can consume a CSV containing:
 

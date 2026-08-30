@@ -15,7 +15,7 @@ from .data import (
     walk_forward_events,
 )
 from .evaluation import evaluate
-from .models import fit_svd
+from .models import fit_contrastive, fit_svd
 
 
 def _git_sha() -> str:
@@ -32,15 +32,33 @@ def _git_sha() -> str:
 def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SArtifact:
     model = config["model"]
     name = model.get("name", "svd")
-    if name != "svd":
-        raise ValueError(f"Unsupported S2S model: {name!r}")
-    return fit_svd(
-        train_visits,
-        n_factors=int(model.get("n_factors", 64)),
-        sigma_power=float(model.get("sigma_power", 1.0)),
-        seed=int(config.get("seed", 42)),
-        metadata=metadata,
-    )
+    seed = int(config.get("seed", 42))
+    if name == "svd":
+        return fit_svd(
+            train_visits,
+            n_factors=int(model.get("n_factors", 64)),
+            sigma_power=float(model.get("sigma_power", 1.0)),
+            seed=seed,
+            metadata=metadata,
+        )
+    if name == "contrastive":
+        return fit_contrastive(
+            train_visits,
+            n_factors=int(model.get("n_factors", 64)),
+            epochs=int(model.get("epochs", 50)),
+            learning_rate=float(model.get("learning_rate", 5e-3)),
+            weight_decay=float(model.get("weight_decay", 1e-4)),
+            temperature=float(model.get("temperature", 0.1)),
+            batch_size=int(model.get("batch_size", 256)),
+            negative_samples=int(model.get("negative_samples", 50)),
+            add_inbatch_negatives=bool(
+                model.get("add_inbatch_negatives", False)
+            ),
+            device=str(model.get("device", "auto")),
+            seed=seed,
+            metadata=metadata,
+        )
+    raise ValueError(f"Unsupported S2S model: {name!r}")
 
 
 def run_s2s(config: dict[str, Any]) -> dict[str, Any]:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 from dataclasses import dataclass
 
 import pandas as pd
@@ -33,15 +34,18 @@ def load_visits(config: dict) -> pd.DataFrame:
         raw = pd.read_csv(path)
     elif source == "database":
         engine = create_engine(_database_url(config))
+        schema = str(config.get("schema", "mart"))
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", schema):
+            raise ValueError(f"Invalid database schema: {schema!r}")
         query = text(
-            """
+            f"""
             select
                 f.pilot,
                 s.site_id,
                 f.date,
                 f.start_time
-            from mart.fact_flights f
-            join mart.dim_sites s
+            from {schema}.fact_flights f
+            join {schema}.dim_sites s
               on f.site = s.xc_name
             where f.pilot is not null
               and s.site_id is not null

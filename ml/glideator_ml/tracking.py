@@ -31,7 +31,9 @@ def log_experiment(
 
     mlflow = _import_mlflow()
     uri_env = tracking.get("tracking_uri_env", "MLFLOW_TRACKING_URI")
-    tracking_uri = os.getenv(uri_env) or tracking.get("default_tracking_uri", "file:./mlruns")
+    tracking_uri = os.getenv(uri_env) or tracking.get(
+        "default_tracking_uri", "sqlite:///mlruns/mlflow.db"
+    )
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(tracking.get("experiment_name", f"glideator-{config['task']}"))
 

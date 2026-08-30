@@ -6,7 +6,7 @@ import pandas as pd
 from glideator_ml.s2s.artifact import S2SArtifact, recommend
 from glideator_ml.s2s.data import first_visits, split_pilots, walk_forward_events
 from glideator_ml.s2s.evaluation import evaluate
-from glideator_ml.s2s.models import fit_svd
+from glideator_ml.s2s.models import fit_contrastive, fit_svd
 
 
 def _raw_visits():
@@ -100,3 +100,28 @@ def test_svd_is_reproducible_and_evaluator_reports_ranking_metrics():
     assert "ndcg_at_3" in metrics
     assert "coverage_at_3" in metrics
     assert "avg_log_popularity_at_3" in metrics
+
+
+def test_contrastive_model_exports_backend_compatible_embeddings():
+    visits = first_visits(_raw_visits())
+    artifact = fit_contrastive(
+        visits,
+        n_factors=4,
+        epochs=1,
+        learning_rate=5e-3,
+        weight_decay=1e-4,
+        temperature=0.1,
+        batch_size=4,
+        negative_samples=1,
+        add_inbatch_negatives=False,
+        seed=42,
+        device="cpu",
+    )
+
+    assert artifact.matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(artifact.matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+    assert artifact.metadata["model_type"] == "contrastive"
