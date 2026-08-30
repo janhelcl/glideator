@@ -4,9 +4,15 @@ import numpy as np
 import pandas as pd
 
 from glideator_ml.s2s.artifact import S2SArtifact, recommend
-from glideator_ml.s2s.data import first_visits, split_pilots, walk_forward_events
+from glideator_ml.s2s.data import (
+    events_fingerprint,
+    first_visits,
+    split_pilots,
+    walk_forward_events,
+)
 from glideator_ml.s2s.evaluation import evaluate
 from glideator_ml.s2s.models import fit_contrastive, fit_svd
+from glideator_ml.s2s.run import _model_seed, _split_seed
 
 
 def _raw_visits():
@@ -51,6 +57,35 @@ def test_first_visits_and_split_have_no_pilot_leakage():
         position = len(prefix)
         assert list(prefix) == ordered[:position]
         assert target == ordered[position]
+
+
+def test_benchmark_split_seed_is_independent_from_model_seed():
+    config = {
+        "seed": 99,
+        "data": {"split_seed": 42},
+        "model": {"name": "contrastive", "seed": 46},
+    }
+    assert _split_seed(config) == 42
+    assert _model_seed(config) == 46
+
+    # Old configs remain reproducible via the legacy top-level fallback.
+    legacy = {"seed": 7, "data": {}, "model": {"name": "svd"}}
+    assert _split_seed(legacy) == 7
+    assert _model_seed(legacy) == 7
+
+
+def test_eval_set_fingerprint_identifies_exact_walk_forward_benchmark():
+    visits = first_visits(_raw_visits())
+    split = split_pilots(visits, eval_fraction=0.5, seed=42)
+    events = walk_forward_events(split.eval_visits)
+
+    fingerprint = events_fingerprint(events)
+    assert fingerprint == events_fingerprint(list(events))
+
+    changed = list(events)
+    pilot, prefix, target = changed[0]
+    changed[0] = (pilot, prefix, target + 1000)
+    assert events_fingerprint(changed) != fingerprint
 
 
 def test_artifact_is_backward_compatible_with_backend_pickle_contract(tmp_path):
