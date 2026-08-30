@@ -1,5 +1,4 @@
 task: s2s
-seed: 42
 
 data:
   source: database
@@ -7,9 +6,11 @@ data:
   schema: glideator_mart
   eval_fraction: 0.20
   min_eval_history: 1
+  split_seed: 42
 
 model:
   name: contrastive
+  seed: 42
   n_factors: 64
   epochs: 50
   learning_rate: 0.005
@@ -21,6 +22,7 @@ model:
   device: auto
 
 evaluation:
+  benchmark_id: s2s-v1
   ks: [5, 10]
 
 artifact:
