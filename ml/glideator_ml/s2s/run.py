@@ -8,6 +8,7 @@ from typing import Any
 
 from ..tracking import log_experiment
 from .artifact import S2SArtifact
+from .candidate_attention import fit_candidate_attention
 from .asymmetric import fit_asymmetric
 from .data import (
     dataset_fingerprint,
@@ -221,6 +222,29 @@ def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SA
             ),
             add_inbatch_negatives=bool(
                 model.get("add_inbatch_negatives", False)
+            ),
+            device=str(model.get("device", "auto")),
+            seed=seed,
+            metadata=metadata,
+        )
+    if name == "candidate_attention":
+        return fit_candidate_attention(
+            train_visits,
+            n_factors=int(model.get("n_factors", 64)),
+            epochs=int(model.get("epochs", 50)),
+            learning_rate=float(model.get("learning_rate", 5e-3)),
+            weight_decay=float(model.get("weight_decay", 1e-4)),
+            temperature=float(model.get("temperature", 0.1)),
+            batch_size=int(model.get("batch_size", 256)),
+            negative_samples=int(model.get("negative_samples", 50)),
+            negative_sampling_power=float(
+                model.get("negative_sampling_power", 0.75)
+            ),
+            add_inbatch_negatives=bool(
+                model.get("add_inbatch_negatives", False)
+            ),
+            attention_scale_init=float(
+                model.get("attention_scale_init", 0.1)
             ),
             device=str(model.get("device", "auto")),
             seed=seed,
