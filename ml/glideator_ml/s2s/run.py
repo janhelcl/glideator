@@ -10,6 +10,7 @@ from ..tracking import log_experiment
 from .artifact import S2SArtifact
 from .data import (
     dataset_fingerprint,
+    events_fingerprint,
     load_visits,
     split_pilots,
     walk_forward_events,
@@ -29,10 +30,20 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def _model_seed(config: dict[str, Any]) -> int:
+    # Top-level seed is retained as a backward-compatible fallback for old configs.
+    return int(config["model"].get("seed", config.get("seed", 42)))
+
+
+def _split_seed(config: dict[str, Any]) -> int:
+    # Split identity belongs to the data/benchmark, not to stochastic model training.
+    return int(config["data"].get("split_seed", config.get("seed", 42)))
+
+
 def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SArtifact:
     model = config["model"]
     name = model.get("name", "svd")
-    seed = int(config.get("seed", 42))
+    seed = _model_seed(config)
     if name == "svd":
         return fit_svd(
             train_visits,
@@ -64,21 +75,29 @@ def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SA
 def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
     visits = load_visits(config["data"])
     fingerprint = dataset_fingerprint(visits)
-    seed = int(config.get("seed", 42))
+    split_seed = _split_seed(config)
+    model_seed = _model_seed(config)
+    benchmark_id = str(config["evaluation"].get("benchmark_id", "s2s-v1"))
+
     split = split_pilots(
         visits,
         eval_fraction=float(config["data"].get("eval_fraction", 0.2)),
-        seed=seed,
+        seed=split_seed,
     )
     events = walk_forward_events(
         split.eval_visits,
         min_history=int(config["data"].get("min_eval_history", 1)),
     )
+    eval_fingerprint = events_fingerprint(events)
 
     git_sha = _git_sha()
     model_metadata = {
         "task": "s2s",
         "dataset_fingerprint": fingerprint,
+        "benchmark_id": benchmark_id,
+        "eval_set_fingerprint": eval_fingerprint,
+        "split_seed": split_seed,
+        "model_seed": model_seed,
         "git_sha": git_sha,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -108,7 +127,11 @@ def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
     report_path = output_dir / "evaluation.json"
     report = {
         "task": "s2s",
+        "benchmark_id": benchmark_id,
         "dataset_fingerprint": fingerprint,
+        "eval_set_fingerprint": eval_fingerprint,
+        "split_seed": split_seed,
+        "model_seed": model_seed,
         "git_sha": git_sha,
         "model": artifact.metadata,
         "metrics": metrics,
@@ -124,7 +147,11 @@ def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
         tags={
             "task": "s2s",
             "model_family": str(config["model"].get("name", "svd")),
+            "benchmark_id": benchmark_id,
             "dataset_fingerprint": fingerprint,
+            "eval_set_fingerprint": eval_fingerprint,
+            "split_seed": str(split_seed),
+            "model_seed": str(model_seed),
             "git_sha": git_sha,
         },
         artifacts=[artifact_path, report_path],
