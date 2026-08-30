@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from glideator_ml.s2s.artifact import S2SArtifact, recommend
+from glideator_ml.s2s.asymmetric import fit_asymmetric
 from glideator_ml.s2s.data import (
     events_fingerprint,
     first_visits,
@@ -263,6 +264,84 @@ def test_deepsets_model_roundtrips_learned_history_encoder(tmp_path):
 
     before = recommend(artifact, [1, 2], top_k=2)
     loaded = S2SArtifact.load(artifact.save(tmp_path / "deepsets.pkl"))
+    after = recommend(loaded, [1, 2], top_k=2)
+
+    assert [site for site, _ in before] == [site for site, _ in after]
+    np.testing.assert_allclose(
+        [score for _, score in before],
+        [score for _, score in after],
+    )
+
+
+def test_asymmetric_scorer_uses_source_embeddings_for_history():
+    artifact = S2SArtifact(
+        site_to_idx={1: 0, 2: 1, 3: 2},
+        idx_to_site=[1, 2, 3],
+        matrix=np.asarray(
+            [
+                [1.0, 0.0],
+                [0.8, 0.6],
+                [0.0, 1.0],
+            ],
+            dtype=np.float32,
+        ),
+        metadata={"model_type": "asymmetric"},
+        scorer={
+            "type": "asymmetric",
+            "source_matrix": np.asarray(
+                [
+                    [0.0, 1.0],
+                    [1.0, 0.0],
+                    [0.0, 1.0],
+                ],
+                dtype=np.float32,
+            ),
+        },
+    )
+    artifact.validate()
+
+    # Target-space site 1 points right, but its source-space representation
+    # points up, so candidate 3 should be ranked first.
+    assert recommend(artifact, [1], top_k=1)[0][0] == 3
+
+
+def test_asymmetric_model_roundtrips_source_and_target_embeddings(tmp_path):
+    visits = first_visits(_raw_visits())
+    artifact = fit_asymmetric(
+        visits,
+        n_factors=4,
+        epochs=1,
+        learning_rate=5e-3,
+        weight_decay=1e-4,
+        temperature=0.1,
+        batch_size=4,
+        negative_samples=1,
+        negative_sampling_power=0.5,
+        add_inbatch_negatives=False,
+        seed=42,
+        device="cpu",
+    )
+
+    assert artifact.matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(artifact.matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+    assert artifact.metadata["model_type"] == "asymmetric"
+    assert artifact.metadata["requires_learned_scorer"] is True
+    assert artifact.scorer is not None
+    assert artifact.scorer["type"] == "asymmetric"
+    source_matrix = np.asarray(artifact.scorer["source_matrix"])
+    assert source_matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(source_matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+
+    before = recommend(artifact, [1, 2], top_k=2)
+    loaded = S2SArtifact.load(artifact.save(tmp_path / "asymmetric.pkl"))
     after = recommend(loaded, [1, 2], top_k=2)
 
     assert [site for site, _ in before] == [site for site, _ in after]
