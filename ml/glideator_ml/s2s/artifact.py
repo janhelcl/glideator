@@ -36,6 +36,17 @@ class S2SArtifact:
         if self.scorer is None:
             return
         scorer_type = self.scorer.get("type")
+        if scorer_type == "asymmetric":
+            source_matrix = np.asarray(self.scorer["source_matrix"])
+            if source_matrix.shape != self.matrix.shape:
+                raise ValueError(
+                    "Asymmetric source matrix must match target embedding shape"
+                )
+            if not np.isfinite(source_matrix).all():
+                raise ValueError(
+                    "Asymmetric source matrix contains non-finite values"
+                )
+            return
         if scorer_type != "deepsets":
             raise ValueError(f"Unsupported S2S scorer type: {scorer_type!r}")
 
@@ -159,6 +170,8 @@ def recommend(
 
     if artifact.scorer is None:
         query = artifact.matrix[idxs].sum(axis=0)
+    elif artifact.scorer.get("type") == "asymmetric":
+        query = np.asarray(artifact.scorer["source_matrix"])[idxs].sum(axis=0)
     elif artifact.scorer.get("type") == "deepsets":
         query = _deepsets_query(artifact, idxs)
     else:
