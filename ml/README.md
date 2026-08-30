@@ -27,6 +27,25 @@ Every evaluation pilot then contributes walk-forward examples:
 This prevents a held-out pilot's future visits from leaking into learned site
 embeddings.
 
+The benchmark split and stochastic model training have separate seeds:
+
+```yaml
+data:
+  split_seed: 42
+
+model:
+  seed: 42
+
+evaluation:
+  benchmark_id: s2s-v1
+```
+
+Keep `data.split_seed` fixed when comparing model seeds or architectures. Change
+only `model.seed` for repeated stochastic runs. The runner logs the
+`benchmark_id`, dataset fingerprint, and an `eval_set_fingerprint` derived from
+the exact walk-forward examples, so accidentally incomparable runs are visible in
+MLflow.
+
 The harness supports truncated SVD and the contrastive architecture used by the
 current production model. Item embeddings are normalized and exported using the
 production-compatible keys `site_to_idx`, `idx_to_site`, and `matrix`. Extra
@@ -55,7 +74,7 @@ can be used with:
 export MLFLOW_TRACKING_URI='http://localhost:5000'
 ```
 
-Run the baseline:
+Run the SVD baseline:
 
 ```bash
 glideator-ml run s2s --config configs/s2s/svd.yaml
@@ -67,9 +86,14 @@ Retrain the production-equivalent contrastive benchmark:
 glideator-ml run s2s --config configs/s2s/contrastive-prod-equivalent.yaml
 ```
 
+For a fixed-split 5-seed contrastive comparison, leave
+`data.split_seed: 42` unchanged and run the same config with
+`model.seed: 42`, `43`, `44`, `45`, and `46`. All five reports should have
+identical `events`, `eval_pilots`, and `eval_set_fingerprint`.
+
 The command writes a production-compatible pickle plus an evaluation report under
-`outputs/`, and logs the config, dataset fingerprint, metrics, Git SHA, and
-artifacts to MLflow.
+`outputs/`, and logs the config, dataset fingerprint, benchmark identity,
+evaluation-set fingerprint, metrics, Git SHA, and artifacts to MLflow.
 
 To inspect local runs:
 
