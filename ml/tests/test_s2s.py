@@ -5,6 +5,7 @@ import pandas as pd
 
 from glideator_ml.s2s.artifact import S2SArtifact, recommend
 from glideator_ml.s2s.asymmetric import fit_asymmetric
+from glideator_ml.s2s.candidate_attention import fit_candidate_attention
 from glideator_ml.s2s.data import (
     events_fingerprint,
     first_visits,
@@ -422,6 +423,92 @@ def test_transformed_additive_model_roundtrips_scorer(tmp_path):
     before = recommend(artifact, [1, 2], top_k=2)
     loaded = S2SArtifact.load(
         artifact.save(tmp_path / "transformed_additive.pkl")
+    )
+    after = recommend(loaded, [1, 2], top_k=2)
+
+    assert [site for site, _ in before] == [site for site, _ in after]
+    np.testing.assert_allclose(
+        [score for _, score in before],
+        [score for _, score in after],
+    )
+
+
+def test_candidate_attention_scores_candidates_with_different_history_weights():
+    artifact = S2SArtifact(
+        site_to_idx={1: 0, 2: 1, 3: 2, 4: 3},
+        idx_to_site=[1, 2, 3, 4],
+        matrix=np.asarray(
+            [
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 0.0],
+                [0.0, 1.0],
+            ],
+            dtype=np.float32,
+        ),
+        metadata={"model_type": "candidate_attention"},
+        scorer={
+            "type": "candidate_attention",
+            "history_matrix": np.asarray(
+                [
+                    [1.0, 0.0],
+                    [0.0, 1.0],
+                    [1.0, 0.0],
+                    [0.0, 1.0],
+                ],
+                dtype=np.float32,
+            ),
+            "query_weight": np.eye(2, dtype=np.float32),
+            "key_weight": np.eye(2, dtype=np.float32),
+            "value_weight": np.asarray(
+                [[1.0, 0.0], [0.0, -1.0]],
+                dtype=np.float32,
+            ),
+            "attention_scale": 1.0,
+        },
+    )
+    artifact.validate()
+
+    # Candidates 3 and 4 have identical cosine similarity to the additive
+    # baseline [1, 1]. Candidate-conditioned attention breaks that tie because
+    # each candidate attends to a different history site.
+    assert recommend(artifact, [1, 2], top_k=1)[0][0] == 3
+
+
+def test_candidate_attention_model_roundtrips_scorer(tmp_path):
+    visits = first_visits(_raw_visits())
+    artifact = fit_candidate_attention(
+        visits,
+        n_factors=4,
+        epochs=1,
+        learning_rate=5e-3,
+        weight_decay=1e-4,
+        temperature=0.1,
+        batch_size=4,
+        negative_samples=1,
+        negative_sampling_power=0.5,
+        add_inbatch_negatives=False,
+        attention_scale_init=0.1,
+        seed=42,
+        device="cpu",
+    )
+
+    assert artifact.matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(artifact.matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+    assert artifact.metadata["model_type"] == "candidate_attention"
+    assert artifact.metadata["attention_heads"] == 1
+    assert artifact.metadata["requires_learned_scorer"] is True
+    assert artifact.scorer is not None
+    assert artifact.scorer["type"] == "candidate_attention"
+    assert np.asarray(artifact.scorer["history_matrix"]).shape == (4, 4)
+
+    before = recommend(artifact, [1, 2], top_k=2)
+    loaded = S2SArtifact.load(
+        artifact.save(tmp_path / "candidate_attention.pkl")
     )
     after = recommend(loaded, [1, 2], top_k=2)
 
