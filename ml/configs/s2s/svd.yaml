@@ -3,6 +3,7 @@ task: s2s
 data:
   source: database
   database_url_env: ML_DATABASE_URL
+  split_strategy: pilot
   eval_fraction: 0.20
   min_eval_history: 1
   split_seed: 42
