@@ -142,9 +142,11 @@ have identical `events`, `eval_pilots`, and `eval_set_fingerprint`.
 For v2 seed comparisons, keep `temporal_cutoff` unchanged and vary only
 `model.seed`.
 
-The command writes a production-compatible pickle plus an evaluation report under
-`outputs/`, and logs the config, dataset fingerprint, benchmark identity,
-evaluation-set fingerprint, metrics, Git SHA, and artifacts to MLflow.
+The command writes an S2S artifact plus an evaluation report under `outputs/`,
+and logs the config, dataset fingerprint, benchmark identity, evaluation-set
+fingerprint, metrics, Git SHA, and artifacts to MLflow. SVD and contrastive
+artifacts are directly production-compatible; DeepSets artifacts additionally
+require scorer-aware serving.
 
 To inspect local runs:
 
