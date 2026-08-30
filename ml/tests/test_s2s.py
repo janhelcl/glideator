@@ -17,6 +17,7 @@ from glideator_ml.s2s.deepsets import fit_deepsets
 from glideator_ml.s2s.evaluation import evaluate
 from glideator_ml.s2s.models import fit_contrastive, fit_svd
 from glideator_ml.s2s.run import _model_seed, _split_seed
+from glideator_ml.s2s.transformed_additive import fit_transformed_additive
 
 
 def _raw_visits():
@@ -342,6 +343,86 @@ def test_asymmetric_model_roundtrips_source_and_target_embeddings(tmp_path):
 
     before = recommend(artifact, [1, 2], top_k=2)
     loaded = S2SArtifact.load(artifact.save(tmp_path / "asymmetric.pkl"))
+    after = recommend(loaded, [1, 2], top_k=2)
+
+    assert [site for site, _ in before] == [site for site, _ in after]
+    np.testing.assert_allclose(
+        [score for _, score in before],
+        [score for _, score in after],
+    )
+
+
+def test_transformed_additive_scorer_transforms_each_site_before_sum():
+    artifact = S2SArtifact(
+        site_to_idx={1: 0, 2: 1, 3: 2, 4: 3},
+        idx_to_site=[1, 2, 3, 4],
+        matrix=np.asarray(
+            [
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+                [-1.0, 1.0],
+            ],
+            dtype=np.float32,
+        ),
+        metadata={"model_type": "transformed_additive"},
+        scorer={
+            "type": "transformed_additive",
+            "phi_w1": np.eye(2, dtype=np.float32),
+            "phi_b1": np.zeros(2, dtype=np.float32),
+            "phi_w2": np.eye(2, dtype=np.float32),
+            "phi_b2": np.zeros(2, dtype=np.float32),
+            "rho_w1": np.asarray(
+                [[1.0, -1.0], [-1.0, 1.0]],
+                dtype=np.float32,
+            ),
+            "rho_b1": np.zeros(2, dtype=np.float32),
+            "rho_w2": np.eye(2, dtype=np.float32),
+            "rho_b2": np.zeros(2, dtype=np.float32),
+        },
+    )
+    artifact.validate()
+
+    # Site 1 transforms to [1, 0] and site 2 to [0, 1], so additive
+    # composition points toward candidate 3.
+    assert recommend(artifact, [1, 2], top_k=1)[0][0] == 3
+
+
+def test_transformed_additive_model_roundtrips_scorer(tmp_path):
+    visits = first_visits(_raw_visits())
+    artifact = fit_transformed_additive(
+        visits,
+        n_factors=4,
+        phi_hidden_dim=8,
+        rho_hidden_dim=8,
+        epochs=1,
+        learning_rate=5e-3,
+        weight_decay=1e-4,
+        temperature=0.1,
+        batch_size=4,
+        negative_samples=1,
+        negative_sampling_power=0.5,
+        add_inbatch_negatives=False,
+        seed=42,
+        device="cpu",
+    )
+
+    assert artifact.matrix.shape == (4, 4)
+    np.testing.assert_allclose(
+        np.linalg.norm(artifact.matrix, axis=1),
+        np.ones(4),
+        atol=1e-6,
+    )
+    assert artifact.metadata["model_type"] == "transformed_additive"
+    assert artifact.metadata["aggregation"] == "sum_after_phi_rho"
+    assert artifact.metadata["requires_learned_scorer"] is True
+    assert artifact.scorer is not None
+    assert artifact.scorer["type"] == "transformed_additive"
+
+    before = recommend(artifact, [1, 2], top_k=2)
+    loaded = S2SArtifact.load(
+        artifact.save(tmp_path / "transformed_additive.pkl")
+    )
     after = recommend(loaded, [1, 2], top_k=2)
 
     assert [site for site, _ in before] == [site for site, _ in after]
