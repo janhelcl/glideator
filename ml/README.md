@@ -71,11 +71,17 @@ The runner logs the `benchmark_id`, split strategy, cutoff/seed, dataset
 fingerprint, and an `eval_set_fingerprint` derived from the exact walk-forward
 examples, so accidentally incomparable runs are visible in MLflow.
 
-The harness supports truncated SVD and the contrastive architecture used by the
-current production model. Item embeddings are normalized and exported using the
-production-compatible keys `site_to_idx`, `idx_to_site`, and `matrix`. Extra
-metadata is additive, so an artifact can replace the existing S2S pickle without
-changing serving code.
+The harness supports truncated SVD, the contrastive architecture used by the
+current production model, and a DeepSets history encoder. SVD and contrastive
+artifacts remain directly production-compatible: item embeddings are normalized
+and exported using the keys `site_to_idx`, `idx_to_site`, and `matrix`.
+
+DeepSets learns a nonlinear permutation-invariant history encoder
+`rho(pool(phi(site)))`. Its artifact preserves the same three legacy keys and
+adds a small optional `scorer` payload containing the learned history-encoder
+weights. The experiment evaluator uses that scorer so inference matches training.
+Do not promote a DeepSets artifact to the current backend until serving also
+understands the optional scorer payload.
 
 ## Setup
 
@@ -110,6 +116,17 @@ Run the production-equivalent contrastive v1 benchmark:
 ```bash
 glideator-ml run s2s --config configs/s2s/contrastive-prod-equivalent.yaml
 ```
+
+Run the DeepSets v1 benchmark on the same held-out-pilot split:
+
+```bash
+glideator-ml run s2s --config configs/s2s/deepsets.yaml
+```
+
+The checked-in DeepSets config keeps the contrastive optimizer, negative sampling,
+embedding dimension, and benchmark identity aligned with the production-equivalent
+contrastive config. Its new degrees of freedom are the per-site `phi` MLP, the
+post-pooling `rho` MLP, and mean pooling over the already-discovered site set.
 
 Run the temporal v2 benchmark:
 
