@@ -8,6 +8,8 @@ from glideator_ml.s2s.data import (
     events_fingerprint,
     first_visits,
     split_pilots,
+    split_temporal,
+    temporal_walk_forward_events,
     walk_forward_events,
 )
 from glideator_ml.s2s.evaluation import evaluate
@@ -57,6 +59,28 @@ def test_first_visits_and_split_have_no_pilot_leakage():
         position = len(prefix)
         assert list(prefix) == ordered[:position]
         assert target == ordered[position]
+
+
+def test_temporal_split_uses_only_past_training_data_and_keeps_prior_history():
+    visits = first_visits(_raw_visits())
+    cutoff = "2026-01-03"
+    split = split_temporal(visits, cutoff=cutoff)
+
+    assert split.train_visits["visit_at"].max() < pd.Timestamp(cutoff)
+    assert split.eval_visits["visit_at"].min() >= pd.Timestamp(cutoff)
+
+    events = temporal_walk_forward_events(visits, cutoff=cutoff)
+    assert ("p1", (1,), 2) in events
+    assert ("p1", (1, 2), 3) in events
+
+    for pilot, prefix, target in events:
+        ordered = (
+            visits[visits["pilot"] == pilot]
+            .sort_values(["visit_at", "site_id"])["site_id"]
+            .tolist()
+        )
+        position = ordered.index(target)
+        assert list(prefix) == ordered[:position]
 
 
 def test_benchmark_split_seed_is_independent_from_model_seed():
@@ -126,15 +150,25 @@ def test_svd_is_reproducible_and_evaluator_reports_ranking_metrics():
     )
     np.testing.assert_allclose(artifact_a.matrix, artifact_b.matrix)
 
-    events = [("heldout", (1,), 2), ("heldout", (2,), 3)]
+    events = [
+        ("heldout-a", (1,), 2),
+        ("heldout-b", (2, 1), 3),
+        ("heldout-c", (1, 2, 3, 4), 999),
+    ]
     metrics = evaluate(artifact_a, events, visits, ks=[1, 3])
 
-    assert metrics["events"] == 2
+    assert metrics["events"] == 3
     assert "hit_rate_at_1" in metrics
     assert "mrr_at_3" in metrics
     assert "ndcg_at_3" in metrics
+    assert "end_to_end_hit_rate_at_3" in metrics
     assert "coverage_at_3" in metrics
     assert "avg_log_popularity_at_3" in metrics
+    assert metrics["history_1_events"] == 1
+    assert metrics["history_2_3_events"] == 1
+    assert metrics["history_4_plus_events"] == 1
+    assert metrics["target_cold_start_events"] == 1
+    assert metrics["cold_start_target_rate"] == 1 / 3
 
 
 def test_contrastive_model_exports_backend_compatible_embeddings():
