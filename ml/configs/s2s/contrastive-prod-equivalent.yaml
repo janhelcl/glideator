@@ -19,6 +19,7 @@ model:
   temperature: 0.1
   batch_size: 256
   negative_samples: 50
+  negative_sampling_power: 0.75
   add_inbatch_negatives: false
   device: auto
 

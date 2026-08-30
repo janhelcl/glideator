@@ -91,6 +91,7 @@ def fit_contrastive(
     temperature: float,
     batch_size: int,
     negative_samples: int,
+    negative_sampling_power: float,
     add_inbatch_negatives: bool,
     seed: int,
     device: str = "auto",
@@ -205,7 +206,7 @@ def fit_contrastive(
         num_workers=0,
     )
     sampling_weights = torch.as_tensor(
-        np.power(popularity + 1e-8, 0.75),
+        np.power(popularity + 1e-8, float(negative_sampling_power)),
         dtype=torch.float32,
         device=resolved_device,
     )
@@ -266,6 +267,7 @@ def fit_contrastive(
             "temperature": float(temperature),
             "batch_size": int(batch_size),
             "negative_samples": int(negative_samples),
+            "negative_sampling_power": float(negative_sampling_power),
             "add_inbatch_negatives": bool(add_inbatch_negatives),
             "seed": int(seed),
             "device": resolved_device,

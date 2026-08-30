@@ -182,6 +182,7 @@ def test_contrastive_model_exports_backend_compatible_embeddings():
         temperature=0.1,
         batch_size=4,
         negative_samples=1,
+        negative_sampling_power=0.5,
         add_inbatch_negatives=False,
         seed=42,
         device="cpu",
@@ -194,3 +195,4 @@ def test_contrastive_model_exports_backend_compatible_embeddings():
         atol=1e-6,
     )
     assert artifact.metadata["model_type"] == "contrastive"
+    assert artifact.metadata["negative_sampling_power"] == 0.5

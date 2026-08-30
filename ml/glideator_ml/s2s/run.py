@@ -114,6 +114,9 @@ def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SA
             temperature=float(model.get("temperature", 0.1)),
             batch_size=int(model.get("batch_size", 256)),
             negative_samples=int(model.get("negative_samples", 50)),
+            negative_sampling_power=float(
+                model.get("negative_sampling_power", 0.75)
+            ),
             add_inbatch_negatives=bool(
                 model.get("add_inbatch_negatives", False)
             ),
