@@ -1,0 +1,26 @@
+task: s2s
+seed: 42
+
+data:
+  source: database
+  database_url_env: ML_DATABASE_URL
+  eval_fraction: 0.20
+  min_eval_history: 1
+
+model:
+  name: svd
+  n_factors: 64
+  sigma_power: 1.0
+
+evaluation:
+  ks: [5, 10]
+
+artifact:
+  output_dir: outputs/s2s/svd
+  filename: s2s_covisit_embeddings.pkl
+
+tracking:
+  enabled: true
+  experiment_name: glideator-s2s
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  default_tracking_uri: file:./mlruns
