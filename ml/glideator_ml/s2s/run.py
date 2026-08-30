@@ -13,6 +13,8 @@ from .data import (
     events_fingerprint,
     load_visits,
     split_pilots,
+    split_temporal,
+    temporal_walk_forward_events,
     walk_forward_events,
 )
 from .evaluation import evaluate
@@ -38,6 +40,56 @@ def _model_seed(config: dict[str, Any]) -> int:
 def _split_seed(config: dict[str, Any]) -> int:
     # Split identity belongs to the data/benchmark, not to stochastic model training.
     return int(config["data"].get("split_seed", config.get("seed", 42)))
+
+
+def _benchmark(
+    config: dict[str, Any],
+    visits,
+):
+    data = config["data"]
+    strategy = str(data.get("split_strategy", "pilot"))
+    min_history = int(data.get("min_eval_history", 1))
+
+    if strategy == "pilot":
+        split_seed = _split_seed(config)
+        split = split_pilots(
+            visits,
+            eval_fraction=float(data.get("eval_fraction", 0.2)),
+            seed=split_seed,
+        )
+        events = walk_forward_events(
+            split.eval_visits,
+            min_history=min_history,
+        )
+        metadata = {
+            "split_strategy": "pilot",
+            "split_seed": split_seed,
+        }
+    elif strategy == "temporal":
+        cutoff = data.get("temporal_cutoff")
+        if not cutoff:
+            raise ValueError(
+                "data.temporal_cutoff is required when split_strategy=temporal"
+            )
+        cutoff = str(cutoff)
+        split = split_temporal(visits, cutoff=cutoff)
+        events = temporal_walk_forward_events(
+            visits,
+            cutoff=cutoff,
+            min_history=min_history,
+        )
+        metadata = {
+            "split_strategy": "temporal",
+            "temporal_cutoff": cutoff,
+        }
+    else:
+        raise ValueError(f"Unsupported S2S split strategy: {strategy!r}")
+
+    if not events:
+        raise ValueError(
+            f"S2S benchmark {strategy!r} produced no walk-forward evaluation events"
+        )
+    return split, events, metadata
 
 
 def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SArtifact:
@@ -75,19 +127,10 @@ def _fit(config: dict[str, Any], train_visits, metadata: dict[str, Any]) -> S2SA
 def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
     visits = load_visits(config["data"])
     fingerprint = dataset_fingerprint(visits)
-    split_seed = _split_seed(config)
     model_seed = _model_seed(config)
     benchmark_id = str(config["evaluation"].get("benchmark_id", "s2s-v1"))
 
-    split = split_pilots(
-        visits,
-        eval_fraction=float(config["data"].get("eval_fraction", 0.2)),
-        seed=split_seed,
-    )
-    events = walk_forward_events(
-        split.eval_visits,
-        min_history=int(config["data"].get("min_eval_history", 1)),
-    )
+    split, events, benchmark_metadata = _benchmark(config, visits)
     eval_fingerprint = events_fingerprint(events)
 
     git_sha = _git_sha()
@@ -96,10 +139,10 @@ def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
         "dataset_fingerprint": fingerprint,
         "benchmark_id": benchmark_id,
         "eval_set_fingerprint": eval_fingerprint,
-        "split_seed": split_seed,
         "model_seed": model_seed,
         "git_sha": git_sha,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        **benchmark_metadata,
     }
     artifact = _fit(config, split.train_visits, model_metadata)
 
@@ -128,32 +171,42 @@ def run_s2s(config: dict[str, Any]) -> dict[str, Any]:
     report = {
         "task": "s2s",
         "benchmark_id": benchmark_id,
+        "benchmark": benchmark_metadata,
         "dataset_fingerprint": fingerprint,
         "eval_set_fingerprint": eval_fingerprint,
-        "split_seed": split_seed,
         "model_seed": model_seed,
         "git_sha": git_sha,
         "model": artifact.metadata,
         "metrics": metrics,
     }
+    if "split_seed" in benchmark_metadata:
+        # Preserve the v1 report contract for existing comparisons/scripts.
+        report["split_seed"] = benchmark_metadata["split_seed"]
+
     report_path.write_text(
         json.dumps(report, indent=2, sort_keys=True),
         encoding="utf-8",
     )
 
+    tags = {
+        "task": "s2s",
+        "model_family": str(config["model"].get("name", "svd")),
+        "benchmark_id": benchmark_id,
+        "dataset_fingerprint": fingerprint,
+        "eval_set_fingerprint": eval_fingerprint,
+        "model_seed": str(model_seed),
+        "git_sha": git_sha,
+        "split_strategy": str(benchmark_metadata["split_strategy"]),
+    }
+    if "split_seed" in benchmark_metadata:
+        tags["split_seed"] = str(benchmark_metadata["split_seed"])
+    if "temporal_cutoff" in benchmark_metadata:
+        tags["temporal_cutoff"] = str(benchmark_metadata["temporal_cutoff"])
+
     run_id = log_experiment(
         config=config,
         metrics=metrics,
-        tags={
-            "task": "s2s",
-            "model_family": str(config["model"].get("name", "svd")),
-            "benchmark_id": benchmark_id,
-            "dataset_fingerprint": fingerprint,
-            "eval_set_fingerprint": eval_fingerprint,
-            "split_seed": str(split_seed),
-            "model_seed": str(model_seed),
-            "git_sha": git_sha,
-        },
+        tags=tags,
         artifacts=[artifact_path, report_path],
     )
     report["mlflow_run_id"] = run_id
