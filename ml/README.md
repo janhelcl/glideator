@@ -57,13 +57,13 @@ before the target, including legitimate pre-cutoff history.
 ```yaml
 data:
   split_strategy: temporal
-  temporal_cutoff: "2025-01-01"
+  temporal_cutoff: "2024-01-01"
 
 evaluation:
   benchmark_id: s2s-v2
 ```
 
-The checked-in v2 benchmark uses 2025-01-01 as its fixed cutoff. Treat the cutoff
+The checked-in v2 benchmark uses 2024-01-01 as its fixed cutoff. Treat the cutoff
 as part of the benchmark definition: changing it should also use a new
 `benchmark_id`.
 
