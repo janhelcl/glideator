@@ -47,12 +47,13 @@ class S2SArtifact:
                     "Asymmetric source matrix contains non-finite values"
                 )
             return
-        if scorer_type != "deepsets":
+        if scorer_type not in {"deepsets", "transformed_additive"}:
             raise ValueError(f"Unsupported S2S scorer type: {scorer_type!r}")
 
-        pooling = self.scorer.get("pooling")
-        if pooling not in {"mean", "sum"}:
-            raise ValueError("DeepSets scorer pooling must be 'mean' or 'sum'")
+        if scorer_type == "deepsets":
+            pooling = self.scorer.get("pooling")
+            if pooling not in {"mean", "sum"}:
+                raise ValueError("DeepSets scorer pooling must be 'mean' or 'sum'")
 
         dimension = self.matrix.shape[1]
         phi_w1 = np.asarray(self.scorer["phi_w1"])
@@ -93,7 +94,9 @@ class S2SArtifact:
                     f"expected {expected_shapes[name]}"
                 )
             if not np.isfinite(array).all():
-                raise ValueError(f"DeepSets scorer {name} contains non-finite values")
+                raise ValueError(
+                    f"{scorer_type} scorer {name} contains non-finite values"
+                )
 
     def to_payload(self) -> dict[str, Any]:
         self.validate()
@@ -129,6 +132,30 @@ class S2SArtifact:
         )
         artifact.validate()
         return artifact
+
+
+def _transformed_additive_query(
+    artifact: S2SArtifact,
+    idxs: list[int],
+) -> np.ndarray:
+    scorer = artifact.scorer
+    if scorer is None:
+        raise ValueError("Transformed-additive query requested without scorer state")
+
+    items = artifact.matrix[idxs]
+    phi = np.maximum(
+        items @ np.asarray(scorer["phi_w1"]).T + np.asarray(scorer["phi_b1"]),
+        0.0,
+    )
+    phi = phi @ np.asarray(scorer["phi_w2"]).T + np.asarray(scorer["phi_b2"])
+    rho = np.maximum(
+        phi @ np.asarray(scorer["rho_w1"]).T + np.asarray(scorer["rho_b1"]),
+        0.0,
+    )
+    transformed = (
+        rho @ np.asarray(scorer["rho_w2"]).T + np.asarray(scorer["rho_b2"])
+    )
+    return transformed.sum(axis=0)
 
 
 def _deepsets_query(artifact: S2SArtifact, idxs: list[int]) -> np.ndarray:
@@ -174,6 +201,8 @@ def recommend(
         query = np.asarray(artifact.scorer["source_matrix"])[idxs].sum(axis=0)
     elif artifact.scorer.get("type") == "deepsets":
         query = _deepsets_query(artifact, idxs)
+    elif artifact.scorer.get("type") == "transformed_additive":
+        query = _transformed_additive_query(artifact, idxs)
     else:
         raise ValueError(
             f"Unsupported S2S scorer type: {artifact.scorer.get('type')!r}"
