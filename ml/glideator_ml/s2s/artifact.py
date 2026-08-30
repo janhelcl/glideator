@@ -47,6 +47,34 @@ class S2SArtifact:
                     "Asymmetric source matrix contains non-finite values"
                 )
             return
+        if scorer_type == "candidate_attention":
+            dimension = self.matrix.shape[1]
+            history_matrix = np.asarray(self.scorer["history_matrix"])
+            if history_matrix.shape != self.matrix.shape:
+                raise ValueError(
+                    "Candidate-attention history matrix must match embedding shape"
+                )
+            arrays = {
+                "history_matrix": history_matrix,
+                "query_weight": np.asarray(self.scorer["query_weight"]),
+                "key_weight": np.asarray(self.scorer["key_weight"]),
+                "value_weight": np.asarray(self.scorer["value_weight"]),
+            }
+            for name in ("query_weight", "key_weight", "value_weight"):
+                if arrays[name].shape != (dimension, dimension):
+                    raise ValueError(
+                        f"Candidate-attention {name} has shape {arrays[name].shape}, "
+                        f"expected {(dimension, dimension)}"
+                    )
+            for name, array in arrays.items():
+                if not np.isfinite(array).all():
+                    raise ValueError(
+                        f"Candidate-attention {name} contains non-finite values"
+                    )
+            scale = float(self.scorer["attention_scale"])
+            if not np.isfinite(scale):
+                raise ValueError("Candidate-attention scale must be finite")
+            return
         if scorer_type not in {"deepsets", "transformed_additive"}:
             raise ValueError(f"Unsupported S2S scorer type: {scorer_type!r}")
 
@@ -134,6 +162,48 @@ class S2SArtifact:
         return artifact
 
 
+def _candidate_attention_scores(
+    artifact: S2SArtifact,
+    idxs: list[int],
+) -> np.ndarray:
+    scorer = artifact.scorer
+    if scorer is None:
+        raise ValueError("Candidate-attention scoring requested without scorer state")
+
+    history_matrix = np.asarray(scorer["history_matrix"])
+    base = history_matrix[idxs].sum(axis=0)
+    base_norm = np.linalg.norm(base)
+    if base_norm == 0.0:
+        return np.full(len(artifact.idx_to_site), -np.inf, dtype=np.float32)
+    base = base / base_norm
+
+    dimension = artifact.matrix.shape[1]
+    root_d = np.sqrt(float(dimension))
+    history = artifact.matrix[idxs]
+    candidates = artifact.matrix
+
+    queries = (candidates * root_d) @ np.asarray(scorer["query_weight"]).T
+    keys = (history * root_d) @ np.asarray(scorer["key_weight"]).T
+    logits = (queries @ keys.T) / root_d
+    logits = logits - logits.max(axis=1, keepdims=True)
+    attention = np.exp(logits)
+    attention = attention / attention.sum(axis=1, keepdims=True)
+
+    values = history @ np.asarray(scorer["value_weight"]).T
+    context = attention @ values
+    candidate_queries = (
+        base[None, :] + float(scorer["attention_scale"]) * context
+    )
+    norms = np.linalg.norm(candidate_queries, axis=1, keepdims=True)
+    candidate_queries = np.divide(
+        candidate_queries,
+        norms,
+        out=np.zeros_like(candidate_queries),
+        where=norms > 0,
+    )
+    return np.sum(candidate_queries * candidates, axis=1)
+
+
 def _transformed_additive_query(
     artifact: S2SArtifact,
     idxs: list[int],
@@ -195,25 +265,30 @@ def recommend(
     if not idxs or top_k <= 0:
         return []
 
-    if artifact.scorer is None:
-        query = artifact.matrix[idxs].sum(axis=0)
-    elif artifact.scorer.get("type") == "asymmetric":
-        query = np.asarray(artifact.scorer["source_matrix"])[idxs].sum(axis=0)
-    elif artifact.scorer.get("type") == "deepsets":
-        query = _deepsets_query(artifact, idxs)
-    elif artifact.scorer.get("type") == "transformed_additive":
-        query = _transformed_additive_query(artifact, idxs)
+    if (
+        artifact.scorer is not None
+        and artifact.scorer.get("type") == "candidate_attention"
+    ):
+        scores = _candidate_attention_scores(artifact, idxs)
     else:
-        raise ValueError(
-            f"Unsupported S2S scorer type: {artifact.scorer.get('type')!r}"
-        )
+        if artifact.scorer is None:
+            query = artifact.matrix[idxs].sum(axis=0)
+        elif artifact.scorer.get("type") == "asymmetric":
+            query = np.asarray(artifact.scorer["source_matrix"])[idxs].sum(axis=0)
+        elif artifact.scorer.get("type") == "deepsets":
+            query = _deepsets_query(artifact, idxs)
+        elif artifact.scorer.get("type") == "transformed_additive":
+            query = _transformed_additive_query(artifact, idxs)
+        else:
+            raise ValueError(
+                f"Unsupported S2S scorer type: {artifact.scorer.get('type')!r}"
+            )
 
-    norm = np.linalg.norm(query)
-    if norm == 0.0:
-        return []
-    query = query / norm
-
-    scores = artifact.matrix @ query
+        norm = np.linalg.norm(query)
+        if norm == 0.0:
+            return []
+        query = query / norm
+        scores = artifact.matrix @ query
     scores = scores.copy()
     scores[idxs] = -np.inf
     candidate_count = scores.size - len(set(idxs))
