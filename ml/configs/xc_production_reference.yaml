@@ -41,10 +41,16 @@ model:
 evaluation:
   benchmark_id: xc-temporal-2024-v1
   batch_size: 4096
+  onnx_parity_sample_sizes: [1, 7, 31]
+  onnx_parity_atol: 1.0e-5
+  onnx_parity_rtol: 1.0e-5
 
 artifact:
   output_dir: outputs/xc/production-reference
   filename: xc_checkpoint.pt
+  export_onnx: true
+  onnx_filename: model.onnx
+  onnx_opset_version: 18
 
 tracking:
   enabled: true
