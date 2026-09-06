@@ -13,7 +13,7 @@ For each site/date pair the model consumes:
 
 It returns eleven probabilities named `XC0`, `XC10`, ..., `XC100`. Training targets use the strict rule `max_points > threshold`.
 
-The production architecture is `ExpandedGlideatorNet`: each weather time slice is combined with site/date context, processed by a full-rank cross network, concatenated across the three times, and passed through a deep network and prediction head.
+The production architecture is `ExpandedGlideatorNet`: each weather time slice is combined with site/date context, processed through a shared full-rank cross network and a shared parallel deep tower, concatenated across the three times, and passed through the main deep tower and prediction head.
 
 ## Migrated pipeline
 
@@ -28,11 +28,12 @@ XC now has an executable experiment path under `glideator_ml.xc`:
 - `training.py` — seeded config-driven PyTorch training with early stopping;
 - `evaluation.py` — BCE, Brier, ROC-AUC and monotonicity diagnostics;
 - `onnx.py` — production-shaped ONNX export, scoring and numerical parity;
+- `compatibility.py` — reconstructs the migrated PyTorch architecture and exact weights directly from the served ONNX graph;
 - `reference.py` — evaluation of an existing ONNX artifact on the fixed benchmark;
 - `promotion.py` — candidate/reference comparability and promotion eligibility;
 - `run.py` — report/checkpoint creation and MLflow tracking/backfill.
 
-TorchRec is no longer required. The replacement full-rank `CrossNet` keeps the legacy equation, parameter names and state-dict shapes so old state dicts remain loadable.
+TorchRec is no longer required. The replacement full-rank `CrossNet` keeps the legacy equation, parameter names and state-dict shapes so production weights can be represented by the migrated model.
 
 ## Benchmark: `xc-temporal-2024-v1`
 
@@ -51,18 +52,36 @@ This benchmark is defined in [decision 0005](../decisions/0005-xc-temporal-bench
 
 Scaler fitting preserves one non-obvious legacy behavior: weather mean/std are fitted from the **12:00 slice only** and the same scaler is applied to 09:00, 12:00 and 15:00. Site scaling uses fit rows only.
 
-## Candidate reference config
+## Production architecture contract
 
-`configs/xc_production_reference.yaml` captures the historical production-sized architecture currently visible in the legacy training workflow:
+The structural model configuration is no longer inferred from notebook examples. It is read and tested directly from the initializers embedded in the currently served `backend/app/models/model.onnx`:
 
+- 77 weather features per time slice;
+- three static site features and four date features;
 - 251 embedding slots for site IDs 0–250;
 - 32-dimensional site embedding;
-- two full-rank cross layers;
-- deep layers `[128, 64, 32]`;
-- independent multilabel probability heads;
-- legacy-scale training defaults and regularization.
+- 116 inputs per time slice;
+- two shared full-rank CrossNet layers;
+- shared parallel deep tower `[128, 64]`;
+- main deep tower `[128, 64, 32]` after concatenating the three time slices;
+- eleven independent multilabel probability heads.
 
-This is the migration **candidate reference**, not yet proof of the exact hyperparameters used to create the currently served ONNX artifact. That claim requires retained checkpoint/config evidence or graph-level confirmation.
+`compatibility.py` derives that constructor contract from ONNX parameter names/shapes, rebuilds `ExpandedGlideatorNet`, and loads the exact served weights into the TorchRec-free implementation. CI compares that reconstructed PyTorch model against ONNX Runtime on identical production-shaped inputs. This is the migration proof for model structure and forward semantics; it is independent of retraining.
+
+The served artifact also has direct repository provenance. Before the ONNX-serving switch it existed as `backend/app/models/model.pth`; the production model was updated in commit `15eb413` (`model on fixed dataset`) and later moved to ONNX serving in commit `7988d05`.
+
+Historical **training** choices such as the optimizer trajectory, stochastic seed, and exact stopping epoch are not encoded in the served graph. The migrated training config therefore treats those as experiment policy rather than claiming they can be recovered from ONNX.
+
+## Candidate reference config
+
+`configs/xc_production_reference.yaml` uses the graph-confirmed production structure:
+
+- 251 embedding slots and 32-dimensional embedding;
+- two shared full-rank cross layers;
+- shared parallel tower `[128, 64]`;
+- main deep tower `[128, 64, 32]`;
+- independent multilabel probability heads;
+- explicit migrated training/regularization policy.
 
 Run the candidate with:
 
@@ -131,24 +150,23 @@ Candidate runs additionally record fit/validation row counts, best epoch, best i
 
 Production serving has **not** moved. The backend still loads `backend/app/models/model.onnx` and scores it through `net.io.score_onnx`.
 
-The migrated architecture accepts legacy **state dicts** without TorchRec. Legacy full-object PyTorch pickles still depend on the old module path and are not a promotion format.
+The migrated architecture can reconstruct the current production state directly from ONNX without TorchRec. Legacy full-object PyTorch pickles remain tied to the old module path and are not the promotion format.
 
 ## What remains
 
-The remaining migration steps are now operational rather than architectural:
+The remaining migration steps are operational:
 
 1. run `xc_served_reference.yaml` against the real analytics database and record the served 2024 baseline;
 2. run `xc_production_reference.yaml` on the same database snapshot and record the candidate run;
-3. validate the assumed candidate architecture/hyperparameters against any retained production checkpoint/config evidence;
-4. inspect `promotion.json`; tune/reproduce the candidate if the strict migration gate fails;
-5. switch the backend artifact only after the gate passes and the architecture provenance is satisfactory;
-6. retire the notebook/`net/` training path after production cutover.
+3. inspect `promotion.json`; tune/reproduce the candidate if the strict migration gate fails;
+4. switch the backend artifact only after the gate passes;
+5. retire the notebook/`net/` training path after production cutover.
 
 ## Legacy sources
 
-Until cutover, reference behavior still lives in:
+Until cutover, historical behavior still lives in:
 
-- `net/net/net.py` — architecture;
+- `net/net/net.py` — architecture implementation;
 - `net/net/preprocessing.py` — target/date semantics;
 - `net/net/export.py` and `net/net/io.py` — historical ONNX input/output contract;
 - `analytics/training/training.py` — historical training objective/loop;
