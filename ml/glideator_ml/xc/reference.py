@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from ..tracking import log_experiment
-from .benchmark import frame_fingerprint, split_temporal
+from .benchmark import XCFeatureContract, frame_fingerprint, split_temporal
 from .data import load_xc_data
 from .evaluation import evaluate_predictions
 from .onnx import score_onnx
@@ -38,12 +39,16 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def run_xc_onnx_reference(config: dict[str, Any]) -> dict[str, Any]:
+def run_xc_onnx_reference(
+    config: dict[str, Any],
+    *,
+    prepared_data: tuple[pd.DataFrame, XCFeatureContract] | None = None,
+) -> dict[str, Any]:
     data_config = config["data"]
     if str(data_config.get("split_strategy", "temporal")) != "temporal":
         raise ValueError("XC ONNX reference evaluation supports only temporal benchmarks")
 
-    frame, features = load_xc_data(data_config)
+    frame, features = prepared_data or load_xc_data(data_config)
     benchmark = {
         "split_strategy": "temporal",
         "train_end": str(data_config["train_end"]),
