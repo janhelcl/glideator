@@ -77,6 +77,28 @@ def prepare_xc_data(raw: pd.DataFrame, config: dict[str, Any]) -> tuple[pd.DataF
     if duplicates.any():
         raise ValueError("XC dataset must contain exactly one row per site/date")
 
+    if bool(config.get("require_eval_boundary_coverage", False)):
+        if config.get("eval_start") is None or config.get("eval_end") is None:
+            raise ValueError(
+                "data.eval_start and data.eval_end are required when "
+                "require_eval_boundary_coverage=true"
+            )
+        expected_start = as_date(config["eval_start"], name="data.eval_start")
+        expected_end = as_date(config["eval_end"], name="data.eval_end")
+        evaluation = frame.loc[
+            (frame["date"] >= expected_start) & (frame["date"] <= expected_end)
+        ]
+        if evaluation.empty:
+            raise ValueError("XC evaluation window has no complete feature rows")
+        actual_start = pd.Timestamp(evaluation["date"].min()).normalize()
+        actual_end = pd.Timestamp(evaluation["date"].max()).normalize()
+        if actual_start != expected_start or actual_end != expected_end:
+            raise ValueError(
+                "XC evaluation does not cover configured boundaries after dropping "
+                f"incomplete rows: expected {expected_start.date()}..{expected_end.date()}, "
+                f"got {actual_start.date()}..{actual_end.date()}"
+            )
+
     frame = add_targets(frame, max_points_col="max_points")
     frame = add_date_features(frame, date_col="date")
     frame = frame.sort_values(["date", "site_id"], kind="mergesort").reset_index(drop=True)
