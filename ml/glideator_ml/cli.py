@@ -21,6 +21,13 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("task", choices=["xc"])
     evaluate.add_argument("--config", required=True)
 
+    compare = subparsers.add_parser(
+        "compare",
+        help="Compare a candidate with its promotion reference",
+    )
+    compare.add_argument("task", choices=["xc"])
+    compare.add_argument("--config", required=True)
+
     backfill = subparsers.add_parser(
         "backfill",
         help="Backfill tracking from saved experiment artifacts",
@@ -38,10 +45,17 @@ def main() -> None:
             f"Config task {config['task']!r} does not match CLI task {args.task!r}"
         )
 
+    exit_code = 0
     if args.command == "evaluate":
         from .xc.reference import run_xc_onnx_reference
 
         report = run_xc_onnx_reference(config)
+    elif args.command == "compare":
+        from .xc.promotion import run_xc_promotion_check
+
+        report = run_xc_promotion_check(config)
+        if not report["eligible"]:
+            exit_code = 2
     elif args.task == "s2s":
         from .s2s.run import backfill_s2s_tracking, run_s2s
 
@@ -62,6 +76,8 @@ def main() -> None:
         raise SystemExit(f"Unsupported command/task: {args.command}/{args.task}")
 
     print(json.dumps(report, indent=2, sort_keys=True))
+    if exit_code:
+        raise SystemExit(exit_code)
 
 
 if __name__ == "__main__":
