@@ -9,7 +9,7 @@ The shared layer standardizes experiment execution, provenance, tracking, and re
 | Task | Purpose | Status | Docs |
 | --- | --- | --- | --- |
 | S2S | Recommend new flying sites from a pilot's discovered-site history | Active | [docs/s2s/README.md](docs/s2s/README.md) |
-| XC | Predict flight / XC potential | Migration started | [docs/xc/README.md](docs/xc/README.md) |
+| XC | Predict flight / XC potential | Benchmark + training migrated; serving pending | [docs/xc/README.md](docs/xc/README.md) |
 | D2D | Retrieve analogous historical days | Planned migration | — |
 
 ## Layout
@@ -41,7 +41,7 @@ See [docs/decisions/README.md](docs/decisions/README.md) for the decision-record
 cd ml
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[contrastive,test,tracking]'
+pip install -e '.[contrastive,xc,test,tracking]'
 ~~~
 
 Point the runner at the analytics database:
@@ -65,7 +65,10 @@ glideator-ml run <task> --config <config>
 glideator-ml backfill <task> --config <config>
 ~~~
 
-Task docs define the benchmark-specific configs and comparison rules. Start with [S2S](docs/s2s/README.md).
+Task docs define the benchmark-specific configs and comparison rules:
+
+- [S2S](docs/s2s/README.md)
+- [XC](docs/xc/README.md)
 
 Every run should make it possible to answer:
 
