@@ -13,6 +13,7 @@ from .benchmark import frame_fingerprint, split_temporal
 from .data import load_xc_data
 from .evaluation import evaluate_predictions
 from .onnx import export_xc_onnx, verify_onnx_parity
+from .selection import split_development
 from .training import fit_xc, predict_xc
 
 
@@ -40,6 +41,7 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
         "model_seed": str(report["model_seed"]),
         "git_sha": str(report["git_sha"]),
         "split_strategy": "temporal",
+        "validation_start": str(report["selection"]["validation_start"]),
         "train_end": str(benchmark["train_end"]),
         "eval_start": str(benchmark["eval_start"]),
         "eval_end": str(benchmark["eval_end"]),
@@ -48,6 +50,7 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
 
 def run_xc(config: dict[str, Any]) -> dict[str, Any]:
     data_config = config["data"]
+    model_config = config["model"]
     if str(data_config.get("split_strategy", "temporal")) != "temporal":
         raise ValueError("The migrated XC benchmark currently supports only temporal splits")
 
@@ -68,10 +71,18 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
     )
     eval_fingerprint = frame_fingerprint(split.evaluation, features)
 
-    model_seed = int(config["model"].get("seed", 42))
+    validation_start = model_config.get("validation_start")
+    if validation_start is None:
+        raise ValueError(
+            "model.validation_start is required so benchmark evaluation is never used for early stopping"
+        )
+    development = split_development(split.train, validation_start=validation_start)
+    selection = {"validation_start": str(validation_start)}
+
+    model_seed = int(model_config.get("seed", 42))
     benchmark_id = str(config["evaluation"].get("benchmark_id", "xc-temporal-v1"))
     git_sha = _git_sha()
-    fit = fit_xc(split.train, split.evaluation, features, config["model"])
+    fit = fit_xc(development.fit, development.validation, features, model_config)
     targets, probabilities = predict_xc(
         fit.model,
         split.evaluation,
@@ -83,9 +94,12 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
     metrics.update(
         {
             "dataset_rows": len(frame),
-            "train_rows": len(split.train),
+            "development_rows": len(split.train),
+            "fit_rows": len(development.fit),
+            "validation_rows": len(development.validation),
             "eval_rows": len(split.evaluation),
-            "train_sites": split.train["site_id"].nunique(),
+            "fit_sites": development.fit["site_id"].nunique(),
+            "validation_sites": development.validation["site_id"].nunique(),
             "eval_sites": split.evaluation["site_id"].nunique(),
             "best_epoch": fit.best_epoch,
             "best_validation_loss": fit.best_validation_loss,
@@ -138,6 +152,7 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
         "model_seed": model_seed,
         "git_sha": git_sha,
         "benchmark": benchmark,
+        "selection": selection,
         "weather_scaler_source_hour": 12,
         "onnx": onnx_metadata,
     }
@@ -160,7 +175,7 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
         **metadata,
         "feature_contract": features.as_dict(),
         "model": {
-            "name": str(config["model"].get("name", "expanded")),
+            "name": str(model_config.get("name", "expanded")),
             **fit.model_config,
         },
         "metrics": metrics,
