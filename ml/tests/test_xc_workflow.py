@@ -36,19 +36,29 @@ def _reference_config() -> dict:
     }
 
 
-def test_benchmark_workflow_runs_reference_candidate_then_promotion(monkeypatch) -> None:
+def test_benchmark_workflow_uses_one_snapshot_for_reference_and_candidate(monkeypatch) -> None:
     calls: list[str] = []
+    snapshot = object()
+    received: list[object] = []
 
     monkeypatch.setattr(
         workflow,
-        "run_xc_onnx_reference",
-        lambda config: calls.append("reference") or {"kind": "reference"},
+        "load_xc_data",
+        lambda config: calls.append("load") or snapshot,
     )
-    monkeypatch.setattr(
-        workflow,
-        "run_xc",
-        lambda config: calls.append("candidate") or {"kind": "candidate"},
-    )
+
+    def reference(config, *, prepared_data=None):
+        calls.append("reference")
+        received.append(prepared_data)
+        return {"kind": "reference"}
+
+    def candidate(config, *, prepared_data=None):
+        calls.append("candidate")
+        received.append(prepared_data)
+        return {"kind": "candidate"}
+
+    monkeypatch.setattr(workflow, "run_xc_onnx_reference", reference)
+    monkeypatch.setattr(workflow, "run_xc", candidate)
     monkeypatch.setattr(
         workflow,
         "run_xc_promotion_check",
@@ -59,7 +69,8 @@ def test_benchmark_workflow_runs_reference_candidate_then_promotion(monkeypatch)
         _candidate_config(), _reference_config()
     )
 
-    assert calls == ["reference", "candidate", "promotion"]
+    assert calls == ["load", "reference", "candidate", "promotion"]
+    assert received == [snapshot, snapshot]
     assert result["eligible"] is True
     assert result["reference"] == {"kind": "reference"}
     assert result["candidate"] == {"kind": "candidate"}
