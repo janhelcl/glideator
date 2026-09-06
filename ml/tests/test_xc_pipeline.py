@@ -61,7 +61,8 @@ def test_xc_temporal_benchmark_and_model_selection_are_disjoint() -> None:
     assert development.fit["date"].max() == pd.Timestamp("2023-01-01")
     assert development.validation["date"].min() == pd.Timestamp("2023-06-01")
     assert split.evaluation["date"].min() == pd.Timestamp("2024-01-01")
-    assert set(development.fit.index).isdisjoint(set(split.evaluation.index)) is False
+    assert development.fit["date"].max() < development.validation["date"].min()
+    assert development.validation["date"].max() < split.evaluation["date"].min()
 
     fingerprint = frame_fingerprint(frame, features)
     shuffled = frame.sample(frac=1.0, random_state=123).reset_index(drop=True)
