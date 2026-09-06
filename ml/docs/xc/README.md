@@ -62,8 +62,10 @@ The structural model configuration is no longer inferred from notebook examples.
 - 32-dimensional site embedding;
 - 116 inputs per time slice;
 - two shared full-rank CrossNet layers;
-- shared parallel deep tower `[128, 64]`;
-- main deep tower `[128, 64, 32]` after concatenating the three time slices;
+- shared parallel deep tower `[128, 64, 32]`;
+- the 116-dimensional cross output and 32-dimensional parallel output form 148 values per time slice;
+- three time slices form 444 values for the main deep tower;
+- main deep tower `[64, 32]`;
 - eleven independent multilabel probability heads.
 
 `compatibility.py` derives that constructor contract from ONNX parameter names/shapes, rebuilds `ExpandedGlideatorNet`, and loads the exact served weights into the TorchRec-free implementation. CI compares that reconstructed PyTorch model against ONNX Runtime on identical production-shaped inputs. This is the migration proof for model structure and forward semantics; it is independent of retraining.
@@ -78,8 +80,8 @@ Historical **training** choices such as the optimizer trajectory, stochastic see
 
 - 251 embedding slots and 32-dimensional embedding;
 - two shared full-rank cross layers;
-- shared parallel tower `[128, 64]`;
-- main deep tower `[128, 64, 32]`;
+- shared parallel tower `[128, 64, 32]`;
+- main deep tower `[64, 32]`;
 - independent multilabel probability heads;
 - explicit migrated training/regularization policy.
 
