@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 
 from .benchmark import (
     DEFAULT_SITE_FEATURES,
+    PRODUCTION_WEATHER_FEATURES,
     XCFeatureContract,
     as_date,
     discover_weather_features,
@@ -21,11 +22,14 @@ _TABLE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
 
 def _feature_contract(raw: pd.DataFrame, config: dict[str, Any]) -> XCFeatureContract:
     configured_weather = config.get("weather_features")
-    weather = (
-        tuple(str(value) for value in configured_weather)
-        if configured_weather
-        else discover_weather_features(list(raw.columns))
-    )
+    if configured_weather:
+        weather = tuple(str(value) for value in configured_weather)
+    elif str(config.get("source", "database")) == "database":
+        # Production training and serving use gfs.fetch.get_col_order(). Keep that
+        # order explicit here instead of depending on SELECT * / DataFrame order.
+        weather = PRODUCTION_WEATHER_FEATURES
+    else:
+        weather = discover_weather_features(list(raw.columns))
     site = tuple(str(value) for value in config.get("site_features", DEFAULT_SITE_FEATURES))
     return XCFeatureContract(weather_features=weather, site_features=site)
 
