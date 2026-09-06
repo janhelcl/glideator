@@ -11,6 +11,7 @@ from glideator_ml.xc.benchmark import frame_fingerprint, split_temporal
 from glideator_ml.xc.data import fit_scaling_params, prepare_xc_data
 from glideator_ml.xc.evaluation import evaluate_predictions
 from glideator_ml.xc.run import run_xc
+from glideator_ml.xc.selection import split_development
 
 
 def _raw_frame() -> pd.DataFrame:
@@ -47,7 +48,7 @@ def _data_config() -> dict:
     }
 
 
-def test_xc_temporal_benchmark_is_stable_and_row_order_independent() -> None:
+def test_xc_temporal_benchmark_and_model_selection_are_disjoint() -> None:
     frame, features = prepare_xc_data(_raw_frame(), _data_config())
     split = split_temporal(
         frame,
@@ -55,9 +56,13 @@ def test_xc_temporal_benchmark_is_stable_and_row_order_independent() -> None:
         eval_start="2024-01-01",
         eval_end="2024-12-31",
     )
+    development = split_development(split.train, validation_start="2023-06-01")
 
-    assert split.train["date"].max() == pd.Timestamp("2023-06-01")
+    assert development.fit["date"].max() == pd.Timestamp("2023-01-01")
+    assert development.validation["date"].min() == pd.Timestamp("2023-06-01")
     assert split.evaluation["date"].min() == pd.Timestamp("2024-01-01")
+    assert set(development.fit.index).isdisjoint(set(split.evaluation.index)) is False
+
     fingerprint = frame_fingerprint(frame, features)
     shuffled = frame.sample(frac=1.0, random_state=123).reset_index(drop=True)
     assert frame_fingerprint(shuffled, features) == fingerprint
@@ -71,11 +76,12 @@ def test_xc_scaler_uses_noon_weather_slice_only() -> None:
         eval_start="2024-01-01",
         eval_end="2024-12-31",
     )
-    weather, site = fit_scaling_params(split.train, features)
+    development = split_development(split.train, validation_start="2023-06-01")
+    weather, site = fit_scaling_params(development.fit, features)
 
     assert set(weather) == {"w1_12", "w2_12"}
-    assert weather["w1_12"]["mean"] == split.train["w1_12"].mean()
-    assert weather["w1_12"]["std"] == split.train["w1_12"].std(ddof=1)
+    assert weather["w1_12"]["mean"] == development.fit["w1_12"].mean()
+    assert weather["w1_12"]["std"] == development.fit["w1_12"].std(ddof=1)
     assert set(site) == {"latitude", "longitude", "altitude"}
 
 
@@ -111,6 +117,7 @@ def test_run_xc_writes_checkpoint_onnx_and_report(tmp_path: Path) -> None:
             "seed": 7,
             "deterministic": True,
             "device": "cpu",
+            "validation_start": "2023-06-01",
             "num_launches": 3,
             "site_embedding_dim": 2,
             "deep_hidden_units": [8, 4],
@@ -147,7 +154,10 @@ def test_run_xc_writes_checkpoint_onnx_and_report(tmp_path: Path) -> None:
 
     assert report["benchmark_id"] == "xc-test-v1"
     assert report["benchmark"]["split_strategy"] == "temporal"
-    assert report["metrics"]["train_rows"] == 4
+    assert report["selection"]["validation_start"] == "2023-06-01"
+    assert report["metrics"]["development_rows"] == 4
+    assert report["metrics"]["fit_rows"] == 2
+    assert report["metrics"]["validation_rows"] == 2
     assert report["metrics"]["eval_rows"] == 4
     assert report["metrics"]["onnx_parity_max_abs_diff"] < 1e-5
     assert report["onnx"]["exported"] is True
