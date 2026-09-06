@@ -9,7 +9,7 @@ The shared layer standardizes experiment execution, provenance, tracking, and re
 | Task | Purpose | Status | Docs |
 | --- | --- | --- | --- |
 | S2S | Recommend new flying sites from a pilot's discovered-site history | Active | [docs/s2s/README.md](docs/s2s/README.md) |
-| XC | Predict flight / XC potential | Planned migration | — |
+| XC | Predict flight / XC potential | Migration started | [docs/xc/README.md](docs/xc/README.md) |
 | D2D | Retrieve analogous historical days | Planned migration | — |
 
 ## Layout
