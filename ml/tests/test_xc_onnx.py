@@ -76,17 +76,17 @@ def test_checked_in_production_onnx_confirms_reference_architecture() -> None:
     assert architecture == {
         "num_launches": 251,
         "num_targets": 11,
-        "deep_hidden_units": [128, 64, 32],
+        "deep_hidden_units": [64, 32],
         "cross_layers": 2,
         "site_embedding_dim": 32,
         "prediction_head_type": "multilabel",
-        "parallel_deep_hidden_units": [128, 64],
+        "parallel_deep_hidden_units": [128, 64, 32],
         "share_cross_net": True,
     }
 
     # 77 weather + 3 site + 32 site embedding + 4 date features = 116.
-    # The parallel tower contributes another 64 values per time slice, so the
-    # three time slices feed 3 * (116 + 64) = 540 values to the main deep tower.
+    # The parallel tower contributes another 32 values per time slice, so the
+    # three time slices feed 3 * (116 + 32) = 444 values to the main deep tower.
     assert _initializer_shape(model, "launch_embedding.weight") == (251, 32)
     assert _initializer_shape(model, "cross_net.kernels.0") == (116, 116)
     assert _initializer_shape(model, "cross_net.bias.0") == (116, 1)
@@ -97,13 +97,13 @@ def test_checked_in_production_onnx_confirms_reference_architecture() -> None:
     assert _initializer_shape(model, "parallel_deep_net.0.bias") == (128,)
     assert _initializer_shape(model, "parallel_deep_net.2.weight") == (64, 128)
     assert _initializer_shape(model, "parallel_deep_net.2.bias") == (64,)
+    assert _initializer_shape(model, "parallel_deep_net.4.weight") == (32, 64)
+    assert _initializer_shape(model, "parallel_deep_net.4.bias") == (32,)
 
-    assert _initializer_shape(model, "deep_net.0.weight") == (128, 540)
-    assert _initializer_shape(model, "deep_net.0.bias") == (128,)
-    assert _initializer_shape(model, "deep_net.2.weight") == (64, 128)
-    assert _initializer_shape(model, "deep_net.2.bias") == (64,)
-    assert _initializer_shape(model, "deep_net.4.weight") == (32, 64)
-    assert _initializer_shape(model, "deep_net.4.bias") == (32,)
+    assert _initializer_shape(model, "deep_net.0.weight") == (64, 444)
+    assert _initializer_shape(model, "deep_net.0.bias") == (64,)
+    assert _initializer_shape(model, "deep_net.2.weight") == (32, 64)
+    assert _initializer_shape(model, "deep_net.2.bias") == (32,)
 
     assert _initializer_shape(model, "prediction_head.output_layers.0.weight") == (1, 32)
     assert _initializer_shape(model, "prediction_head.output_layers.10.weight") == (1, 32)
