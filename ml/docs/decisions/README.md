@@ -50,3 +50,4 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0003 — Scorer-aware artifacts](0003-scorer-aware-artifacts.md)
 - [0004 — Preserve XC CrossNet compatibility without TorchRec](0004-xc-crossnet-compatibility.md)
 - [0005 — Use a fixed temporal benchmark for XC](0005-xc-temporal-benchmark.md)
+- [0006 — Gate XC promotion on identical benchmark identity and explicit regressions](0006-xc-promotion-gate.md)
