@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from .config import load_config
+from .config import load_config, require_sections
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,16 +47,19 @@ def main() -> None:
 
     exit_code = 0
     if args.command == "evaluate":
+        require_sections(config, "data", "evaluation", "reference", "artifact", "tracking")
         from .xc.reference import run_xc_onnx_reference
 
         report = run_xc_onnx_reference(config)
     elif args.command == "compare":
+        require_sections(config, "artifact", "promotion")
         from .xc.promotion import run_xc_promotion_check
 
         report = run_xc_promotion_check(config)
         if not report["eligible"]:
             exit_code = 2
     elif args.task == "s2s":
+        require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
         from .s2s.run import backfill_s2s_tracking, run_s2s
 
         report = (
@@ -65,6 +68,7 @@ def main() -> None:
             else backfill_s2s_tracking(config)
         )
     elif args.task == "xc":
+        require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
         from .xc.run import backfill_xc_tracking, run_xc
 
         report = (
