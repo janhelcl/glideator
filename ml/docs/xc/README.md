@@ -31,7 +31,7 @@ XC now has an executable experiment path under `glideator_ml.xc`:
 - `compatibility.py` — reconstructs the migrated PyTorch architecture and exact weights directly from the served ONNX graph;
 - `reference.py` — evaluation of an existing ONNX artifact on the fixed benchmark;
 - `promotion.py` — candidate/reference comparability and promotion eligibility;
-- `workflow.py` — fail-safe reference → candidate → promotion orchestration;
+- `workflow.py` — single-snapshot reference → candidate → promotion orchestration;
 - `run.py` — report/checkpoint creation and MLflow tracking/backfill.
 
 TorchRec is no longer required. The replacement full-rank `CrossNet` keeps the legacy equation, parameter names and state-dict shapes so production weights can be represented by the migrated model.
@@ -45,6 +45,7 @@ The stable XC benchmark deliberately replaces the old nondeterministic `is_valid
 - development window ends `2023-12-31`;
 - final evaluation is the full 2024 calendar year;
 - evaluation sites must already exist in development data;
+- the configured evaluation boundaries must actually exist after incomplete rows are removed;
 - source values, feature order and exact evaluation rows receive SHA-256 fingerprints.
 
 Model selection is also temporal. The production-reference config uses rows before `2023-01-01` for fitting and 2023 for early stopping. The 2024 benchmark is never consulted during training or model selection.
@@ -142,7 +143,7 @@ glideator-ml benchmark xc \
   --reference-config configs/xc_served_reference.yaml
 ~~~
 
-This validates that both configs describe the same data query and benchmark, evaluates the served reference, trains/evaluates the candidate, and applies the promotion policy in one command. The database is read independently for the reference and candidate, but the exact dataset/evaluation fingerprints are compared before eligibility is possible; any change between reads therefore fails closed instead of producing a misleading comparison.
+This validates that both configs describe the same data query and benchmark, loads and prepares the analytics dataset **once**, evaluates the served reference and trains/evaluates the candidate against that same in-memory snapshot, then applies the promotion policy. Candidate and reference therefore cannot drift because the warehouse changed between reads; fingerprints remain part of the persisted comparison contract and provenance.
 
 See [decision 0006](../decisions/0006-xc-promotion-gate.md).
 
