@@ -11,6 +11,7 @@ data:
   eval_start: "2024-01-01"
   eval_end: "2024-12-31"
   require_known_eval_sites: true
+  require_eval_boundary_coverage: true
   site_features:
     - latitude
     - longitude
