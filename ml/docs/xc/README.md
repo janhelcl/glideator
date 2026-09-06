@@ -31,6 +31,7 @@ XC now has an executable experiment path under `glideator_ml.xc`:
 - `compatibility.py` — reconstructs the migrated PyTorch architecture and exact weights directly from the served ONNX graph;
 - `reference.py` — evaluation of an existing ONNX artifact on the fixed benchmark;
 - `promotion.py` — candidate/reference comparability and promotion eligibility;
+- `workflow.py` — fail-safe reference → candidate → promotion orchestration;
 - `run.py` — report/checkpoint creation and MLflow tracking/backfill.
 
 TorchRec is no longer required. The replacement full-rank `CrossNet` keeps the legacy equation, parameter names and state-dict shapes so production weights can be represented by the migrated model.
@@ -85,7 +86,7 @@ Historical **training** choices such as the optimizer trajectory, stochastic see
 - independent multilabel probability heads;
 - explicit migrated training/regularization policy.
 
-Run the candidate with:
+Run the candidate alone with:
 
 ~~~bash
 cd ml
@@ -133,6 +134,16 @@ It then requires successful candidate PyTorch ↔ ONNX parity and applies the ex
 
 The result is written to `outputs/xc/production-reference/promotion.json`. A non-eligible candidate makes the CLI exit non-zero. Passing means **eligible for an explicit serving change**, not automatically deployed.
 
+For the real migration run, prefer the combined workflow:
+
+~~~bash
+glideator-ml benchmark xc \
+  --config configs/xc_production_reference.yaml \
+  --reference-config configs/xc_served_reference.yaml
+~~~
+
+This validates that both configs describe the same data query and benchmark, evaluates the served reference, trains/evaluates the candidate, and applies the promotion policy in one command. The database is read independently for the reference and candidate, but the exact dataset/evaluation fingerprints are compared before eligibility is possible; any change between reads therefore fails closed instead of producing a misleading comparison.
+
 See [decision 0006](../decisions/0006-xc-promotion-gate.md).
 
 ## Evaluation metrics
@@ -158,11 +169,12 @@ The migrated architecture can reconstruct the current production state directly 
 
 The remaining migration steps are operational:
 
-1. run `xc_served_reference.yaml` against the real analytics database and record the served 2024 baseline;
-2. run `xc_production_reference.yaml` on the same database snapshot and record the candidate run;
-3. inspect `promotion.json`; tune/reproduce the candidate if the strict migration gate fails;
-4. switch the backend artifact only after the gate passes;
-5. retire the notebook/`net/` training path after production cutover.
+1. run the combined `benchmark xc` workflow against the real analytics database and record both runs in MLflow;
+2. inspect `promotion.json`; tune/reproduce the candidate if the strict migration gate fails;
+3. switch the backend artifact only after the gate passes;
+4. retire the notebook/`net/` training path after production cutover.
+
+The Render production database is not the analytics source: it retains the historical 231-value weather vectors used by D2D, but not the daily `max_points` labels required by this benchmark. The real benchmark therefore still needs the analytics/training database exposed through `ML_DATABASE_URL`.
 
 ## Legacy sources
 
