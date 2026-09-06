@@ -7,6 +7,7 @@ import onnx
 import onnxruntime as ort
 import torch
 
+from glideator_ml.config import load_config
 from glideator_ml.xc.compatibility import (
     infer_migrated_architecture_from_onnx,
     load_migrated_model_from_onnx,
@@ -109,6 +110,23 @@ def test_checked_in_production_onnx_confirms_reference_architecture() -> None:
 
     initializer_names = [initializer.name for initializer in model.graph.initializer]
     assert not any("cross_nets." in name for name in initializer_names)
+
+
+def test_production_reference_config_matches_served_architecture() -> None:
+    architecture = infer_migrated_architecture_from_onnx(_model_path())
+    config = load_config(_repo_root() / "ml" / "configs" / "xc_production_reference.yaml")
+    model_config = config["model"]
+
+    for key in (
+        "num_launches",
+        "deep_hidden_units",
+        "cross_layers",
+        "site_embedding_dim",
+        "prediction_head_type",
+        "parallel_deep_hidden_units",
+        "share_cross_net",
+    ):
+        assert model_config[key] == architecture[key], key
 
 
 def test_migrated_pytorch_reproduces_served_onnx_with_production_weights() -> None:
