@@ -41,7 +41,7 @@ See [docs/decisions/README.md](docs/decisions/README.md) for the decision-record
 cd ml
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[contrastive,xc,test,tracking]'
+pip install -e '.[contrastive,xc,onnx,test,tracking]'
 ~~~
 
 Point the runner at the analytics database:
