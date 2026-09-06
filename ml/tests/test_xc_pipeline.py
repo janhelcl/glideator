@@ -94,7 +94,7 @@ def test_xc_evaluation_reports_probability_and_monotonicity_metrics() -> None:
     assert "roc_auc_XC0" in metrics
 
 
-def test_run_xc_writes_reproducible_checkpoint_and_report(tmp_path: Path) -> None:
+def test_run_xc_writes_checkpoint_onnx_and_report(tmp_path: Path) -> None:
     csv_path = tmp_path / "xc.csv"
     _raw_frame().to_csv(csv_path, index=False)
     output_dir = tmp_path / "output"
@@ -126,8 +126,20 @@ def test_run_xc_writes_reproducible_checkpoint_and_report(tmp_path: Path) -> Non
             "l2_lambda": 0.0,
             "monotonicity_lambda": 0.0,
         },
-        "evaluation": {"benchmark_id": "xc-test-v1", "batch_size": 8},
-        "artifact": {"output_dir": str(output_dir), "filename": "xc_checkpoint.pt"},
+        "evaluation": {
+            "benchmark_id": "xc-test-v1",
+            "batch_size": 8,
+            "onnx_parity_sample_sizes": [1, 3],
+            "onnx_parity_atol": 1e-5,
+            "onnx_parity_rtol": 1e-5,
+        },
+        "artifact": {
+            "output_dir": str(output_dir),
+            "filename": "xc_checkpoint.pt",
+            "export_onnx": True,
+            "onnx_filename": "model.onnx",
+            "onnx_opset_version": 18,
+        },
         "tracking": {"enabled": False},
     }
 
@@ -137,12 +149,17 @@ def test_run_xc_writes_reproducible_checkpoint_and_report(tmp_path: Path) -> Non
     assert report["benchmark"]["split_strategy"] == "temporal"
     assert report["metrics"]["train_rows"] == 4
     assert report["metrics"]["eval_rows"] == 4
+    assert report["metrics"]["onnx_parity_max_abs_diff"] < 1e-5
+    assert report["onnx"]["exported"] is True
+    assert report["onnx"]["opset_version"] == 18
     assert report["mlflow_run_id"] is None
 
     checkpoint_path = output_dir / "xc_checkpoint.pt"
+    onnx_path = output_dir / "model.onnx"
     evaluation_path = output_dir / "evaluation.json"
     history_path = output_dir / "training_history.json"
     assert checkpoint_path.is_file()
+    assert onnx_path.is_file()
     assert evaluation_path.is_file()
     assert history_path.is_file()
 
@@ -150,5 +167,6 @@ def test_run_xc_writes_reproducible_checkpoint_and_report(tmp_path: Path) -> Non
     assert checkpoint["format_version"] == 1
     assert checkpoint["model_config"]["num_launches"] == 3
     assert checkpoint["metadata"]["weather_scaler_source_hour"] == 12
+    assert checkpoint["metadata"]["onnx"]["filename"] == "model.onnx"
     persisted = json.loads(evaluation_path.read_text(encoding="utf-8"))
     assert persisted["dataset_fingerprint"] == report["dataset_fingerprint"]
