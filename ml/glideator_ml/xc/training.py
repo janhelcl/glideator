@@ -113,10 +113,12 @@ def _validation_loss(
 
 def fit_xc(
     train: pd.DataFrame,
-    evaluation: pd.DataFrame,
+    validation: pd.DataFrame,
     features: XCFeatureContract,
     config: dict[str, Any],
 ) -> XCFitResult:
+    """Fit on train and use validation only for model selection/early stopping."""
+
     seed = int(config.get("seed", 42))
     deterministic = bool(config.get("deterministic", True))
     _seed_everything(seed, deterministic)
@@ -125,7 +127,7 @@ def fit_xc(
     weather_scaling, site_scaling = fit_scaling_params(train, features)
     requested_launches = config.get("num_launches")
     num_launches = int(requested_launches or (int(train["site_id"].max()) + 1))
-    max_site_id = int(max(train["site_id"].max(), evaluation["site_id"].max()))
+    max_site_id = int(max(train["site_id"].max(), validation["site_id"].max()))
     if num_launches <= max_site_id:
         raise ValueError(
             f"model.num_launches={num_launches} cannot represent site_id={max_site_id}"
@@ -156,7 +158,7 @@ def fit_xc(
         generator=generator,
         num_workers=int(config.get("num_workers", 0)),
     )
-    eval_loader = DataLoader(_dataset(evaluation, features), batch_size=batch_size)
+    validation_loader = DataLoader(_dataset(validation, features), batch_size=batch_size)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=float(config.get("learning_rate", 1e-3)))
     scheduler = torch.optim.lr_scheduler.ExponentialLR(
@@ -190,7 +192,7 @@ def fit_xc(
             train_total += float(total.item()) * rows
             train_rows += rows
 
-        validation_loss = _validation_loss(model, eval_loader, device)
+        validation_loss = _validation_loss(model, validation_loader, device)
         history.append(
             {
                 "epoch": epoch,
