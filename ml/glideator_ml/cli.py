@@ -28,6 +28,14 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("task", choices=["xc"])
     compare.add_argument("--config", required=True)
 
+    benchmark = subparsers.add_parser(
+        "benchmark",
+        help="Run reference, candidate and promotion as one benchmark workflow",
+    )
+    benchmark.add_argument("task", choices=["xc"])
+    benchmark.add_argument("--config", required=True, help="Candidate config")
+    benchmark.add_argument("--reference-config", required=True)
+
     backfill = subparsers.add_parser(
         "backfill",
         help="Backfill tracking from saved experiment artifacts",
@@ -46,7 +54,25 @@ def main() -> None:
         )
 
     exit_code = 0
-    if args.command == "evaluate":
+    if args.command == "benchmark":
+        require_sections(
+            config, "data", "model", "evaluation", "artifact", "promotion", "tracking"
+        )
+        reference_config = load_config(args.reference_config)
+        if reference_config["task"] != args.task:
+            raise SystemExit(
+                f"Reference config task {reference_config['task']!r} does not match "
+                f"CLI task {args.task!r}"
+            )
+        require_sections(
+            reference_config, "data", "evaluation", "reference", "artifact", "tracking"
+        )
+        from .xc.workflow import run_xc_benchmark_workflow
+
+        report = run_xc_benchmark_workflow(config, reference_config)
+        if not report["eligible"]:
+            exit_code = 2
+    elif args.command == "evaluate":
         require_sections(config, "data", "evaluation", "reference", "artifact", "tracking")
         from .xc.reference import run_xc_onnx_reference
 
