@@ -11,11 +11,16 @@ def load_config(path: str | Path) -> dict[str, Any]:
     with config_path.open("r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle) or {}
 
-    required = {"task", "data", "model", "evaluation", "artifact", "tracking"}
-    missing = sorted(required - config.keys())
-    if missing:
-        raise ValueError(f"Missing config sections: {', '.join(missing)}")
+    if "task" not in config:
+        raise ValueError("Missing config section: task")
     return config
+
+
+def require_sections(config: dict[str, Any], *sections: str) -> None:
+    missing = sorted(section for section in sections if section not in config)
+    if missing:
+        label = "section" if len(missing) == 1 else "sections"
+        raise ValueError(f"Missing config {label}: {', '.join(missing)}")
 
 
 def flatten_config(value: dict[str, Any], prefix: str = "") -> dict[str, Any]:
