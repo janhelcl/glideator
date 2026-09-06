@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 
 from glideator_ml.xc.benchmark import frame_fingerprint, split_temporal
@@ -67,6 +68,25 @@ def test_xc_temporal_benchmark_and_model_selection_are_disjoint() -> None:
     fingerprint = frame_fingerprint(frame, features)
     shuffled = frame.sample(frac=1.0, random_state=123).reset_index(drop=True)
     assert frame_fingerprint(shuffled, features) == fingerprint
+
+
+def test_xc_data_can_require_complete_evaluation_boundaries() -> None:
+    config = {**_data_config(), "require_eval_boundary_coverage": True}
+
+    with pytest.raises(ValueError, match="does not cover configured boundaries"):
+        prepare_xc_data(_raw_frame(), config)
+
+    complete = pd.concat(
+        [
+            _raw_frame(),
+            _raw_frame()
+            .loc[lambda frame: frame["date"] == "2024-06-01"]
+            .assign(date="2024-12-31"),
+        ],
+        ignore_index=True,
+    )
+    frame, _ = prepare_xc_data(complete, config)
+    assert frame["date"].max() == pd.Timestamp("2024-12-31")
 
 
 def test_xc_scaler_uses_noon_weather_slice_only() -> None:
