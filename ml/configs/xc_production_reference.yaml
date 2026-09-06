@@ -24,10 +24,10 @@ model:
   validation_start: "2023-01-01"
   num_launches: 251
   site_embedding_dim: 32
-  deep_hidden_units: [128, 64, 32]
+  deep_hidden_units: [64, 32]
   cross_layers: 2
   prediction_head_type: multilabel
-  parallel_deep_hidden_units: [128, 64]
+  parallel_deep_hidden_units: [128, 64, 32]
   share_cross_net: true
   batch_size: 2048
   num_workers: 0
