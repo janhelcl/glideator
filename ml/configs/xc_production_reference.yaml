@@ -53,6 +53,23 @@ artifact:
   onnx_filename: model.onnx
   onnx_opset_version: 18
 
+promotion:
+  version: xc-promotion-v1
+  reference_report: outputs/xc/served-reference/evaluation.json
+  output_path: outputs/xc/production-reference/promotion.json
+  require_candidate_onnx_parity: true
+  onnx_parity_max_abs_diff: 1.0e-5
+  rules:
+    bce_macro:
+      direction: lower
+      max_absolute_regression: 0.0
+    brier_macro:
+      direction: lower
+      max_absolute_regression: 0.0
+    roc_auc_macro:
+      direction: higher
+      max_absolute_regression: 0.0
+
 tracking:
   enabled: true
   experiment_name: glideator-xc
