@@ -4,8 +4,6 @@ import argparse
 import json
 
 from .config import load_config
-from .s2s.run import backfill_s2s_tracking, run_s2s
-from .xc.run import backfill_xc_tracking, run_xc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,14 +31,22 @@ def main() -> None:
             f"Config task {config['task']!r} does not match CLI task {args.task!r}"
         )
 
-    if args.command == "run" and args.task == "s2s":
-        report = run_s2s(config)
-    elif args.command == "run" and args.task == "xc":
-        report = run_xc(config)
-    elif args.command == "backfill" and args.task == "s2s":
-        report = backfill_s2s_tracking(config)
-    elif args.command == "backfill" and args.task == "xc":
-        report = backfill_xc_tracking(config)
+    if args.task == "s2s":
+        from .s2s.run import backfill_s2s_tracking, run_s2s
+
+        report = (
+            run_s2s(config)
+            if args.command == "run"
+            else backfill_s2s_tracking(config)
+        )
+    elif args.task == "xc":
+        from .xc.run import backfill_xc_tracking, run_xc
+
+        report = (
+            run_xc(config)
+            if args.command == "run"
+            else backfill_xc_tracking(config)
+        )
     else:
         raise SystemExit(f"Unsupported command/task: {args.command}/{args.task}")
 
