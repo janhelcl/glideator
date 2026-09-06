@@ -27,7 +27,7 @@ model:
   deep_hidden_units: [128, 64, 32]
   cross_layers: 2
   prediction_head_type: multilabel
-  parallel_deep_hidden_units: null
+  parallel_deep_hidden_units: [128, 64]
   share_cross_net: true
   batch_size: 2048
   num_workers: 0
