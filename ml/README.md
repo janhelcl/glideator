@@ -9,7 +9,7 @@ The shared layer standardizes experiment execution, provenance, tracking, and re
 | Task | Purpose | Status | Docs |
 | --- | --- | --- | --- |
 | S2S | Recommend new flying sites from a pilot's discovered-site history | Active | [docs/s2s/README.md](docs/s2s/README.md) |
-| XC | Predict flight / XC potential | Benchmark + training migrated; serving pending | [docs/xc/README.md](docs/xc/README.md) |
+| XC | Predict flight / XC potential | Benchmark, training, ONNX and promotion gate migrated; serving pending | [docs/xc/README.md](docs/xc/README.md) |
 | D2D | Retrieve analogous historical days | Planned migration | — |
 
 ## Layout
@@ -62,8 +62,12 @@ The CLI is intentionally thin:
 
 ~~~text
 glideator-ml run <task> --config <config>
+glideator-ml evaluate <task> --config <config>
+glideator-ml compare <task> --config <config>
 glideator-ml backfill <task> --config <config>
 ~~~
+
+`run` trains a candidate, `evaluate` scores an existing reference artifact, and `compare` applies a task-owned promotion policy. Not every task needs every command.
 
 Task docs define the benchmark-specific configs and comparison rules:
 
