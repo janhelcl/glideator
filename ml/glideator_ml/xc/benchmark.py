@@ -157,6 +157,7 @@ def split_temporal(
     eval_start: Any,
     eval_end: Any,
     require_known_eval_sites: bool = True,
+    require_eval_boundary_coverage: bool = False,
 ) -> XCSplit:
     train_end_at = as_date(train_end, name="data.train_end")
     eval_start_at = as_date(eval_start, name="data.eval_start")
@@ -172,6 +173,16 @@ def split_temporal(
     ].reset_index(drop=True)
     if train.empty or evaluation.empty:
         raise ValueError("XC temporal split requires non-empty train and evaluation sets")
+
+    if require_eval_boundary_coverage:
+        actual_start = pd.Timestamp(evaluation["date"].min()).normalize()
+        actual_end = pd.Timestamp(evaluation["date"].max()).normalize()
+        if actual_start != eval_start_at or actual_end != eval_end_at:
+            raise ValueError(
+                "XC evaluation does not cover configured boundaries: "
+                f"expected {eval_start_at.date()}..{eval_end_at.date()}, "
+                f"got {actual_start.date()}..{actual_end.date()}"
+            )
 
     if require_known_eval_sites:
         unseen = sorted(set(evaluation["site_id"]) - set(train["site_id"]))
