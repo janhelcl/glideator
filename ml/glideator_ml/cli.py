@@ -5,6 +5,7 @@ import json
 
 from .config import load_config
 from .s2s.run import backfill_s2s_tracking, run_s2s
+from .xc.run import backfill_xc_tracking, run_xc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -12,14 +13,14 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run = subparsers.add_parser("run", help="Run a model experiment")
-    run.add_argument("task", choices=["s2s"])
+    run.add_argument("task", choices=["s2s", "xc"])
     run.add_argument("--config", required=True)
 
     backfill = subparsers.add_parser(
         "backfill",
         help="Backfill tracking from saved experiment artifacts",
     )
-    backfill.add_argument("task", choices=["s2s"])
+    backfill.add_argument("task", choices=["s2s", "xc"])
     backfill.add_argument("--config", required=True)
     return parser
 
@@ -34,8 +35,12 @@ def main() -> None:
 
     if args.command == "run" and args.task == "s2s":
         report = run_s2s(config)
+    elif args.command == "run" and args.task == "xc":
+        report = run_xc(config)
     elif args.command == "backfill" and args.task == "s2s":
         report = backfill_s2s_tracking(config)
+    elif args.command == "backfill" and args.task == "xc":
+        report = backfill_xc_tracking(config)
     else:
         raise SystemExit(f"Unsupported command/task: {args.command}/{args.task}")
 
