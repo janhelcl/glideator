@@ -12,6 +12,88 @@ from .preprocessing import DATE_FEATURES, TARGET_NAMES, WEATHER_TIMES
 
 DEFAULT_SITE_FEATURES = ("latitude", "longitude", "altitude")
 
+# Exact order returned by legacy gfs.fetch.get_col_order() and consumed by the
+# currently served XC model. Database column order is not a model contract.
+PRODUCTION_WEATHER_FEATURES = (
+    "u_wind_500hpa_ms",
+    "u_wind_550hpa_ms",
+    "u_wind_600hpa_ms",
+    "u_wind_650hpa_ms",
+    "u_wind_700hpa_ms",
+    "u_wind_750hpa_ms",
+    "u_wind_800hpa_ms",
+    "u_wind_850hpa_ms",
+    "u_wind_900hpa_ms",
+    "u_wind_925hpa_ms",
+    "u_wind_950hpa_ms",
+    "u_wind_975hpa_ms",
+    "u_wind_1000hpa_ms",
+    "v_wind_500hpa_ms",
+    "v_wind_550hpa_ms",
+    "v_wind_600hpa_ms",
+    "v_wind_650hpa_ms",
+    "v_wind_700hpa_ms",
+    "v_wind_750hpa_ms",
+    "v_wind_800hpa_ms",
+    "v_wind_850hpa_ms",
+    "v_wind_900hpa_ms",
+    "v_wind_925hpa_ms",
+    "v_wind_950hpa_ms",
+    "v_wind_975hpa_ms",
+    "v_wind_1000hpa_ms",
+    "u_wind_10m_ms",
+    "u_wind_100m_ms",
+    "v_wind_10m_ms",
+    "v_wind_100m_ms",
+    "wind_gust_sfc_ms",
+    "temperature_500hpa_k",
+    "temperature_550hpa_k",
+    "temperature_600hpa_k",
+    "temperature_650hpa_k",
+    "temperature_700hpa_k",
+    "temperature_750hpa_k",
+    "temperature_800hpa_k",
+    "temperature_850hpa_k",
+    "temperature_900hpa_k",
+    "temperature_925hpa_k",
+    "temperature_950hpa_k",
+    "temperature_975hpa_k",
+    "temperature_1000hpa_k",
+    "temperature_2m_k",
+    "temperature_80m_k",
+    "temperature_100m_k",
+    "dewpoint_2m_k",
+    "pressure_sfc_pa",
+    "precipitable_water_clm_kg_m2",
+    "relative_humidity_500hpa_pct",
+    "relative_humidity_550hpa_pct",
+    "relative_humidity_600hpa_pct",
+    "relative_humidity_650hpa_pct",
+    "relative_humidity_700hpa_pct",
+    "relative_humidity_750hpa_pct",
+    "relative_humidity_800hpa_pct",
+    "relative_humidity_850hpa_pct",
+    "relative_humidity_900hpa_pct",
+    "relative_humidity_925hpa_pct",
+    "relative_humidity_950hpa_pct",
+    "relative_humidity_975hpa_pct",
+    "relative_humidity_1000hpa_pct",
+    "geopotential_height_500hpa_m",
+    "geopotential_height_550hpa_m",
+    "geopotential_height_600hpa_m",
+    "geopotential_height_650hpa_m",
+    "geopotential_height_700hpa_m",
+    "geopotential_height_750hpa_m",
+    "geopotential_height_800hpa_m",
+    "geopotential_height_850hpa_m",
+    "geopotential_height_900hpa_m",
+    "geopotential_height_925hpa_m",
+    "geopotential_height_950hpa_m",
+    "geopotential_height_975hpa_m",
+    "geopotential_height_1000hpa_m",
+    "geopotential_height_sfc_m",
+)
+
 
 @dataclass(frozen=True)
 class XCFeatureContract:
@@ -50,6 +132,7 @@ def as_date(value: Any, *, name: str) -> pd.Timestamp:
 
 
 def discover_weather_features(columns: list[str]) -> tuple[str, ...]:
+    """Discover a feature order for synthetic/ad-hoc CSV experiments only."""
     features = tuple(column[:-3] for column in columns if column.endswith("_12"))
     if not features:
         raise ValueError("Could not discover XC weather features ending in '_12'")
