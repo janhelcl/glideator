@@ -12,6 +12,7 @@ from ..tracking import log_experiment
 from .benchmark import frame_fingerprint, split_temporal
 from .data import load_xc_data
 from .evaluation import evaluate_predictions
+from .onnx import export_xc_onnx, verify_onnx_parity
 from .training import fit_xc, predict_xc
 
 
@@ -91,11 +92,42 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
         }
     )
 
-    output_dir = Path(config["artifact"].get("output_dir", "outputs/xc"))
+    artifact_config = config["artifact"]
+    output_dir = Path(artifact_config.get("output_dir", "outputs/xc"))
     output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = output_dir / config["artifact"].get("filename", "xc_checkpoint.pt")
+    checkpoint_path = output_dir / artifact_config.get("filename", "xc_checkpoint.pt")
     history_path = output_dir / "training_history.json"
     report_path = output_dir / "evaluation.json"
+    artifact_paths = [checkpoint_path, history_path, report_path]
+
+    onnx_metadata: dict[str, Any] = {"exported": False}
+    if bool(artifact_config.get("export_onnx", False)):
+        onnx_path = output_dir / artifact_config.get("onnx_filename", "model.onnx")
+        opset_version = int(artifact_config.get("onnx_opset_version", 18))
+        export_xc_onnx(fit.model, features, onnx_path, opset_version=opset_version)
+        parity = verify_onnx_parity(
+            fit.model,
+            onnx_path,
+            split.evaluation,
+            features,
+            sample_sizes=tuple(
+                int(value)
+                for value in config["evaluation"].get(
+                    "onnx_parity_sample_sizes", [1, 7, 31]
+                )
+            ),
+            atol=float(config["evaluation"].get("onnx_parity_atol", 1e-5)),
+            rtol=float(config["evaluation"].get("onnx_parity_rtol", 1e-5)),
+        )
+        metrics.update(parity)
+        artifact_paths.append(onnx_path)
+        onnx_metadata = {
+            "exported": True,
+            "filename": onnx_path.name,
+            "opset_version": opset_version,
+            "parity_atol": float(config["evaluation"].get("onnx_parity_atol", 1e-5)),
+            "parity_rtol": float(config["evaluation"].get("onnx_parity_rtol", 1e-5)),
+        }
 
     metadata = {
         "task": "xc",
@@ -107,6 +139,7 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
         "git_sha": git_sha,
         "benchmark": benchmark,
         "weather_scaler_source_hour": 12,
+        "onnx": onnx_metadata,
     }
     checkpoint = {
         "format_version": 1,
@@ -138,7 +171,7 @@ def run_xc(config: dict[str, Any]) -> dict[str, Any]:
         config=config,
         metrics=metrics,
         tags=_tracking_tags(config, report),
-        artifacts=[checkpoint_path, history_path, report_path],
+        artifacts=artifact_paths,
     )
     report["mlflow_run_id"] = run_id
     if run_id is not None:
@@ -151,18 +184,26 @@ def backfill_xc_tracking(config: dict[str, Any]) -> dict[str, Any]:
     checkpoint_path = output_dir / config["artifact"].get("filename", "xc_checkpoint.pt")
     history_path = output_dir / "training_history.json"
     report_path = output_dir / "evaluation.json"
-    for path in (checkpoint_path, history_path, report_path):
+    required = [checkpoint_path, history_path, report_path]
+    for path in required:
         if not path.is_file():
             raise FileNotFoundError(f"Missing XC experiment artifact: {path}")
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
     if report.get("mlflow_run_id"):
         return report
+    artifacts = list(required)
+    onnx_info = report.get("onnx", {})
+    if onnx_info.get("exported"):
+        onnx_path = output_dir / str(onnx_info["filename"])
+        if not onnx_path.is_file():
+            raise FileNotFoundError(f"Missing XC ONNX artifact: {onnx_path}")
+        artifacts.append(onnx_path)
     run_id = log_experiment(
         config=config,
         metrics=report["metrics"],
         tags=_tracking_tags(config, report),
-        artifacts=[checkpoint_path, history_path, report_path],
+        artifacts=artifacts,
     )
     if run_id is None:
         raise RuntimeError("MLflow tracking is disabled; cannot backfill XC run")
