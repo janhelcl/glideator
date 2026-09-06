@@ -9,25 +9,52 @@ import torch
 from .model import ExpandedGlideatorNet, StandardScalerLayer
 
 
-def _initializers_by_suffix(model: Any) -> dict[str, np.ndarray]:
+def _initializers(model: Any) -> dict[str, np.ndarray]:
     from onnx import numpy_helper
 
-    values: dict[str, np.ndarray] = {}
-    for initializer in model.graph.initializer:
-        array = np.asarray(numpy_helper.to_array(initializer))
-        name = str(initializer.name)
-        values[name] = array
-    return values
+    return {
+        str(initializer.name): np.asarray(numpy_helper.to_array(initializer))
+        for initializer in model.graph.initializer
+    }
 
 
-def _unique_suffix(initializers: dict[str, np.ndarray], suffix: str) -> np.ndarray:
-    matches = [value for name, value in initializers.items() if name.endswith(suffix)]
-    if len(matches) != 1:
-        names = [name for name in initializers if name.endswith(suffix)]
+def _parameter_matches(name: str, parameter_name: str) -> bool:
+    actual = name.split(".")
+    expected = parameter_name.split(".")
+    return len(actual) >= len(expected) and actual[-len(expected) :] == expected
+
+
+def _unique_parameter(initializers: dict[str, np.ndarray], parameter_name: str) -> np.ndarray:
+    names = [name for name in initializers if _parameter_matches(name, parameter_name)]
+    if len(names) != 1:
         raise ValueError(
-            f"Expected one ONNX initializer ending with {suffix!r}, found {names}"
+            f"Expected one ONNX initializer for {parameter_name!r}, found {names}"
         )
-    return matches[0]
+    return initializers[names[0]]
+
+
+def _linear_hidden_units(
+    initializers: dict[str, np.ndarray], module_name: str
+) -> list[int]:
+    hidden_units: list[int] = []
+    layer_index = 0
+    while True:
+        parameter_name = f"{module_name}.{layer_index}.weight"
+        names = [
+            name for name in initializers if _parameter_matches(name, parameter_name)
+        ]
+        if not names:
+            break
+        if len(names) != 1:
+            raise ValueError(
+                f"Expected one ONNX initializer for {parameter_name!r}, found {names}"
+            )
+        value = initializers[names[0]]
+        if value.ndim != 2:
+            raise ValueError(f"Invalid rank for ONNX initializer {names[0]!r}")
+        hidden_units.append(int(value.shape[0]))
+        layer_index += 2
+    return hidden_units
 
 
 def _scaler_from_arrays(means: np.ndarray, stds: np.ndarray) -> StandardScalerLayer:
@@ -40,76 +67,79 @@ def _scaler_from_arrays(means: np.ndarray, stds: np.ndarray) -> StandardScalerLa
     return StandardScalerLayer(params)
 
 
-def load_migrated_model_from_onnx(path: str | Path) -> ExpandedGlideatorNet:
-    """Reconstruct the migrated XC PyTorch model from a legacy production ONNX.
-
-    This is a migration-validation tool, not a serving loader. It relies only on the
-    parameter names and shapes embedded in the ONNX artifact, allowing us to prove
-    that the TorchRec-free migrated architecture reproduces the currently served
-    model numerically with the exact production weights.
-    """
+def infer_migrated_architecture_from_onnx(path: str | Path) -> dict[str, Any]:
+    """Infer the migrated ExpandedGlideatorNet constructor contract from ONNX weights."""
 
     import onnx
 
-    graph = onnx.load(str(path))
-    initializers = _initializers_by_suffix(graph)
-
-    weather_means = _unique_suffix(initializers, "weather_scaler.means")
-    weather_stds = _unique_suffix(initializers, "weather_scaler.stds")
-    site_means = _unique_suffix(initializers, "site_scaler.means")
-    site_stds = _unique_suffix(initializers, "site_scaler.stds")
-    embedding = _unique_suffix(initializers, "launch_embedding.weight")
+    initializers = _initializers(onnx.load(str(path)))
+    embedding = _unique_parameter(initializers, "launch_embedding.weight")
     if embedding.ndim != 2:
         raise ValueError("XC launch embedding must be a rank-2 matrix")
 
     cross_layers = 0
-    while any(name.endswith(f"cross_net.kernels.{cross_layers}") for name in initializers):
+    while any(
+        _parameter_matches(name, f"cross_net.kernels.{cross_layers}")
+        for name in initializers
+    ):
         cross_layers += 1
     if cross_layers == 0:
         raise ValueError("Production XC ONNX does not contain a shared CrossNet")
     if any("cross_nets." in name for name in initializers):
         raise ValueError("Per-time CrossNets are not supported by production compatibility loader")
-    if any("parallel_deep_net." in name for name in initializers):
-        raise ValueError("Parallel deep tower is not supported by production compatibility loader")
 
-    deep_hidden_units: list[int] = []
-    layer_index = 0
-    while True:
-        suffix = f"deep_net.{layer_index}.weight"
-        matches = [value for name, value in initializers.items() if name.endswith(suffix)]
-        if not matches:
-            break
-        if len(matches) != 1 or matches[0].ndim != 2:
-            raise ValueError(f"Invalid XC deep-layer initializer for {suffix}")
-        deep_hidden_units.append(int(matches[0].shape[0]))
-        layer_index += 2
+    deep_hidden_units = _linear_hidden_units(initializers, "deep_net")
     if not deep_hidden_units:
         raise ValueError("Production XC ONNX does not contain a deep tower")
+    parallel_hidden_units = _linear_hidden_units(initializers, "parallel_deep_net")
 
-    num_targets = sum(
-        1
+    output_weight_names = [
+        name
         for name in initializers
-        if name.endswith(".weight") and "prediction_head.output_layers." in name
-    )
-    if num_targets == 0:
+        if "prediction_head.output_layers." in name
+        and name.split(".")[-1] == "weight"
+    ]
+    if not output_weight_names:
         raise ValueError("Production XC ONNX does not contain the multilabel prediction head")
+
+    return {
+        "num_launches": int(embedding.shape[0]),
+        "num_targets": len(output_weight_names),
+        "deep_hidden_units": deep_hidden_units,
+        "cross_layers": cross_layers,
+        "site_embedding_dim": int(embedding.shape[1]),
+        "prediction_head_type": "multilabel",
+        "parallel_deep_hidden_units": parallel_hidden_units or None,
+        "share_cross_net": True,
+    }
+
+
+def load_migrated_model_from_onnx(path: str | Path) -> ExpandedGlideatorNet:
+    """Reconstruct migrated XC PyTorch using the exact weights in a legacy ONNX.
+
+    This is migration-validation tooling, not a serving loader. A successful numerical
+    comparison against the served artifact proves the TorchRec-free model preserves
+    the production architecture and forward semantics independently of retraining.
+    """
+
+    import onnx
+
+    initializers = _initializers(onnx.load(str(path)))
+    weather_means = _unique_parameter(initializers, "weather_scaler.means")
+    weather_stds = _unique_parameter(initializers, "weather_scaler.stds")
+    site_means = _unique_parameter(initializers, "site_scaler.means")
+    site_stds = _unique_parameter(initializers, "site_scaler.stds")
+    architecture = infer_migrated_architecture_from_onnx(path)
 
     model = ExpandedGlideatorNet(
         weather_scaler=_scaler_from_arrays(weather_means, weather_stds),
         site_scaler=_scaler_from_arrays(site_means, site_stds),
-        num_launches=int(embedding.shape[0]),
-        num_targets=num_targets,
-        deep_hidden_units=deep_hidden_units,
-        cross_layers=cross_layers,
-        site_embedding_dim=int(embedding.shape[1]),
-        prediction_head_type="multilabel",
-        parallel_deep_hidden_units=None,
-        share_cross_net=True,
+        **architecture,
     )
 
     reconstructed: dict[str, torch.Tensor] = {}
     for state_name, state_value in model.state_dict().items():
-        array = _unique_suffix(initializers, state_name)
+        array = _unique_parameter(initializers, state_name)
         tensor = torch.from_numpy(np.array(array, copy=True)).to(dtype=state_value.dtype)
         if tensor.shape != state_value.shape:
             raise ValueError(
