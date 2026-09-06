@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import onnx
 import onnxruntime as ort
+import torch
 
-from glideator_ml.xc.onnx import ONNX_INPUT_NAMES, ONNX_OUTPUT_NAME
+from glideator_ml.xc.compatibility import load_migrated_model_from_onnx
+from glideator_ml.xc.onnx import ONNX_INPUT_NAMES, ONNX_OUTPUT_NAME, XCOnnxWrapper
 
 
 def _repo_root() -> Path:
@@ -79,3 +82,51 @@ def test_checked_in_production_onnx_confirms_reference_architecture() -> None:
     initializer_names = [initializer.name for initializer in model.graph.initializer]
     assert not any("cross_nets." in name for name in initializer_names)
     assert not any("parallel_deep_net." in name for name in initializer_names)
+
+
+def test_migrated_pytorch_reproduces_served_onnx_with_production_weights() -> None:
+    model_path = _model_path()
+    migrated = load_migrated_model_from_onnx(model_path)
+    wrapper = XCOnnxWrapper(migrated).eval()
+
+    rng = np.random.default_rng(42)
+    batch_size = 13
+    inputs = {
+        "weather_9": rng.normal(size=(batch_size, 77)).astype(np.float32),
+        "weather_12": rng.normal(size=(batch_size, 77)).astype(np.float32),
+        "weather_15": rng.normal(size=(batch_size, 77)).astype(np.float32),
+        "site": np.column_stack(
+            [
+                rng.uniform(45.0, 52.0, batch_size),
+                rng.uniform(5.0, 20.0, batch_size),
+                rng.uniform(100.0, 2500.0, batch_size),
+            ]
+        ).astype(np.float32),
+        "site_id": rng.integers(0, 251, size=batch_size, dtype=np.int64),
+        "date": np.column_stack(
+            [
+                rng.integers(0, 2, size=batch_size),
+                np.full(batch_size, 2024),
+                rng.uniform(-1.0, 1.0, batch_size),
+                rng.uniform(-1.0, 1.0, batch_size),
+            ]
+        ).astype(np.float32),
+    }
+
+    session = ort.InferenceSession(
+        str(model_path),
+        providers=["CPUExecutionProvider"],
+    )
+    served = session.run([ONNX_OUTPUT_NAME], inputs)[0]
+
+    with torch.no_grad():
+        reconstructed = wrapper(
+            torch.from_numpy(inputs["weather_9"]),
+            torch.from_numpy(inputs["weather_12"]),
+            torch.from_numpy(inputs["weather_15"]),
+            torch.from_numpy(inputs["site"]),
+            torch.from_numpy(inputs["site_id"]),
+            torch.from_numpy(inputs["date"]),
+        ).numpy()
+
+    np.testing.assert_allclose(reconstructed, served, atol=1e-5, rtol=1e-5)
