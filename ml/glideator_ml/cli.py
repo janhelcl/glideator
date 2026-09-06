@@ -14,6 +14,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("task", choices=["s2s", "xc"])
     run.add_argument("--config", required=True)
 
+    evaluate = subparsers.add_parser(
+        "evaluate",
+        help="Evaluate an existing production/reference artifact",
+    )
+    evaluate.add_argument("task", choices=["xc"])
+    evaluate.add_argument("--config", required=True)
+
     backfill = subparsers.add_parser(
         "backfill",
         help="Backfill tracking from saved experiment artifacts",
@@ -31,7 +38,11 @@ def main() -> None:
             f"Config task {config['task']!r} does not match CLI task {args.task!r}"
         )
 
-    if args.task == "s2s":
+    if args.command == "evaluate":
+        from .xc.reference import run_xc_onnx_reference
+
+        report = run_xc_onnx_reference(config)
+    elif args.task == "s2s":
         from .s2s.run import backfill_s2s_tracking, run_s2s
 
         report = (
