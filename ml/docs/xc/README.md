@@ -22,32 +22,38 @@ XC now has an executable experiment path under `glideator_ml.xc`:
 - `model.py` — production architecture and fixed scaling layers;
 - `preprocessing.py` — target/date semantics and weather-time contract;
 - `objective.py` — legacy summed BCE and monotonicity penalty;
-- `benchmark.py` — temporal split, feature contract and fingerprints;
+- `benchmark.py` — temporal benchmark, feature contract and fingerprints;
+- `selection.py` — internal temporal model-selection split;
 - `data.py` — database/CSV extraction, validation and scaler fitting;
 - `training.py` — seeded config-driven PyTorch training with early stopping;
 - `evaluation.py` — BCE, Brier, ROC-AUC and monotonicity diagnostics;
+- `onnx.py` — production-shaped ONNX export, scoring and numerical parity;
+- `reference.py` — evaluation of an existing ONNX artifact on the fixed benchmark;
+- `promotion.py` — candidate/reference comparability and promotion eligibility;
 - `run.py` — report/checkpoint creation and MLflow tracking/backfill.
 
 TorchRec is no longer required. The replacement full-rank `CrossNet` keeps the legacy equation, parameter names and state-dict shapes so old state dicts remain loadable.
 
 ## Benchmark: `xc-temporal-2024-v1`
 
-The first stable XC benchmark deliberately replaces the old nondeterministic `is_validation` flag:
+The stable XC benchmark deliberately replaces the old nondeterministic `is_validation` flag:
 
 - data starts at `2021-01-01`;
 - site domain is capped at the existing production range, `site_id <= 250`;
-- train window ends `2023-12-31`;
-- evaluation is the full 2024 calendar year;
-- evaluation sites must already exist in training;
+- development window ends `2023-12-31`;
+- final evaluation is the full 2024 calendar year;
+- evaluation sites must already exist in development data;
 - source values, feature order and exact evaluation rows receive SHA-256 fingerprints.
+
+Model selection is also temporal. The production-reference config uses rows before `2023-01-01` for fitting and 2023 for early stopping. The 2024 benchmark is never consulted during training or model selection.
 
 This benchmark is defined in [decision 0005](../decisions/0005-xc-temporal-benchmark.md). Results from the old random 80/20 per-site split are not directly comparable.
 
-Scaler fitting also preserves one non-obvious legacy behavior: weather mean/std are fitted from the **12:00 slice only** and the same scaler is applied to 09:00, 12:00 and 15:00. Site scaling uses training rows only.
+Scaler fitting preserves one non-obvious legacy behavior: weather mean/std are fitted from the **12:00 slice only** and the same scaler is applied to 09:00, 12:00 and 15:00. Site scaling uses fit rows only.
 
-## Production-reference config
+## Candidate reference config
 
-`configs/xc_production_reference.yaml` captures the historical production-sized architecture:
+`configs/xc_production_reference.yaml` captures the historical production-sized architecture currently visible in the legacy training workflow:
 
 - 251 embedding slots for site IDs 0–250;
 - 32-dimensional site embedding;
@@ -56,7 +62,9 @@ Scaler fitting also preserves one non-obvious legacy behavior: weather mean/std 
 - independent multilabel probability heads;
 - legacy-scale training defaults and regularization.
 
-Run it with:
+This is the migration **candidate reference**, not yet proof of the exact hyperparameters used to create the currently served ONNX artifact. That claim requires retained checkpoint/config evidence or graph-level confirmation.
+
+Run the candidate with:
 
 ~~~bash
 cd ml
@@ -67,23 +75,57 @@ glideator-ml run xc --config configs/xc_production_reference.yaml
 A run writes:
 
 - `xc_checkpoint.pt` — state dict, architecture config, fitted scalers, feature contract and provenance;
-- `training_history.json` — epoch-level train/validation losses and learning rate;
-- `evaluation.json` — benchmark identity, fingerprints, model metadata and metrics;
+- `training_history.json` — epoch-level fit/validation losses and learning rate;
+- `evaluation.json` — benchmark identity, fingerprints, model metadata and final 2024 metrics;
+- `model.onnx` — production-shaped exported artifact;
+- ONNX parity metrics measured against the PyTorch model;
 - the same parameters, metrics, tags and artifacts to MLflow when tracking is enabled.
 
-The checkpoint is an **experiment artifact**, not yet a production serving artifact.
+The checkpoint and ONNX are experiment artifacts until the promotion gate passes and an explicit serving change is made.
 
-## Evaluation
+## Served production reference
 
-The runner reports the legacy summed per-threshold BCE as `validation_loss`, plus:
+The currently deployed `backend/app/models/model.onnx` can be scored on exactly the same 2024 benchmark:
 
+~~~bash
+glideator-ml evaluate xc --config configs/xc_served_reference.yaml
+~~~
+
+That run records the same dataset/evaluation fingerprints and feature contract plus the SHA-256 fingerprint of the served ONNX file. Its report is written to `outputs/xc/served-reference/evaluation.json` and can also be logged to MLflow.
+
+## Promotion gate
+
+After both reports exist, compare them with:
+
+~~~bash
+glideator-ml compare xc --config configs/xc_production_reference.yaml
+~~~
+
+The comparator first requires exact equality of:
+
+- benchmark ID;
+- full dataset fingerprint;
+- evaluation-set fingerprint;
+- feature contract.
+
+It then requires successful candidate PyTorch ↔ ONNX parity and applies the explicit rules under `promotion.rules`. The initial compatibility policy allows no regression in macro BCE, macro Brier score, or macro ROC-AUC versus the served artifact.
+
+The result is written to `outputs/xc/production-reference/promotion.json`. A non-eligible candidate makes the CLI exit non-zero. Passing means **eligible for an explicit serving change**, not automatically deployed.
+
+See [decision 0006](../decisions/0006-xc-promotion-gate.md).
+
+## Evaluation metrics
+
+Both candidate and served-reference runners report:
+
+- summed per-threshold BCE as `validation_loss`;
 - macro and per-threshold BCE;
 - macro and per-threshold Brier score;
 - ROC-AUC for thresholds with both classes present;
 - macro ROC-AUC across valid thresholds;
 - fraction and average magnitude of adjacent-threshold monotonicity violations.
 
-Row/site counts, best epoch and best validation loss are logged alongside the quality metrics.
+Candidate runs additionally record fit/validation row counts, best epoch, best internal validation loss, and ONNX parity diagnostics.
 
 ## Serving boundary
 
@@ -91,19 +133,16 @@ Production serving has **not** moved. The backend still loads `backend/app/model
 
 The migrated architecture accepts legacy **state dicts** without TorchRec. Legacy full-object PyTorch pickles still depend on the old module path and are not a promotion format.
 
-No new XC checkpoint should be promoted until a parity run demonstrates that the migrated model, given the same weights and inputs, matches the currently served ONNX model within an explicit tolerance.
-
 ## What remains
 
-The next migration steps are:
+The remaining migration steps are now operational rather than architectural:
 
-1. run `xc_production_reference.yaml` against the real analytics database and record the first benchmark run in MLflow;
-2. validate the historical architecture/hyperparameters against the served artifact and any retained training checkpoint;
-3. add ONNX export inside the XC task;
-4. add PyTorch ↔ ONNX parity tests on representative real rows;
-5. define promotion tolerances and the production artifact contract;
-6. switch backend serving only after the parity gate is satisfied;
-7. retire the notebook/`net/` training path after production cutover.
+1. run `xc_served_reference.yaml` against the real analytics database and record the served 2024 baseline;
+2. run `xc_production_reference.yaml` on the same database snapshot and record the candidate run;
+3. validate the assumed candidate architecture/hyperparameters against any retained production checkpoint/config evidence;
+4. inspect `promotion.json`; tune/reproduce the candidate if the strict migration gate fails;
+5. switch the backend artifact only after the gate passes and the architecture provenance is satisfactory;
+6. retire the notebook/`net/` training path after production cutover.
 
 ## Legacy sources
 
@@ -111,7 +150,7 @@ Until cutover, reference behavior still lives in:
 
 - `net/net/net.py` — architecture;
 - `net/net/preprocessing.py` — target/date semantics;
-- `net/net/export.py` and `net/net/io.py` — ONNX input/output contract;
-- `analytics/training/training.py` — training objective/loop;
+- `net/net/export.py` and `net/net/io.py` — historical ONNX input/output contract;
+- `analytics/training/training.py` — historical training objective/loop;
 - `analytics/training/data_prep/crate_fs_table.ipynb` — legacy feature-store build and random validation flag;
 - `analytics/training/fit_scalers.ipynb` — legacy scaler semantics.
