@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 contrastive = ["torch>=2.13,<3"]
+xc = ["torch>=2.13,<3"]
 tracking = ["mlflow==3.15.2"]
 test = ["pytest>=8,<9"]
 
