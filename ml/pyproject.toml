@@ -16,6 +16,11 @@ dependencies = [
 [project.optional-dependencies]
 contrastive = ["torch>=2.13,<3"]
 xc = ["torch>=2.13,<3"]
+onnx = [
+  "onnx>=1.18,<2",
+  "onnxscript>=0.7,<1",
+  "onnxruntime>=1.22,<2",
+]
 tracking = ["mlflow==3.15.2"]
 test = ["pytest>=8,<9"]
 
