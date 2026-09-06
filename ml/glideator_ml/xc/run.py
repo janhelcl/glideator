@@ -6,10 +6,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import torch
 
 from ..tracking import log_experiment
-from .benchmark import frame_fingerprint, split_temporal
+from .benchmark import XCFeatureContract, frame_fingerprint, split_temporal
 from .data import load_xc_data
 from .evaluation import evaluate_predictions
 from .onnx import export_xc_onnx, verify_onnx_parity
@@ -48,13 +49,17 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
     }
 
 
-def run_xc(config: dict[str, Any]) -> dict[str, Any]:
+def run_xc(
+    config: dict[str, Any],
+    *,
+    prepared_data: tuple[pd.DataFrame, XCFeatureContract] | None = None,
+) -> dict[str, Any]:
     data_config = config["data"]
     model_config = config["model"]
     if str(data_config.get("split_strategy", "temporal")) != "temporal":
         raise ValueError("The migrated XC benchmark currently supports only temporal splits")
 
-    frame, features = load_xc_data(data_config)
+    frame, features = prepared_data or load_xc_data(data_config)
     dataset_fingerprint = frame_fingerprint(frame, features)
     benchmark = {
         "split_strategy": "temporal",
