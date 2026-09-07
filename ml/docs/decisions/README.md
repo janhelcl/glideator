@@ -53,3 +53,4 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0006 — Gate XC promotion on identical benchmark identity and explicit regressions](0006-xc-promotion-gate.md)
 - [0007 — Use batch size 8192 for XC GPU experiments](0007-xc-gpu-batch-policy.md)
 - [0008 — Remove CrossNet from the XC candidate baseline](0008-xc-remove-crossnet-from-candidate-baseline.md)
+- [0009 — Do not use hard monotonic output heads as the XC candidate baseline](0009-xc-reject-hard-monotonic-heads.md)
