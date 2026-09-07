@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 import random
 from dataclasses import dataclass
 from typing import Any
@@ -15,6 +16,8 @@ from .data import fit_scaling_params
 from .model import ExpandedGlideatorNet, StandardScalerLayer
 from .objective import xc_loss
 from .preprocessing import DATE_FEATURES, TARGET_NAMES, WEATHER_TIMES
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -148,6 +151,12 @@ def fit_xc(
         site_scaler=StandardScalerLayer(site_scaling),
         **model_config,
     ).to(device)
+    logger.info(
+        "Fitting XC model on %s rows, validating on %s rows, device=%s",
+        len(train),
+        len(validation),
+        device,
+    )
 
     batch_size = int(config.get("batch_size", 2048))
     generator = torch.Generator().manual_seed(seed)
@@ -193,10 +202,18 @@ def fit_xc(
             train_rows += rows
 
         validation_loss = _validation_loss(model, validation_loader, device)
+        train_loss = train_total / train_rows
+        logger.info(
+            "XC epoch %s/%s train_loss=%.6f validation_loss=%.6f",
+            epoch,
+            epochs,
+            train_loss,
+            validation_loss,
+        )
         history.append(
             {
                 "epoch": epoch,
-                "train_loss": train_total / train_rows,
+                "train_loss": train_loss,
                 "validation_loss": validation_loss,
                 "learning_rate": float(optimizer.param_groups[0]["lr"]),
             }

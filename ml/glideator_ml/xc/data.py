@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 from typing import Any
@@ -16,6 +17,7 @@ from .benchmark import (
 )
 from .preprocessing import WEATHER_TIMES, add_date_features, add_targets
 
+logger = logging.getLogger(__name__)
 
 _TABLE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*")
 
@@ -137,9 +139,11 @@ def load_xc_data(config: dict[str, Any]) -> tuple[pd.DataFrame, XCFeatureContrac
         params["max_site_id"] = int(config["max_site_id"])
     query = text(f"select * from {table} where {' and '.join(clauses)} order by date, site_id")
 
+    logger.info("Loading XC rows from %s", table)
     engine = create_engine(database_url)
     with engine.connect() as connection:
         raw = pd.read_sql(query, connection, params=params, parse_dates=["date"])
+    logger.info("Loaded %s XC source rows", len(raw))
     return prepare_xc_data(raw, config)
 
 
