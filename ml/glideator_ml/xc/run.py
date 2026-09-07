@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -87,7 +88,14 @@ def run_xc(
     model_seed = int(model_config.get("seed", 42))
     benchmark_id = str(config["evaluation"].get("benchmark_id", "xc-temporal-v1"))
     git_sha = _git_sha()
+
+    training_started = time.perf_counter()
     fit = fit_xc(development.fit, development.validation, features, model_config)
+    training_seconds = time.perf_counter() - training_started
+    trainable_parameters = sum(
+        parameter.numel() for parameter in fit.model.parameters() if parameter.requires_grad
+    )
+
     targets, probabilities = predict_xc(
         fit.model,
         split.evaluation,
@@ -108,6 +116,8 @@ def run_xc(
             "eval_sites": split.evaluation["site_id"].nunique(),
             "best_epoch": fit.best_epoch,
             "best_validation_loss": fit.best_validation_loss,
+            "training_seconds": training_seconds,
+            "trainable_parameters": trainable_parameters,
         }
     )
 
