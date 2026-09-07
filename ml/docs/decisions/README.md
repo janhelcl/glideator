@@ -51,3 +51,5 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0004 — Preserve XC CrossNet compatibility without TorchRec](0004-xc-crossnet-compatibility.md)
 - [0005 — Use a fixed temporal benchmark for XC](0005-xc-temporal-benchmark.md)
 - [0006 — Gate XC promotion on identical benchmark identity and explicit regressions](0006-xc-promotion-gate.md)
+- [0007 — Use batch size 8192 for XC GPU experiments](0007-xc-gpu-batch-policy.md)
+- [0008 — Remove CrossNet from the XC candidate baseline](0008-xc-remove-crossnet-from-candidate-baseline.md)
