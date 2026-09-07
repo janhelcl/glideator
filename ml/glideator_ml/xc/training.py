@@ -145,6 +145,12 @@ def fit_xc(
         "prediction_head_type": str(config.get("prediction_head_type", "multilabel")),
         "parallel_deep_hidden_units": config.get("parallel_deep_hidden_units"),
         "share_cross_net": bool(config.get("share_cross_net", True)),
+        "include_time_input_branch": bool(
+            config.get("include_time_input_branch", True)
+        ),
+        "share_parallel_deep_net": bool(
+            config.get("share_parallel_deep_net", True)
+        ),
     }
     model = ExpandedGlideatorNet(
         weather_scaler=StandardScalerLayer(weather_scaling),
