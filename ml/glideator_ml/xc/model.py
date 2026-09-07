@@ -193,6 +193,7 @@ class ExpandedGlideatorNet(nn.Module):
                 )
 
         self.parallel_deep_net: nn.Sequential | None = None
+        self.parallel_deep_nets: nn.ModuleDict | None = None
         if parallel_deep_hidden_units:
             if share_parallel_deep_net:
                 self.parallel_deep_net = _deep_tower(
@@ -274,7 +275,7 @@ class ExpandedGlideatorNet(nn.Module):
                     branches.append(self.cross_nets[time_key](combined))
             if self.parallel_deep_net is not None:
                 branches.append(self.parallel_deep_net(combined))
-            elif hasattr(self, "parallel_deep_nets"):
+            elif self.parallel_deep_nets is not None:
                 branches.append(self.parallel_deep_nets[time_key](combined))
 
             time_slice_outputs.append(
