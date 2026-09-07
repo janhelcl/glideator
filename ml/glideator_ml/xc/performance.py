@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-import math
+import json
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -40,8 +40,8 @@ def select_batch_size(
     """Choose the smallest batch size close to maximum measured throughput.
 
     Large batches can reduce optimization quality even after hardware throughput has
-    saturated. The recommended batch is therefore the smallest non-OOM batch that
-    reaches ``throughput_fraction`` of the best samples/second result.
+    saturated. The recommendation is therefore the smallest non-OOM batch reaching
+    ``throughput_fraction`` of the best samples/second result.
     """
 
     if not 0 < throughput_fraction <= 1:
@@ -106,7 +106,11 @@ def profile_batch_sizes(
     measured_steps: int = 20,
     throughput_fraction: float = 0.95,
 ) -> dict[str, Any]:
-    """Measure end-to-end training-step throughput for candidate batch sizes."""
+    """Measure actual XC training-step throughput for candidate batch sizes.
+
+    This intentionally uses the same CPU TensorDataset -> device transfer path as the
+    current trainer. If transfer optimization is added later, rerun the profile.
+    """
 
     if warmup_steps < 0:
         raise ValueError("warmup_steps must be >= 0")
@@ -139,8 +143,6 @@ def profile_batch_sizes(
     l1_lambda = float(model_config.get("l1_lambda", 1e-9))
     l2_lambda = float(model_config.get("l2_lambda", 1e-9))
     num_workers = int(model_config.get("num_workers", 0))
-    pin_memory = bool(model_config.get("pin_memory", True))
-    non_blocking = pin_memory
 
     results: list[BatchProfileResult] = []
     for batch_size in sizes:
@@ -171,7 +173,6 @@ def profile_batch_sizes(
             shuffle=True,
             generator=generator,
             num_workers=num_workers,
-            pin_memory=pin_memory,
             drop_last=True,
         )
         iterator = iter(loader)
@@ -179,9 +180,7 @@ def profile_batch_sizes(
         try:
             for _ in range(warmup_steps):
                 batch, iterator = _next_batch(loader, iterator)
-                inputs, targets = _features(
-                    batch, device, non_blocking=non_blocking
-                )
+                inputs, targets = _features(batch, device)
                 optimizer.zero_grad(set_to_none=True)
                 loss = xc_loss(
                     model(inputs),
@@ -198,9 +197,7 @@ def profile_batch_sizes(
             samples = 0
             for _ in range(measured_steps):
                 batch, iterator = _next_batch(loader, iterator)
-                inputs, targets = _features(
-                    batch, device, non_blocking=non_blocking
-                )
+                inputs, targets = _features(batch, device)
                 optimizer.zero_grad(set_to_none=True)
                 loss = xc_loss(
                     model(inputs),
@@ -311,8 +308,6 @@ def run_xc_batch_profile(
     output_dir = Path(config["artifact"].get("output_dir", "outputs/xc"))
     output_dir.mkdir(parents=True, exist_ok=True)
     profile_path = output_dir / "batch_profile.json"
-    import json
-
     profile_path.write_text(
         json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
     )
