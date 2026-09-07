@@ -17,6 +17,7 @@ data:
 model:
   name: xc-tabpfn3
   version: v3
+  target_encoding: ordinal-multiclass-cumulative
   seed: 42
   device: auto
   # Strict comparison with the neural architecture runs: TabPFN sees only the
