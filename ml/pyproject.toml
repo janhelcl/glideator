@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 contrastive = ["torch>=2.13,<3"]
 xc = ["torch>=2.13,<3"]
+tabpfn = ["tabpfn==8.5.0"]
 onnx = [
   "onnx>=1.18,<2",
   "onnxscript>=0.7,<1",
