@@ -1,13 +1,13 @@
 # Adaptive monotonic head
 
-**Role:** active head experiment  
+**Role:** rejected head experiment  
 **Config:** `configs/xc/architecture/adaptive_monotonic.yaml`
 
 ## Hypothesis
 
 The ordinal experiment showed that hard monotonicity is attractive but collapsing all thresholds onto one latent XC-strength axis is too restrictive. The multilabel baseline is more expressive but still produces probability inversions.
 
-The adaptive monotonic head aims to keep both properties:
+The adaptive monotonic head aimed to keep both properties:
 
 - threshold-specific, feature-conditioned behavior;
 - monotonic probabilities by construction.
@@ -30,16 +30,34 @@ The initial gap layers are initialized with zero feature weights and a modest ne
 
 ## Experimental baseline
 
-This head is tested on the accepted no-CrossNet structural baseline from [ADR 0008](../../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md), with the same temporal benchmark and GPU training policy.
+This head was tested on the accepted no-CrossNet structural baseline from [ADR 0008](../../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md), with the same temporal benchmark and GPU training policy.
 
-The legacy monotonicity penalty is set to zero because the constraint is structural.
+The legacy monotonicity penalty was set to zero because the constraint is structural.
 
-## What to learn from it
+## Result
 
-If this matches or improves calibration/discrimination while driving monotonic violations to zero, it should replace the independent multilabel head as the preferred XC output parameterization.
+The matched seed-42 run finished with zero monotonicity violations, but regressed against the no-CrossNet multilabel baseline on all three primary predictive metrics:
 
-If it regresses materially, the remaining useful flexibility likely comes from allowing threshold logits to move more independently than cumulative positive gaps permit.
+| Metric | Adaptive monotonic | No-CrossNet |
+| --- | ---: | ---: |
+| Macro BCE | 0.16209 | 0.15982 |
+| Macro Brier | 0.04912 | 0.04848 |
+| Macro ROC-AUC | 0.93601 | 0.93944 |
+| Monotonic violation rate | 0.0000 | 0.0199 |
+| Trainable parameters | 64,267 | 64,267 |
+
+MLflow run: `4753c267f3f447cb8eb19a2f8e406ff8` (`rumbling-mink-438`).
+
+The experiment bar was to match or improve calibration/discrimination while driving violations to zero. It met the monotonicity requirement and missed the predictive-quality requirement.
+
+## Decision
+
+Rejected. Do not spend a seed sweep or width tuning on this formulation.
+
+The result is much better than the scalar ordinal head, so feature-conditioned threshold spacing recovered useful flexibility, but cumulative positive gaps still constrain the output layer enough to hurt calibration and discrimination.
+
+The no-CrossNet multilabel head remains the candidate baseline. See [ADR 0009](../../decisions/0009-xc-reject-hard-monotonic-heads.md).
 
 ## Serving implications
 
-The external output contract remains eleven XC threshold probabilities. ONNX export/parity is intentionally deferred until the architecture is selected from screening experiments.
+The external output contract would remain eleven XC threshold probabilities, but this head is not a promotion candidate. ONNX export/parity is therefore unnecessary unless the architecture is revisited under a new hypothesis.
