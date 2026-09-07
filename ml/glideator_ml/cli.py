@@ -97,7 +97,7 @@ def main() -> None:
         if not report["eligible"]:
             exit_code = 2
     elif args.command == "profile-batch":
-        require_sections(config, "data", "model", "artifact")
+        require_sections(config, "data", "model", "artifact", "tracking")
         from .xc.performance import run_xc_batch_profile
 
         report = run_xc_batch_profile(

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import math
+import subprocess
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -12,6 +14,7 @@ from typing import Any, Iterable
 import torch
 from torch.utils.data import DataLoader
 
+from ..tracking import log_experiment
 from .benchmark import split_temporal
 from .data import fit_scaling_params, load_xc_data
 from .model import ExpandedGlideatorNet, StandardScalerLayer
@@ -19,6 +22,8 @@ from .objective import xc_loss
 from .preprocessing import TARGET_NAMES
 from .selection import split_development
 from .training import _dataset, _device, _features, _regularization, _seed_everything
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -34,6 +39,53 @@ class BatchProfileResult:
     measured_samples: int
     oom: bool
     error: str | None = None
+
+
+def _git_sha() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
+def batch_profile_metrics(report: dict[str, Any]) -> dict[str, float | int]:
+    metrics: dict[str, float | int] = {
+        "recommended_batch_size": int(report["recommended_batch_size"]),
+        "best_throughput_batch_size": int(report["best_throughput_batch_size"]),
+        "fit_rows": int(report["fit_rows"]),
+        "trainable_parameters": int(report["trainable_parameters"]),
+        "throughput_fraction": float(report["throughput_fraction"]),
+    }
+    for result in report["results"]:
+        prefix = f"bs{int(result['batch_size'])}"
+        metrics[f"{prefix}_steps_per_epoch"] = int(result["steps_per_epoch"])
+        metrics[f"{prefix}_oom"] = 1 if result["oom"] else 0
+        for key in (
+            "samples_per_second",
+            "mean_step_ms",
+            "estimated_epoch_seconds",
+            "peak_allocated_gib",
+            "peak_reserved_gib",
+        ):
+            value = result.get(key)
+            if value is not None:
+                metrics[f"{prefix}_{key}"] = float(value)
+    return metrics
+
+
+def _profile_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, str]:
+    device = report.get("device") or {}
+    return {
+        "task": "xc",
+        "run_kind": "gpu-batch-profile",
+        "model_family": str(config["model"].get("name", "expanded")),
+        "git_sha": _git_sha(),
+        "device_name": str(device.get("name", "unknown")),
+        "recommended_batch_size": str(report["recommended_batch_size"]),
+        "best_throughput_batch_size": str(report["best_throughput_batch_size"]),
+    }
 
 
 def select_batch_size(
@@ -150,6 +202,7 @@ def profile_batch_sizes(
 
     results: list[BatchProfileResult] = []
     for batch_size in sizes:
+        logger.info("Profiling XC batch_size=%s on %s", batch_size, device)
         steps_per_epoch = math.ceil(len(dataset) / batch_size)
         if batch_size > len(dataset):
             results.append(
@@ -219,20 +272,27 @@ def profile_batch_sizes(
             samples_per_second = samples / elapsed
             peak_allocated = torch.cuda.max_memory_allocated(device) / (1024**3)
             peak_reserved = torch.cuda.max_memory_reserved(device) / (1024**3)
-            results.append(
-                BatchProfileResult(
-                    batch_size=batch_size,
-                    steps_per_epoch=steps_per_epoch,
-                    samples_per_second=samples_per_second,
-                    mean_step_ms=(elapsed / measured_steps) * 1000,
-                    estimated_epoch_seconds=len(dataset) / samples_per_second,
-                    peak_allocated_gib=peak_allocated,
-                    peak_reserved_gib=peak_reserved,
-                    measured_steps=measured_steps,
-                    measured_samples=samples,
-                    oom=False,
-                )
+            result = BatchProfileResult(
+                batch_size=batch_size,
+                steps_per_epoch=steps_per_epoch,
+                samples_per_second=samples_per_second,
+                mean_step_ms=(elapsed / measured_steps) * 1000,
+                estimated_epoch_seconds=len(dataset) / samples_per_second,
+                peak_allocated_gib=peak_allocated,
+                peak_reserved_gib=peak_reserved,
+                measured_steps=measured_steps,
+                measured_samples=samples,
+                oom=False,
             )
+            logger.info(
+                "XC batch_size=%s samples/s=%.0f step=%.1fms peak_alloc=%.2fGiB steps/epoch=%s",
+                batch_size,
+                samples_per_second,
+                result.mean_step_ms,
+                peak_allocated,
+                steps_per_epoch,
+            )
+            results.append(result)
         except torch.OutOfMemoryError as exc:
             results.append(
                 BatchProfileResult(
@@ -249,6 +309,7 @@ def profile_batch_sizes(
                     error=str(exc),
                 )
             )
+            logger.info("XC batch_size=%s ran out of GPU memory", batch_size)
         finally:
             del iterator, loader, optimizer, model
             torch.cuda.empty_cache()
@@ -320,4 +381,21 @@ def run_xc_batch_profile(
         json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
     )
     report["output_path"] = str(profile_path)
+    run_id = log_experiment(
+        config=config,
+        metrics=batch_profile_metrics(report),
+        tags=_profile_tags(config, report),
+        artifacts=[profile_path],
+    )
+    report["mlflow_run_id"] = run_id
+    if run_id is not None:
+        profile_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
+        )
+    logger.info(
+        "XC batch profile recommended_batch_size=%s best_throughput_batch_size=%s mlflow_run_id=%s",
+        report["recommended_batch_size"],
+        report["best_throughput_batch_size"],
+        run_id,
+    )
     return report
