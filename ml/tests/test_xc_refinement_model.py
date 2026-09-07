@@ -72,8 +72,9 @@ def test_time_specific_encoder_uses_independent_towers() -> None:
     time_specific = _model(share_parallel_deep_net=False)
 
     assert shared.parallel_deep_net is not None
-    assert not hasattr(shared, "parallel_deep_nets")
+    assert shared.parallel_deep_nets is None
     assert time_specific.parallel_deep_net is None
+    assert time_specific.parallel_deep_nets is not None
     assert set(time_specific.parallel_deep_nets) == {"9", "12", "15"}
 
     weight_9 = _first_linear(time_specific.parallel_deep_nets["9"]).weight
