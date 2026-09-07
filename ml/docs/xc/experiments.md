@@ -86,11 +86,55 @@ The adaptive implementation and config remain as a documented rejected experimen
 The architecture baseline for the next phase is therefore:
 
 - no CrossNet (`cross_layers: 0`);
-- shared parallel per-time deep tower `[128, 64, 32]`;
+- raw per-time input bypass concatenated with a shared deep encoder;
+- shared per-time deep encoder `[128, 64, 32]`;
 - fusion tower `[64, 32]`;
 - 32-dimensional site embedding;
 - eleven independent sigmoid XC-threshold heads;
 - batch size `8192` with the normalized training budget above.
+
+With `cross_layers: 0`, the old CrossNet branch is an identity operation. The accepted baseline therefore feeds both the raw 116-dimensional per-time input and the learned 32-dimensional encoder output into fusion. The next screen makes that inherited bypass explicit rather than treating it as accidental architecture.
+
+## Second architecture screen: representation and capacity
+
+Configs live under `configs/xc/architecture/refinement/`. Every run keeps the same benchmark, seed, optimizer, batch size, site embedding and multilabel head. Each candidate changes one representation/capacity hypothesis from the no-CrossNet control.
+
+| Config | Change | Question |
+| --- | --- | --- |
+| `control.yaml` | accepted no-CrossNet architecture | reproducible comparison control |
+| `no_raw_skip.yaml` | remove raw per-time input from fusion | does the inherited identity bypass add signal beyond the nonlinear encoder? |
+| `time_specific_encoder.yaml` | separate 09/12/15 encoders | should each forecast time learn its own nonlinear transform? |
+| `smaller_encoder.yaml` | encoder `[64, 32]` | can the useful per-time tower be simpler? |
+| `larger_encoder.yaml` | encoder `[256, 128, 64]` | is per-time representation capacity limiting? |
+| `smaller_fusion.yaml` | fusion `[32, 16]` | can fusion be simplified after wider fusion already failed? |
+| `deeper_fusion.yaml` | fusion `[64, 64, 32]` | does extra fusion depth help without widening the final representation? |
+
+The code exposes two explicit candidate-only flags while preserving legacy defaults:
+
+- `include_time_input_branch`: when false with `cross_layers: 0`, fusion receives only the learned per-time encoder output;
+- `share_parallel_deep_net`: when false, 09/12/15 receive independent encoder weights.
+
+Run the complete screen from `ml/`:
+
+```bash
+export ML_DATABASE_URL='postgresql://...'
+
+for config in \
+  control \
+  no_raw_skip \
+  time_specific_encoder \
+  smaller_encoder \
+  larger_encoder \
+  smaller_fusion \
+  deeper_fusion
+do
+  glideator-ml run xc --config "configs/xc/architecture/refinement/${config}.yaml"
+done
+```
+
+Artifacts are isolated under `outputs/xc/architecture/refinement/`; all runs log to the existing `glideator-xc` MLflow experiment.
+
+Screen at seed 42 first. Do not seed-sweep every variant. Promote at most the strongest two candidates to paired seeds 42–46 against the refinement control. A candidate is interesting if it improves BCE/Brier without a meaningful AUC loss, or matches the control closely while materially simplifying the model.
 
 ## Selection metrics
 
@@ -106,4 +150,4 @@ Do not select architecture on ROC-AUC alone. Compare at minimum:
 
 For architectures that are close on predictive metrics, prefer the simpler model unless a meaningful XC-threshold region improves consistently.
 
-The output-head question is now settled. Next experiments should tune representation/capacity and optimization around the no-CrossNet multilabel family rather than starting with another output constraint or a large mixed grid.
+After this screen, test site-embedding size around the winning representation family. Only then tune optimization (learning rate and, if needed, batch size) rather than mixing architecture and optimizer changes in the same sweep.
