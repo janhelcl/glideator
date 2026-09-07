@@ -6,8 +6,10 @@ import pandas as pd
 from glideator_ml.xc.benchmark import XCFeatureContract
 from glideator_ml.xc.preprocessing import DATE_FEATURES, TARGET_NAMES
 from glideator_ml.xc.tabpfn import (
+    _independent_predictions,
     build_tabular_features,
     ordinal_classes_from_targets,
+    positive_class_probability,
     tabular_feature_columns,
     threshold_probabilities_from_classes,
 )
@@ -53,6 +55,57 @@ def test_tabpfn_class_probabilities_recover_monotonic_threshold_outputs() -> Non
     np.testing.assert_allclose(probabilities[:, 0], [0.8, 0.3])
     np.testing.assert_allclose(probabilities[:, 1:], [[0.5] * 10, [0.1] * 10])
     assert np.all(probabilities[:, 1:] <= probabilities[:, :-1])
+
+
+def test_tabpfn_positive_probability_does_not_assume_class_order() -> None:
+    classes = np.asarray([1, 0])
+    class_probabilities = np.asarray([[0.8, 0.2], [0.3, 0.7]])
+
+    probabilities = positive_class_probability(classes, class_probabilities)
+
+    np.testing.assert_allclose(probabilities, [0.8, 0.3])
+
+
+def test_tabpfn_independent_mode_fits_one_classifier_per_threshold(monkeypatch) -> None:
+    class FakeClassifier:
+        classes_ = np.asarray([0, 1])
+
+        def __init__(self) -> None:
+            self.positive_rate = 0.0
+
+        def fit(self, frame: pd.DataFrame, target: np.ndarray) -> FakeClassifier:
+            self.positive_rate = float(np.mean(target))
+            return self
+
+        def predict_proba(self, frame: pd.DataFrame) -> np.ndarray:
+            positive = np.full(len(frame), self.positive_rate)
+            return np.column_stack([1.0 - positive, positive])
+
+    created: list[FakeClassifier] = []
+
+    def factory(model_config: dict[str, object]) -> FakeClassifier:
+        classifier = FakeClassifier()
+        created.append(classifier)
+        return classifier
+
+    monkeypatch.setattr("glideator_ml.xc.tabpfn._tabpfn_classifier", factory)
+    context = _target_frame([0, 11])
+    x_context = pd.DataFrame({"feature": [0.0, 1.0]})
+    x_evaluation = pd.DataFrame({"feature": [2.0, 3.0, 4.0]})
+
+    probabilities, runtime = _independent_predictions(
+        x_context=x_context,
+        context=context,
+        x_evaluation=x_evaluation,
+        model_config={},
+        prediction_batch_size=None,
+    )
+
+    assert len(created) == len(TARGET_NAMES)
+    assert runtime["classifier_count"] == len(TARGET_NAMES)
+    assert runtime["constant_threshold_count"] == 0
+    assert probabilities.shape == (3, len(TARGET_NAMES))
+    np.testing.assert_allclose(probabilities, 0.5)
 
 
 def test_tabpfn_features_flatten_existing_contract_and_keep_site_id_categorical() -> None:
