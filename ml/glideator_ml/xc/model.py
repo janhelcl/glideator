@@ -125,11 +125,22 @@ class AdaptiveMonotonicHead(nn.Module):
         return torch.sigmoid(logits)
 
 
+def _deep_tower(input_dim: int, hidden_units: Sequence[int]) -> nn.Sequential:
+    layers: list[nn.Module] = []
+    previous = input_dim
+    for units in hidden_units:
+        layers.extend((nn.Linear(previous, units), nn.ReLU()))
+        previous = units
+    return nn.Sequential(*layers)
+
+
 class ExpandedGlideatorNet(nn.Module):
     """Production XC architecture, migrated into the model-family workspace.
 
-    The module and parameter names intentionally mirror ``net.net.ExpandedGlideatorNet``
-    so legacy training checkpoints can be loaded via ``load_state_dict``.
+    The default module and parameter names intentionally mirror
+    ``net.net.ExpandedGlideatorNet`` so legacy training checkpoints can be
+    loaded via ``load_state_dict``. Experimental constructor flags default to
+    the legacy behavior and are used only by candidate configs.
     """
 
     time_keys = ("9", "12", "15")
@@ -146,10 +157,16 @@ class ExpandedGlideatorNet(nn.Module):
         prediction_head_type: str = "multilabel",
         parallel_deep_hidden_units: Sequence[int] | None = None,
         share_cross_net: bool = True,
+        include_time_input_branch: bool = True,
+        share_parallel_deep_net: bool = True,
     ) -> None:
         super().__init__()
         if not deep_hidden_units:
             raise ValueError("deep_hidden_units must contain at least one layer")
+        if not include_time_input_branch and cross_layers:
+            raise ValueError(
+                "cross_layers must be 0 when include_time_input_branch is false"
+            )
 
         self.weather_scaler = weather_scaler
         self.site_scaler = site_scaler
@@ -161,34 +178,49 @@ class ExpandedGlideatorNet(nn.Module):
 
         single_time_input_dim = weather_dim + site_dim + site_embedding_dim + date_dim
         self.share_cross_net = share_cross_net
+        self.include_time_input_branch = include_time_input_branch
+        self.share_parallel_deep_net = share_parallel_deep_net
 
-        if share_cross_net:
-            self.cross_net = CrossNet(single_time_input_dim, cross_layers)
-        else:
-            self.cross_nets = nn.ModuleDict(
-                {
-                    time_key: CrossNet(single_time_input_dim, cross_layers)
-                    for time_key in self.time_keys
-                }
-            )
+        if include_time_input_branch:
+            if share_cross_net:
+                self.cross_net = CrossNet(single_time_input_dim, cross_layers)
+            else:
+                self.cross_nets = nn.ModuleDict(
+                    {
+                        time_key: CrossNet(single_time_input_dim, cross_layers)
+                        for time_key in self.time_keys
+                    }
+                )
 
         self.parallel_deep_net: nn.Sequential | None = None
-        single_time_output_dim = single_time_input_dim
         if parallel_deep_hidden_units:
-            layers: list[nn.Module] = []
-            previous = single_time_input_dim
-            for hidden_units in parallel_deep_hidden_units:
-                layers.extend((nn.Linear(previous, hidden_units), nn.ReLU()))
-                previous = hidden_units
-            self.parallel_deep_net = nn.Sequential(*layers)
-            single_time_output_dim += parallel_deep_hidden_units[-1]
+            if share_parallel_deep_net:
+                self.parallel_deep_net = _deep_tower(
+                    single_time_input_dim, parallel_deep_hidden_units
+                )
+            else:
+                self.parallel_deep_nets = nn.ModuleDict(
+                    {
+                        time_key: _deep_tower(
+                            single_time_input_dim, parallel_deep_hidden_units
+                        )
+                        for time_key in self.time_keys
+                    }
+                )
 
-        deep_layers: list[nn.Module] = []
-        previous = len(self.time_keys) * single_time_output_dim
-        for hidden_units in deep_hidden_units:
-            deep_layers.extend((nn.Linear(previous, hidden_units), nn.ReLU()))
-            previous = hidden_units
-        self.deep_net = nn.Sequential(*deep_layers)
+        single_time_output_dim = 0
+        if include_time_input_branch:
+            single_time_output_dim += single_time_input_dim
+        if parallel_deep_hidden_units:
+            single_time_output_dim += parallel_deep_hidden_units[-1]
+        if single_time_output_dim == 0:
+            raise ValueError(
+                "At least one of the time input branch or parallel deep tower is required"
+            )
+
+        self.deep_net = _deep_tower(
+            len(self.time_keys) * single_time_output_dim, deep_hidden_units
+        )
 
         self.prediction_head_type = prediction_head_type
         if prediction_head_type == "multilabel":
@@ -233,15 +265,21 @@ class ExpandedGlideatorNet(nn.Module):
             combined = torch.cat(
                 [weather_scaled, site_scaled, launch_embedded, date_features], dim=-1
             )
-            if self.share_cross_net:
-                cross_output = self.cross_net(combined)
-            else:
-                cross_output = self.cross_nets[time_key](combined)
+
+            branches: list[torch.Tensor] = []
+            if self.include_time_input_branch:
+                if self.share_cross_net:
+                    branches.append(self.cross_net(combined))
+                else:
+                    branches.append(self.cross_nets[time_key](combined))
             if self.parallel_deep_net is not None:
-                cross_output = torch.cat(
-                    [cross_output, self.parallel_deep_net(combined)], dim=-1
-                )
-            time_slice_outputs.append(cross_output)
+                branches.append(self.parallel_deep_net(combined))
+            elif hasattr(self, "parallel_deep_nets"):
+                branches.append(self.parallel_deep_nets[time_key](combined))
+
+            time_slice_outputs.append(
+                branches[0] if len(branches) == 1 else torch.cat(branches, dim=-1)
+            )
 
         deep_output = self.deep_net(torch.cat(time_slice_outputs, dim=-1))
         return self.prediction_head(deep_output)
