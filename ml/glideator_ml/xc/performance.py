@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -23,6 +24,7 @@ from .training import _dataset, _device, _features, _regularization, _seed_every
 @dataclass(frozen=True)
 class BatchProfileResult:
     batch_size: int
+    steps_per_epoch: int
     samples_per_second: float | None
     mean_step_ms: float | None
     estimated_epoch_seconds: float | None
@@ -137,7 +139,9 @@ def profile_batch_sizes(
         )
 
     base_model = _build_model(train, features, model_config).cpu()
-    base_state = copy.deepcopy(base_model.state_dict())
+    parameter_count = sum(
+        parameter.numel() for parameter in base_model.parameters() if parameter.requires_grad
+    )
     learning_rate = float(model_config.get("learning_rate", 1e-3))
     monotonicity_lambda = float(model_config.get("monotonicity_lambda", 1e-9))
     l1_lambda = float(model_config.get("l1_lambda", 1e-9))
@@ -146,10 +150,12 @@ def profile_batch_sizes(
 
     results: list[BatchProfileResult] = []
     for batch_size in sizes:
+        steps_per_epoch = math.ceil(len(dataset) / batch_size)
         if batch_size > len(dataset):
             results.append(
                 BatchProfileResult(
                     batch_size=batch_size,
+                    steps_per_epoch=steps_per_epoch,
                     samples_per_second=None,
                     mean_step_ms=None,
                     estimated_epoch_seconds=None,
@@ -163,8 +169,7 @@ def profile_batch_sizes(
             )
             continue
 
-        model = _build_model(train, features, model_config).to(device)
-        model.load_state_dict(base_state)
+        model = copy.deepcopy(base_model).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         generator = torch.Generator().manual_seed(seed)
         loader = DataLoader(
@@ -217,6 +222,7 @@ def profile_batch_sizes(
             results.append(
                 BatchProfileResult(
                     batch_size=batch_size,
+                    steps_per_epoch=steps_per_epoch,
                     samples_per_second=samples_per_second,
                     mean_step_ms=(elapsed / measured_steps) * 1000,
                     estimated_epoch_seconds=len(dataset) / samples_per_second,
@@ -231,6 +237,7 @@ def profile_batch_sizes(
             results.append(
                 BatchProfileResult(
                     batch_size=batch_size,
+                    steps_per_epoch=steps_per_epoch,
                     samples_per_second=None,
                     mean_step_ms=None,
                     estimated_epoch_seconds=None,
@@ -261,6 +268,7 @@ def profile_batch_sizes(
             "compute_capability": f"{properties.major}.{properties.minor}",
         },
         "fit_rows": len(dataset),
+        "trainable_parameters": parameter_count,
         "warmup_steps": warmup_steps,
         "measured_steps": measured_steps,
         "throughput_fraction": throughput_fraction,
