@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import json
 import subprocess
 import time
@@ -18,7 +19,9 @@ from .preprocessing import DATE_FEATURES, TARGET_NAMES, WEATHER_TIMES
 from .selection import split_development
 
 
-TABPFN_TARGET_ENCODING = "ordinal-multiclass-cumulative"
+TABPFN_ORDINAL_TARGET_ENCODING = "ordinal-multiclass-cumulative"
+TABPFN_INDEPENDENT_TARGET_ENCODING = "independent-binary"
+TABPFN_TARGET_ENCODING = TABPFN_ORDINAL_TARGET_ENCODING
 TABPFN_MODEL_VERSION = "v3"
 
 
@@ -106,6 +109,31 @@ def threshold_probabilities_from_classes(
     return survival[:, 1:]
 
 
+def positive_class_probability(
+    classes: np.ndarray,
+    class_probabilities: np.ndarray,
+) -> np.ndarray:
+    """Extract P(y=1) from a binary classifier without assuming class order."""
+
+    classes = np.asarray(classes)
+    probabilities = np.asarray(class_probabilities, dtype=float)
+    if probabilities.ndim != 2 or probabilities.shape[1] != len(classes):
+        raise ValueError("TabPFN class probability shape does not match classes")
+
+    positive = np.zeros(probabilities.shape[0], dtype=float)
+    seen: set[int] = set()
+    for source_index, value in enumerate(classes):
+        binary_class = int(value)
+        if binary_class not in {0, 1}:
+            raise ValueError(f"Unexpected TabPFN binary class: {value!r}")
+        if binary_class in seen:
+            raise ValueError(f"Duplicate TabPFN binary class: {binary_class}")
+        seen.add(binary_class)
+        if binary_class == 1:
+            positive = probabilities[:, source_index]
+    return positive
+
+
 def _predict_in_batches(
     classifier: Any,
     frame: pd.DataFrame,
@@ -160,6 +188,7 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
         "model_family": str(model["name"]),
         "foundation_model": "tabpfn",
         "foundation_model_version": str(model["version"]),
+        "target_encoding": str(model["target_encoding"]),
         "benchmark_id": str(report["benchmark_id"]),
         "dataset_fingerprint": str(report["dataset_fingerprint"]),
         "eval_set_fingerprint": str(report["eval_set_fingerprint"]),
@@ -174,18 +203,124 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
     }
 
 
+def _ordinal_predictions(
+    *,
+    x_context: pd.DataFrame,
+    context: pd.DataFrame,
+    x_evaluation: pd.DataFrame,
+    model_config: dict[str, Any],
+    prediction_batch_size: int | None,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    y_context = ordinal_classes_from_targets(context)
+    classifier = _tabpfn_classifier(model_config)
+
+    fit_started = time.perf_counter()
+    classifier.fit(x_context, y_context)
+    fit_seconds = time.perf_counter() - fit_started
+
+    predict_started = time.perf_counter()
+    class_probabilities = _predict_in_batches(
+        classifier,
+        x_evaluation,
+        prediction_batch_size,
+    )
+    prediction_seconds = time.perf_counter() - predict_started
+    probabilities = threshold_probabilities_from_classes(
+        np.asarray(classifier.classes_), class_probabilities
+    )
+    return probabilities, {
+        "classifier_count": 1,
+        "ordinal_class_count": len(np.unique(y_context)),
+        "fit_seconds": fit_seconds,
+        "prediction_seconds": prediction_seconds,
+        "fit_predict_seconds": fit_seconds + prediction_seconds,
+    }
+
+
+def _independent_predictions(
+    *,
+    x_context: pd.DataFrame,
+    context: pd.DataFrame,
+    x_evaluation: pd.DataFrame,
+    model_config: dict[str, Any],
+    prediction_batch_size: int | None,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    probabilities = np.empty((len(x_evaluation), len(TARGET_NAMES)), dtype=float)
+    fit_seconds_by_threshold: dict[str, float] = {}
+    prediction_seconds_by_threshold: dict[str, float] = {}
+    constant_thresholds: list[str] = []
+
+    for target_index, target_name in enumerate(TARGET_NAMES):
+        y_context = context[target_name].to_numpy(dtype=np.int8)
+        unique_classes = np.unique(y_context)
+        if np.any((unique_classes != 0) & (unique_classes != 1)):
+            raise ValueError(f"{target_name} must be binary for independent TabPFN")
+
+        if len(unique_classes) == 1:
+            probabilities[:, target_index] = float(unique_classes[0])
+            fit_seconds_by_threshold[target_name] = 0.0
+            prediction_seconds_by_threshold[target_name] = 0.0
+            constant_thresholds.append(target_name)
+            continue
+
+        classifier = _tabpfn_classifier(model_config)
+        fit_started = time.perf_counter()
+        classifier.fit(x_context, y_context)
+        fit_seconds_by_threshold[target_name] = time.perf_counter() - fit_started
+
+        predict_started = time.perf_counter()
+        class_probabilities = _predict_in_batches(
+            classifier,
+            x_evaluation,
+            prediction_batch_size,
+        )
+        prediction_seconds_by_threshold[target_name] = time.perf_counter() - predict_started
+        probabilities[:, target_index] = positive_class_probability(
+            np.asarray(classifier.classes_), class_probabilities
+        )
+
+        del classifier
+        gc.collect()
+
+    fit_seconds = sum(fit_seconds_by_threshold.values())
+    prediction_seconds = sum(prediction_seconds_by_threshold.values())
+    return probabilities, {
+        "classifier_count": len(TARGET_NAMES) - len(constant_thresholds),
+        "constant_threshold_count": len(constant_thresholds),
+        "constant_thresholds": constant_thresholds,
+        "fit_seconds_by_threshold": fit_seconds_by_threshold,
+        "prediction_seconds_by_threshold": prediction_seconds_by_threshold,
+        "fit_seconds": fit_seconds,
+        "prediction_seconds": prediction_seconds,
+        "fit_predict_seconds": fit_seconds + prediction_seconds,
+    }
+
+
 def run_xc_tabpfn(
     config: dict[str, Any],
     *,
     prepared_data: tuple[pd.DataFrame, XCFeatureContract] | None = None,
 ) -> dict[str, Any]:
-    """Run the pinned TabPFN-3 challenger on the canonical XC benchmark."""
+    """Run a pinned TabPFN-3 challenger on the canonical XC benchmark."""
 
     data_config = config["data"]
     model_config = config["model"]
     evaluation_config = config["evaluation"]
     if str(data_config.get("split_strategy", "temporal")) != "temporal":
         raise ValueError("The XC TabPFN benchmark supports only temporal splits")
+
+    target_encoding = str(
+        model_config.get("target_encoding", TABPFN_ORDINAL_TARGET_ENCODING)
+    )
+    if target_encoding not in {
+        TABPFN_ORDINAL_TARGET_ENCODING,
+        TABPFN_INDEPENDENT_TARGET_ENCODING,
+    }:
+        raise ValueError(
+            "model.target_encoding must be "
+            f"{TABPFN_ORDINAL_TARGET_ENCODING!r} or "
+            f"{TABPFN_INDEPENDENT_TARGET_ENCODING!r}, got {target_encoding!r}"
+        )
 
     frame, features = prepared_data or load_xc_data(data_config)
     dataset_fingerprint = frame_fingerprint(frame, features)
@@ -227,13 +362,7 @@ def run_xc_tabpfn(
 
     x_context = build_tabular_features(context, features)
     x_evaluation = build_tabular_features(split.evaluation, features)
-    y_context = ordinal_classes_from_targets(context)
     targets = split.evaluation.loc[:, list(TARGET_NAMES)].to_numpy(dtype=float)
-
-    classifier = _tabpfn_classifier(model_config)
-    fit_started = time.perf_counter()
-    classifier.fit(x_context, y_context)
-    fit_seconds = time.perf_counter() - fit_started
 
     prediction_batch_size_value = evaluation_config.get("prediction_batch_size", 8192)
     prediction_batch_size = (
@@ -241,16 +370,23 @@ def run_xc_tabpfn(
         if prediction_batch_size_value is None
         else int(prediction_batch_size_value)
     )
-    predict_started = time.perf_counter()
-    class_probabilities = _predict_in_batches(
-        classifier,
-        x_evaluation,
-        prediction_batch_size,
-    )
-    prediction_seconds = time.perf_counter() - predict_started
-    probabilities = threshold_probabilities_from_classes(
-        np.asarray(classifier.classes_), class_probabilities
-    )
+
+    if target_encoding == TABPFN_ORDINAL_TARGET_ENCODING:
+        probabilities, runtime = _ordinal_predictions(
+            x_context=x_context,
+            context=context,
+            x_evaluation=x_evaluation,
+            model_config=model_config,
+            prediction_batch_size=prediction_batch_size,
+        )
+    else:
+        probabilities, runtime = _independent_predictions(
+            x_context=x_context,
+            context=context,
+            x_evaluation=x_evaluation,
+            model_config=model_config,
+            prediction_batch_size=prediction_batch_size,
+        )
 
     metrics = evaluate_predictions(targets, probabilities)
     metrics.update(
@@ -264,12 +400,16 @@ def run_xc_tabpfn(
             "context_sites": context["site_id"].nunique(),
             "eval_sites": split.evaluation["site_id"].nunique(),
             "tabular_feature_count": x_context.shape[1],
-            "ordinal_class_count": len(np.unique(y_context)),
-            "fit_seconds": fit_seconds,
-            "prediction_seconds": prediction_seconds,
-            "fit_predict_seconds": fit_seconds + prediction_seconds,
+            "classifier_count": runtime["classifier_count"],
+            "fit_seconds": runtime["fit_seconds"],
+            "prediction_seconds": runtime["prediction_seconds"],
+            "fit_predict_seconds": runtime["fit_predict_seconds"],
         }
     )
+    if "ordinal_class_count" in runtime:
+        metrics["ordinal_class_count"] = runtime["ordinal_class_count"]
+    if "constant_threshold_count" in runtime:
+        metrics["constant_threshold_count"] = runtime["constant_threshold_count"]
 
     try:
         tabpfn_package_version = package_version("tabpfn")
@@ -302,12 +442,13 @@ def run_xc_tabpfn(
             "family": "tabpfn",
             "version": TABPFN_MODEL_VERSION,
             "package_version": tabpfn_package_version,
-            "target_encoding": TABPFN_TARGET_ENCODING,
+            "target_encoding": target_encoding,
             "n_estimators": model_config.get("n_estimators", "auto"),
             "fit_mode": str(model_config.get("fit_mode", "fit_preprocessors")),
             "memory_saving_mode": model_config.get("memory_saving_mode", "auto"),
             "categorical_features": ["site_id"],
         },
+        "runtime": runtime,
         "metrics": metrics,
     }
 
