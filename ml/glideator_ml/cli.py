@@ -39,6 +39,13 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--config", required=True, help="Candidate config")
     benchmark.add_argument("--reference-config", required=True)
 
+    foundation = subparsers.add_parser(
+        "benchmark-foundation",
+        help="Benchmark a tabular foundation model on the canonical task contract",
+    )
+    foundation.add_argument("task", choices=["xc"])
+    foundation.add_argument("--config", required=True)
+
     profile_batch = subparsers.add_parser(
         "profile-batch",
         help="Profile XC training throughput across GPU batch sizes",
@@ -96,6 +103,11 @@ def main() -> None:
         report = run_xc_benchmark_workflow(config, reference_config)
         if not report["eligible"]:
             exit_code = 2
+    elif args.command == "benchmark-foundation":
+        require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
+        from .xc.tabpfn import run_xc_tabpfn
+
+        report = run_xc_tabpfn(config)
     elif args.command == "profile-batch":
         require_sections(config, "data", "model", "artifact", "tracking")
         from .xc.performance import run_xc_batch_profile
