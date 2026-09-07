@@ -44,7 +44,7 @@ The first sweep tested one structural change at a time from the migrated product
 | `control.yaml` | production-shaped reference | comparison control |
 | `ordinal.yaml` | single latent ordinal XC axis | rejected; perfect monotonicity but materially worse BCE/Brier/AUC |
 | `no_parallel.yaml` | remove parallel deep tower | small regression; keep the tower |
-| `no_cross.yaml` | remove CrossNet | provisional winner |
+| `no_cross.yaml` | remove CrossNet | accepted structural baseline |
 | `time_specific_cross.yaml` | separate CrossNets for 09/12/15 | small regression; sharing was not the CrossNet problem |
 | `wider_fusion.yaml` | widen fusion tower | small regression; no evidence of a fusion-capacity bottleneck |
 
@@ -54,24 +54,43 @@ Because the no-CrossNet improvement was small, control and no-CrossNet were reru
 
 CrossNet remains only for compatibility with the served/reference family.
 
-## Current experiment: adaptive monotonic head
+## Completed output-head experiments
 
-The ordinal result suggests that monotonicity itself is not the problem; the restrictive single latent XC axis is. The next candidate therefore starts from the accepted no-CrossNet baseline and replaces the independent multilabel head with a feature-conditioned cumulative head:
+### Scalar ordinal head
 
-```text
-base = f0(h)
-gap_i = softplus(fi(h))
-logit_0 = base
-logit_k = base - sum(gap_1 ... gap_k)
-P(XC > k) = sigmoid(logit_k)
-```
+The scalar ordinal head guaranteed monotonic predictions but regressed materially on calibration and discrimination. Collapsing all XC thresholds onto one latent score was too restrictive.
 
-This guarantees `P(XC>0) >= ... >= P(XC>100)` while allowing threshold spacing to vary with the learned weather/site representation.
+Status: rejected.
 
-Config: `configs/xc/architecture/adaptive_monotonic.yaml`  
-Model note: [Adaptive monotonic head](models/adaptive-monotonic.md)
+### Adaptive monotonic head
 
-The monotonicity penalty is set to zero for this candidate because monotonicity is guaranteed structurally.
+The adaptive head replaced global ordinal cut-points with feature-conditioned positive cumulative logit gaps. This restored much of the lost flexibility while retaining perfect monotonicity.
+
+On the matched seed-42 comparison against the no-CrossNet multilabel baseline:
+
+| Metric | Adaptive monotonic | No-CrossNet |
+| --- | ---: | ---: |
+| Macro BCE | 0.16209 | 0.15982 |
+| Macro Brier | 0.04912 | 0.04848 |
+| Macro ROC-AUC | 0.93601 | 0.93944 |
+| Monotonic violation rate | 0.0000 | 0.0199 |
+
+The head met the zero-violation objective but regressed on all three primary predictive metrics. Because the predictive loss is consistent and this experiment directly addressed the ordinal head's known restriction, no seed sweep is warranted.
+
+**Output-head decision: keep the independent multilabel head.** See [ADR 0009](../decisions/0009-xc-reject-hard-monotonic-heads.md).
+
+The adaptive implementation and config remain as a documented rejected experiment rather than a promotion candidate.
+
+## Current baseline
+
+The architecture baseline for the next phase is therefore:
+
+- no CrossNet (`cross_layers: 0`);
+- shared parallel per-time deep tower `[128, 64, 32]`;
+- fusion tower `[64, 32]`;
+- 32-dimensional site embedding;
+- eleven independent sigmoid XC-threshold heads;
+- batch size `8192` with the normalized training budget above.
 
 ## Selection metrics
 
@@ -87,4 +106,4 @@ Do not select architecture on ROC-AUC alone. Compare at minimum:
 
 For architectures that are close on predictive metrics, prefer the simpler model unless a meaningful XC-threshold region improves consistently.
 
-After the output-head question is settled, tune width/depth/embedding size and optimization hyperparameters around the winning structural family rather than starting with a large mixed grid.
+The output-head question is now settled. Next experiments should tune representation/capacity and optimization around the no-CrossNet multilabel family rather than starting with another output constraint or a large mixed grid.
