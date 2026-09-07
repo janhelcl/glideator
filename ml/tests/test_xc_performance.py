@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from glideator_ml.cli import build_parser
@@ -9,6 +11,7 @@ from glideator_ml.xc.performance import BatchProfileResult, select_batch_size
 def _result(batch_size: int, throughput: float | None, *, oom: bool = False):
     return BatchProfileResult(
         batch_size=batch_size,
+        steps_per_epoch=math.ceil(181_040 / batch_size),
         samples_per_second=throughput,
         mean_step_ms=None,
         estimated_epoch_seconds=None,
