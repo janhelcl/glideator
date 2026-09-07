@@ -36,6 +36,27 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--config", required=True, help="Candidate config")
     benchmark.add_argument("--reference-config", required=True)
 
+    profile_batch = subparsers.add_parser(
+        "profile-batch",
+        help="Profile XC training throughput across GPU batch sizes",
+    )
+    profile_batch.add_argument("task", choices=["xc"])
+    profile_batch.add_argument("--config", required=True)
+    profile_batch.add_argument(
+        "--batch-sizes",
+        nargs="+",
+        type=int,
+        default=[2048, 4096, 8192, 16384, 32768, 65536],
+    )
+    profile_batch.add_argument("--warmup-steps", type=int, default=5)
+    profile_batch.add_argument("--steps", type=int, default=20)
+    profile_batch.add_argument(
+        "--throughput-fraction",
+        type=float,
+        default=0.95,
+        help="Recommend the smallest batch within this fraction of peak throughput",
+    )
+
     backfill = subparsers.add_parser(
         "backfill",
         help="Backfill tracking from saved experiment artifacts",
@@ -72,6 +93,17 @@ def main() -> None:
         report = run_xc_benchmark_workflow(config, reference_config)
         if not report["eligible"]:
             exit_code = 2
+    elif args.command == "profile-batch":
+        require_sections(config, "data", "model", "artifact")
+        from .xc.performance import run_xc_batch_profile
+
+        report = run_xc_batch_profile(
+            config,
+            batch_sizes=args.batch_sizes,
+            warmup_steps=args.warmup_steps,
+            measured_steps=args.steps,
+            throughput_fraction=args.throughput_fraction,
+        )
     elif args.command == "evaluate":
         require_sections(config, "data", "evaluation", "reference", "artifact", "tracking")
         from .xc.reference import run_xc_onnx_reference
