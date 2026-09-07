@@ -94,6 +94,37 @@ class OrdinalHead(nn.Module):
         return 1.0 - torch.sigmoid(logits)
 
 
+class AdaptiveMonotonicHead(nn.Module):
+    """Feature-conditioned cumulative logits with monotonic probabilities.
+
+    XC0 gets an unconstrained base logit. Each harder threshold subtracts a
+    positive, feature-dependent gap from the previous logit. The gaps are
+    produced with ``softplus``, so probabilities can never increase as the XC
+    threshold rises while still allowing weather-dependent threshold spacing.
+    """
+
+    def __init__(self, input_dim: int, num_targets: int) -> None:
+        super().__init__()
+        if num_targets < 2:
+            raise ValueError("Adaptive monotonic head requires num_targets >= 2")
+        self.num_targets = num_targets
+        self.base_logit = nn.Linear(input_dim, 1)
+        self.gap_logits = nn.Linear(input_dim, num_targets - 1)
+
+        # Start from a sensible decreasing curve without initially imposing
+        # feature-dependent threshold gaps. softplus(-1) ~= 0.31, which gives
+        # the optimizer useful gradients across the full XC0..XC100 range.
+        nn.init.zeros_(self.gap_logits.weight)
+        nn.init.constant_(self.gap_logits.bias, -1.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        base = self.base_logit(x)
+        gaps = F.softplus(self.gap_logits(x))
+        cumulative_gaps = torch.cumsum(gaps, dim=-1)
+        logits = torch.cat([base, base - cumulative_gaps], dim=-1)
+        return torch.sigmoid(logits)
+
+
 class ExpandedGlideatorNet(nn.Module):
     """Production XC architecture, migrated into the model-family workspace.
 
@@ -166,6 +197,10 @@ class ExpandedGlideatorNet(nn.Module):
             if num_targets < 2:
                 raise ValueError("Ordinal prediction head requires num_targets >= 2")
             self.prediction_head = OrdinalHead(deep_hidden_units[-1], num_targets)
+        elif prediction_head_type == "adaptive_monotonic":
+            self.prediction_head = AdaptiveMonotonicHead(
+                deep_hidden_units[-1], num_targets
+            )
         else:
             raise ValueError(f"Unknown prediction_head_type: {prediction_head_type}")
 
