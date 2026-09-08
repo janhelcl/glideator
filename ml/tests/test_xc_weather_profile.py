@@ -186,8 +186,13 @@ def test_agl_profile_uses_raw_site_height_and_masks_below_ground_levels() -> Non
     torch.testing.assert_close(profile[:, 4, 2:], torch.full((1, 11), 1000.0))
 
 
-def test_agl_scaling_is_fit_on_raw_noon_height_minus_site_altitude() -> None:
-    frame = pd.DataFrame({"altitude": [100.0, 200.0, 300.0]})
+def test_agl_scaling_uses_only_valid_noon_pressure_levels() -> None:
+    frame = pd.DataFrame(
+        {
+            "altitude": [100.0, 200.0, 300.0],
+            "pressure_sfc_pa_12": [90000.0, 110000.0, 110000.0],
+        }
+    )
     for level in PRESSURE_LEVELS_HPA:
         frame[f"geopotential_height_{level}hpa_m_12"] = [
             100.0 + level,
@@ -200,9 +205,14 @@ def test_agl_scaling_is_fit_on_raw_noon_height_minus_site_altitude() -> None:
         frame, features
     )
 
-    assert means[0] == pytest.approx(1010.0)
+    # The first row is below the 1000 hPa surface and must not influence that scaler.
+    assert means[0] == pytest.approx(1015.0)
+    assert stds[0] == pytest.approx(7.0710678119)
+    level_900_index = PRESSURE_LEVELS_HPA.index(900)
+    assert means[level_900_index] == pytest.approx(910.0)
+    assert stds[level_900_index] == pytest.approx(10.0)
     assert means[-1] == pytest.approx(510.0)
-    assert stds == pytest.approx([10.0] * 13)
+    assert stds[-1] == pytest.approx(10.0)
     assert surface_pressure_index == PRODUCTION_WEATHER_FEATURES.index("pressure_sfc_pa")
     assert site_altitude_index == 2
 
