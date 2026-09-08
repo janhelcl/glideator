@@ -119,6 +119,43 @@ def _validation_loss(
     return weighted_loss / rows
 
 
+def _profile_agl_scaling(
+    train: pd.DataFrame,
+    features: XCFeatureContract,
+) -> tuple[list[float], list[float], int, int]:
+    """Fit noon AGL scaling and resolve raw altitude/surface-pressure inputs."""
+
+    try:
+        site_altitude_index = features.site_features.index("altitude")
+    except ValueError as exc:
+        raise ValueError(
+            "AGL profile masking requires site feature 'altitude'"
+        ) from exc
+    try:
+        surface_pressure_index = features.weather_features.index("pressure_sfc_pa")
+    except ValueError as exc:
+        raise ValueError(
+            "AGL profile masking requires weather feature 'pressure_sfc_pa'"
+        ) from exc
+
+    altitude = train["altitude"]
+    means: list[float] = []
+    stds: list[float] = []
+    for level in PRESSURE_LEVELS_HPA:
+        column = f"geopotential_height_{level}hpa_m_12"
+        agl = train[column] - altitude
+        mean = float(agl.mean())
+        std = float(agl.std(ddof=1))
+        if not pd.notna(mean) or not pd.notna(std) or std <= 0:
+            raise ValueError(
+                f"Cannot fit AGL scaler for {level} hPa: mean={mean}, std={std}"
+            )
+        means.append(mean)
+        stds.append(std)
+
+    return means, stds, surface_pressure_index, site_altitude_index
+
+
 def fit_xc(
     train: pd.DataFrame,
     validation: pd.DataFrame,
@@ -182,6 +219,21 @@ def fit_xc(
                 ),
             }
         )
+
+        if bool(config.get("weather_profile_use_agl_mask", False)):
+            agl_means, agl_stds, surface_pressure_index, site_altitude_index = (
+                _profile_agl_scaling(train, features)
+            )
+            model_config.update(
+                {
+                    "weather_profile_use_agl_mask": True,
+                    "weather_profile_surface_pressure_index": surface_pressure_index,
+                    "weather_profile_site_altitude_index": site_altitude_index,
+                    "weather_profile_pressure_levels_hpa": list(PRESSURE_LEVELS_HPA),
+                    "weather_profile_agl_means": agl_means,
+                    "weather_profile_agl_stds": agl_stds,
+                }
+            )
 
     model = ExpandedGlideatorNet(
         weather_scaler=StandardScalerLayer(weather_scaling),
