@@ -55,3 +55,4 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0008 — Remove CrossNet from the XC candidate baseline](0008-xc-remove-crossnet-from-candidate-baseline.md)
 - [0009 — Do not use hard monotonic output heads as the XC candidate baseline](0009-xc-reject-hard-monotonic-heads.md)
 - [0010 — Do not replace the XC model with TabPFN-3](0010-xc-reject-tabpfn3-as-main-model.md)
+- [0011 — Promote the smaller shared encoder as the XC conventional baseline](0011-xc-promote-smaller-shared-encoder.md)
