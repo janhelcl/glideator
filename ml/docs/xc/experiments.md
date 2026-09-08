@@ -73,7 +73,7 @@ The smaller encoder was confirmed against the old control on paired model seeds 
 
 ## Current conventional baseline
 
-`configs/xc/baselines/conventional_mlp.yaml` is the canonical conventional baseline:
+`configs/xc/baselines/conventional_mlp.yaml` is the canonical conventional architecture baseline:
 
 - no CrossNet (`cross_layers: 0`);
 - raw per-time bypass retained;
@@ -100,30 +100,42 @@ The 32-dimensional control is the best probabilistic fit. Going to 64 dimensions
 
 **Decision:** keep `site_embedding_dim: 32` and close embedding-size tuning. See [ADR 0012](../decisions/0012-xc-keep-32d-site-embedding.md).
 
-## Active experiment: training and regularization screen
+## Completed training and regularization screen
 
-### Hypothesis
+The first seed-42 optimization screen changed one training axis at a time around the locked 32-dimensional conventional architecture.
 
-The conventional architecture is now stable enough to tune optimization without confounding architecture choices. The first screen is intentionally one-factor-at-a-time around the locked 32-dimensional conventional baseline.
+| Config | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `control.yaml` | 0.15787 | 0.04788 | 0.94098 | 0.0270 | 45 |
+| `lr_5e-4.yaml` | 0.15779 | 0.04781 | 0.94077 | 0.0324 | 98 |
+| `lr_2e-3.yaml` | 0.15752 | 0.04796 | 0.94094 | 0.0287 | 34 |
+| `lr_3e-3.yaml` | 0.15817 | 0.04804 | 0.94021 | 0.0265 | 22 |
+| `l2_1e-7.yaml` | 0.15915 | 0.04819 | 0.94087 | 0.0290 | 45 |
+| `l2_1e-6.yaml` | 0.15768 | 0.04784 | 0.94116 | 0.0283 | 45 |
+| `dropout_005.yaml` | 0.15688 | 0.04768 | 0.94080 | 0.0089 | 46 |
+| `dropout_010.yaml` | **0.15686** | **0.04762** | **0.94206** | **0.0014** | 86 |
+
+`dropout: 0.10` is the clear working winner: it improves BCE, Brier, ROC-AUC and monotonicity simultaneously. Learning rate and explicit L2 show at most small, mixed gains and are not worth further independent sweeps.
+
+**Working benchmark:** use `dropout_010.yaml` as the control for the final local optimization pass. Keep the canonical baseline config unchanged until this local pass is complete; that preserves the completed screen as an exact reproducibility record.
+
+## Active experiment: local dropout and interaction follow-up
+
+This is intentionally the final generic optimization pass before weather-specific architecture work.
+
+The local sweep asks only two questions:
+
+1. is the dropout optimum slightly below or above `0.10`?;
+2. do the only mildly interesting LR/L2 settings add anything when combined with the dropout winner?
 
 | Config | Learning rate | L2 penalty | Dropout | Role |
 | --- | ---: | ---: | ---: | --- |
-| `control.yaml` | 0.001 | 1e-9 | 0.00 | control |
-| `lr_5e-4.yaml` | 0.0005 | 1e-9 | 0.00 | slower LR |
-| `lr_2e-3.yaml` | 0.002 | 1e-9 | 0.00 | faster LR |
-| `lr_3e-3.yaml` | 0.003 | 1e-9 | 0.00 | faster LR / bracket |
-| `l2_1e-7.yaml` | 0.001 | 1e-7 | 0.00 | mild L2 |
-| `l2_1e-6.yaml` | 0.001 | 1e-6 | 0.00 | stronger L2 |
-| `dropout_005.yaml` | 0.001 | 1e-9 | 0.05 | mild dropout |
-| `dropout_010.yaml` | 0.001 | 1e-9 | 0.10 | stronger dropout |
-
-Dropout is opt-in and is applied after hidden activations in both the shared per-time encoder and the fusion tower. `dropout: 0.0` preserves the legacy module layout and behavior.
-
-The trainer already has an explicit L2 penalty, so this screen varies `l2_lambda` rather than changing optimizer semantics at the same time. Adam remains fixed. If explicit L2 looks useful, AdamW can still be tested later as a separate optimizer hypothesis.
-
-### Sweep runner
-
-`glideator-ml sweep xc` loads the XC dataset once, runs every config against the same prepared snapshot, verifies benchmark/dataset/evaluation identity, keeps each run's artifacts isolated and writes a machine-readable `sweep_summary.json`.
+| `dropout_010.yaml` | 0.001 | 1e-9 | 0.10 | working control |
+| `dropout_0075.yaml` | 0.001 | 1e-9 | 0.075 | local lower bracket |
+| `dropout_0125.yaml` | 0.001 | 1e-9 | 0.125 | local upper bracket |
+| `dropout_015.yaml` | 0.001 | 1e-9 | 0.15 | upper boundary check |
+| `dropout_010_l2_1e-6.yaml` | 0.001 | 1e-6 | 0.10 | L2 interaction |
+| `dropout_010_lr_2e-3.yaml` | 0.002 | 1e-9 | 0.10 | LR interaction |
 
 Run from `ml/`:
 
@@ -132,40 +144,21 @@ export ML_DATABASE_URL='postgresql://...'
 
 glideator-ml sweep xc \
   --configs \
-    configs/xc/optimization/training/control.yaml \
-    configs/xc/optimization/training/lr_5e-4.yaml \
-    configs/xc/optimization/training/lr_2e-3.yaml \
-    configs/xc/optimization/training/lr_3e-3.yaml \
-    configs/xc/optimization/training/l2_1e-7.yaml \
-    configs/xc/optimization/training/l2_1e-6.yaml \
-    configs/xc/optimization/training/dropout_005.yaml \
     configs/xc/optimization/training/dropout_010.yaml \
-  --output-dir outputs/xc/optimization/training/screen
+    configs/xc/optimization/training/dropout_0075.yaml \
+    configs/xc/optimization/training/dropout_0125.yaml \
+    configs/xc/optimization/training/dropout_015.yaml \
+    configs/xc/optimization/training/dropout_010_l2_1e-6.yaml \
+    configs/xc/optimization/training/dropout_010_lr_2e-3.yaml \
+  --output-dir outputs/xc/optimization/training/local-dropout
 ```
+
+The sweep runner loads the XC dataset once, verifies benchmark/dataset/evaluation identity, isolates every artifact directory and writes `sweep_summary.json`.
 
 ### Selection rule
 
-Screen seed 42 first. Compare at minimum:
+Use macro BCE and Brier as the primary tie-breakers, with ROC-AUC and monotonicity required not to show a meaningful regression. Also inspect per-threshold metrics for the harder XC50–XC100 targets, best epoch, validation loss, training time and parameter count.
 
-- macro BCE;
-- macro Brier score;
-- macro ROC-AUC;
-- per-threshold BCE/Brier/AUC, especially XC50–XC100;
-- monotonicity violations;
-- best epoch and validation loss;
-- parameter count and wall-clock training time.
+Do not open another generic LR/L2/dropout grid after this. Pick the strongest local candidate. If it is materially better than `dropout_010.yaml`, confirm it on paired seeds 42–46. If the differences are negligible, keep `dropout: 0.10` without spending more runs.
 
-Do not seed-sweep every candidate. Pick the strongest learning-rate setting and strongest regularization setting. If both independently help, run one combined follow-up config using those two settings. Then promote at most one final candidate to paired seeds 42–46 against `control.yaml` using `glideator-ml confirm-seeds`.
-
-For close candidates, prefer the configuration with better BCE/Brier unless an AUC change is clearly meaningful and consistent in the harder XC thresholds.
-
-## Planned conventional optimization sequence
-
-After this screen:
-
-1. combine the winning LR and regularizer only if both independently help;
-2. paired seed confirmation of the final training config;
-3. one smooth-activation check (`ReLU` vs `SiLU`);
-4. freeze the optimized conventional MLP benchmark.
-
-Only then start weather-specific architectures so any gains are measured against a properly tuned conventional baseline.
+After that, freeze the optimized conventional MLP benchmark and move directly to weather/profile-specific architectures.
