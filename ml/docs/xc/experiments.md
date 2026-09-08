@@ -14,13 +14,13 @@ The path appears transfer-bound rather than compute- or memory-bound, but an est
 
 ### Training budget
 
-Moving from 2,048 to 8,192 reduces optimizer steps per epoch by roughly 4x. Architecture screening therefore uses:
+Architecture screening uses:
 
 - batch size: `8192`;
 - learning rate: `0.001`;
 - max epochs: `200`;
 - patience: `40` epochs;
-- optimizer/objective/regularization otherwise unchanged unless the architecture makes a term structurally unnecessary.
+- optimizer/objective/regularization otherwise unchanged unless the experiment explicitly targets them.
 
 At about 23 steps per epoch, `patience: 40` preserves roughly the old stale-update budget.
 
@@ -50,7 +50,7 @@ The first sweep tested one structural change at a time from the migrated product
 
 Because the no-CrossNet improvement was small, control and no-CrossNet were rerun with paired model seeds 42–46. No-CrossNet won BCE 4/5 times, Brier 4/5, AUC 3/5, and monotonicity 5/5. Mean AUC was effectively tied while calibration improved modestly, monotonicity violations dropped substantially, and parameter count fell from about 91k to 64k.
 
-**Current structural baseline: `cross_layers: 0`.** See [ADR 0008](../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md).
+**Structural decision: `cross_layers: 0`.** See [ADR 0008](../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md).
 
 CrossNet remains only for compatibility with the served/reference family.
 
@@ -81,60 +81,68 @@ The head met the zero-violation objective but regressed on all three primary pre
 
 The adaptive implementation and config remain as a documented rejected experiment rather than a promotion candidate.
 
-## Current baseline
+## Completed representation/capacity screen
 
-The architecture baseline for the next phase is therefore:
+The accepted no-CrossNet baseline feeds both the raw per-time input and a learned shared per-time encoder into fusion. The refinement screen kept the benchmark, optimizer, batch size, site embedding and multilabel head fixed while changing one representation/capacity hypothesis at a time.
 
-- no CrossNet (`cross_layers: 0`);
-- raw per-time input bypass concatenated with a shared deep encoder;
-- shared per-time deep encoder `[128, 64, 32]`;
-- fusion tower `[64, 32]`;
-- 32-dimensional site embedding;
-- eleven independent sigmoid XC-threshold heads;
-- batch size `8192` with the normalized training budget above.
+Configs remain under `configs/xc/architecture/refinement/` as reproducible experiment records:
 
-With `cross_layers: 0`, the old CrossNet branch is an identity operation. The accepted baseline therefore feeds both the raw 116-dimensional per-time input and the learned 32-dimensional encoder output into fusion. The next screen makes that inherited bypass explicit rather than treating it as accidental architecture.
-
-## Second architecture screen: representation and capacity
-
-Configs live under `configs/xc/architecture/refinement/`. Every run keeps the same benchmark, seed, optimizer, batch size, site embedding and multilabel head. Each candidate changes one representation/capacity hypothesis from the no-CrossNet control.
-
-| Config | Change | Question |
+| Config | Change | Status |
 | --- | --- | --- |
-| `control.yaml` | accepted no-CrossNet architecture | reproducible comparison control |
-| `no_raw_skip.yaml` | remove raw per-time input from fusion | does the inherited identity bypass add signal beyond the nonlinear encoder? |
-| `time_specific_encoder.yaml` | separate 09/12/15 encoders | should each forecast time learn its own nonlinear transform? |
-| `smaller_encoder.yaml` | encoder `[64, 32]` | can the useful per-time tower be simpler? |
-| `larger_encoder.yaml` | encoder `[256, 128, 64]` | is per-time representation capacity limiting? |
-| `smaller_fusion.yaml` | fusion `[32, 16]` | can fusion be simplified after wider fusion already failed? |
-| `deeper_fusion.yaml` | fusion `[64, 64, 32]` | does extra fusion depth help without widening the final representation? |
+| `control.yaml` | shared encoder `[128, 64, 32]` | comparison control |
+| `no_raw_skip.yaml` | remove raw per-time bypass | not promoted |
+| `time_specific_encoder.yaml` | independent 09/12/15 encoders | not promoted |
+| `smaller_encoder.yaml` | encoder `[64, 32]` | **promotion candidate** |
+| `larger_encoder.yaml` | encoder `[256, 128, 64]` | not promoted |
+| `smaller_fusion.yaml` | fusion `[32, 16]` | not promoted |
+| `deeper_fusion.yaml` | fusion `[64, 64, 32]` | not promoted |
 
-The code exposes two explicit candidate-only flags while preserving legacy defaults:
+At seed 42, `smaller_encoder` produced the strongest overall refinement result:
 
-- `include_time_input_branch`: when false with `cross_layers: 0`, fusion receives only the learned per-time encoder output;
-- `share_parallel_deep_net`: when false, 09/12/15 receive independent encoder weights.
+| Metric | Smaller encoder |
+| --- | ---: |
+| Macro BCE | 0.15787 |
+| Macro Brier | 0.04788 |
+| Macro ROC-AUC | 0.94098 |
+| Monotonic violation rate | 0.0270 |
+| Trainable parameters | ~48.5k |
+| Best epoch | 45 |
 
-Run the complete screen from `ml/`:
+It improves all three primary predictive metrics while simplifying the shared per-time encoder substantially. The higher monotonic-violation rate remains a diagnostic, not a reason to impose a hard monotonic head that already regressed predictive quality.
+
+## Active experiment: paired seed confirmation
+
+Before changing the structural baseline, confirm `smaller_encoder` against the refinement control on paired seeds 42–46.
+
+Use the reusable paired runner from `ml/`:
 
 ```bash
 export ML_DATABASE_URL='postgresql://...'
 
-for config in \
-  control \
-  no_raw_skip \
-  time_specific_encoder \
-  smaller_encoder \
-  larger_encoder \
-  smaller_fusion \
-  deeper_fusion
-do
-  glideator-ml run xc --config "configs/xc/architecture/refinement/${config}.yaml"
-done
+glideator-ml confirm-seeds xc \
+  --control-config configs/xc/architecture/refinement/control.yaml \
+  --config configs/xc/architecture/refinement/smaller_encoder.yaml \
+  --seeds 42 43 44 45 46
 ```
 
-Artifacts are isolated under `outputs/xc/architecture/refinement/`; all runs log to the existing `glideator-xc` MLflow experiment.
+The runner:
 
-Screen at seed 42 first. Do not seed-sweep every variant. Promote at most the strongest two candidates to paired seeds 42–46 against the refinement control. A candidate is interesting if it improves BCE/Brier without a meaningful AUC loss, or matches the control closely while materially simplifying the model.
+- loads the XC dataset once and reuses the same prepared snapshot for every run;
+- requires identical data and evaluation configs;
+- verifies benchmark, dataset and evaluation fingerprints for every control/candidate pair;
+- isolates artifacts under `seed-sweep/seed-<n>` so runs cannot overwrite one another;
+- logs each model run to the existing MLflow experiment;
+- writes `paired_comparison.json` with per-seed results, mean candidate-minus-control deltas, sample standard deviation of paired deltas and candidate win counts.
+
+Promotion rule for this confirmation:
+
+- mean macro BCE improves;
+- mean macro Brier improves;
+- mean macro ROC-AUC does not regress;
+- paired win counts support the mean result rather than showing a single-seed outlier;
+- parameter reduction is retained.
+
+Monotonicity remains a reported secondary metric. If the smaller encoder passes this gate, it becomes the optimized architecture baseline for the next generic tuning step: site-embedding size.
 
 ## Selection metrics
 
@@ -150,4 +158,14 @@ Do not select architecture on ROC-AUC alone. Compare at minimum:
 
 For architectures that are close on predictive metrics, prefer the simpler model unless a meaningful XC-threshold region improves consistently.
 
-After this screen, test site-embedding size around the winning representation family. Only then tune optimization (learning rate and, if needed, batch size) rather than mixing architecture and optimizer changes in the same sweep.
+## Planned generic optimization sequence
+
+After the smaller-encoder confirmation:
+
+1. site embedding size;
+2. learning rate;
+3. dropout / weight decay;
+4. one smooth-activation check (`ReLU` vs `SiLU`);
+5. freeze the optimized conventional MLP benchmark.
+
+Only then start weather-specific architectures so their gains are measured against a properly tuned conventional baseline rather than an under-optimized MLP.
