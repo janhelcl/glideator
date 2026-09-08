@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from statistics import fmean, stdev
 from typing import Any
@@ -62,6 +63,18 @@ def _assert_run_identity(control: dict[str, Any], candidate: dict[str, Any]) -> 
             )
 
 
+def _run_metrics(report: dict[str, Any]) -> dict[str, float | int | str | None]:
+    return {
+        **{
+            metric: float(report["metrics"][metric])
+            for metric in PRIMARY_METRICS
+        },
+        "best_epoch": int(report["metrics"]["best_epoch"]),
+        "trainable_parameters": int(report["metrics"]["trainable_parameters"]),
+        "mlflow_run_id": report.get("mlflow_run_id"),
+    }
+
+
 def _metric_summary(
     pairs: list[dict[str, Any]], metric: str
 ) -> dict[str, float | int | None]:
@@ -91,78 +104,118 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def run_xc_seed_comparison(
-    control_config: dict[str, Any],
+def _normalize_seeds(seeds: Sequence[int]) -> list[int]:
+    normalized = [int(seed) for seed in seeds]
+    if not normalized:
+        raise ValueError("Seed comparison requires at least one seed")
+    if len(set(normalized)) != len(normalized):
+        raise ValueError("Seed comparison seeds must be unique")
+    return normalized
+
+
+def run_xc_seed_comparisons(
+    control_configs: Sequence[dict[str, Any]],
     candidate_config: dict[str, Any],
     *,
-    seeds: list[int] | tuple[int, ...],
+    seeds: Sequence[int],
 ) -> dict[str, Any]:
-    """Run a paired multi-seed XC comparison on one prepared dataset snapshot."""
+    """Compare one candidate with several controls without retraining the candidate."""
 
-    normalized_seeds = [int(seed) for seed in seeds]
-    if not normalized_seeds:
-        raise ValueError("Seed comparison requires at least one seed")
-    if len(set(normalized_seeds)) != len(normalized_seeds):
-        raise ValueError("Seed comparison seeds must be unique")
+    controls = list(control_configs)
+    if not controls:
+        raise ValueError("Seed comparison requires at least one control config")
+    normalized_seeds = _normalize_seeds(seeds)
+    for control in controls:
+        _assert_comparable(control, candidate_config)
 
-    _assert_comparable(control_config, candidate_config)
-    prepared_data = load_xc_data(control_config["data"])
+    control_names = [str(control["model"].get("name", "xc-control")) for control in controls]
+    if len(set(control_names)) != len(control_names):
+        raise ValueError("Seed comparison control model names must be unique")
 
-    pairs: list[dict[str, Any]] = []
+    prepared_data = load_xc_data(candidate_config["data"])
+    pairs_by_control: dict[str, list[dict[str, Any]]] = {
+        name: [] for name in control_names
+    }
+
     for seed in normalized_seeds:
-        control_report = run_xc(
-            _seeded_config(control_config, seed), prepared_data=prepared_data
-        )
         candidate_report = run_xc(
             _seeded_config(candidate_config, seed), prepared_data=prepared_data
         )
-        _assert_run_identity(control_report, candidate_report)
-        if int(control_report["model_seed"]) != seed:
-            raise ValueError("Control run returned an unexpected model seed")
         if int(candidate_report["model_seed"]) != seed:
             raise ValueError("Candidate run returned an unexpected model seed")
+        candidate_metrics = _run_metrics(candidate_report)
 
-        pairs.append(
+        for control_name, control_config in zip(control_names, controls, strict=True):
+            control_report = run_xc(
+                _seeded_config(control_config, seed), prepared_data=prepared_data
+            )
+            _assert_run_identity(control_report, candidate_report)
+            if int(control_report["model_seed"]) != seed:
+                raise ValueError("Control run returned an unexpected model seed")
+
+            pairs_by_control[control_name].append(
+                {
+                    "seed": seed,
+                    "control": _run_metrics(control_report),
+                    "candidate": candidate_metrics,
+                }
+            )
+
+    comparisons = []
+    for control_name in control_names:
+        pairs = pairs_by_control[control_name]
+        comparisons.append(
             {
-                "seed": seed,
-                "control": {
-                    **{
-                        metric: float(control_report["metrics"][metric])
-                        for metric in PRIMARY_METRICS
-                    },
-                    "best_epoch": int(control_report["metrics"]["best_epoch"]),
-                    "trainable_parameters": int(
-                        control_report["metrics"]["trainable_parameters"]
-                    ),
-                    "mlflow_run_id": control_report.get("mlflow_run_id"),
-                },
-                "candidate": {
-                    **{
-                        metric: float(candidate_report["metrics"][metric])
-                        for metric in PRIMARY_METRICS
-                    },
-                    "best_epoch": int(candidate_report["metrics"]["best_epoch"]),
-                    "trainable_parameters": int(
-                        candidate_report["metrics"]["trainable_parameters"]
-                    ),
-                    "mlflow_run_id": candidate_report.get("mlflow_run_id"),
+                "control_model": control_name,
+                "pairs": pairs,
+                "summary": {
+                    metric: _metric_summary(pairs, metric) for metric in PRIMARY_METRICS
                 },
             }
         )
 
     report: dict[str, Any] = {
         "task": "xc",
-        "comparison": "paired_seed_confirmation",
-        "control_model": str(control_config["model"].get("name", "xc-control")),
+        "comparison": "paired_seed_confirmation_multi_control",
+        "control_models": control_names,
         "candidate_model": str(
             candidate_config["model"].get("name", "xc-candidate")
         ),
         "seeds": normalized_seeds,
-        "benchmark_id": str(control_config["evaluation"]["benchmark_id"]),
-        "pairs": pairs,
-        "summary": {
-            metric: _metric_summary(pairs, metric) for metric in PRIMARY_METRICS
-        },
+        "benchmark_id": str(candidate_config["evaluation"]["benchmark_id"]),
+        "comparisons": comparisons,
+    }
+
+    output_dir = Path(str(candidate_config["artifact"]["output_dir"])) / "seed-sweep"
+    summary_path = output_dir / "paired_comparisons.json"
+    _write_json(summary_path, report)
+    report["summary_path"] = str(summary_path)
+    return report
+
+
+def run_xc_seed_comparison(
+    control_config: dict[str, Any],
+    candidate_config: dict[str, Any],
+    *,
+    seeds: Sequence[int],
+) -> dict[str, Any]:
+    """Run a paired multi-seed XC comparison on one prepared dataset snapshot."""
+
+    multi = run_xc_seed_comparisons(
+        [control_config],
+        candidate_config,
+        seeds=seeds,
+    )
+    comparison = multi["comparisons"][0]
+    report: dict[str, Any] = {
+        "task": "xc",
+        "comparison": "paired_seed_confirmation",
+        "control_model": comparison["control_model"],
+        "candidate_model": multi["candidate_model"],
+        "seeds": multi["seeds"],
+        "benchmark_id": multi["benchmark_id"],
+        "pairs": comparison["pairs"],
+        "summary": comparison["summary"],
     }
 
     output_dir = Path(str(candidate_config["artifact"]["output_dir"])) / "seed-sweep"
