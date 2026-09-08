@@ -53,11 +53,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     confirm_seeds = subparsers.add_parser(
         "confirm-seeds",
-        help="Run a paired multi-seed comparison of two XC configs",
+        help="Run paired multi-seed XC comparisons against one or more controls",
     )
     confirm_seeds.add_argument("task", choices=["xc"])
     confirm_seeds.add_argument("--config", required=True, help="Candidate config")
-    confirm_seeds.add_argument("--control-config", required=True)
+    confirm_seeds.add_argument(
+        "--control-config",
+        nargs="+",
+        required=True,
+        help="One or more control configs; candidate is trained only once per seed",
+    )
     confirm_seeds.add_argument(
         "--seeds",
         nargs="+",
@@ -150,22 +155,34 @@ def main() -> None:
             exit_code = 2
     elif args.command == "confirm-seeds":
         require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
-        control_config = load_config(args.control_config)
-        if control_config["task"] != args.task:
-            raise SystemExit(
-                f"Control config task {control_config['task']!r} does not match "
-                f"CLI task {args.task!r}"
+        control_configs = [load_config(path) for path in args.control_config]
+        for control_config in control_configs:
+            if control_config["task"] != args.task:
+                raise SystemExit(
+                    f"Control config task {control_config['task']!r} does not match "
+                    f"CLI task {args.task!r}"
+                )
+            require_sections(
+                control_config, "data", "model", "evaluation", "artifact", "tracking"
             )
-        require_sections(
-            control_config, "data", "model", "evaluation", "artifact", "tracking"
-        )
-        from .xc.seed_comparison import run_xc_seed_comparison
 
-        report = run_xc_seed_comparison(
-            control_config,
-            config,
-            seeds=args.seeds,
+        from .xc.seed_comparison import (
+            run_xc_seed_comparison,
+            run_xc_seed_comparisons,
         )
+
+        if len(control_configs) == 1:
+            report = run_xc_seed_comparison(
+                control_configs[0],
+                config,
+                seeds=args.seeds,
+            )
+        else:
+            report = run_xc_seed_comparisons(
+                control_configs,
+                config,
+                seeds=args.seeds,
+            )
     elif args.command == "benchmark-foundation":
         require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
         from .xc.tabpfn import run_xc_tabpfn
