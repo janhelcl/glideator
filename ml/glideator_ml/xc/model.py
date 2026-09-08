@@ -125,11 +125,18 @@ class AdaptiveMonotonicHead(nn.Module):
         return torch.sigmoid(logits)
 
 
-def _deep_tower(input_dim: int, hidden_units: Sequence[int]) -> nn.Sequential:
+def _deep_tower(
+    input_dim: int,
+    hidden_units: Sequence[int],
+    *,
+    dropout: float = 0.0,
+) -> nn.Sequential:
     layers: list[nn.Module] = []
     previous = input_dim
     for units in hidden_units:
         layers.extend((nn.Linear(previous, units), nn.ReLU()))
+        if dropout:
+            layers.append(nn.Dropout(p=dropout))
         previous = units
     return nn.Sequential(*layers)
 
@@ -159,10 +166,13 @@ class ExpandedGlideatorNet(nn.Module):
         share_cross_net: bool = True,
         include_time_input_branch: bool = True,
         share_parallel_deep_net: bool = True,
+        dropout: float = 0.0,
     ) -> None:
         super().__init__()
         if not deep_hidden_units:
             raise ValueError("deep_hidden_units must contain at least one layer")
+        if not 0.0 <= dropout < 1.0:
+            raise ValueError("dropout must satisfy 0 <= dropout < 1")
         if not include_time_input_branch and cross_layers:
             raise ValueError(
                 "cross_layers must be 0 when include_time_input_branch is false"
@@ -180,6 +190,7 @@ class ExpandedGlideatorNet(nn.Module):
         self.share_cross_net = share_cross_net
         self.include_time_input_branch = include_time_input_branch
         self.share_parallel_deep_net = share_parallel_deep_net
+        self.dropout = float(dropout)
 
         if include_time_input_branch:
             if share_cross_net:
@@ -197,13 +208,17 @@ class ExpandedGlideatorNet(nn.Module):
         if parallel_deep_hidden_units:
             if share_parallel_deep_net:
                 self.parallel_deep_net = _deep_tower(
-                    single_time_input_dim, parallel_deep_hidden_units
+                    single_time_input_dim,
+                    parallel_deep_hidden_units,
+                    dropout=self.dropout,
                 )
             else:
                 self.parallel_deep_nets = nn.ModuleDict(
                     {
                         time_key: _deep_tower(
-                            single_time_input_dim, parallel_deep_hidden_units
+                            single_time_input_dim,
+                            parallel_deep_hidden_units,
+                            dropout=self.dropout,
                         )
                         for time_key in self.time_keys
                     }
@@ -220,7 +235,9 @@ class ExpandedGlideatorNet(nn.Module):
             )
 
         self.deep_net = _deep_tower(
-            len(self.time_keys) * single_time_output_dim, deep_hidden_units
+            len(self.time_keys) * single_time_output_dim,
+            deep_hidden_units,
+            dropout=self.dropout,
         )
 
         self.prediction_head_type = prediction_head_type

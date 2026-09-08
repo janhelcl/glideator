@@ -69,13 +69,11 @@ The smaller encoder was confirmed against the old control on paired model seeds 
 | Macro ROC-AUC ↑ | 0.93891 | 0.94098 | +0.00207 | 5/5 |
 | Monotonic violation rate ↓ | 0.0165 | 0.0253 | +0.0088 | 1/5 |
 
-The predictive result is clean: 5/5 wins on all three primary metrics while reducing trainable parameters from roughly 64k to 48.5k. The monotonicity regression remains a secondary diagnostic rather than a hard gate because hard-monotonic heads already showed a predictive penalty.
-
 **Decision:** promote the shared per-time encoder `[64, 32]`. See [ADR 0011](../decisions/0011-xc-promote-smaller-shared-encoder.md).
 
 ## Current conventional baseline
 
-`configs/xc/baselines/conventional_mlp.yaml` is now the canonical conventional baseline:
+`configs/xc/baselines/conventional_mlp.yaml` is the canonical conventional baseline:
 
 - no CrossNet (`cross_layers: 0`);
 - raw per-time bypass retained;
@@ -87,49 +85,67 @@ The predictive result is clean: 5/5 wins on all three primary metrics while redu
 
 Old architecture/refinement configs remain only as lightweight reproducibility records.
 
-## Active experiment: site embedding size
+## Completed site-embedding screen
+
+The seed-42 screen varied only site-embedding dimension:
+
+| Embedding dim | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Mono rate ↓ | Best epoch | Parameters |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 8 | 0.16101 | 0.04866 | 0.93933 | 0.0123 | 117 | 36.4k |
+| 16 | 0.15944 | 0.04828 | 0.93964 | 0.0286 | 84 | 40.4k |
+| 32 | **0.15787** | **0.04788** | 0.94098 | 0.0270 | 45 | 48.5k |
+| 64 | 0.15833 | 0.04790 | **0.94156** | 0.0205 | 42 | 64.7k |
+
+The 32-dimensional control is the best probabilistic fit. Going to 64 dimensions buys only `+0.00058` ROC-AUC while slightly worsening BCE/Brier and adding roughly 16k parameters. Smaller embeddings lose on all three primary predictive metrics.
+
+**Decision:** keep `site_embedding_dim: 32` and close embedding-size tuning. See [ADR 0012](../decisions/0012-xc-keep-32d-site-embedding.md).
+
+## Active experiment: training and regularization screen
 
 ### Hypothesis
 
-The 32-dimensional learned site embedding may be oversized for roughly 250 sites, especially because latitude, longitude and altitude are already explicit features. Conversely, a larger embedding tests whether site identity still carries useful residual structure not captured by those geographic features.
+The conventional architecture is now stable enough to tune optimization without confounding architecture choices. The first screen is intentionally one-factor-at-a-time around the locked 32-dimensional conventional baseline.
 
-Change only `site_embedding_dim`:
+| Config | Learning rate | L2 penalty | Dropout | Role |
+| --- | ---: | ---: | ---: | --- |
+| `control.yaml` | 0.001 | 1e-9 | 0.00 | control |
+| `lr_5e-4.yaml` | 0.0005 | 1e-9 | 0.00 | slower LR |
+| `lr_2e-3.yaml` | 0.002 | 1e-9 | 0.00 | faster LR |
+| `lr_3e-3.yaml` | 0.003 | 1e-9 | 0.00 | faster LR / bracket |
+| `l2_1e-7.yaml` | 0.001 | 1e-7 | 0.00 | mild L2 |
+| `l2_1e-6.yaml` | 0.001 | 1e-6 | 0.00 | stronger L2 |
+| `dropout_005.yaml` | 0.001 | 1e-9 | 0.05 | mild dropout |
+| `dropout_010.yaml` | 0.001 | 1e-9 | 0.10 | stronger dropout |
 
-| Config | Embedding dim | Role |
-| --- | ---: | --- |
-| `configs/xc/optimization/site_embedding/embedding_8.yaml` | 8 | smaller challenger |
-| `configs/xc/optimization/site_embedding/embedding_16.yaml` | 16 | smaller challenger |
-| `configs/xc/baselines/conventional_mlp.yaml` | 32 | control |
-| `configs/xc/optimization/site_embedding/embedding_64.yaml` | 64 | capacity check |
+Dropout is opt-in and is applied after hidden activations in both the shared per-time encoder and the fusion tower. `dropout: 0.0` preserves the legacy module layout and behavior.
 
-### Seed-42 screen
+The trainer already has an explicit L2 penalty, so this screen varies `l2_lambda` rather than changing optimizer semantics at the same time. Adam remains fixed. If explicit L2 looks useful, AdamW can still be tested later as a separate optimizer hypothesis.
+
+### Sweep runner
+
+`glideator-ml sweep xc` loads the XC dataset once, runs every config against the same prepared snapshot, verifies benchmark/dataset/evaluation identity, keeps each run's artifacts isolated and writes a machine-readable `sweep_summary.json`.
 
 Run from `ml/`:
 
 ```bash
 export ML_DATABASE_URL='postgresql://...'
 
-for config in \
-  configs/xc/optimization/site_embedding/embedding_8.yaml \
-  configs/xc/optimization/site_embedding/embedding_16.yaml \
-  configs/xc/baselines/conventional_mlp.yaml \
-  configs/xc/optimization/site_embedding/embedding_64.yaml
-do
-  glideator-ml run xc --config "$config"
-done
+glideator-ml sweep xc \
+  --configs \
+    configs/xc/optimization/training/control.yaml \
+    configs/xc/optimization/training/lr_5e-4.yaml \
+    configs/xc/optimization/training/lr_2e-3.yaml \
+    configs/xc/optimization/training/lr_3e-3.yaml \
+    configs/xc/optimization/training/l2_1e-7.yaml \
+    configs/xc/optimization/training/l2_1e-6.yaml \
+    configs/xc/optimization/training/dropout_005.yaml \
+    configs/xc/optimization/training/dropout_010.yaml \
+  --output-dir outputs/xc/optimization/training/screen
 ```
 
-All four configs share the same benchmark and training contract; tests guard that challengers differ from the control only in embedding size, model name and artifact path.
+### Selection rule
 
-### Promotion rule
-
-Screen seed 42 first. Promote at most one challenger to paired seeds 42–46 using `glideator-ml confirm-seeds`.
-
-Prefer a smaller embedding when BCE/Brier/AUC are effectively tied. Promote a larger embedding only if it produces a clear predictive gain that justifies the extra parameters.
-
-## Selection metrics
-
-Compare at minimum:
+Screen seed 42 first. Compare at minimum:
 
 - macro BCE;
 - macro Brier score;
@@ -139,15 +155,17 @@ Compare at minimum:
 - best epoch and validation loss;
 - parameter count and wall-clock training time.
 
-For close candidates, prefer the simpler model unless a meaningful threshold region improves consistently.
+Do not seed-sweep every candidate. Pick the strongest learning-rate setting and strongest regularization setting. If both independently help, run one combined follow-up config using those two settings. Then promote at most one final candidate to paired seeds 42–46 against `control.yaml` using `glideator-ml confirm-seeds`.
+
+For close candidates, prefer the configuration with better BCE/Brier unless an AUC change is clearly meaningful and consistent in the harder XC thresholds.
 
 ## Planned conventional optimization sequence
 
-After site embedding size:
+After this screen:
 
-1. learning rate;
-2. dropout / AdamW weight decay;
-3. one activation check (`ReLU` vs `SiLU`);
+1. combine the winning LR and regularizer only if both independently help;
+2. paired seed confirmation of the final training config;
+3. one smooth-activation check (`ReLU` vs `SiLU`);
 4. freeze the optimized conventional MLP benchmark.
 
 Only then start weather-specific architectures so any gains are measured against a properly tuned conventional baseline.

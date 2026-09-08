@@ -17,6 +17,18 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("task", choices=["s2s", "xc"])
     run.add_argument("--config", required=True)
 
+    sweep = subparsers.add_parser(
+        "sweep",
+        help="Run multiple XC configs on one prepared dataset snapshot",
+    )
+    sweep.add_argument("task", choices=["xc"])
+    sweep.add_argument("--configs", nargs="+", required=True)
+    sweep.add_argument(
+        "--output-dir",
+        default="outputs/xc/optimization/sweep",
+        help="Directory for sweep_summary.json",
+    )
+
     evaluate = subparsers.add_parser(
         "evaluate",
         help="Evaluate an existing production/reference artifact",
@@ -93,6 +105,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+
+    if args.command == "sweep":
+        configs = [load_config(path) for path in args.configs]
+        for config in configs:
+            if config["task"] != args.task:
+                raise SystemExit(
+                    f"Config task {config['task']!r} does not match CLI task {args.task!r}"
+                )
+            require_sections(
+                config, "data", "model", "evaluation", "artifact", "tracking"
+            )
+
+        from .xc.sweep import run_xc_sweep
+
+        report = run_xc_sweep(configs, output_dir=args.output_dir)
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return
+
     config = load_config(args.config)
     if config["task"] != args.task:
         raise SystemExit(
