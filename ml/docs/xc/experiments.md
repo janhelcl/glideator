@@ -4,14 +4,14 @@ This note tracks the active XC experiment sequence after migrating the productio
 
 ## Fixed experiment policy
 
-Architecture and optimization comparisons currently use:
+Architecture comparisons use:
 
 - benchmark: `xc-temporal-2024-jan-nov-v1`;
 - fit rows: before `2023-01-01`;
 - validation/model selection: calendar year 2023;
 - final evaluation: `2024-01-01` through `2024-11-30`;
 - batch size: `8192`;
-- learning rate: `0.001` unless the experiment explicitly targets it;
+- learning rate: `0.001` unless an experiment explicitly targets it;
 - max epochs: `200`;
 - patience: `40`;
 - identical feature contract and scaler behavior across candidates.
@@ -71,20 +71,6 @@ The smaller encoder was confirmed against the old control on paired model seeds 
 
 **Decision:** promote the shared per-time encoder `[64, 32]`. See [ADR 0011](../decisions/0011-xc-promote-smaller-shared-encoder.md).
 
-## Current conventional baseline
-
-`configs/xc/baselines/conventional_mlp.yaml` is the canonical conventional architecture baseline:
-
-- no CrossNet (`cross_layers: 0`);
-- raw per-time bypass retained;
-- shared per-time encoder `[64, 32]`;
-- fusion tower `[64, 32]`;
-- site embedding dimension `32`;
-- independent multilabel head;
-- batch size `8192`.
-
-Old architecture/refinement configs remain only as lightweight reproducibility records.
-
 ## Completed site-embedding screen
 
 The seed-42 screen varied only site-embedding dimension:
@@ -96,13 +82,11 @@ The seed-42 screen varied only site-embedding dimension:
 | 32 | **0.15787** | **0.04788** | 0.94098 | 0.0270 | 45 | 48.5k |
 | 64 | 0.15833 | 0.04790 | **0.94156** | 0.0205 | 42 | 64.7k |
 
-The 32-dimensional control is the best probabilistic fit. Going to 64 dimensions buys only `+0.00058` ROC-AUC while slightly worsening BCE/Brier and adding roughly 16k parameters. Smaller embeddings lose on all three primary predictive metrics.
-
 **Decision:** keep `site_embedding_dim: 32` and close embedding-size tuning. See [ADR 0012](../decisions/0012-xc-keep-32d-site-embedding.md).
 
-## Completed training and regularization screen
+## Completed training and regularization optimization
 
-The first seed-42 optimization screen changed one training axis at a time around the locked 32-dimensional conventional architecture.
+The first seed-42 screen identified dropout as the only generic optimization axis with a clear joint gain:
 
 | Config | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -115,50 +99,34 @@ The first seed-42 optimization screen changed one training axis at a time around
 | `dropout_005.yaml` | 0.15688 | 0.04768 | 0.94080 | 0.0089 | 46 |
 | `dropout_010.yaml` | **0.15686** | **0.04762** | **0.94206** | **0.0014** | 86 |
 
-`dropout: 0.10` is the clear working winner: it improves BCE, Brier, ROC-AUC and monotonicity simultaneously. Learning rate and explicit L2 show at most small, mixed gains and are not worth further independent sweeps.
+A final local screen then checked the neighborhood around `dropout: 0.10` plus the only plausible LR/L2 interactions:
 
-**Working benchmark:** use `dropout_010.yaml` as the control for the final local optimization pass. Keep the canonical baseline config unchanged until this local pass is complete; that preserves the completed screen as an exact reproducibility record.
+| Config | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `dropout_010` | **0.15686** | 0.04762 | **0.94206** | 0.0014 | 86 |
+| `dropout_0075` | 0.15760 | 0.04771 | 0.94175 | 0.0016 | 86 |
+| `dropout_0125` | 0.15748 | 0.04771 | 0.94176 | 0.0012 | 86 |
+| `dropout_015` | 0.15701 | **0.04760** | 0.94198 | **0.0006** | 86 |
+| `dropout_010_l2_1e-6` | 0.15769 | 0.04779 | 0.94191 | 0.0012 | 86 |
+| `dropout_010_lr_2e-3` | **0.15641** | 0.04772 | 0.94112 | 0.0025 | 31 |
 
-## Active experiment: local dropout and interaction follow-up
+There is no material joint improvement over `dropout: 0.10`. Dropout 0.15 moves tiny amounts between metrics; extra L2 is worse; LR 0.002 buys BCE at the expense of Brier, ROC-AUC and monotonicity. Generic baseline tuning stops here.
 
-This is intentionally the final generic optimization pass before weather-specific architecture work.
+**Decision:** freeze `configs/xc/baselines/conventional_mlp.yaml` at `dropout: 0.10` and use it as the canonical control for weather-specific work. See [ADR 0013](../decisions/0013-xc-freeze-optimized-conventional-benchmark.md).
 
-The local sweep asks only two questions:
+## Frozen conventional benchmark
 
-1. is the dropout optimum slightly below or above `0.10`?;
-2. do the only mildly interesting LR/L2 settings add anything when combined with the dropout winner?
+The canonical conventional model is now:
 
-| Config | Learning rate | L2 penalty | Dropout | Role |
-| --- | ---: | ---: | ---: | --- |
-| `dropout_010.yaml` | 0.001 | 1e-9 | 0.10 | working control |
-| `dropout_0075.yaml` | 0.001 | 1e-9 | 0.075 | local lower bracket |
-| `dropout_0125.yaml` | 0.001 | 1e-9 | 0.125 | local upper bracket |
-| `dropout_015.yaml` | 0.001 | 1e-9 | 0.15 | upper boundary check |
-| `dropout_010_l2_1e-6.yaml` | 0.001 | 1e-6 | 0.10 | L2 interaction |
-| `dropout_010_lr_2e-3.yaml` | 0.002 | 1e-9 | 0.10 | LR interaction |
+- no CrossNet (`cross_layers: 0`);
+- raw per-time bypass retained;
+- shared per-time MLP `[64, 32]`;
+- fusion tower `[64, 32]`;
+- site embedding dimension `32`;
+- independent multilabel head;
+- dropout `0.10`;
+- batch size `8192` and learning rate `0.001`.
 
-Run from `ml/`:
+Seed-42 reference metrics are BCE `0.15686`, Brier `0.04762`, ROC-AUC `0.94206`, monotonic violation rate `0.0014`, best epoch `86`.
 
-```bash
-export ML_DATABASE_URL='postgresql://...'
-
-glideator-ml sweep xc \
-  --configs \
-    configs/xc/optimization/training/dropout_010.yaml \
-    configs/xc/optimization/training/dropout_0075.yaml \
-    configs/xc/optimization/training/dropout_0125.yaml \
-    configs/xc/optimization/training/dropout_015.yaml \
-    configs/xc/optimization/training/dropout_010_l2_1e-6.yaml \
-    configs/xc/optimization/training/dropout_010_lr_2e-3.yaml \
-  --output-dir outputs/xc/optimization/training/local-dropout
-```
-
-The sweep runner loads the XC dataset once, verifies benchmark/dataset/evaluation identity, isolates every artifact directory and writes `sweep_summary.json`.
-
-### Selection rule
-
-Use macro BCE and Brier as the primary tie-breakers, with ROC-AUC and monotonicity required not to show a meaningful regression. Also inspect per-threshold metrics for the harder XC50–XC100 targets, best epoch, validation loss, training time and parameter count.
-
-Do not open another generic LR/L2/dropout grid after this. Pick the strongest local candidate. If it is materially better than `dropout_010.yaml`, confirm it on paired seeds 42–46. If the differences are negligible, keep `dropout: 0.10` without spending more runs.
-
-After that, freeze the optimized conventional MLP benchmark and move directly to weather/profile-specific architectures.
+Do not reopen generic capacity, embedding, LR, L2 or dropout tuning while screening weather-specific representations.
