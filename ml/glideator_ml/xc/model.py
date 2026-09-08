@@ -111,6 +111,9 @@ class AdaptiveMonotonicHead(nn.Module):
         self.base_logit = nn.Linear(input_dim, 1)
         self.gap_logits = nn.Linear(input_dim, num_targets - 1)
 
+        # Start from a sensible decreasing curve without initially imposing
+        # feature-dependent threshold gaps. softplus(-1) ~= 0.31, which gives
+        # the optimizer useful gradients across the full XC0..XC100 range.
         nn.init.zeros_(self.gap_logits.weight)
         nn.init.constant_(self.gap_logits.bias, -1.0)
 
