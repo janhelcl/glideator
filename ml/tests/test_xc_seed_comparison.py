@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from glideator_ml.cli import build_parser
 from glideator_ml.xc import seed_comparison
 
 
@@ -49,7 +50,7 @@ def test_seed_comparison_runs_paired_seeds_on_one_snapshot(
 
     def fake_load_xc_data(data_config):
         nonlocal load_calls
-        assert data_config == control["data"]
+        assert data_config == candidate["data"]
         load_calls += 1
         return prepared
 
@@ -84,10 +85,10 @@ def test_seed_comparison_runs_paired_seeds_on_one_snapshot(
 
     assert load_calls == 1
     assert run_calls == [
-        ("control", 42),
         ("candidate", 42),
-        ("control", 43),
+        ("control", 42),
         ("candidate", 43),
+        ("control", 43),
     ]
     assert report["seeds"] == [42, 43]
     assert report["summary"]["bce_macro"]["candidate_wins"] == 2
@@ -102,6 +103,96 @@ def test_seed_comparison_runs_paired_seeds_on_one_snapshot(
     saved = json.loads(summary_path.read_text(encoding="utf-8"))
     assert saved["comparison"] == "paired_seed_confirmation"
     assert saved["summary"]["brier_macro"]["candidate_wins"] == 2
+
+
+def test_multi_control_confirmation_reuses_candidate_per_seed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mlp = _config("mlp", tmp_path / "mlp")
+    cnn = _config("cnn", tmp_path / "cnn")
+    candidate = _config("agl", tmp_path / "agl")
+    prepared = (object(), object())
+    run_calls: list[tuple[str, int]] = []
+
+    monkeypatch.setattr(
+        seed_comparison,
+        "load_xc_data",
+        lambda data_config: prepared,
+    )
+
+    def fake_run_xc(config, *, prepared_data=None):
+        assert prepared_data is prepared
+        seed = int(config["model"]["seed"])
+        seeded_name = str(config["model"]["name"])
+        name = seeded_name.split("-seed-")[0]
+        run_calls.append((name, seed))
+        offsets = {"mlp": 0.010, "cnn": 0.005, "agl": 0.000}
+        offset = offsets[name]
+        return {
+            "benchmark_id": "xc-test-v1",
+            "dataset_fingerprint": "dataset-1",
+            "eval_set_fingerprint": "eval-1",
+            "model_seed": seed,
+            "mlflow_run_id": f"run-{seeded_name}",
+            "metrics": {
+                "bce_macro": 0.15 + offset,
+                "brier_macro": 0.049 + offset,
+                "roc_auc_macro": 0.941 - offset,
+                "monotonic_violation_rate": 0.020 + offset,
+                "best_epoch": seed,
+                "trainable_parameters": 58_000,
+            },
+        }
+
+    monkeypatch.setattr(seed_comparison, "run_xc", fake_run_xc)
+
+    report = seed_comparison.run_xc_seed_comparisons(
+        [mlp, cnn], candidate, seeds=[42, 43]
+    )
+
+    assert run_calls == [
+        ("agl", 42),
+        ("mlp", 42),
+        ("cnn", 42),
+        ("agl", 43),
+        ("mlp", 43),
+        ("cnn", 43),
+    ]
+    assert report["control_models"] == ["mlp", "cnn"]
+    assert report["candidate_model"] == "agl"
+    assert len(report["comparisons"]) == 2
+    for comparison in report["comparisons"]:
+        assert comparison["summary"]["bce_macro"]["candidate_wins"] == 2
+        assert comparison["summary"]["roc_auc_macro"]["candidate_wins"] == 2
+        candidate_run_ids = [
+            pair["candidate"]["mlflow_run_id"] for pair in comparison["pairs"]
+        ]
+        assert candidate_run_ids == ["run-agl-seed-42", "run-agl-seed-43"]
+
+    summary_path = Path(report["summary_path"])
+    assert summary_path.name == "paired_comparisons.json"
+    saved = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert saved["comparison"] == "paired_seed_confirmation_multi_control"
+
+
+def test_confirm_seeds_cli_accepts_multiple_controls() -> None:
+    args = build_parser().parse_args(
+        [
+            "confirm-seeds",
+            "xc",
+            "--config",
+            "candidate.yaml",
+            "--control-config",
+            "mlp.yaml",
+            "cnn.yaml",
+            "--seeds",
+            "42",
+            "43",
+        ]
+    )
+
+    assert args.control_config == ["mlp.yaml", "cnn.yaml"]
+    assert args.seeds == [42, 43]
 
 
 def test_seed_comparison_rejects_mismatched_benchmark_contract(tmp_path: Path) -> None:
@@ -119,3 +210,14 @@ def test_seed_comparison_rejects_duplicate_seeds(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="seeds must be unique"):
         seed_comparison.run_xc_seed_comparison(control, candidate, seeds=[42, 42])
+
+
+def test_multi_control_confirmation_requires_unique_control_names(tmp_path: Path) -> None:
+    control_a = _config("control", tmp_path / "control-a")
+    control_b = _config("control", tmp_path / "control-b")
+    candidate = _config("candidate", tmp_path / "candidate")
+
+    with pytest.raises(ValueError, match="control model names must be unique"):
+        seed_comparison.run_xc_seed_comparisons(
+            [control_a, control_b], candidate, seeds=[42]
+        )
