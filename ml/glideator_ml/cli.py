@@ -39,6 +39,21 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--config", required=True, help="Candidate config")
     benchmark.add_argument("--reference-config", required=True)
 
+    confirm_seeds = subparsers.add_parser(
+        "confirm-seeds",
+        help="Run a paired multi-seed comparison of two XC configs",
+    )
+    confirm_seeds.add_argument("task", choices=["xc"])
+    confirm_seeds.add_argument("--config", required=True, help="Candidate config")
+    confirm_seeds.add_argument("--control-config", required=True)
+    confirm_seeds.add_argument(
+        "--seeds",
+        nargs="+",
+        type=int,
+        default=[42, 43, 44, 45, 46],
+        help="Model seeds to run as paired control/candidate comparisons",
+    )
+
     foundation = subparsers.add_parser(
         "benchmark-foundation",
         help="Benchmark a tabular foundation model on the canonical task contract",
@@ -103,6 +118,24 @@ def main() -> None:
         report = run_xc_benchmark_workflow(config, reference_config)
         if not report["eligible"]:
             exit_code = 2
+    elif args.command == "confirm-seeds":
+        require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
+        control_config = load_config(args.control_config)
+        if control_config["task"] != args.task:
+            raise SystemExit(
+                f"Control config task {control_config['task']!r} does not match "
+                f"CLI task {args.task!r}"
+            )
+        require_sections(
+            control_config, "data", "model", "evaluation", "artifact", "tracking"
+        )
+        from .xc.seed_comparison import run_xc_seed_comparison
+
+        report = run_xc_seed_comparison(
+            control_config,
+            config,
+            seeds=args.seeds,
+        )
     elif args.command == "benchmark-foundation":
         require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
         from .xc.tabpfn import run_xc_tabpfn
