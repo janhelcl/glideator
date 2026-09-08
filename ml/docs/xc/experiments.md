@@ -1,153 +1,153 @@
-# XC GPU and architecture experiments
+# XC experiments
 
-This note tracks the active XC experiment sequence after migrating the production model family into the reproducible `glideator_ml.xc` pipeline. Run-level metrics belong in MLflow; durable conclusions are recorded in `docs/decisions/`.
+This note tracks the active XC experiment sequence after migrating the production model family into the reproducible `glideator_ml.xc` pipeline. Run-level metrics belong in MLflow; durable conclusions live in `docs/decisions/`.
 
-## Settled experiment policy
+## Fixed experiment policy
+
+Architecture and optimization comparisons currently use:
+
+- benchmark: `xc-temporal-2024-jan-nov-v1`;
+- fit rows: before `2023-01-01`;
+- validation/model selection: calendar year 2023;
+- final evaluation: `2024-01-01` through `2024-11-30`;
+- batch size: `8192`;
+- learning rate: `0.001` unless the experiment explicitly targets it;
+- max epochs: `200`;
+- patience: `40`;
+- identical feature contract and scaler behavior across candidates.
+
+The warehouse currently ends on `2024-11-30`; do not mix these results with a future full-calendar-2024 benchmark without rerunning candidates.
+
+## Settled architecture decisions
 
 ### GPU batch size
 
-The RTX 3090 profile flattened quickly while using very little VRAM. Batch 8,192 reached at least 95% of peak measured throughput while retaining 23 optimizer steps per epoch, versus only 3 at the maximum-throughput batch of 65,536.
+Batch 8,192 reached at least 95% of peak measured RTX 3090 throughput while retaining substantially more optimizer steps per epoch than larger batches.
 
-**Current policy: batch size 8,192.** See [ADR 0007](../decisions/0007-xc-gpu-batch-policy.md).
+**Decision:** use batch size `8192`. See [ADR 0007](../decisions/0007-xc-gpu-batch-policy.md).
 
-The path appears transfer-bound rather than compute- or memory-bound, but an estimated fit epoch already takes only about 2.6 seconds, so input-pipeline optimization is deferred.
+### CrossNet
 
-### Training budget
+The no-CrossNet candidate beat the production-shaped control on paired seeds 42–46 often enough to establish a simpler structural baseline, while reducing parameters from roughly 91k to 64k.
 
-Moving from 2,048 to 8,192 reduces optimizer steps per epoch by roughly 4x. Architecture screening therefore uses:
+**Decision:** `cross_layers: 0`. See [ADR 0008](../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md).
 
-- batch size: `8192`;
-- learning rate: `0.001`;
-- max epochs: `200`;
-- patience: `40` epochs;
-- optimizer/objective/regularization otherwise unchanged unless the architecture makes a term structurally unnecessary.
+CrossNet remains only for compatibility with the served/reference model family.
 
-At about 23 steps per epoch, `patience: 40` preserves roughly the old stale-update budget.
+### Output head
 
-### Benchmark
+Both scalar ordinal and adaptive monotonic heads eliminated monotonicity violations but regressed BCE, Brier and ROC-AUC.
 
-The warehouse currently ends on `2024-11-30`, so architecture experiments use benchmark `xc-temporal-2024-jan-nov-v1`:
+**Decision:** keep eleven independent sigmoid heads. See [ADR 0009](../decisions/0009-xc-reject-hard-monotonic-heads.md).
 
-- fit: before `2023-01-01`;
-- validation/model selection: calendar year 2023;
-- final evaluation: `2024-01-01` through `2024-11-30`;
-- same feature contract and scaler behavior for every comparison.
+### TabPFN-3 challenger
 
-Do not mix these Jan-Nov results with a future full-calendar-2024 benchmark without rerunning candidates.
+TabPFN-3 was tested both as an ordinal multiclass model and as eleven independent binary classifiers on the canonical XC contract.
 
-## Completed first architecture sweep
+**Decision:** do not replace the main XC model with TabPFN-3. See [ADR 0010](../decisions/0010-xc-reject-tabpfn3-as-main-model.md).
 
-The first sweep tested one structural change at a time from the migrated production-shaped control:
+## Completed representation/capacity screen
 
-| Config | Structural question | Conclusion |
+The refinement screen kept the accepted no-CrossNet architecture fixed while changing one representation/capacity hypothesis at a time.
+
+| Config | Change | Status |
 | --- | --- | --- |
-| `control.yaml` | production-shaped reference | comparison control |
-| `ordinal.yaml` | single latent ordinal XC axis | rejected; perfect monotonicity but materially worse BCE/Brier/AUC |
-| `no_parallel.yaml` | remove parallel deep tower | small regression; keep the tower |
-| `no_cross.yaml` | remove CrossNet | accepted structural baseline |
-| `time_specific_cross.yaml` | separate CrossNets for 09/12/15 | small regression; sharing was not the CrossNet problem |
-| `wider_fusion.yaml` | widen fusion tower | small regression; no evidence of a fusion-capacity bottleneck |
+| `control.yaml` | shared encoder `[128, 64, 32]` | old comparison control |
+| `no_raw_skip.yaml` | remove raw per-time bypass | rejected |
+| `time_specific_encoder.yaml` | independent 09/12/15 encoders | rejected |
+| `smaller_encoder.yaml` | encoder `[64, 32]` | **promoted** |
+| `larger_encoder.yaml` | encoder `[256, 128, 64]` | rejected |
+| `smaller_fusion.yaml` | fusion `[32, 16]` | rejected |
+| `deeper_fusion.yaml` | fusion `[64, 64, 32]` | rejected |
 
-Because the no-CrossNet improvement was small, control and no-CrossNet were rerun with paired model seeds 42–46. No-CrossNet won BCE 4/5 times, Brier 4/5, AUC 3/5, and monotonicity 5/5. Mean AUC was effectively tied while calibration improved modestly, monotonicity violations dropped substantially, and parameter count fell from about 91k to 64k.
+The smaller encoder was confirmed against the old control on paired model seeds 42–46:
 
-**Current structural baseline: `cross_layers: 0`.** See [ADR 0008](../decisions/0008-xc-remove-crossnet-from-candidate-baseline.md).
+| Metric | Control mean | Smaller encoder mean | Candidate delta | Candidate wins |
+| --- | ---: | ---: | ---: | ---: |
+| Macro BCE ↓ | 0.16091 | 0.15764 | -0.00328 | 5/5 |
+| Macro Brier ↓ | 0.04864 | 0.04785 | -0.00079 | 5/5 |
+| Macro ROC-AUC ↑ | 0.93891 | 0.94098 | +0.00207 | 5/5 |
+| Monotonic violation rate ↓ | 0.0165 | 0.0253 | +0.0088 | 1/5 |
 
-CrossNet remains only for compatibility with the served/reference family.
+The predictive result is clean: 5/5 wins on all three primary metrics while reducing trainable parameters from roughly 64k to 48.5k. The monotonicity regression remains a secondary diagnostic rather than a hard gate because hard-monotonic heads already showed a predictive penalty.
 
-## Completed output-head experiments
+**Decision:** promote the shared per-time encoder `[64, 32]`. See [ADR 0011](../decisions/0011-xc-promote-smaller-shared-encoder.md).
 
-### Scalar ordinal head
+## Current conventional baseline
 
-The scalar ordinal head guaranteed monotonic predictions but regressed materially on calibration and discrimination. Collapsing all XC thresholds onto one latent score was too restrictive.
-
-Status: rejected.
-
-### Adaptive monotonic head
-
-The adaptive head replaced global ordinal cut-points with feature-conditioned positive cumulative logit gaps. This restored much of the lost flexibility while retaining perfect monotonicity.
-
-On the matched seed-42 comparison against the no-CrossNet multilabel baseline:
-
-| Metric | Adaptive monotonic | No-CrossNet |
-| --- | ---: | ---: |
-| Macro BCE | 0.16209 | 0.15982 |
-| Macro Brier | 0.04912 | 0.04848 |
-| Macro ROC-AUC | 0.93601 | 0.93944 |
-| Monotonic violation rate | 0.0000 | 0.0199 |
-
-The head met the zero-violation objective but regressed on all three primary predictive metrics. Because the predictive loss is consistent and this experiment directly addressed the ordinal head's known restriction, no seed sweep is warranted.
-
-**Output-head decision: keep the independent multilabel head.** See [ADR 0009](../decisions/0009-xc-reject-hard-monotonic-heads.md).
-
-The adaptive implementation and config remain as a documented rejected experiment rather than a promotion candidate.
-
-## Current baseline
-
-The architecture baseline for the next phase is therefore:
+`configs/xc/baselines/conventional_mlp.yaml` is now the canonical conventional baseline:
 
 - no CrossNet (`cross_layers: 0`);
-- raw per-time input bypass concatenated with a shared deep encoder;
-- shared per-time deep encoder `[128, 64, 32]`;
+- raw per-time bypass retained;
+- shared per-time encoder `[64, 32]`;
 - fusion tower `[64, 32]`;
-- 32-dimensional site embedding;
-- eleven independent sigmoid XC-threshold heads;
-- batch size `8192` with the normalized training budget above.
+- site embedding dimension `32`;
+- independent multilabel head;
+- batch size `8192`.
 
-With `cross_layers: 0`, the old CrossNet branch is an identity operation. The accepted baseline therefore feeds both the raw 116-dimensional per-time input and the learned 32-dimensional encoder output into fusion. The next screen makes that inherited bypass explicit rather than treating it as accidental architecture.
+Old architecture/refinement configs remain only as lightweight reproducibility records.
 
-## Second architecture screen: representation and capacity
+## Active experiment: site embedding size
 
-Configs live under `configs/xc/architecture/refinement/`. Every run keeps the same benchmark, seed, optimizer, batch size, site embedding and multilabel head. Each candidate changes one representation/capacity hypothesis from the no-CrossNet control.
+### Hypothesis
 
-| Config | Change | Question |
-| --- | --- | --- |
-| `control.yaml` | accepted no-CrossNet architecture | reproducible comparison control |
-| `no_raw_skip.yaml` | remove raw per-time input from fusion | does the inherited identity bypass add signal beyond the nonlinear encoder? |
-| `time_specific_encoder.yaml` | separate 09/12/15 encoders | should each forecast time learn its own nonlinear transform? |
-| `smaller_encoder.yaml` | encoder `[64, 32]` | can the useful per-time tower be simpler? |
-| `larger_encoder.yaml` | encoder `[256, 128, 64]` | is per-time representation capacity limiting? |
-| `smaller_fusion.yaml` | fusion `[32, 16]` | can fusion be simplified after wider fusion already failed? |
-| `deeper_fusion.yaml` | fusion `[64, 64, 32]` | does extra fusion depth help without widening the final representation? |
+The 32-dimensional learned site embedding may be oversized for roughly 250 sites, especially because latitude, longitude and altitude are already explicit features. Conversely, a larger embedding tests whether site identity still carries useful residual structure not captured by those geographic features.
 
-The code exposes two explicit candidate-only flags while preserving legacy defaults:
+Change only `site_embedding_dim`:
 
-- `include_time_input_branch`: when false with `cross_layers: 0`, fusion receives only the learned per-time encoder output;
-- `share_parallel_deep_net`: when false, 09/12/15 receive independent encoder weights.
+| Config | Embedding dim | Role |
+| --- | ---: | --- |
+| `configs/xc/optimization/site_embedding/embedding_8.yaml` | 8 | smaller challenger |
+| `configs/xc/optimization/site_embedding/embedding_16.yaml` | 16 | smaller challenger |
+| `configs/xc/baselines/conventional_mlp.yaml` | 32 | control |
+| `configs/xc/optimization/site_embedding/embedding_64.yaml` | 64 | capacity check |
 
-Run the complete screen from `ml/`:
+### Seed-42 screen
+
+Run from `ml/`:
 
 ```bash
 export ML_DATABASE_URL='postgresql://...'
 
 for config in \
-  control \
-  no_raw_skip \
-  time_specific_encoder \
-  smaller_encoder \
-  larger_encoder \
-  smaller_fusion \
-  deeper_fusion
+  configs/xc/optimization/site_embedding/embedding_8.yaml \
+  configs/xc/optimization/site_embedding/embedding_16.yaml \
+  configs/xc/baselines/conventional_mlp.yaml \
+  configs/xc/optimization/site_embedding/embedding_64.yaml
 do
-  glideator-ml run xc --config "configs/xc/architecture/refinement/${config}.yaml"
+  glideator-ml run xc --config "$config"
 done
 ```
 
-Artifacts are isolated under `outputs/xc/architecture/refinement/`; all runs log to the existing `glideator-xc` MLflow experiment.
+All four configs share the same benchmark and training contract; tests guard that challengers differ from the control only in embedding size, model name and artifact path.
 
-Screen at seed 42 first. Do not seed-sweep every variant. Promote at most the strongest two candidates to paired seeds 42–46 against the refinement control. A candidate is interesting if it improves BCE/Brier without a meaningful AUC loss, or matches the control closely while materially simplifying the model.
+### Promotion rule
+
+Screen seed 42 first. Promote at most one challenger to paired seeds 42–46 using `glideator-ml confirm-seeds`.
+
+Prefer a smaller embedding when BCE/Brier/AUC are effectively tied. Promote a larger embedding only if it produces a clear predictive gain that justifies the extra parameters.
 
 ## Selection metrics
 
-Do not select architecture on ROC-AUC alone. Compare at minimum:
+Compare at minimum:
 
 - macro BCE;
 - macro Brier score;
 - macro ROC-AUC;
-- per-threshold BCE/Brier/AUC;
+- per-threshold BCE/Brier/AUC, especially XC50–XC100;
 - monotonicity violations;
 - best epoch and validation loss;
 - parameter count and wall-clock training time.
 
-For architectures that are close on predictive metrics, prefer the simpler model unless a meaningful XC-threshold region improves consistently.
+For close candidates, prefer the simpler model unless a meaningful threshold region improves consistently.
 
-After this screen, test site-embedding size around the winning representation family. Only then tune optimization (learning rate and, if needed, batch size) rather than mixing architecture and optimizer changes in the same sweep.
+## Planned conventional optimization sequence
+
+After site embedding size:
+
+1. learning rate;
+2. dropout / AdamW weight decay;
+3. one activation check (`ReLU` vs `SiLU`);
+4. freeze the optimized conventional MLP benchmark.
+
+Only then start weather-specific architectures so any gains are measured against a properly tuned conventional baseline.
