@@ -150,13 +150,13 @@ The primary metrics are a wash with slightly worse candidate means, and monotoni
 
 ## Active experiment: site-relative AGL + above-ground mask
 
-The next candidate isolates a sharper hypothesis: **does the vertical CNN become useful when its profile is expressed in coordinates that better match what a pilot can physically encounter?**
+This candidate asks whether the same vertical CNN becomes useful when its profile is expressed in coordinates that better match what a pilot can physically encounter.
 
 `vertical_conv_agl_mask.yaml` keeps the CNN architecture, raw bypass, per-time MLP, fusion tower and all training settings identical to `vertical_conv.yaml`. It changes only the CNN input representation:
 
 - keep standardized `u`, `v`, temperature and relative humidity channels;
 - replace absolute geopotential-height `z` with `z_AGL = geopotential_height - site_altitude`, computed from raw values;
-- fit one AGL mean/std per pressure level on training/noon rows before standardizing the derived AGL channel;
+- fit one AGL mean/std per pressure level on valid training/noon rows before standardizing the derived AGL channel;
 - derive `valid_above_ground` from GFS surface pressure: a pressure level is valid when `level_pressure <= pressure_sfc`;
 - zero all five physical channels at invalid/below-ground levels and append the binary validity mask as a sixth CNN channel.
 
@@ -176,21 +176,35 @@ raw weather + raw site altitude
 
 The existing raw and MLP branches still receive the original unmodified feature contract, so this experiment changes only what the additional structured-profile branch sees.
 
-Run from `ml/`:
+### Seed-42 screen
+
+| Model | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch | Parameters |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| conventional MLP | 0.156858 | 0.047616 | 0.942058 | 0.001378 | 86 | 48,523 |
+| vertical CNN | 0.156238 | 0.047413 | 0.942053 | 0.002428 | 86 | 58,355 |
+| vertical CNN + AGL/mask | **0.156021** | **0.047290** | **0.942749** | **0.001294** | 98 | 58,379 |
+
+Against the plain CNN, AGL/mask changes BCE by `-0.000217`, Brier by `-0.000123`, ROC-AUC by `+0.000697` and monotonic violation rate by `-0.001134`.
+
+Against the frozen conventional MLP, AGL/mask changes BCE by `-0.000836`, Brier by `-0.000325`, ROC-AUC by `+0.000691` and monotonic violation rate by `-0.000084`.
+
+XC50–XC100 BCE is mixed, but ROC-AUC improves at every one of those thresholds; XC100 BCE is the only threshold worse than the conventional MLP.
+
+The seed-42 result is promising but is not a promotion decision. Do not tune the CNN architecture or optimizer before confirmation.
+
+### Active confirmation
+
+Run paired seeds 42–46 against both controls in one workflow. The AGL/mask candidate is trained once per seed; the same candidate run is paired with the conventional MLP for the promotion question and with the plain CNN for the representation question.
 
 ```bash
 export ML_DATABASE_URL='postgresql://...'
 
-glideator-ml sweep xc \
-  --configs \
+glideator-ml confirm-seeds xc \
+  --config configs/xc/architecture/weather_profiles/vertical_conv_agl_mask.yaml \
+  --control-config \
     configs/xc/baselines/conventional_mlp.yaml \
     configs/xc/architecture/weather_profiles/vertical_conv.yaml \
-    configs/xc/architecture/weather_profiles/vertical_conv_agl_mask.yaml \
-  --output-dir outputs/xc/architecture/weather-profiles/vertical-conv-agl-mask-screen
+  --seeds 42 43 44 45 46
 ```
 
-### Selection rule
-
-Start with seed 42. The key causal comparison is `vertical_conv_agl_mask` versus `vertical_conv`; the conventional MLP remains the promotion bar. Require identical benchmark/data/evaluation fingerprints and compare macro BCE/Brier first, then ROC-AUC, monotonicity and XC50–XC100.
-
-If AGL/masking creates a material gain over the plain CNN and clears the conventional benchmark, confirm it on paired seeds 42–46. If it does not, stop the convolution branch and move to a different vertical encoder rather than tuning CNN hyperparameters.
+Require identical benchmark/data/evaluation fingerprints. Compare macro BCE and Brier first, then ROC-AUC and monotonicity; also inspect XC50–XC100 across seeds rather than relying on seed 42. Promotion requires a repeatable advantage over the conventional MLP. The plain CNN comparison is diagnostic: it tests whether the AGL/mask representation itself consistently improves the structured branch.
