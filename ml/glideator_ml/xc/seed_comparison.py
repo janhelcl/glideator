@@ -113,14 +113,12 @@ def _normalize_seeds(seeds: Sequence[int]) -> list[int]:
     return normalized
 
 
-def run_xc_seed_comparisons(
+def _run_seed_pairs(
     control_configs: Sequence[dict[str, Any]],
     candidate_config: dict[str, Any],
     *,
     seeds: Sequence[int],
-) -> dict[str, Any]:
-    """Compare one candidate with several controls without retraining the candidate."""
-
+) -> tuple[list[int], list[str], dict[str, list[dict[str, Any]]]]:
     controls = list(control_configs)
     if not controls:
         raise ValueError("Seed comparison requires at least one control config")
@@ -161,19 +159,39 @@ def run_xc_seed_comparisons(
                 }
             )
 
-    comparisons = []
-    for control_name in control_names:
-        pairs = pairs_by_control[control_name]
-        comparisons.append(
-            {
-                "control_model": control_name,
-                "pairs": pairs,
-                "summary": {
-                    metric: _metric_summary(pairs, metric) for metric in PRIMARY_METRICS
-                },
-            }
-        )
+    return normalized_seeds, control_names, pairs_by_control
 
+
+def _comparison_report(
+    control_name: str,
+    pairs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "control_model": control_name,
+        "pairs": pairs,
+        "summary": {
+            metric: _metric_summary(pairs, metric) for metric in PRIMARY_METRICS
+        },
+    }
+
+
+def run_xc_seed_comparisons(
+    control_configs: Sequence[dict[str, Any]],
+    candidate_config: dict[str, Any],
+    *,
+    seeds: Sequence[int],
+) -> dict[str, Any]:
+    """Compare one candidate with several controls without retraining the candidate."""
+
+    normalized_seeds, control_names, pairs_by_control = _run_seed_pairs(
+        control_configs,
+        candidate_config,
+        seeds=seeds,
+    )
+    comparisons = [
+        _comparison_report(control_name, pairs_by_control[control_name])
+        for control_name in control_names
+    ]
     report: dict[str, Any] = {
         "task": "xc",
         "comparison": "paired_seed_confirmation_multi_control",
@@ -201,19 +219,21 @@ def run_xc_seed_comparison(
 ) -> dict[str, Any]:
     """Run a paired multi-seed XC comparison on one prepared dataset snapshot."""
 
-    multi = run_xc_seed_comparisons(
+    normalized_seeds, control_names, pairs_by_control = _run_seed_pairs(
         [control_config],
         candidate_config,
         seeds=seeds,
     )
-    comparison = multi["comparisons"][0]
+    comparison = _comparison_report(control_names[0], pairs_by_control[control_names[0]])
     report: dict[str, Any] = {
         "task": "xc",
         "comparison": "paired_seed_confirmation",
         "control_model": comparison["control_model"],
-        "candidate_model": multi["candidate_model"],
-        "seeds": multi["seeds"],
-        "benchmark_id": multi["benchmark_id"],
+        "candidate_model": str(
+            candidate_config["model"].get("name", "xc-candidate")
+        ),
+        "seeds": normalized_seeds,
+        "benchmark_id": str(candidate_config["evaluation"]["benchmark_id"]),
         "pairs": comparison["pairs"],
         "summary": comparison["summary"],
     }
