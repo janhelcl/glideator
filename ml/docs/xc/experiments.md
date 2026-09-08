@@ -130,3 +130,49 @@ The canonical conventional model is now:
 Seed-42 reference metrics are BCE `0.15686`, Brier `0.04762`, ROC-AUC `0.94206`, monotonic violation rate `0.0014`, best epoch `86`.
 
 Do not reopen generic capacity, embedding, LR, L2 or dropout tuning while screening weather-specific representations.
+
+## Active experiment: shared vertical pressure-profile CNN
+
+The first weather-specific candidate asks one narrow question: **does explicitly encoding local vertical structure improve over treating the atmospheric column as flat tabular features?**
+
+Each 09/12/15 weather slice contains a canonical pressure profile with five variables over thirteen pressure levels:
+
+- `u` wind;
+- `v` wind;
+- temperature;
+- relative humidity;
+- geopotential height.
+
+The profile is reordered from nominal lower atmosphere to upper atmosphere (`1000 → 500 hPa`) and reshaped to `5 × 13`. The remaining surface and column features are not passed through the CNN, but they remain available unchanged to the existing raw and MLP branches.
+
+`vertical_conv.yaml` adds one shared branch per time slice:
+
+```text
+standardized 5 × 13 profile
+  → Conv1D(5 → 8, kernel=3) + ReLU + dropout
+  → Conv1D(8 → 8, kernel=3) + ReLU + dropout
+  → flatten
+  → Linear(8 × 13 → 32) + ReLU + dropout
+```
+
+That 32-dimensional profile representation is concatenated with the existing raw-input branch and the existing shared `[64, 32]` MLP output before the unchanged `[64, 32]` fusion tower. The CNN weights are shared across 09/12/15, exactly like the conventional per-time MLP.
+
+This first candidate deliberately does **not** add AGL coordinates, below-ground masks, pressure coordinates, derived lapse rates, explicit time deltas or temporal attention. Those belong to later hypotheses if structured vertical encoding shows signal.
+
+Run from `ml/`:
+
+```bash
+export ML_DATABASE_URL='postgresql://...'
+
+glideator-ml sweep xc \
+  --configs \
+    configs/xc/baselines/conventional_mlp.yaml \
+    configs/xc/architecture/weather_profiles/vertical_conv.yaml \
+  --output-dir outputs/xc/architecture/weather-profiles/vertical-conv-screen
+```
+
+### Selection rule
+
+Start with seed 42. Require identical benchmark/data/evaluation fingerprints. Compare macro BCE and Brier first, then ROC-AUC and monotonicity, and inspect XC50–XC100 threshold metrics plus parameter count and best epoch.
+
+If the vertical CNN is clearly worse, stop this branch and test a different profile encoder. If it shows a meaningful gain, confirm it on paired seeds before adding site-relative AGL/profile masking. Do not tune CNN widths or kernels until the basic structured-profile hypothesis has earned that extra search.

@@ -141,6 +141,61 @@ def _deep_tower(
     return nn.Sequential(*layers)
 
 
+class VerticalProfileConvEncoder(nn.Module):
+    """Encode an ordered multivariate pressure profile with local 1D filters."""
+
+    def __init__(
+        self,
+        *,
+        num_variables: int,
+        num_levels: int,
+        conv_channels: Sequence[int],
+        output_dim: int,
+        kernel_size: int = 3,
+        dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        if num_variables < 1 or num_levels < 1:
+            raise ValueError("Pressure-profile shape must be positive")
+        if not conv_channels or any(channels < 1 for channels in conv_channels):
+            raise ValueError("profile conv_channels must contain positive values")
+        if output_dim < 1:
+            raise ValueError("profile output_dim must be positive")
+        if kernel_size < 1 or kernel_size % 2 == 0:
+            raise ValueError("profile kernel_size must be a positive odd integer")
+
+        layers: list[nn.Module] = []
+        previous = num_variables
+        for channels in conv_channels:
+            layers.extend(
+                (
+                    nn.Conv1d(
+                        previous,
+                        channels,
+                        kernel_size=kernel_size,
+                        padding=kernel_size // 2,
+                    ),
+                    nn.ReLU(),
+                )
+            )
+            if dropout:
+                layers.append(nn.Dropout(p=dropout))
+            previous = channels
+        self.convolution = nn.Sequential(*layers)
+
+        projection: list[nn.Module] = [
+            nn.Flatten(start_dim=1),
+            nn.Linear(previous * num_levels, output_dim),
+            nn.ReLU(),
+        ]
+        if dropout:
+            projection.append(nn.Dropout(p=dropout))
+        self.projection = nn.Sequential(*projection)
+
+    def forward(self, profile: torch.Tensor) -> torch.Tensor:
+        return self.projection(self.convolution(profile))
+
+
 class ExpandedGlideatorNet(nn.Module):
     """Production XC architecture, migrated into the model-family workspace.
 
@@ -167,6 +222,12 @@ class ExpandedGlideatorNet(nn.Module):
         include_time_input_branch: bool = True,
         share_parallel_deep_net: bool = True,
         dropout: float = 0.0,
+        weather_profile_encoder_type: str | None = None,
+        weather_profile_indices: Sequence[int] | None = None,
+        weather_profile_shape: Sequence[int] = (5, 13),
+        weather_profile_conv_channels: Sequence[int] = (8, 8),
+        weather_profile_embedding_dim: int = 32,
+        weather_profile_kernel_size: int = 3,
     ) -> None:
         super().__init__()
         if not deep_hidden_units:
@@ -224,14 +285,59 @@ class ExpandedGlideatorNet(nn.Module):
                     }
                 )
 
+        self.weather_profile_encoder_type = weather_profile_encoder_type
+        self.weather_profile_encoder: VerticalProfileConvEncoder | None = None
+        profile_output_dim = 0
+        if weather_profile_encoder_type is not None:
+            if weather_profile_encoder_type != "vertical_conv":
+                raise ValueError(
+                    f"Unknown weather_profile_encoder_type: {weather_profile_encoder_type}"
+                )
+            if weather_profile_indices is None:
+                raise ValueError(
+                    "weather_profile_indices are required for vertical_conv"
+                )
+            if len(weather_profile_shape) != 2:
+                raise ValueError("weather_profile_shape must be [variables, levels]")
+            profile_variables = int(weather_profile_shape[0])
+            profile_levels = int(weather_profile_shape[1])
+            expected_features = profile_variables * profile_levels
+            indices = tuple(int(index) for index in weather_profile_indices)
+            if len(indices) != expected_features:
+                raise ValueError(
+                    "weather_profile_indices length does not match weather_profile_shape"
+                )
+            if len(set(indices)) != len(indices):
+                raise ValueError("weather_profile_indices must be unique")
+            if any(index < 0 or index >= weather_dim for index in indices):
+                raise ValueError("weather_profile_indices are outside weather input")
+
+            self.register_buffer(
+                "weather_profile_indices",
+                torch.tensor(indices, dtype=torch.long),
+                persistent=False,
+            )
+            self.weather_profile_shape = (profile_variables, profile_levels)
+            self.weather_profile_encoder = VerticalProfileConvEncoder(
+                num_variables=profile_variables,
+                num_levels=profile_levels,
+                conv_channels=weather_profile_conv_channels,
+                output_dim=weather_profile_embedding_dim,
+                kernel_size=weather_profile_kernel_size,
+                dropout=self.dropout,
+            )
+            profile_output_dim = weather_profile_embedding_dim
+
         single_time_output_dim = 0
         if include_time_input_branch:
             single_time_output_dim += single_time_input_dim
         if parallel_deep_hidden_units:
             single_time_output_dim += parallel_deep_hidden_units[-1]
+        single_time_output_dim += profile_output_dim
         if single_time_output_dim == 0:
             raise ValueError(
-                "At least one of the time input branch or parallel deep tower is required"
+                "At least one of the time input branch, parallel deep tower or "
+                "weather profile encoder is required"
             )
 
         self.deep_net = _deep_tower(
@@ -294,6 +400,16 @@ class ExpandedGlideatorNet(nn.Module):
                 branches.append(self.parallel_deep_net(combined))
             elif self.parallel_deep_nets is not None:
                 branches.append(self.parallel_deep_nets[time_key](combined))
+            if self.weather_profile_encoder is not None:
+                profile = weather_scaled.index_select(
+                    dim=-1, index=self.weather_profile_indices
+                )
+                profile = profile.reshape(
+                    profile.shape[0],
+                    self.weather_profile_shape[0],
+                    self.weather_profile_shape[1],
+                )
+                branches.append(self.weather_profile_encoder(profile))
 
             time_slice_outputs.append(
                 branches[0] if len(branches) == 1 else torch.cat(branches, dim=-1)

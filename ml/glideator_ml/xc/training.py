@@ -11,7 +11,12 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from .benchmark import XCFeatureContract
+from .benchmark import (
+    PRESSURE_LEVELS_HPA,
+    PRESSURE_PROFILE_FEATURE_PATTERNS,
+    XCFeatureContract,
+    pressure_profile_indices,
+)
 from .data import fit_scaling_params
 from .model import ExpandedGlideatorNet, StandardScalerLayer
 from .objective import xc_loss
@@ -153,6 +158,31 @@ def fit_xc(
         ),
         "dropout": float(config.get("dropout", 0.0)),
     }
+
+    profile_encoder_type = config.get("weather_profile_encoder_type")
+    if profile_encoder_type is not None:
+        model_config.update(
+            {
+                "weather_profile_encoder_type": str(profile_encoder_type),
+                "weather_profile_indices": list(
+                    pressure_profile_indices(features.weather_features)
+                ),
+                "weather_profile_shape": [
+                    len(PRESSURE_PROFILE_FEATURE_PATTERNS),
+                    len(PRESSURE_LEVELS_HPA),
+                ],
+                "weather_profile_conv_channels": list(
+                    config.get("weather_profile_conv_channels", [8, 8])
+                ),
+                "weather_profile_embedding_dim": int(
+                    config.get("weather_profile_embedding_dim", 32)
+                ),
+                "weather_profile_kernel_size": int(
+                    config.get("weather_profile_kernel_size", 3)
+                ),
+            }
+        )
+
     model = ExpandedGlideatorNet(
         weather_scaler=StandardScalerLayer(weather_scaling),
         site_scaler=StandardScalerLayer(site_scaling),
