@@ -62,16 +62,19 @@ def _assert_model_overrides(candidate: dict, control: dict, overrides: dict) -> 
         assert candidate["model"][key] == value
 
 
-def test_training_control_matches_conventional_baseline() -> None:
+def test_historical_training_control_matches_frozen_baseline_except_dropout() -> None:
     baseline = load_config(BASELINE)
     control = load_config(CONTROL)
-    baseline_model = {**baseline["model"], "dropout": 0.0}
 
+    assert baseline["model"]["dropout"] == 0.10
+    assert control["model"].get("dropout", 0.0) == 0.0
     assert control["task"] == baseline["task"]
     assert control["data"] == baseline["data"]
     assert control["evaluation"] == baseline["evaluation"]
     assert control["tracking"] == baseline["tracking"]
-    assert _without(control["model"], "name") == _without(baseline_model, "name")
+    assert _without(control["model"], "name", "dropout") == _without(
+        baseline["model"], "name", "dropout"
+    )
     assert _without(control["artifact"], "output_dir") == _without(
         baseline["artifact"], "output_dir"
     )
