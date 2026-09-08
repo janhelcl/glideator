@@ -54,3 +54,4 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0007 — Use batch size 8192 for XC GPU experiments](0007-xc-gpu-batch-policy.md)
 - [0008 — Remove CrossNet from the XC candidate baseline](0008-xc-remove-crossnet-from-candidate-baseline.md)
 - [0009 — Do not use hard monotonic output heads as the XC candidate baseline](0009-xc-reject-hard-monotonic-heads.md)
+- [0010 — Do not replace the XC model with TabPFN-3](0010-xc-reject-tabpfn3-as-main-model.md)
