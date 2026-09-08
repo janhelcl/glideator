@@ -123,7 +123,7 @@ def _profile_agl_scaling(
     train: pd.DataFrame,
     features: XCFeatureContract,
 ) -> tuple[list[float], list[float], int, int]:
-    """Fit noon AGL scaling and resolve raw altitude/surface-pressure inputs."""
+    """Fit noon AGL scaling on valid levels and resolve required raw inputs."""
 
     try:
         site_altitude_index = features.site_features.index("altitude")
@@ -139,16 +139,19 @@ def _profile_agl_scaling(
         ) from exc
 
     altitude = train["altitude"]
+    surface_pressure = train["pressure_sfc_pa_12"]
     means: list[float] = []
     stds: list[float] = []
     for level in PRESSURE_LEVELS_HPA:
         column = f"geopotential_height_{level}hpa_m_12"
-        agl = train[column] - altitude
+        valid = surface_pressure >= float(level) * 100.0
+        agl = train.loc[valid, column] - altitude.loc[valid]
         mean = float(agl.mean())
         std = float(agl.std(ddof=1))
         if not pd.notna(mean) or not pd.notna(std) or std <= 0:
             raise ValueError(
-                f"Cannot fit AGL scaler for {level} hPa: mean={mean}, std={std}"
+                f"Cannot fit AGL scaler for {level} hPa on valid levels: "
+                f"rows={int(valid.sum())}, mean={mean}, std={std}"
             )
         means.append(mean)
         stds.append(std)
