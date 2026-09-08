@@ -1,0 +1,55 @@
+task: xc
+
+data:
+  source: database
+  database_url_env: ML_DATABASE_URL
+  table: glideator_fs.features_with_target
+  start_date: "2021-01-01"
+  max_site_id: 250
+  split_strategy: temporal
+  train_end: "2023-12-31"
+  eval_start: "2024-01-01"
+  eval_end: "2024-11-30"
+  require_known_eval_sites: true
+  require_eval_boundary_coverage: true
+  site_features: [latitude, longitude, altitude]
+
+model:
+  name: xc-conventional-mlp
+  seed: 42
+  deterministic: true
+  device: auto
+  validation_start: "2023-01-01"
+  num_launches: 251
+  site_embedding_dim: 32
+  deep_hidden_units: [64, 32]
+  cross_layers: 0
+  prediction_head_type: multilabel
+  parallel_deep_hidden_units: [64, 32]
+  share_cross_net: true
+  include_time_input_branch: true
+  share_parallel_deep_net: true
+  batch_size: 8192
+  num_workers: 0
+  learning_rate: 0.001
+  lr_decay: 1.0
+  epochs: 200
+  patience: 40
+  l1_lambda: 1.0e-9
+  l2_lambda: 1.0e-9
+  monotonicity_lambda: 1.0e-9
+
+evaluation:
+  benchmark_id: xc-temporal-2024-jan-nov-v1
+  batch_size: 8192
+
+artifact:
+  output_dir: outputs/xc/baselines/conventional-mlp
+  filename: xc_checkpoint.pt
+  export_onnx: false
+
+tracking:
+  enabled: true
+  experiment_name: glideator-xc
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  default_tracking_uri: sqlite:///mlruns/mlflow.db
