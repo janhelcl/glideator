@@ -15,7 +15,7 @@ data:
   site_features: [latitude, longitude, altitude]
 
 model:
-  name: xc-conventional-mlp
+  name: xc-opt-dropout-010
   seed: 42
   deterministic: true
   device: auto
@@ -45,7 +45,7 @@ evaluation:
   batch_size: 8192
 
 artifact:
-  output_dir: outputs/xc/baselines/conventional-mlp
+  output_dir: outputs/xc/optimization/training/dropout-010
   filename: xc_checkpoint.pt
   export_onnx: false
 

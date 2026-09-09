@@ -15,7 +15,7 @@ data:
   site_features: [latitude, longitude, altitude]
 
 model:
-  name: xc-conventional-mlp
+  name: xc-opt-dropout-0125
   seed: 42
   deterministic: true
   device: auto
@@ -37,7 +37,7 @@ model:
   patience: 40
   l1_lambda: 1.0e-9
   l2_lambda: 1.0e-9
-  dropout: 0.10
+  dropout: 0.125
   monotonicity_lambda: 1.0e-9
 
 evaluation:
@@ -45,7 +45,7 @@ evaluation:
   batch_size: 8192
 
 artifact:
-  output_dir: outputs/xc/baselines/conventional-mlp
+  output_dir: outputs/xc/optimization/training/dropout-0125
   filename: xc_checkpoint.pt
   export_onnx: false
 

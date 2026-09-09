@@ -4,14 +4,14 @@ This note tracks the active XC experiment sequence after migrating the productio
 
 ## Fixed experiment policy
 
-Architecture and optimization comparisons currently use:
+Architecture comparisons use:
 
 - benchmark: `xc-temporal-2024-jan-nov-v1`;
 - fit rows: before `2023-01-01`;
 - validation/model selection: calendar year 2023;
 - final evaluation: `2024-01-01` through `2024-11-30`;
 - batch size: `8192`;
-- learning rate: `0.001` unless the experiment explicitly targets it;
+- learning rate: `0.001` unless an experiment explicitly targets it;
 - max epochs: `200`;
 - patience: `40`;
 - identical feature contract and scaler behavior across candidates.
@@ -69,85 +69,64 @@ The smaller encoder was confirmed against the old control on paired model seeds 
 | Macro ROC-AUC ↑ | 0.93891 | 0.94098 | +0.00207 | 5/5 |
 | Monotonic violation rate ↓ | 0.0165 | 0.0253 | +0.0088 | 1/5 |
 
-The predictive result is clean: 5/5 wins on all three primary metrics while reducing trainable parameters from roughly 64k to 48.5k. The monotonicity regression remains a secondary diagnostic rather than a hard gate because hard-monotonic heads already showed a predictive penalty.
-
 **Decision:** promote the shared per-time encoder `[64, 32]`. See [ADR 0011](../decisions/0011-xc-promote-smaller-shared-encoder.md).
 
-## Current conventional baseline
+## Completed site-embedding screen
 
-`configs/xc/baselines/conventional_mlp.yaml` is now the canonical conventional baseline:
+The seed-42 screen varied only site-embedding dimension:
+
+| Embedding dim | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Mono rate ↓ | Best epoch | Parameters |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 8 | 0.16101 | 0.04866 | 0.93933 | 0.0123 | 117 | 36.4k |
+| 16 | 0.15944 | 0.04828 | 0.93964 | 0.0286 | 84 | 40.4k |
+| 32 | **0.15787** | **0.04788** | 0.94098 | 0.0270 | 45 | 48.5k |
+| 64 | 0.15833 | 0.04790 | **0.94156** | 0.0205 | 42 | 64.7k |
+
+**Decision:** keep `site_embedding_dim: 32` and close embedding-size tuning. See [ADR 0012](../decisions/0012-xc-keep-32d-site-embedding.md).
+
+## Completed training and regularization optimization
+
+The first seed-42 screen identified dropout as the only generic optimization axis with a clear joint gain:
+
+| Config | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `control.yaml` | 0.15787 | 0.04788 | 0.94098 | 0.0270 | 45 |
+| `lr_5e-4.yaml` | 0.15779 | 0.04781 | 0.94077 | 0.0324 | 98 |
+| `lr_2e-3.yaml` | 0.15752 | 0.04796 | 0.94094 | 0.0287 | 34 |
+| `lr_3e-3.yaml` | 0.15817 | 0.04804 | 0.94021 | 0.0265 | 22 |
+| `l2_1e-7.yaml` | 0.15915 | 0.04819 | 0.94087 | 0.0290 | 45 |
+| `l2_1e-6.yaml` | 0.15768 | 0.04784 | 0.94116 | 0.0283 | 45 |
+| `dropout_005.yaml` | 0.15688 | 0.04768 | 0.94080 | 0.0089 | 46 |
+| `dropout_010.yaml` | **0.15686** | **0.04762** | **0.94206** | **0.0014** | 86 |
+
+A final local screen then checked the neighborhood around `dropout: 0.10` plus the only plausible LR/L2 interactions:
+
+| Config | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `dropout_010` | **0.15686** | 0.04762 | **0.94206** | 0.0014 | 86 |
+| `dropout_0075` | 0.15760 | 0.04771 | 0.94175 | 0.0016 | 86 |
+| `dropout_0125` | 0.15748 | 0.04771 | 0.94176 | 0.0012 | 86 |
+| `dropout_015` | 0.15701 | **0.04760** | 0.94198 | **0.0006** | 86 |
+| `dropout_010_l2_1e-6` | 0.15769 | 0.04779 | 0.94191 | 0.0012 | 86 |
+| `dropout_010_lr_2e-3` | **0.15641** | 0.04772 | 0.94112 | 0.0025 | 31 |
+
+There is no material joint improvement over `dropout: 0.10`. Dropout 0.15 moves tiny amounts between metrics; extra L2 is worse; LR 0.002 buys BCE at the expense of Brier, ROC-AUC and monotonicity. Generic baseline tuning stops here.
+
+**Decision:** freeze `configs/xc/baselines/conventional_mlp.yaml` at `dropout: 0.10` and use it as the canonical control for weather-specific work. See [ADR 0013](../decisions/0013-xc-freeze-optimized-conventional-benchmark.md).
+
+## Frozen conventional benchmark
+
+The canonical conventional model is now:
 
 - no CrossNet (`cross_layers: 0`);
 - raw per-time bypass retained;
-- shared per-time encoder `[64, 32]`;
+- shared per-time MLP `[64, 32]`;
 - fusion tower `[64, 32]`;
 - site embedding dimension `32`;
 - independent multilabel head;
-- batch size `8192`.
+- dropout `0.10`;
+- batch size `8192` and learning rate `0.001`.
 
-Old architecture/refinement configs remain only as lightweight reproducibility records.
+Seed-42 reference metrics are BCE `0.15686`, Brier `0.04762`, ROC-AUC `0.94206`, monotonic violation rate `0.0014`, best epoch `86`.
 
-## Active experiment: site embedding size
-
-### Hypothesis
-
-The 32-dimensional learned site embedding may be oversized for roughly 250 sites, especially because latitude, longitude and altitude are already explicit features. Conversely, a larger embedding tests whether site identity still carries useful residual structure not captured by those geographic features.
-
-Change only `site_embedding_dim`:
-
-| Config | Embedding dim | Role |
-| --- | ---: | --- |
-| `configs/xc/optimization/site_embedding/embedding_8.yaml` | 8 | smaller challenger |
-| `configs/xc/optimization/site_embedding/embedding_16.yaml` | 16 | smaller challenger |
-| `configs/xc/baselines/conventional_mlp.yaml` | 32 | control |
-| `configs/xc/optimization/site_embedding/embedding_64.yaml` | 64 | capacity check |
-
-### Seed-42 screen
-
-Run from `ml/`:
-
-```bash
-export ML_DATABASE_URL='postgresql://...'
-
-for config in \
-  configs/xc/optimization/site_embedding/embedding_8.yaml \
-  configs/xc/optimization/site_embedding/embedding_16.yaml \
-  configs/xc/baselines/conventional_mlp.yaml \
-  configs/xc/optimization/site_embedding/embedding_64.yaml
-do
-  glideator-ml run xc --config "$config"
-done
-```
-
-All four configs share the same benchmark and training contract; tests guard that challengers differ from the control only in embedding size, model name and artifact path.
-
-### Promotion rule
-
-Screen seed 42 first. Promote at most one challenger to paired seeds 42–46 using `glideator-ml confirm-seeds`.
-
-Prefer a smaller embedding when BCE/Brier/AUC are effectively tied. Promote a larger embedding only if it produces a clear predictive gain that justifies the extra parameters.
-
-## Selection metrics
-
-Compare at minimum:
-
-- macro BCE;
-- macro Brier score;
-- macro ROC-AUC;
-- per-threshold BCE/Brier/AUC, especially XC50–XC100;
-- monotonicity violations;
-- best epoch and validation loss;
-- parameter count and wall-clock training time.
-
-For close candidates, prefer the simpler model unless a meaningful threshold region improves consistently.
-
-## Planned conventional optimization sequence
-
-After site embedding size:
-
-1. learning rate;
-2. dropout / AdamW weight decay;
-3. one activation check (`ReLU` vs `SiLU`);
-4. freeze the optimized conventional MLP benchmark.
-
-Only then start weather-specific architectures so any gains are measured against a properly tuned conventional baseline.
+Do not reopen generic capacity, embedding, LR, L2 or dropout tuning while screening weather-specific representations.

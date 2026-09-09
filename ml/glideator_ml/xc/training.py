@@ -151,6 +151,7 @@ def fit_xc(
         "share_parallel_deep_net": bool(
             config.get("share_parallel_deep_net", True)
         ),
+        "dropout": float(config.get("dropout", 0.0)),
     }
     model = ExpandedGlideatorNet(
         weather_scaler=StandardScalerLayer(weather_scaling),
@@ -175,7 +176,9 @@ def fit_xc(
     )
     validation_loader = DataLoader(_dataset(validation, features), batch_size=batch_size)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=float(config.get("learning_rate", 1e-3)))
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=float(config.get("learning_rate", 1e-3))
+    )
     scheduler = torch.optim.lr_scheduler.ExponentialLR(
         optimizer, gamma=float(config.get("lr_decay", 1.0))
     )

@@ -15,7 +15,7 @@ data:
   site_features: [latitude, longitude, altitude]
 
 model:
-  name: xc-conventional-mlp
+  name: xc-opt-l2-1e-6
   seed: 42
   deterministic: true
   device: auto
@@ -36,8 +36,8 @@ model:
   epochs: 200
   patience: 40
   l1_lambda: 1.0e-9
-  l2_lambda: 1.0e-9
-  dropout: 0.10
+  l2_lambda: 1.0e-6
+  dropout: 0.0
   monotonicity_lambda: 1.0e-9
 
 evaluation:
@@ -45,7 +45,7 @@ evaluation:
   batch_size: 8192
 
 artifact:
-  output_dir: outputs/xc/baselines/conventional-mlp
+  output_dir: outputs/xc/optimization/training/l2-1e-6
   filename: xc_checkpoint.pt
   export_onnx: false
 
