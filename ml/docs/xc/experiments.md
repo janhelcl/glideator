@@ -188,4 +188,4 @@ The seed-42 BCE/Brier gain does not replicate. The small ROC-AUC advantage over 
 
 ## Next architecture direction
 
-Return to the frozen conventional MLP as the promotion baseline. The next weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder; only after establishing signal there consider attention across level tokens.
+Return to the frozen conventional MLP as the promotion baseline. The next weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
