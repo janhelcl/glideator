@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 import hashlib
 import json
 from dataclasses import dataclass
@@ -11,6 +12,37 @@ from .preprocessing import DATE_FEATURES, TARGET_NAMES, WEATHER_TIMES
 
 
 DEFAULT_SITE_FEATURES = ("latitude", "longitude", "altitude")
+
+# Pressure levels are ordered from the nominal lower atmosphere upward. The
+# first weather-specific architecture treats each variable as one channel over
+# this shared vertical axis.
+PRESSURE_LEVELS_HPA = (
+    1000,
+    975,
+    950,
+    925,
+    900,
+    850,
+    800,
+    750,
+    700,
+    650,
+    600,
+    550,
+    500,
+)
+PRESSURE_PROFILE_FEATURE_PATTERNS = (
+    "u_wind_{level}hpa_ms",
+    "v_wind_{level}hpa_ms",
+    "temperature_{level}hpa_k",
+    "relative_humidity_{level}hpa_pct",
+    "geopotential_height_{level}hpa_m",
+)
+PRESSURE_PROFILE_FEATURES = tuple(
+    pattern.format(level=level)
+    for pattern in PRESSURE_PROFILE_FEATURE_PATTERNS
+    for level in PRESSURE_LEVELS_HPA
+)
 
 # Exact order returned by legacy gfs.fetch.get_col_order() and consumed by the
 # currently served XC model. Database column order is not a model contract.
@@ -93,6 +125,19 @@ PRODUCTION_WEATHER_FEATURES = (
     "geopotential_height_1000hpa_m",
     "geopotential_height_sfc_m",
 )
+
+
+def pressure_profile_indices(weather_features: Sequence[str]) -> tuple[int, ...]:
+    """Return canonical 5 x 13 profile indices within a weather feature vector."""
+
+    positions = {feature: index for index, feature in enumerate(weather_features)}
+    missing = [feature for feature in PRESSURE_PROFILE_FEATURES if feature not in positions]
+    if missing:
+        raise ValueError(
+            "XC pressure-profile encoder requires the full canonical profile; missing: "
+            + ", ".join(missing[:8])
+        )
+    return tuple(positions[feature] for feature in PRESSURE_PROFILE_FEATURES)
 
 
 @dataclass(frozen=True)

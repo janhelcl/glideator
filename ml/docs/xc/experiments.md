@@ -130,3 +130,20 @@ The canonical conventional model is now:
 Seed-42 reference metrics are BCE `0.15686`, Brier `0.04762`, ROC-AUC `0.94206`, monotonic violation rate `0.0014`, best epoch `86`.
 
 Do not reopen generic capacity, embedding, LR, L2 or dropout tuning while screening weather-specific representations.
+
+## Completed weather-profile experiment: shared vertical CNN
+
+The first weather-specific candidate asked whether explicitly encoding local vertical adjacency helps beyond the flat tabular representation. It added a shared Conv1D branch over standardized `[u, v, T, RH, z] × 13` while leaving the frozen raw bypass and shared `[64, 32]` per-time MLP intact.
+
+Seed 42 showed a small BCE/Brier improvement, so the candidate was confirmed on paired seeds 42–46 before any CNN hyperparameter tuning.
+
+| Metric | Control mean | Vertical CNN mean | Mean delta (candidate − control) | Candidate wins |
+| --- | ---: | ---: | ---: | ---: |
+| Macro BCE ↓ | 0.156677 | 0.156742 | +0.000065 | 3/5 |
+| Macro Brier ↓ | 0.047601 | 0.047611 | +0.000010 | 3/5 |
+| Macro ROC-AUC ↑ | 0.941865 | 0.941676 | -0.000189 | 3/5 |
+| Monotonic violation rate ↓ | 0.002076 | 0.006883 | +0.004807 | 1/5 |
+
+The primary metrics are a wash with slightly worse candidate means, and monotonicity regresses. The seed-42 improvement did not replicate.
+
+**Decision:** reject the plain pressure-index CNN as a promotion candidate and do not tune its width, depth or kernel size. Keep it only as a reusable building block for a sharper physics-aware representation. See [ADR 0014](../decisions/0014-xc-reject-plain-vertical-profile-cnn.md).
