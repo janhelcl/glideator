@@ -18,7 +18,7 @@ Seed 42 improved BCE, Brier, ROC-AUC and monotonicity against both the plain CNN
 
 Do not promote the AGL/mask vertical CNN. Stop the current Conv1D pressure-profile family rather than tuning its width, depth, kernel size or adding further coordinate channels to the same architecture.
 
-The frozen conventional MLP remains the XC promotion baseline. The next weather-specific architecture should change the inductive bias, starting with a level-wise/shared-token encoder rather than another Conv1D variant.
+The frozen conventional MLP remains the XC promotion baseline. The next weather-specific architecture should change the inductive bias, starting with a shared per-level encoder and simple ordered aggregation before introducing level attention.
 
 ## Why
 
@@ -40,7 +40,7 @@ Against the plain vertical CNN, the representation change also did not improve t
 | Macro ROC-AUC ↑ | 0.941676 | 0.941867 | +0.000191 | 4/5 |
 | Monotonic violation rate ↓ | 0.006883 | 0.005656 | -0.001227 | 2/5 |
 
-The small ROC-AUC signal versus the plain CNN is not accompanied by BCE/Brier improvement and does not clear the conventional promotion bar. It is therefore insufficient evidence to continue investing in this convolution family.
+The small ROC-AUC signal versus the plain CNN is not accompanied by BCE/Brier improvement and does not clear the conventional promotion bar. It is insufficient evidence to continue investing in this convolution family.
 
 Both vertical-CNN screens produced attractive seed-42 results that disappeared under paired-seed confirmation. Future weather-specific architecture screens should continue to treat seed 42 only as a cheap filter, not promotion evidence.
 
@@ -51,7 +51,7 @@ Both vertical-CNN screens produced attractive seed-42 results that disappeared u
 - Do not tune Conv1D channel widths, depth or kernel size.
 - Do not add pressure/log-pressure coordinates as another incremental Conv1D experiment.
 - Preserve the useful physics work (AGL derivation and above-ground masking) as potential inputs to a different profile encoder.
-- The next vertical-profile experiment should test a different inductive bias, preferably a shared per-level encoder before considering level attention.
+- The next vertical-profile experiment should use a shared per-pressure-level encoder with simple ordered flatten/fusion aggregation; attention is a later, separate hypothesis.
 
 ## Evidence
 
