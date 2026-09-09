@@ -147,3 +147,50 @@ Seed 42 showed a small BCE/Brier improvement, so the candidate was confirmed on 
 The primary metrics are a wash with slightly worse candidate means, and monotonicity regresses. The seed-42 improvement did not replicate.
 
 **Decision:** reject the plain pressure-index CNN as a promotion candidate and do not tune its width, depth or kernel size. Keep it only as a reusable building block for a sharper physics-aware representation. See [ADR 0014](../decisions/0014-xc-reject-plain-vertical-profile-cnn.md).
+
+## Active experiment: site-relative AGL + above-ground mask
+
+The next candidate isolates a sharper hypothesis: **does the vertical CNN become useful when its profile is expressed in coordinates that better match what a pilot can physically encounter?**
+
+`vertical_conv_agl_mask.yaml` keeps the CNN architecture, raw bypass, per-time MLP, fusion tower and all training settings identical to `vertical_conv.yaml`. It changes only the CNN input representation:
+
+- keep standardized `u`, `v`, temperature and relative humidity channels;
+- replace absolute geopotential-height `z` with `z_AGL = geopotential_height - site_altitude`, computed from raw values;
+- fit one AGL mean/std per pressure level on training/noon rows before standardizing the derived AGL channel;
+- derive `valid_above_ground` from GFS surface pressure: a pressure level is valid when `level_pressure <= pressure_sfc`;
+- zero all five physical channels at invalid/below-ground levels and append the binary validity mask as a sixth CNN channel.
+
+The mask uses model surface pressure because it identifies pressure surfaces below the GFS terrain. AGL uses launch/site altitude because height above the actual launch is the operationally relevant coordinate for the pilot.
+
+Per time slice:
+
+```text
+raw weather + raw site altitude
+  → [standardized u, v, T, RH, standardized z_AGL] × 13
+  → zero invalid levels using pressure_sfc
+  → append valid_above_ground channel
+  → Conv1D(6 → 8, kernel=3)
+  → Conv1D(8 → 8, kernel=3)
+  → flatten → Linear(104 → 32)
+```
+
+The existing raw and MLP branches still receive the original unmodified feature contract, so this experiment changes only what the additional structured-profile branch sees.
+
+Run from `ml/`:
+
+```bash
+export ML_DATABASE_URL='postgresql://...'
+
+glideator-ml sweep xc \
+  --configs \
+    configs/xc/baselines/conventional_mlp.yaml \
+    configs/xc/architecture/weather_profiles/vertical_conv.yaml \
+    configs/xc/architecture/weather_profiles/vertical_conv_agl_mask.yaml \
+  --output-dir outputs/xc/architecture/weather-profiles/vertical-conv-agl-mask-screen
+```
+
+### Selection rule
+
+Start with seed 42. The key causal comparison is `vertical_conv_agl_mask` versus `vertical_conv`; the conventional MLP remains the promotion bar. Require identical benchmark/data/evaluation fingerprints and compare macro BCE/Brier first, then ROC-AUC, monotonicity and XC50–XC100.
+
+If AGL/masking creates a material gain over the plain CNN and clears the conventional benchmark, confirm it on paired seeds 42–46. If it does not, stop the convolution branch and move to a different vertical encoder rather than tuning CNN hyperparameters.

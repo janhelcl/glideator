@@ -228,6 +228,12 @@ class ExpandedGlideatorNet(nn.Module):
         weather_profile_conv_channels: Sequence[int] = (8, 8),
         weather_profile_embedding_dim: int = 32,
         weather_profile_kernel_size: int = 3,
+        weather_profile_use_agl_mask: bool = False,
+        weather_profile_surface_pressure_index: int | None = None,
+        weather_profile_site_altitude_index: int | None = None,
+        weather_profile_pressure_levels_hpa: Sequence[float] | None = None,
+        weather_profile_agl_means: Sequence[float] | None = None,
+        weather_profile_agl_stds: Sequence[float] | None = None,
     ) -> None:
         super().__init__()
         if not deep_hidden_units:
@@ -286,6 +292,7 @@ class ExpandedGlideatorNet(nn.Module):
                 )
 
         self.weather_profile_encoder_type = weather_profile_encoder_type
+        self.weather_profile_use_agl_mask = bool(weather_profile_use_agl_mask)
         self.weather_profile_encoder: VerticalProfileConvEncoder | None = None
         profile_output_dim = 0
         if weather_profile_encoder_type is not None:
@@ -318,8 +325,72 @@ class ExpandedGlideatorNet(nn.Module):
                 persistent=False,
             )
             self.weather_profile_shape = (profile_variables, profile_levels)
+
+            encoder_variables = profile_variables
+            if self.weather_profile_use_agl_mask:
+                if profile_variables != 5:
+                    raise ValueError(
+                        "AGL profile masking requires the canonical five-variable profile"
+                    )
+                if weather_profile_surface_pressure_index is None:
+                    raise ValueError(
+                        "weather_profile_surface_pressure_index is required for AGL masking"
+                    )
+                if not 0 <= int(weather_profile_surface_pressure_index) < weather_dim:
+                    raise ValueError("surface pressure index is outside weather input")
+                if weather_profile_site_altitude_index is None:
+                    raise ValueError(
+                        "weather_profile_site_altitude_index is required for AGL masking"
+                    )
+                if not 0 <= int(weather_profile_site_altitude_index) < site_dim:
+                    raise ValueError("site altitude index is outside site input")
+                if weather_profile_pressure_levels_hpa is None:
+                    raise ValueError(
+                        "weather_profile_pressure_levels_hpa is required for AGL masking"
+                    )
+                pressure_levels = tuple(
+                    float(level) for level in weather_profile_pressure_levels_hpa
+                )
+                if len(pressure_levels) != profile_levels:
+                    raise ValueError(
+                        "pressure level count does not match weather_profile_shape"
+                    )
+                if weather_profile_agl_means is None or weather_profile_agl_stds is None:
+                    raise ValueError(
+                        "training-fitted AGL means/stds are required for AGL masking"
+                    )
+                agl_means = tuple(float(value) for value in weather_profile_agl_means)
+                agl_stds = tuple(float(value) for value in weather_profile_agl_stds)
+                if len(agl_means) != profile_levels or len(agl_stds) != profile_levels:
+                    raise ValueError("AGL scaler length must match profile levels")
+                if any(std <= 0 for std in agl_stds):
+                    raise ValueError("AGL scaler standard deviations must be positive")
+
+                self.weather_profile_surface_pressure_index = int(
+                    weather_profile_surface_pressure_index
+                )
+                self.weather_profile_site_altitude_index = int(
+                    weather_profile_site_altitude_index
+                )
+                self.register_buffer(
+                    "weather_profile_pressure_levels_pa",
+                    torch.tensor(pressure_levels, dtype=torch.float32) * 100.0,
+                    persistent=False,
+                )
+                self.register_buffer(
+                    "weather_profile_agl_means",
+                    torch.tensor(agl_means, dtype=torch.float32),
+                    persistent=False,
+                )
+                self.register_buffer(
+                    "weather_profile_agl_stds",
+                    torch.tensor(agl_stds, dtype=torch.float32),
+                    persistent=False,
+                )
+                encoder_variables += 1
+
             self.weather_profile_encoder = VerticalProfileConvEncoder(
-                num_variables=profile_variables,
+                num_variables=encoder_variables,
                 num_levels=profile_levels,
                 conv_channels=weather_profile_conv_channels,
                 output_dim=weather_profile_embedding_dim,
@@ -359,6 +430,52 @@ class ExpandedGlideatorNet(nn.Module):
             )
         else:
             raise ValueError(f"Unknown prediction_head_type: {prediction_head_type}")
+
+    def _weather_profile(
+        self,
+        *,
+        weather_raw: torch.Tensor,
+        weather_scaled: torch.Tensor,
+        site_raw: torch.Tensor,
+    ) -> torch.Tensor:
+        profile_scaled = weather_scaled.index_select(
+            dim=-1, index=self.weather_profile_indices
+        ).reshape(
+            weather_scaled.shape[0],
+            self.weather_profile_shape[0],
+            self.weather_profile_shape[1],
+        )
+        if not self.weather_profile_use_agl_mask:
+            return profile_scaled
+
+        profile_raw = weather_raw.index_select(
+            dim=-1, index=self.weather_profile_indices
+        ).reshape(
+            weather_raw.shape[0],
+            self.weather_profile_shape[0],
+            self.weather_profile_shape[1],
+        )
+
+        site_altitude = site_raw[:, self.weather_profile_site_altitude_index]
+        agl_raw = profile_raw[:, 4, :] - site_altitude.unsqueeze(-1)
+        agl_scaled = (
+            agl_raw - self.weather_profile_agl_means
+        ) / self.weather_profile_agl_stds
+
+        profile = torch.cat(
+            [profile_scaled[:, :4, :], agl_scaled.unsqueeze(1)], dim=1
+        )
+        surface_pressure = weather_raw[:, self.weather_profile_surface_pressure_index]
+        valid = (
+            self.weather_profile_pressure_levels_pa.unsqueeze(0)
+            <= surface_pressure.unsqueeze(-1)
+        ).to(dtype=profile.dtype)
+
+        # Zero means "neutral standardized value" for invalid model levels; the
+        # explicit validity channel lets the encoder distinguish that from a
+        # genuinely near-mean atmospheric observation.
+        profile = profile * valid.unsqueeze(1)
+        return torch.cat([profile, valid.unsqueeze(1)], dim=1)
 
     def forward(self, features: Mapping[str, object]) -> torch.Tensor:
         weather = features["weather"]
@@ -401,13 +518,10 @@ class ExpandedGlideatorNet(nn.Module):
             elif self.parallel_deep_nets is not None:
                 branches.append(self.parallel_deep_nets[time_key](combined))
             if self.weather_profile_encoder is not None:
-                profile = weather_scaled.index_select(
-                    dim=-1, index=self.weather_profile_indices
-                )
-                profile = profile.reshape(
-                    profile.shape[0],
-                    self.weather_profile_shape[0],
-                    self.weather_profile_shape[1],
+                profile = self._weather_profile(
+                    weather_raw=weather_value,
+                    weather_scaled=weather_scaled,
+                    site_raw=site,
                 )
                 branches.append(self.weather_profile_encoder(profile))
 
