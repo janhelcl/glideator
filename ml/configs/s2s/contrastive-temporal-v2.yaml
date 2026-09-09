@@ -1,0 +1,38 @@
+task: s2s
+
+data:
+  source: database
+  database_url_env: ML_DATABASE_URL
+  schema: glideator_mart
+  split_strategy: temporal
+  temporal_cutoff: "2024-01-01"
+  min_eval_history: 1
+
+model:
+  name: contrastive
+  seed: 42
+  n_factors: 64
+  epochs: 50
+  learning_rate: 0.005
+  weight_decay: 0.0001
+  temperature: 0.1
+  batch_size: 256
+  negative_samples: 50
+  negative_sampling_power: 0.75
+  add_inbatch_negatives: false
+  device: auto
+
+evaluation:
+  benchmark_id: s2s-v2
+  ks: [5, 10]
+
+artifact:
+  output_dir: outputs/s2s/contrastive-temporal-v2
+  filename: s2s_covisit_embeddings.pkl
+
+tracking:
+  enabled: true
+  experiment_name: glideator-s2s
+  run_name: contrastive-temporal-v2
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  default_tracking_uri: sqlite:///mlruns/mlflow.db

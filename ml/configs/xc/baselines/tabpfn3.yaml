@@ -1,0 +1,49 @@
+task: xc
+
+data:
+  source: database
+  database_url_env: ML_DATABASE_URL
+  table: glideator_fs.features_with_target
+  start_date: "2021-01-01"
+  max_site_id: 250
+  split_strategy: temporal
+  train_end: "2023-12-31"
+  eval_start: "2024-01-01"
+  eval_end: "2024-11-30"
+  require_known_eval_sites: true
+  require_eval_boundary_coverage: true
+  site_features: [latitude, longitude, altitude]
+
+model:
+  name: xc-tabpfn3
+  version: v3
+  target_encoding: ordinal-multiclass-cumulative
+  seed: 42
+  device: auto
+  # Strict comparison with the neural architecture runs: TabPFN sees only the
+  # rows used to fit neural weights, while calendar 2023 remains outside its
+  # in-context training set just as it remains outside gradient fitting.
+  validation_start: "2023-01-01"
+  context_policy: fit_parity
+  n_estimators: auto
+  fit_mode: fit_preprocessors
+  memory_saving_mode: auto
+  n_preprocessing_jobs: 1
+  ignore_pretraining_limits: false
+  show_progress_bar: true
+
+evaluation:
+  benchmark_id: xc-temporal-2024-jan-nov-v1
+  # TabPFN recomputes the in-context forward pass for each predict call in
+  # fit_preprocessors mode. 8192 is a practical starting point for the RTX 3090;
+  # reduce this only if the first run is memory constrained.
+  prediction_batch_size: 8192
+
+artifact:
+  output_dir: outputs/xc/baselines/tabpfn3
+
+tracking:
+  enabled: true
+  experiment_name: glideator-xc
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  default_tracking_uri: sqlite:///mlruns/mlflow.db
