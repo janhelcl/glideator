@@ -13,7 +13,7 @@ Seed 42 looked mildly positive, so the candidate was confirmed on paired model s
 
 Do not promote or tune the plain vertical-profile CNN as a replacement for the frozen conventional benchmark.
 
-Keep the implementation as an experimental building block for sharper physics-aware hypotheses, but do not spend search budget on convolution width, depth or kernel-size sweeps in the raw pressure-index representation.
+Keep the implementation as a reproducible negative experiment, but do not spend search budget on convolution width, depth or kernel-size sweeps in the raw pressure-index representation.
 
 ## Why
 
@@ -35,8 +35,8 @@ A plain convolution over pressure-level index also lacks several pieces of meteo
 - `vertical_conv.yaml` remains as the reproducible completed experiment.
 - The frozen conventional MLP remains the promotion reference.
 - Do not tune CNN width, depth or kernel size on the raw pressure-index representation.
-- The next experiment may reuse the same CNN architecture only to isolate a physics-aware input representation: site-relative AGL plus an explicit above-ground validity mask.
-- If the physics-aware representation also fails to improve the benchmark, move to a different profile encoder family rather than tuning the convolution.
+- One physics-aware follow-up was allowed to isolate site-relative AGL plus an explicit above-ground validity mask.
+- That follow-up also failed paired-seed confirmation; ADR 0015 therefore closes the current Conv1D family entirely.
 
 ## Evidence
 

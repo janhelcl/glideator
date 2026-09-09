@@ -146,51 +146,46 @@ Seed 42 showed a small BCE/Brier improvement, so the candidate was confirmed on 
 
 The primary metrics are a wash with slightly worse candidate means, and monotonicity regresses. The seed-42 improvement did not replicate.
 
-**Decision:** reject the plain pressure-index CNN as a promotion candidate and do not tune its width, depth or kernel size. Keep it only as a reusable building block for a sharper physics-aware representation. See [ADR 0014](../decisions/0014-xc-reject-plain-vertical-profile-cnn.md).
+**Decision:** reject the plain pressure-index CNN as a promotion candidate and do not tune its width, depth or kernel size. See [ADR 0014](../decisions/0014-xc-reject-plain-vertical-profile-cnn.md).
 
-## Active experiment: site-relative AGL + above-ground mask
+## Completed weather-profile experiment: site-relative AGL + above-ground mask
 
-The next candidate isolates a sharper hypothesis: **does the vertical CNN become useful when its profile is expressed in coordinates that better match what a pilot can physically encounter?**
+The follow-up kept the CNN architecture frozen and changed only its structured input representation: standardized `u/v/T/RH`, site-relative `z_AGL`, and an explicit above-ground validity mask derived from surface pressure. Invalid pressure levels were zeroed before the CNN. The raw bypass, conventional per-time MLP, fusion tower and training policy remained unchanged.
 
-`vertical_conv_agl_mask.yaml` keeps the CNN architecture, raw bypass, per-time MLP, fusion tower and all training settings identical to `vertical_conv.yaml`. It changes only the CNN input representation:
+### Seed-42 screen
 
-- keep standardized `u`, `v`, temperature and relative humidity channels;
-- replace absolute geopotential-height `z` with `z_AGL = geopotential_height - site_altitude`, computed from raw values;
-- fit one AGL mean/std per pressure level on training/noon rows before standardizing the derived AGL channel;
-- derive `valid_above_ground` from GFS surface pressure: a pressure level is valid when `level_pressure <= pressure_sfc`;
-- zero all five physical channels at invalid/below-ground levels and append the binary validity mask as a sixth CNN channel.
+| Model | BCE ↓ | Brier ↓ | ROC-AUC ↑ | Mono rate ↓ | Best epoch | Parameters |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| conventional MLP | 0.156858 | 0.047616 | 0.942058 | 0.001378 | 86 | 48,523 |
+| vertical CNN | 0.156238 | 0.047413 | 0.942053 | 0.002428 | 86 | 58,355 |
+| vertical CNN + AGL/mask | **0.156021** | **0.047290** | **0.942749** | **0.001294** | 98 | 58,379 |
 
-The mask uses model surface pressure because it identifies pressure surfaces below the GFS terrain. AGL uses launch/site altitude because height above the actual launch is the operationally relevant coordinate for the pilot.
+The candidate improved all aggregate metrics at seed 42, so it earned paired-seed confirmation without any CNN tuning.
 
-Per time slice:
+### Paired seeds 42–46
 
-```text
-raw weather + raw site altitude
-  → [standardized u, v, T, RH, standardized z_AGL] × 13
-  → zero invalid levels using pressure_sfc
-  → append valid_above_ground channel
-  → Conv1D(6 → 8, kernel=3)
-  → Conv1D(8 → 8, kernel=3)
-  → flatten → Linear(104 → 32)
-```
+Against the frozen conventional MLP promotion bar:
 
-The existing raw and MLP branches still receive the original unmodified feature contract, so this experiment changes only what the additional structured-profile branch sees.
+| Metric | MLP mean | AGL/mask mean | Mean delta (AGL − MLP) | AGL wins |
+| --- | ---: | ---: | ---: | ---: |
+| Macro BCE ↓ | 0.156677 | 0.156987 | +0.000310 | 2/5 |
+| Macro Brier ↓ | 0.047601 | 0.047635 | +0.000034 | 3/5 |
+| Macro ROC-AUC ↑ | 0.941865 | 0.941867 | +0.000002 | 3/5 |
+| Monotonic violation rate ↓ | 0.002076 | 0.005656 | +0.003580 | 2/5 |
 
-Run from `ml/`:
+Against the plain vertical CNN causal control:
 
-```bash
-export ML_DATABASE_URL='postgresql://...'
+| Metric | Plain CNN mean | AGL/mask mean | Mean delta (AGL − CNN) | AGL wins |
+| --- | ---: | ---: | ---: | ---: |
+| Macro BCE ↓ | 0.156742 | 0.156987 | +0.000245 | 2/5 |
+| Macro Brier ↓ | 0.047611 | 0.047635 | +0.000024 | 2/5 |
+| Macro ROC-AUC ↑ | 0.941676 | 0.941867 | +0.000191 | 4/5 |
+| Monotonic violation rate ↓ | 0.006883 | 0.005656 | -0.001227 | 2/5 |
 
-glideator-ml sweep xc \
-  --configs \
-    configs/xc/baselines/conventional_mlp.yaml \
-    configs/xc/architecture/weather_profiles/vertical_conv.yaml \
-    configs/xc/architecture/weather_profiles/vertical_conv_agl_mask.yaml \
-  --output-dir outputs/xc/architecture/weather-profiles/vertical-conv-agl-mask-screen
-```
+The seed-42 BCE/Brier gain does not replicate. The small ROC-AUC advantage over the plain CNN is not accompanied by better primary losses and does not clear the conventional promotion bar.
 
-### Selection rule
+**Decision:** reject AGL/mask as a promotion candidate and stop the current Conv1D profile family. Do not tune convolution width, depth or kernel size and do not add another coordinate channel to this CNN. Keep both CNN configs as reproducible negative experiments and preserve AGL/masking as possible inputs for a different encoder family. See [ADR 0015](../decisions/0015-xc-stop-vertical-conv-family.md).
 
-Start with seed 42. The key causal comparison is `vertical_conv_agl_mask` versus `vertical_conv`; the conventional MLP remains the promotion bar. Require identical benchmark/data/evaluation fingerprints and compare macro BCE/Brier first, then ROC-AUC, monotonicity and XC50–XC100.
+## Next architecture direction
 
-If AGL/masking creates a material gain over the plain CNN and clears the conventional benchmark, confirm it on paired seeds 42–46. If it does not, stop the convolution branch and move to a different vertical encoder rather than tuning CNN hyperparameters.
+Return to the frozen conventional MLP as the promotion baseline. The next weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
