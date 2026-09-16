@@ -18,7 +18,7 @@ const SCENARIOS = {
   average: {
     label: 'Flyable Day',
     values: [0.92, 0.75, 0.55, 0.35, 0.20, 0.10, 0.05, 0.02, 0.01, 0.00, 0.00],
-    comment: 'The site is on. You are likely to see sombeody in the air. Local soaring maybe some short XC flights. Long XC flights are unlikely.',
+    comment: 'The site is on. You are likely to see somebody in the air. Local soaring maybe some short XC flights. Long XC flights are unlikely.',
   },
   epic: {
     label: 'Epic Day',
