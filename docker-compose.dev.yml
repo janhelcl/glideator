@@ -18,6 +18,7 @@ services:
       - WATCHPACK_POLLING=true
       - REACT_APP_API_BASE_URL=http://localhost:8000
       - REACT_APP_VAPID_PUBLIC_KEY=${REACT_APP_VAPID_PUBLIC_KEY:-}
+      - REACT_APP_CARTO_API_KEY=${REACT_APP_CARTO_API_KEY:-}
     depends_on:
       - web
     command: npm start

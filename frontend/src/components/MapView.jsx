@@ -11,6 +11,7 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LayersIcon from '@mui/icons-material/Layers';
 import debounce from 'lodash/debounce';
 import LoadingSpinner from './LoadingSpinner';
+import { getLightweightTileConfig } from '../utils/mapTiles';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -155,6 +156,7 @@ const MapView = React.memo(({
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const lightweightTileConfig = useMemo(() => getLightweightTileConfig(), []);
 
   // Initialize useTransition
   const [isPending, startTransition] = useTransition();
@@ -590,8 +592,8 @@ const MapView = React.memo(({
       {(isSmallMap || lightweight) ? (
         /* Render a simplified TileLayer for small/lightweight maps */
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
-          attribution="" // No attribution for small maps
+          url={lightweightTileConfig.url}
+          attribution={lightweightTileConfig.attribution}
           tileSize={256}
           zoomOffset={0}
           updateWhenIdle={true}

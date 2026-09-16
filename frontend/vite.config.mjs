@@ -30,6 +30,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       'process.env.REACT_APP_ANALYTICS_ENABLED': JSON.stringify(
         readFirst(env, 'VITE_ANALYTICS_ENABLED', 'REACT_APP_ANALYTICS_ENABLED'),
       ),
+      'process.env.REACT_APP_CARTO_API_KEY': JSON.stringify(
+        readFirst(env, 'VITE_CARTO_API_KEY', 'REACT_APP_CARTO_API_KEY'),
+      ),
     },
     server: {
       host: '0.0.0.0',
