@@ -42,6 +42,9 @@ The frontend accepts both the existing CRA-style names and their Vite equivalent
 | `REACT_APP_PUBLIC_ORIGIN` | `VITE_PUBLIC_ORIGIN` | Canonical public origin |
 | `REACT_APP_VAPID_PUBLIC_KEY` | `VITE_VAPID_PUBLIC_KEY` | Browser push public key |
 | `REACT_APP_ANALYTICS_ENABLED` | `VITE_ANALYTICS_ENABLED` | Set to `false` to disable product analytics |
+| `REACT_APP_CARTO_API_KEY` | `VITE_CARTO_API_KEY` | CARTO key for date thumbnail basemaps; falls back to OpenStreetMap when unset |
+
+CARTO basemap keys are included in the browser bundle by design. Restrict the key to the deployed Glideator domains in CARTO.
 
 Server-only settings remain ordinary Node environment variables:
 
