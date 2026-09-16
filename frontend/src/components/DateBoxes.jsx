@@ -1,8 +1,10 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
+import { getLightweightTileConfig } from '../utils/mapTiles';
 import './DateBoxes.css';
 
 const MapView = React.lazy(() => import('./MapView'));
+const LIGHTWEIGHT_TILE_PROVIDER = getLightweightTileConfig().provider;
 
 const ClientOnly = ({ children }) => {
   const [mounted, setMounted] = useState(false);
@@ -116,6 +118,20 @@ const DateBoxes = ({
           );
         })}
       </Box>
+      <Typography className="date-strip-attribution" variant="caption" component="div">
+        Map data:{' '}
+        <Link href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+          © OpenStreetMap contributors
+        </Link>
+        {LIGHTWEIGHT_TILE_PROVIDER === 'carto' && (
+          <>
+            {' '}· Map style:{' '}
+            <Link href="https://carto.com/attributions" target="_blank" rel="noreferrer">
+              © CARTO
+            </Link>
+          </>
+        )}
+      </Typography>
     </Box>
   );
 };
