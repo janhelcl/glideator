@@ -186,6 +186,14 @@ The seed-42 BCE/Brier gain does not replicate. The small ROC-AUC advantage over 
 
 **Decision:** reject AGL/mask as a promotion candidate and stop the current Conv1D profile family. Do not tune convolution width, depth or kernel size and do not add another coordinate channel to this CNN. Keep both CNN configs as reproducible negative experiments and preserve AGL/masking as possible inputs for a different encoder family. See [ADR 0015](../decisions/0015-xc-stop-vertical-conv-family.md).
 
-## Next architecture direction
+## Next experiment: Jev 1.13 hosted challenger
 
-Return to the frozen conventional MLP as the promotion baseline. The next weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
+Before returning to trainable weather-specific architectures, run one bounded challenger with TypeSafe's pinned `jev-1.13.0` decision model. Jev is not a drop-in PyTorch layer: it receives semantic state and returns typed probabilities through a hosted API.
+
+The experiment preserves the canonical held-out labels and evaluator. Deterministic code turns the raw GFS profile into compact meteorological categories, and each of the eleven Noul questions receives smoothed historical frequencies fitted only on rows before 2023. The 2024 target never enters state or question construction. API responses are checkpointed per site/date, so the full run is resumable and partial smoke results are not logged as canonical MLflow runs.
+
+See [Jev 1.13 hosted challenger](models/jev.md) for the exact contract and commands.
+
+## Following architecture direction
+
+After the Jev benchmark, return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.

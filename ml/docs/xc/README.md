@@ -27,6 +27,7 @@ XC now has an executable experiment path under `glideator_ml.xc`:
 - `data.py` — database/CSV extraction, validation and scaler fitting;
 - `training.py` — seeded config-driven PyTorch training with early stopping;
 - `evaluation.py` — BCE, Brier, ROC-AUC and monotonicity diagnostics;
+- `jev.py` — semantic weather adapter, fit-only priors and resumable hosted Jev benchmark;
 - `onnx.py` — production-shaped ONNX export, scoring and numerical parity;
 - `compatibility.py` — reconstructs the migrated PyTorch architecture and exact weights directly from the served ONNX graph;
 - `reference.py` — evaluation of an existing ONNX artifact on the fixed benchmark;
@@ -159,6 +160,22 @@ Both candidate and served-reference runners report:
 - fraction and average magnitude of adjacent-threshold monotonicity violations.
 
 Candidate runs additionally record fit/validation row counts, best epoch, best internal validation loss, and ONNX parity diagnostics.
+
+## Hosted Jev challenger
+
+Jev 1.13 is evaluated as a hosted probabilistic challenger, not as a trainable or serving-compatible architecture. It receives semantic weather state and eleven independent Noul questions, then passes those probabilities through the same held-out XC evaluator.
+
+~~~bash
+export TYPESAFE_API_KEY='...'
+glideator-ml benchmark-jev xc \
+  --config configs/xc/baselines/jev_1_13.yaml \
+  --limit 100
+
+glideator-ml benchmark-jev xc \
+  --config configs/xc/baselines/jev_1_13.yaml
+~~~
+
+The smoke run checkpoints responses and the full command resumes them. Only complete benchmark results are logged to MLflow. See the [Jev model page](models/jev.md) for the non-leakage contract, state representation, cost/latency artifacts and interpretation boundary.
 
 ## Serving boundary
 

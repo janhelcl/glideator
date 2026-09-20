@@ -65,6 +65,7 @@ glideator-ml run <task> --config <config>
 glideator-ml evaluate <task> --config <config>
 glideator-ml compare <task> --config <config>
 glideator-ml backfill <task> --config <config>
+glideator-ml benchmark-jev xc --config <config> [--limit N]
 ~~~
 
 `run` trains a candidate, `evaluate` scores an existing reference artifact, and `compare` applies a task-owned promotion policy. Not every task needs every command.
