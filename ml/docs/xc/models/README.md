@@ -11,6 +11,7 @@ XC model pages document architecture-level hypotheses and serving implications. 
 | Ordinal head | single latent XC-strength axis with ordered thresholds | rejected | [Ordinal](ordinal.md) |
 | Adaptive monotonic head | feature-conditioned cumulative monotonic logits | rejected | [Adaptive monotonic](adaptive-monotonic.md) |
 | Jev 1.13 | hosted typed-probability challenger over semantic weather state | rejected | [Jev 1.13](jev.md) |
+| Jev 1.13 raw + production sites | full numeric weather and named takeoff context ablation | queued | [Jev raw + production sites](jev-raw-prod-sites.md) |
 
 New architectures should be added here when they have a reproducible config and can be evaluated on the current XC benchmark.
 

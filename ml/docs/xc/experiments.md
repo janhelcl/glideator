@@ -201,6 +201,21 @@ Jev's higher-threshold ROC-AUC reached `0.87467` at XC100, showing useful zero-s
 
 **Decision:** reject Jev 1.13 as the main XC model and do not start a prompt/representation tuning campaign. Preserve the implementation and result as a reproducible negative benchmark. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and the [Jev model page](models/jev.md).
 
-## Next architecture direction
+## Next bounded context ablation: Jev raw weather + production sites
+
+One material omission was identified after the first Jev run: the model saw neither the site name nor takeoff wind directions, and the semantic adapter discarded much of the 231-value forecast. Run one frozen follow-up with:
+
+- all 77 canonical numeric GFS features at each of 09:00, 12:00 and 15:00;
+- the site name;
+- every takeoff and stored wind-direction range from the frozen production snapshot;
+- unchanged pre-2023 priors, questions, model version and evaluator.
+
+Use `configs/xc/baselines/jev_1_13_raw_prod_sites.yaml`. The production snapshot contains 248 sites and 535 takeoffs and is fingerprinted into the cache manifest.
+
+This is a single representation ablation, not a tuning campaign. Because the first 2024 result informed this follow-up, its repeated 2024 comparison is exploratory rather than fresh promotion evidence. Freeze the context before the smoke run and do not revise it after inspecting 2024 outputs.
+
+See [Jev raw weather + production site context](models/jev-raw-prod-sites.md).
+
+## Following architecture direction
 
 Return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.

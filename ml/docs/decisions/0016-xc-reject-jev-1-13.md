@@ -43,6 +43,12 @@ The `0.17268` monotonic violation rate is also unacceptable for nested XC thresh
 - The conventional MLP remains the XC promotion baseline.
 - The next trainable architecture starts with a shared per-pressure-level encoder and ordered aggregation; attention remains a later, separate hypothesis.
 
+## Bounded follow-up
+
+After accepting this decision, review found that the first context omitted site names and takeoff wind directions and reduced the 231 weather values to a compact semantic summary. One frozen follow-up is permitted to isolate that material context limitation: full numeric weather plus a fingerprinted production site/takeoff snapshot.
+
+This does not reopen general Jev prompt tuning or supersede the rejection of the tested semantic-context system. Because the 2024 result was already inspected, the follow-up's score on the same period is exploratory and cannot alone support promotion.
+
 ## Evidence
 
 - Benchmark: `xc-temporal-2024-jan-nov-v1`
