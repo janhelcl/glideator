@@ -67,10 +67,42 @@ Every successful response is persisted immediately. Re-running skips completed s
 
 Partial runs are not logged to MLflow. A full run is logged only when every evaluation row has a valid response. The report includes API model/version, token usage, estimated input cost, request latency and the normal XC metrics.
 
-## Interpretation
+## Results
 
-Compare the completed run with the frozen conventional benchmark, whose seed-42 reference is BCE `0.15686`, Brier `0.04762`, ROC-AUC `0.94206`, and monotonic violation rate `0.0014`.
+The complete held-out run evaluated all 82,584 rows in `xc-temporal-2024-jan-nov-v1`.
 
-The first decision is whether Jev contains enough discriminative and calibration signal to justify further prompt/representation work. Do not tune against 2024. If iteration is justified, use 2023 as prompt-development data, version the prompt/state contract, and retain 2024 as the untouched final benchmark.
+| Model | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Monotonic violation rate ↓ |
+| --- | ---: | ---: | ---: | ---: |
+| Conventional MLP (seed 42) | **0.15686** | **0.04762** | **0.94206** | 0.00138 |
+| TabPFN-3 ordinal | 0.16562 | 0.05128 | 0.93612 | **0.00000** |
+| TabPFN-3 independent | 0.17029 | 0.05200 | 0.93562 | 0.19617 |
+| Jev 1.13 | 0.31116 | 0.08475 | 0.84939 | 0.17268 |
 
-Even a metric win would not make this serving-compatible. A promotion proposal would also need to justify external availability, latency, privacy/data-retention, cost, version stability and the loss of offline inference.
+Jev per-threshold results:
+
+| Threshold | BCE ↓ | Brier ↓ | ROC-AUC ↑ |
+| --- | ---: | ---: | ---: |
+| XC0 | 0.55728 | 0.18667 | 0.78885 |
+| XC10 | 0.44417 | 0.13781 | 0.82119 |
+| XC20 | 0.37857 | 0.11073 | 0.83370 |
+| XC30 | 0.33511 | 0.09317 | 0.84416 |
+| XC40 | 0.30768 | 0.08180 | 0.84999 |
+| XC50 | 0.29005 | 0.07434 | 0.86011 |
+| XC60 | 0.25598 | 0.06212 | 0.86302 |
+| XC70 | 0.23104 | 0.05312 | 0.86755 |
+| XC80 | 0.21380 | 0.04683 | 0.86806 |
+| XC90 | 0.20072 | 0.04208 | 0.87197 |
+| XC100 | 0.20837 | 0.04359 | 0.87467 |
+| **Macro** | **0.31116** | **0.08475** | **0.84939** |
+
+Jev shows meaningful discrimination for a hosted decision model with no fitted Glideator weights, especially at the higher XC thresholds: ROC-AUC rises from `0.78885` at XC0 to `0.87467` at XC100. It nevertheless trails the conventional MLP on every aggregate predictive metric. Relative to the seed-42 MLP, macro BCE is worse by `0.15430`, Brier by `0.03713`, and ROC-AUC by `0.09267`.
+
+The `0.17268` monotonic violation rate is also operationally unacceptable. It is consistent with asking eleven independent Noul questions: Jev can assign a higher probability to exceeding a harder threshold than an easier one. A post-hoc monotonic projection could remove those contradictions, but it would not repair the large ranking and probabilistic-loss gap.
+
+The correct description is **zero-shot Jev inference over a fixed semantic adapter and fit-derived priors**, not a completely data-free weather classifier. The Jev model weights were not fitted, but the requests contain smoothed historical frequencies derived from pre-2023 rows.
+
+## Decision
+
+Reject Jev 1.13 as the main XC model and close this experiment line. The gap is too large to justify a prompt or representation tuning campaign, and the hosted serving constraints remain even if output consistency were repaired.
+
+Keep the runner, pinned config and completed evaluation as a reproducible negative benchmark. Do not tune against the held-out 2024 period. The frozen conventional MLP remains the promotion reference, and the next trainable experiment returns to a materially different weather-profile encoder. See [ADR 0016](../../decisions/0016-xc-reject-jev-1-13.md).

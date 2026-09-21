@@ -10,7 +10,7 @@ XC model pages document architecture-level hypotheses and serving implications. 
 | No-CrossNet | simplified production-shaped model | accepted structural baseline | [No-CrossNet](no-cross.md) |
 | Ordinal head | single latent XC-strength axis with ordered thresholds | rejected | [Ordinal](ordinal.md) |
 | Adaptive monotonic head | feature-conditioned cumulative monotonic logits | rejected | [Adaptive monotonic](adaptive-monotonic.md) |
-| Jev 1.13 | hosted typed-probability challenger over semantic weather state | queued | [Jev 1.13](jev.md) |
+| Jev 1.13 | hosted typed-probability challenger over semantic weather state | rejected | [Jev 1.13](jev.md) |
 
 New architectures should be added here when they have a reproducible config and can be evaluated on the current XC benchmark.
 

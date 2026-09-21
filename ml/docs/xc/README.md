@@ -175,7 +175,9 @@ glideator-ml benchmark-jev xc \
   --config configs/xc/baselines/jev_1_13.yaml
 ~~~
 
-The smoke run checkpoints responses and the full command resumes them. Only complete benchmark results are logged to MLflow. See the [Jev model page](models/jev.md) for the non-leakage contract, state representation, cost/latency artifacts and interpretation boundary.
+The smoke run checkpoints responses and the full command resumes them. Only complete benchmark results are logged to MLflow.
+
+The complete 82,584-row run produced macro BCE `0.31116`, Brier `0.08475`, ROC-AUC `0.84939`, and monotonic violation rate `0.17268`. Jev is rejected as the main XC model; the implementation remains as a reproducible hosted-model benchmark. See the [Jev model page](models/jev.md) and [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md).
 
 ## Serving boundary
 

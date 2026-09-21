@@ -186,14 +186,21 @@ The seed-42 BCE/Brier gain does not replicate. The small ROC-AUC advantage over 
 
 **Decision:** reject AGL/mask as a promotion candidate and stop the current Conv1D profile family. Do not tune convolution width, depth or kernel size and do not add another coordinate channel to this CNN. Keep both CNN configs as reproducible negative experiments and preserve AGL/masking as possible inputs for a different encoder family. See [ADR 0015](../decisions/0015-xc-stop-vertical-conv-family.md).
 
-## Next experiment: Jev 1.13 hosted challenger
+## Completed hosted challenger: Jev 1.13
 
-Before returning to trainable weather-specific architectures, run one bounded challenger with TypeSafe's pinned `jev-1.13.0` decision model. Jev is not a drop-in PyTorch layer: it receives semantic state and returns typed probabilities through a hosted API.
+TypeSafe's pinned `jev-1.13.0` was evaluated over all 82,584 held-out rows using the fixed semantic weather adapter, pre-2023 smoothed historical priors and eleven independent Noul questions. No 2024 label or `max_points` value entered a request.
 
-The experiment preserves the canonical held-out labels and evaluator. Deterministic code turns the raw GFS profile into compact meteorological categories, and each of the eleven Noul questions receives smoothed historical frequencies fitted only on rows before 2023. The 2024 target never enters state or question construction. API responses are checkpointed per site/date, so the full run is resumable and partial smoke results are not logged as canonical MLflow runs.
+| Model | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Monotonic violation rate ↓ |
+| --- | ---: | ---: | ---: | ---: |
+| Conventional MLP (seed 42) | **0.15686** | **0.04762** | **0.94206** | 0.00138 |
+| TabPFN-3 ordinal | 0.16562 | 0.05128 | 0.93612 | **0.00000** |
+| TabPFN-3 independent | 0.17029 | 0.05200 | 0.93562 | 0.19617 |
+| Jev 1.13 | 0.31116 | 0.08475 | 0.84939 | 0.17268 |
 
-See [Jev 1.13 hosted challenger](models/jev.md) for the exact contract and commands.
+Jev's higher-threshold ROC-AUC reached `0.87467` at XC100, showing useful zero-shot semantic signal in this niche domain. Aggregate calibration and ranking remain far behind the frozen MLP, however, and independent threshold questions produced a `0.17268` monotonic violation rate.
 
-## Following architecture direction
+**Decision:** reject Jev 1.13 as the main XC model and do not start a prompt/representation tuning campaign. Preserve the implementation and result as a reproducible negative benchmark. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and the [Jev model page](models/jev.md).
 
-After the Jev benchmark, return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
+## Next architecture direction
+
+Return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
