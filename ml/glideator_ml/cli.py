@@ -78,6 +78,19 @@ def build_parser() -> argparse.ArgumentParser:
     foundation.add_argument("task", choices=["xc"])
     foundation.add_argument("--config", required=True)
 
+    jev = subparsers.add_parser(
+        "benchmark-jev",
+        help="Benchmark hosted Jev probabilities on the canonical XC contract",
+    )
+    jev.add_argument("task", choices=["xc"])
+    jev.add_argument("--config", required=True)
+    jev.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Run N rows spread across the evaluation window as a resumable smoke test",
+    )
+
     profile_batch = subparsers.add_parser(
         "profile-batch",
         help="Profile XC training throughput across GPU batch sizes",
@@ -188,6 +201,13 @@ def main() -> None:
         from .xc.tabpfn import run_xc_tabpfn
 
         report = run_xc_tabpfn(config)
+    elif args.command == "benchmark-jev":
+        require_sections(config, "data", "model", "evaluation", "artifact", "tracking")
+        from .xc.jev import run_xc_jev
+
+        report = run_xc_jev(config, limit=args.limit)
+        if args.limit is None and not report["run_scope"]["complete"]:
+            exit_code = 2
     elif args.command == "profile-batch":
         require_sections(config, "data", "model", "artifact", "tracking")
         from .xc.performance import run_xc_batch_profile

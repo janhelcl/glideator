@@ -60,3 +60,4 @@ Optional MLflow run IDs, reports, PRs, or code references.
 - [0013 — Freeze the optimized XC conventional benchmark](0013-xc-freeze-optimized-conventional-benchmark.md)
 - [0014 — Do not promote the plain vertical pressure-profile CNN](0014-xc-reject-plain-vertical-profile-cnn.md)
 - [0015 — Stop the XC vertical Conv1D profile family](0015-xc-stop-vertical-conv-family.md)
+- [0016 — Do not use Jev 1.13 as the main XC model](0016-xc-reject-jev-1-13.md)
