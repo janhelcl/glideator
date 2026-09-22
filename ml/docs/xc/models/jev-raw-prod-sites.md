@@ -56,8 +56,24 @@ glideator-ml benchmark-jev xc \
   --config configs/xc/baselines/jev_1_13_raw_prod_sites.yaml
 ~~~
 
+## Result
+
+The complete run evaluated all 82,584 rows of `xc-temporal-2024-jan-nov-v1`:
+
+| Model | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Monotonic violation rate ↓ |
+| --- | ---: | ---: | ---: | ---: |
+| Conventional MLP (seed 42) | **0.15686** | **0.04762** | **0.94206** | **0.00138** |
+| Jev semantic context | 0.31116 | 0.08475 | 0.84939 | 0.17268 |
+| Jev raw weather + production sites | 0.30780 | 0.08240 | 0.82614 | 0.110 |
+
+Compared with the semantic adapter, the raw context improved BCE by `0.00336`, Brier by `0.00235`, and monotonic violation rate by about `0.063`. ROC-AUC fell by `0.02325`. The API run cost approximately `$32`; generated responses and evaluation artifacts remain under `outputs/xc/baselines/jev-1.13-raw-prod-sites/` and are not committed.
+
+## Decision
+
+Reject this variant and close the Jev 1.13 experiment line. Richer weather and production-site context modestly improves probabilistic loss and consistency, but it weakens ranking and remains far behind the frozen conventional MLP on every promotion metric. Do not continue prompt tuning or apply post-hoc monotonic correction.
+
 ## Interpretation boundary
 
-This is one pre-specified context ablation, not an open prompt-tuning loop. The original 2024 result was already inspected before this follow-up was designed, so the repeated 2024 score is useful for direct exploratory comparison but is not fresh promotion evidence.
+This was one pre-specified context ablation, not an open prompt-tuning loop. The original 2024 result was already inspected before this follow-up was designed, so the direct comparison is exploratory and is not fresh promotion evidence. The gap to the conventional baseline is large enough that this limitation does not alter the rejection.
 
-Do not alter this prompt/state contract after seeing partial or full 2024 metrics. Any promotion claim would require a new untouched time period in addition to the hosted-serving review.
+See [ADR 0016](../../decisions/0016-xc-reject-jev-1-13.md) for the durable decision.
