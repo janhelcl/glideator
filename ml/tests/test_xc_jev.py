@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -11,8 +12,13 @@ from glideator_ml.xc.data import prepare_xc_data
 from glideator_ml.xc.jev import (
     JEV_MODEL_VERSION,
     JEV_PROMPT_VERSION,
+    JEV_RAW_SITE_PROMPT_VERSION,
+    JEV_RAW_SITE_STATE,
+    SiteContext,
+    TakeoffContext,
     build_jev_questions,
     build_jev_state,
+    build_raw_site_jev_state,
     fit_historical_priors,
     run_xc_jev,
 )
@@ -144,6 +150,86 @@ def test_jev_state_is_semantic_and_never_contains_the_label() -> None:
     }
 
 
+def _write_site_snapshot(path: Path) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "source": {
+                    "environment": "production",
+                    "database": "glideator-db",
+                    "tables": ["public.sites", "public.spots"],
+                },
+                "captured_on": "2026-09-21",
+                "sites": [
+                    {
+                        "site_id": 1,
+                        "name": "Rana",
+                        "latitude": 50.406433,
+                        "longitude": 13.77073,
+                        "altitude": 420,
+                        "takeoffs": [
+                            {
+                                "spot_id": 3086,
+                                "name": "Rana east",
+                                "latitude": 50.406495,
+                                "longitude": 13.771034,
+                                "altitude": 417,
+                                "wind_direction": "E-S",
+                            },
+                            {
+                                "spot_id": 3087,
+                                "name": "Rana west",
+                                "latitude": 50.406257,
+                                "longitude": 13.769796,
+                                "altitude": 413,
+                                "wind_direction": "W-NNW",
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_raw_jev_state_preserves_all_weather_and_named_takeoffs() -> None:
+    frame, features = _prepared_data()
+    row = frame.loc[frame["date"] == pd.Timestamp("2024-01-01")].iloc[0]
+    site = SiteContext(
+        site_id=1,
+        name="Rana",
+        latitude=50.406433,
+        longitude=13.77073,
+        altitude_m=420,
+        takeoffs=(
+            TakeoffContext(3086, "Rana east", 50.406495, 13.771034, 417, "E-S"),
+            TakeoffContext(3087, "Rana west", 50.406257, 13.769796, 413, "W-NNW"),
+        ),
+    )
+
+    state = build_raw_site_jev_state(
+        row,
+        weather_features=features.weather_features,
+        site_context=site,
+    )
+    serialized = json.dumps(state)
+
+    assert "max_points" not in serialized
+    assert all(target not in serialized for target in TARGET_NAMES)
+    assert state["site"]["name"] == "Rana"
+    assert [item["suitable_wind_direction"] for item in state["site"]["takeoffs"]] == [
+        "E-S",
+        "W-NNW",
+    ]
+    assert len(state["forecast"]) == len(WEATHER_TIMES)
+    for snapshot in state["forecast"]:
+        raw = snapshot["raw_gfs_features"]
+        assert tuple(raw) == PRODUCTION_WEATHER_FEATURES
+        assert len(raw) == 77
+
+
 def test_jev_questions_use_fit_only_smoothed_history() -> None:
     frame, _ = _prepared_data()
     fit = frame.loc[frame["date"] < pd.Timestamp("2023-01-01")]
@@ -185,6 +271,36 @@ class FakeJevClient:
             answers=answers,
             usage=SimpleNamespace(input_tokens=500, output_tokens=50),
         )
+
+
+def test_raw_site_run_uses_frozen_production_snapshot(tmp_path) -> None:
+    prepared = _prepared_data()
+    snapshot_path = tmp_path / "site-context.json"
+    _write_site_snapshot(snapshot_path)
+    config = _config(str(tmp_path / "jev-raw"))
+    config["data"]["site_context_path"] = str(snapshot_path)
+    config["model"]["name"] = "xc-jev-raw-test"
+    config["model"]["prompt_version"] = JEV_RAW_SITE_PROMPT_VERSION
+    config["model"]["state_representation"] = JEV_RAW_SITE_STATE
+    client = FakeJevClient()
+
+    report = run_xc_jev(
+        config,
+        prepared_data=prepared,
+        limit=1,
+        client_factory=lambda _: client,
+    )
+
+    assert report["run_scope"]["complete"] is False
+    assert report["model"]["state_representation"] == JEV_RAW_SITE_STATE
+    assert report["model"]["site_context_fingerprint"].startswith("sha256:")
+    assert len(client.calls) == 1
+    state = client.calls[0]["state"]
+    assert state["site"]["name"] == "Rana"
+    assert len(state["site"]["takeoffs"]) == 2
+    assert len(state["forecast"][0]["raw_gfs_features"]) == 77
+    questions = client.calls[0]["questions"]
+    assert "complete numeric forecast" in questions["XC50"]["instructions"]["decision_guidance"]
 
 
 def test_jev_run_is_resumable_and_logs_only_complete_benchmark(tmp_path) -> None:

@@ -1,0 +1,6528 @@
+{
+  "schema_version": 1,
+  "source": {
+    "environment": "production",
+    "database": "glideator-db",
+    "tables": [
+      "public.sites",
+      "public.spots"
+    ],
+    "site_filter": "site_id <= 250",
+    "takeoff_filter": "lower(type) = 'takeoff'"
+  },
+  "captured_on": "2026-09-21",
+  "sites": [
+    {
+      "altitude": 420,
+      "latitude": 50.406433,
+      "longitude": 13.77073,
+      "name": "Raná",
+      "site_id": 1,
+      "takeoffs": [
+        {
+          "altitude": 417,
+          "latitude": 50.4064952356796,
+          "longitude": 13.7710344793497,
+          "name": "Raná",
+          "spot_id": 3086,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 413,
+          "latitude": 50.4062568330602,
+          "longitude": 13.7697955743334,
+          "name": "Raná",
+          "spot_id": 3087,
+          "wind_direction": "W-NNW"
+        }
+      ]
+    },
+    {
+      "altitude": 930,
+      "latitude": 49.628864,
+      "longitude": 18.627232,
+      "name": "Javorový",
+      "site_id": 2,
+      "takeoffs": [
+        {
+          "altitude": 923,
+          "latitude": 49.6289516425648,
+          "longitude": 18.6272206616018,
+          "name": "Javorový",
+          "spot_id": 3248,
+          "wind_direction": "NNW-NE"
+        },
+        {
+          "altitude": 938,
+          "latitude": 49.6280595437776,
+          "longitude": 18.6270925838358,
+          "name": "Javorový",
+          "spot_id": 3250,
+          "wind_direction": "W-WNW"
+        }
+      ]
+    },
+    {
+      "altitude": 743,
+      "latitude": 50.593203,
+      "longitude": 15.263132,
+      "name": "Kozákov",
+      "site_id": 3,
+      "takeoffs": [
+        {
+          "altitude": 743,
+          "latitude": 50.5933690241882,
+          "longitude": 15.2633888064955,
+          "name": "Kozákov",
+          "spot_id": 3040,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1245,
+      "latitude": 50.649413,
+      "longitude": 15.739908,
+      "name": "Černá hora",
+      "site_id": 4,
+      "takeoffs": [
+        {
+          "altitude": 1245,
+          "latitude": 50.649407,
+          "longitude": 15.739982,
+          "name": "Černá hora",
+          "spot_id": 3018,
+          "wind_direction": "SSE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 646,
+      "latitude": 50.696461,
+      "longitude": 13.876743,
+      "name": "Krupka",
+      "site_id": 5,
+      "takeoffs": [
+        {
+          "altitude": 646,
+          "latitude": 50.696461,
+          "longitude": 13.876743,
+          "name": "Krupka",
+          "spot_id": 3001,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 810,
+      "latitude": 49.234349,
+      "longitude": 13.49169,
+      "name": "Svatobor",
+      "site_id": 6,
+      "takeoffs": [
+        {
+          "altitude": 821,
+          "latitude": 49.235069,
+          "longitude": 13.486144,
+          "name": "Svatobor",
+          "spot_id": 3362,
+          "wind_direction": "SSW-SW"
+        },
+        {
+          "altitude": 806,
+          "latitude": 49.234339,
+          "longitude": 13.491885,
+          "name": "Svatobor",
+          "spot_id": 3363,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 933,
+      "latitude": 49.554097,
+      "longitude": 18.299208,
+      "name": "Skalka",
+      "site_id": 7,
+      "takeoffs": [
+        {
+          "altitude": 933,
+          "latitude": 49.554166,
+          "longitude": 18.299236,
+          "name": "Skalka",
+          "spot_id": 3278,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 704,
+      "latitude": 49.432843,
+      "longitude": 13.202711,
+      "name": "Doubrava",
+      "site_id": 8,
+      "takeoffs": [
+        {
+          "altitude": 704,
+          "latitude": 49.432941,
+          "longitude": 13.202316,
+          "name": "Doubrava",
+          "spot_id": 3322,
+          "wind_direction": "W-N"
+        }
+      ]
+    },
+    {
+      "altitude": 431,
+      "latitude": 49.5775,
+      "longitude": 17.6647,
+      "name": "Uhřínov",
+      "site_id": 9,
+      "takeoffs": [
+        {
+          "altitude": 431,
+          "latitude": 49.577504,
+          "longitude": 17.664713,
+          "name": "Uhřínov",
+          "spot_id": 3267,
+          "wind_direction": "S"
+        }
+      ]
+    },
+    {
+      "altitude": 258,
+      "latitude": 50.338229,
+      "longitude": 14.323352,
+      "name": "Jeviněves",
+      "site_id": 10,
+      "takeoffs": [
+        {
+          "altitude": 258,
+          "latitude": 50.338229,
+          "longitude": 14.323352,
+          "name": "Jeviněves",
+          "spot_id": 3117,
+          "wind_direction": "E-SSE"
+        }
+      ]
+    },
+    {
+      "altitude": 1216,
+      "latitude": 50.151731,
+      "longitude": 16.832383,
+      "name": "Dolní Morava",
+      "site_id": 11,
+      "takeoffs": [
+        {
+          "altitude": 1077,
+          "latitude": 50.149805,
+          "longitude": 16.828682,
+          "name": "Dolní Morava",
+          "spot_id": 3142,
+          "wind_direction": "W-WNW"
+        },
+        {
+          "altitude": 1216,
+          "latitude": 50.154229,
+          "longitude": 16.837384,
+          "name": "Slamník",
+          "spot_id": 3141,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 433,
+      "latitude": 50.619466,
+      "longitude": 14.053252,
+      "name": "Čerťák",
+      "site_id": 12,
+      "takeoffs": [
+        {
+          "altitude": 433,
+          "latitude": 50.619466,
+          "longitude": 14.053252,
+          "name": "Čerťák",
+          "spot_id": 3034,
+          "wind_direction": "N-NNE"
+        }
+      ]
+    },
+    {
+      "altitude": 671,
+      "latitude": 50.455525,
+      "longitude": 15.69613,
+      "name": "Zvičina",
+      "site_id": 13,
+      "takeoffs": [
+        {
+          "altitude": 637,
+          "latitude": 50.457249,
+          "longitude": 15.69445,
+          "name": "Zvičina",
+          "spot_id": 3072,
+          "wind_direction": "NNE-NE"
+        },
+        {
+          "altitude": 653,
+          "latitude": 50.453492,
+          "longitude": 15.698127,
+          "name": "Zvičina",
+          "spot_id": 3073,
+          "wind_direction": "E"
+        }
+      ]
+    },
+    {
+      "altitude": 500,
+      "latitude": 50.1866,
+      "longitude": 13.7911,
+      "name": "Řevničov",
+      "site_id": 14,
+      "takeoffs": [
+        {
+          "altitude": 500,
+          "latitude": 50.1866,
+          "longitude": 13.7911,
+          "name": "Řevničov",
+          "spot_id": 3135,
+          "wind_direction": "SSW"
+        }
+      ]
+    },
+    {
+      "altitude": 891,
+      "latitude": 49.527259,
+      "longitude": 18.162109,
+      "name": "Velký Javorník",
+      "site_id": 15,
+      "takeoffs": [
+        {
+          "altitude": 891,
+          "latitude": 49.527282,
+          "longitude": 18.162077,
+          "name": "Velký Javorník",
+          "spot_id": 3286,
+          "wind_direction": "NNE-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 670,
+      "latitude": 50.7048,
+      "longitude": 15.2642,
+      "name": "Zásada",
+      "site_id": 16,
+      "takeoffs": [
+        {
+          "altitude": 670,
+          "latitude": 50.7048,
+          "longitude": 15.2642,
+          "name": "Zásada",
+          "spot_id": 2995,
+          "wind_direction": "SE"
+        }
+      ]
+    },
+    {
+      "altitude": 371,
+      "latitude": 49.917093,
+      "longitude": 16.056604,
+      "name": "Srbce",
+      "site_id": 17,
+      "takeoffs": [
+        {
+          "altitude": 371,
+          "latitude": 49.917093,
+          "longitude": 16.056604,
+          "name": "Srbce",
+          "spot_id": 3198,
+          "wind_direction": "W"
+        }
+      ]
+    },
+    {
+      "altitude": 479,
+      "latitude": 49.4937,
+      "longitude": 13.2668,
+      "name": "Švihov",
+      "site_id": 18,
+      "takeoffs": [
+        {
+          "altitude": 479,
+          "latitude": 49.4937,
+          "longitude": 13.2668,
+          "name": "Švihov",
+          "spot_id": 3294,
+          "wind_direction": "E"
+        }
+      ]
+    },
+    {
+      "altitude": 406,
+      "latitude": 49.901045,
+      "longitude": 14.061425,
+      "name": "Suchomasty",
+      "site_id": 19,
+      "takeoffs": [
+        {
+          "altitude": 406,
+          "latitude": 49.901045,
+          "longitude": 14.061425,
+          "name": "Suchomasty",
+          "spot_id": 3202,
+          "wind_direction": "SSW-WSW"
+        }
+      ]
+    },
+    {
+      "altitude": 710,
+      "latitude": 49.2327,
+      "longitude": 13.546,
+      "name": "Kalovy",
+      "site_id": 20,
+      "takeoffs": [
+        {
+          "altitude": 710,
+          "latitude": 49.2327,
+          "longitude": 13.546,
+          "name": "Kalovy",
+          "spot_id": 3364,
+          "wind_direction": "NW"
+        }
+      ]
+    },
+    {
+      "altitude": 793,
+      "latitude": 50.7085,
+      "longitude": 15.0165,
+      "name": "Rašovka",
+      "site_id": 21,
+      "takeoffs": [
+        {
+          "altitude": 793,
+          "latitude": 50.7085,
+          "longitude": 15.0165,
+          "name": "Rašovka",
+          "spot_id": 2993,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 370,
+      "latitude": 49.9381,
+      "longitude": 14.335,
+      "name": "Cukrák",
+      "site_id": 22,
+      "takeoffs": [
+        {
+          "altitude": 370,
+          "latitude": 49.9381,
+          "longitude": 14.335,
+          "name": "Cukrák",
+          "spot_id": 3193,
+          "wind_direction": "WNW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 450,
+      "latitude": 50.6355,
+      "longitude": 14.0741,
+      "name": "Brná",
+      "site_id": 23,
+      "takeoffs": [
+        {
+          "altitude": 450,
+          "latitude": 50.6355,
+          "longitude": 14.0741,
+          "name": "Brná",
+          "spot_id": 3023,
+          "wind_direction": "SSW"
+        }
+      ]
+    },
+    {
+      "altitude": 762,
+      "latitude": 49.2366,
+      "longitude": 18.8251,
+      "name": "Straník",
+      "site_id": 24,
+      "takeoffs": [
+        {
+          "altitude": 762,
+          "latitude": 49.236447,
+          "longitude": 18.825584,
+          "name": "Straník",
+          "spot_id": 18616,
+          "wind_direction": "SE-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1343,
+      "latitude": 48.8887,
+      "longitude": 19.2301,
+      "name": "Donovaly",
+      "site_id": 25,
+      "takeoffs": [
+        {
+          "altitude": 1343,
+          "latitude": 48.8887,
+          "longitude": 19.2301,
+          "name": "Donovaly",
+          "spot_id": 18746,
+          "wind_direction": "ESE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 551,
+      "latitude": 48.9567,
+      "longitude": 17.9929,
+      "name": "Horná Súča",
+      "site_id": 26,
+      "takeoffs": [
+        {
+          "altitude": 551,
+          "latitude": 48.9567,
+          "longitude": 17.9929,
+          "name": "Horná Súča",
+          "spot_id": 18714,
+          "wind_direction": "W-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1108,
+      "latitude": 48.9734,
+      "longitude": 20.8719,
+      "name": "Sľubica",
+      "site_id": 27,
+      "takeoffs": [
+        {
+          "altitude": 1108,
+          "latitude": 48.9734,
+          "longitude": 20.8719,
+          "name": "Sľubica",
+          "spot_id": 18709,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1423,
+      "latitude": 49.096634,
+      "longitude": 18.824333,
+      "name": "Martinské hole",
+      "site_id": 28,
+      "takeoffs": [
+        {
+          "altitude": 1423,
+          "latitude": 49.096634,
+          "longitude": 18.824333,
+          "name": "Martinské hole",
+          "spot_id": 18669,
+          "wind_direction": "ENE-ESE"
+        }
+      ]
+    },
+    {
+      "altitude": 526,
+      "latitude": 48.4581,
+      "longitude": 17.4125,
+      "name": "Orešany",
+      "site_id": 29,
+      "takeoffs": [
+        {
+          "altitude": 526,
+          "latitude": 48.4581,
+          "longitude": 17.4125,
+          "name": "Orešany",
+          "spot_id": 18879,
+          "wind_direction": "SE-SSE"
+        }
+      ]
+    },
+    {
+      "altitude": 872,
+      "latitude": 48.9152,
+      "longitude": 17.7824,
+      "name": "Velký Lopeník",
+      "site_id": 30,
+      "takeoffs": [
+        {
+          "altitude": 872,
+          "latitude": 48.9152,
+          "longitude": 17.7824,
+          "name": "Velký Lopeník",
+          "spot_id": 3417,
+          "wind_direction": "SSE-SWW"
+        }
+      ]
+    },
+    {
+      "altitude": 823,
+      "latitude": 48.5947,
+      "longitude": 19.8439,
+      "name": "Slopovo",
+      "site_id": 31,
+      "takeoffs": [
+        {
+          "altitude": 823,
+          "latitude": 48.5947,
+          "longitude": 19.8439,
+          "name": "Slopovo",
+          "spot_id": 18851,
+          "wind_direction": "N-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1394,
+      "latitude": 49.269611,
+      "longitude": 19.253977,
+      "name": "Kubínska hoľa",
+      "site_id": 32,
+      "takeoffs": [
+        {
+          "altitude": 1394,
+          "latitude": 49.269611,
+          "longitude": 19.253977,
+          "name": "Kubínska hoľa",
+          "spot_id": 18609,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 950,
+      "latitude": 48.816221,
+      "longitude": 19.242302,
+      "name": "Podkonické Pleše",
+      "site_id": 33,
+      "takeoffs": [
+        {
+          "altitude": 950,
+          "latitude": 48.816221,
+          "longitude": 19.242302,
+          "name": "Podkonické Pleše",
+          "spot_id": 18779,
+          "wind_direction": "SSE-SSW"
+        }
+      ]
+    },
+    {
+      "altitude": 1890,
+      "latitude": 46.774577,
+      "longitude": 13.149997,
+      "name": "Emberger Alm",
+      "site_id": 34,
+      "takeoffs": [
+        {
+          "altitude": 1890,
+          "latitude": 46.776796,
+          "longitude": 13.14994,
+          "name": "Emberger Alm",
+          "spot_id": 1570,
+          "wind_direction": "SE-SSW"
+        },
+        {
+          "altitude": 1735,
+          "latitude": 46.772547,
+          "longitude": 13.149638,
+          "name": "Emberger Alm",
+          "spot_id": 1581,
+          "wind_direction": "SSE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1800,
+      "latitude": 47.463011,
+      "longitude": 13.298131,
+      "name": "Bischling",
+      "site_id": 35,
+      "takeoffs": [
+        {
+          "altitude": 1805,
+          "latitude": 47.463811,
+          "longitude": 13.299127,
+          "name": "Bischling",
+          "spot_id": 640,
+          "wind_direction": "E"
+        },
+        {
+          "altitude": 1800,
+          "latitude": 47.46239,
+          "longitude": 13.297299,
+          "name": "Bischling",
+          "spot_id": 643,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1810,
+          "latitude": 47.46177,
+          "longitude": 13.298167,
+          "name": "Bischling",
+          "spot_id": 646,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1430,
+      "latitude": 47.200616,
+      "longitude": 15.473335,
+      "name": "Schöckl",
+      "site_id": 36,
+      "takeoffs": [
+        {
+          "altitude": 1400,
+          "latitude": 47.201165,
+          "longitude": 15.475596,
+          "name": "Schöckl",
+          "spot_id": 1187,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 1413,
+          "latitude": 47.19838,
+          "longitude": 15.459588,
+          "name": "Schöckl",
+          "spot_id": 1193,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 900,
+      "latitude": 47.829378,
+      "longitude": 16.041627,
+      "name": "Hohe Wand",
+      "site_id": 37,
+      "takeoffs": [
+        {
+          "altitude": 865,
+          "latitude": 47.830246,
+          "longitude": 16.046292,
+          "name": "Hohe Wand",
+          "spot_id": 213,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 912,
+          "latitude": 47.829378,
+          "longitude": 16.041627,
+          "name": "Hohe Wand",
+          "spot_id": 214,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 47.629469,
+      "longitude": 12.433005,
+      "name": "Kössen",
+      "site_id": 38,
+      "takeoffs": [
+        {
+          "altitude": 1487,
+          "latitude": 47.631691,
+          "longitude": 12.431785,
+          "name": "Unterberghorn",
+          "spot_id": 386,
+          "wind_direction": "NNW-NE"
+        },
+        {
+          "altitude": 1490,
+          "latitude": 47.631185,
+          "longitude": 12.431082,
+          "name": "Unterberghorn",
+          "spot_id": 388,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1535,
+          "latitude": 47.63021,
+          "longitude": 12.433167,
+          "name": "Unterberghorn",
+          "spot_id": 390,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 47.625656,
+          "longitude": 12.436283,
+          "name": "Unterberghorn",
+          "spot_id": 394,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 47.624633,
+          "longitude": 12.436017,
+          "name": "Unterberghorn",
+          "spot_id": 99997,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1250,
+      "latitude": 47.804123,
+      "longitude": 13.112245,
+      "name": "Gaisberg",
+      "site_id": 39,
+      "takeoffs": [
+        {
+          "altitude": 1263,
+          "latitude": 47.804883,
+          "longitude": 13.113942,
+          "name": "Gaisberg",
+          "spot_id": 244,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1256,
+          "latitude": 47.804429,
+          "longitude": 13.110472,
+          "name": "Gaisberg",
+          "spot_id": 245,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1257,
+          "latitude": 47.803331,
+          "longitude": 13.109524,
+          "name": "Gaisberg",
+          "spot_id": 248,
+          "wind_direction": "SW-WNW"
+        }
+      ]
+    },
+    {
+      "altitude": 1900,
+      "latitude": 46.689963,
+      "longitude": 13.912319,
+      "name": "Gerlitzen",
+      "site_id": 40,
+      "takeoffs": [
+        {
+          "altitude": 1897,
+          "latitude": 46.69303,
+          "longitude": 13.91303,
+          "name": "Gerlitzen",
+          "spot_id": 1638,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1897,
+          "latitude": 46.693051,
+          "longitude": 13.914613,
+          "name": "Gerlitzen",
+          "spot_id": 1642,
+          "wind_direction": "E-ESE"
+        },
+        {
+          "altitude": 1897,
+          "latitude": 46.692819,
+          "longitude": 13.913644,
+          "name": "Gerlitzen",
+          "spot_id": 1643,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 1465,
+          "latitude": 46.673671,
+          "longitude": 13.896923,
+          "name": "Kanzelhöhe",
+          "spot_id": 1649,
+          "wind_direction": "SSE-SSW"
+        },
+        {
+          "altitude": 1050,
+          "latitude": 46.669274,
+          "longitude": 13.904657,
+          "name": "Ossiachberg",
+          "spot_id": 1652,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 47.401887,
+      "longitude": 9.941052,
+      "name": "Bezau",
+      "site_id": 41,
+      "takeoffs": [
+        {
+          "altitude": 1550,
+          "latitude": 47.403584,
+          "longitude": 9.938718,
+          "name": "Andelsbuch Niedere",
+          "spot_id": 789,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1575,
+          "latitude": 47.399101,
+          "longitude": 9.934687,
+          "name": "Baumgartenalpe",
+          "spot_id": 802,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 1685,
+          "latitude": 47.399075,
+          "longitude": 9.944915,
+          "name": "Hintere Niedere",
+          "spot_id": 803,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1950,
+      "latitude": 47.097015,
+      "longitude": 11.323087,
+      "name": "Elfer",
+      "site_id": 42,
+      "takeoffs": [
+        {
+          "altitude": 1984,
+          "latitude": 47.094737,
+          "longitude": 11.31985,
+          "name": "Elferhütte",
+          "spot_id": 1334,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1947,
+          "latitude": 47.095417,
+          "longitude": 11.321306,
+          "name": "Elferhütte",
+          "spot_id": 99998,
+          "wind_direction": "NE-E"
+        },
+        {
+          "altitude": 1780,
+          "latitude": 47.0978,
+          "longitude": 11.3236,
+          "name": "Elfer Unten",
+          "spot_id": 1331,
+          "wind_direction": "NW-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 940,
+      "latitude": 47.228516,
+      "longitude": 15.762128,
+      "name": "Kulm",
+      "site_id": 43,
+      "takeoffs": [
+        {
+          "altitude": 940,
+          "latitude": 47.228516,
+          "longitude": 15.762128,
+          "name": "Kulm",
+          "spot_id": 1131,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2100,
+      "latitude": 47.145081,
+      "longitude": 11.307597,
+      "name": "Schlick 2000",
+      "site_id": 44,
+      "takeoffs": [
+        {
+          "altitude": 2100,
+          "latitude": 47.145081,
+          "longitude": 11.307597,
+          "name": "Schlick 2000",
+          "spot_id": 1276,
+          "wind_direction": "NE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1800,
+      "latitude": 47.665609,
+      "longitude": 14.17142,
+      "name": "Hinterstoder",
+      "site_id": 45,
+      "takeoffs": [
+        {
+          "altitude": 1792,
+          "latitude": 47.66806,
+          "longitude": 14.176439,
+          "name": "Hutterer Höß",
+          "spot_id": 352,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1730,
+          "latitude": 47.665974,
+          "longitude": 14.166254,
+          "name": "Hutterer Höß",
+          "spot_id": 354,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1802,
+          "latitude": 47.664911,
+          "longitude": 14.169977,
+          "name": "Hutterer Höß",
+          "spot_id": 355,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 47.655621,
+          "longitude": 14.174561,
+          "name": "Schafkögel",
+          "spot_id": 366,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 815,
+      "latitude": 46.572583,
+      "longitude": 14.402389,
+      "name": "Radsberg",
+      "site_id": 46,
+      "takeoffs": [
+        {
+          "altitude": 815,
+          "latitude": 46.572583,
+          "longitude": 14.402389,
+          "name": "Radsberg",
+          "spot_id": 1675,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1020,
+      "latitude": 47.930466,
+      "longitude": 14.329674,
+      "name": "Ternberg",
+      "site_id": 47,
+      "takeoffs": [
+        {
+          "altitude": 1026,
+          "latitude": 47.928345,
+          "longitude": 14.328366,
+          "name": "Herndleck",
+          "spot_id": 156,
+          "wind_direction": "N-SE"
+        },
+        {
+          "altitude": 810,
+          "latitude": 47.933982,
+          "longitude": 14.33204,
+          "name": "Postkogel",
+          "spot_id": 99999,
+          "wind_direction": "W-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1280,
+      "latitude": 47.229209,
+      "longitude": 9.738545,
+      "name": "Hensler",
+      "site_id": 48,
+      "takeoffs": [
+        {
+          "altitude": 1587,
+          "latitude": 47.230553,
+          "longitude": 9.747815,
+          "name": "Alpila",
+          "spot_id": 1126,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1310,
+          "latitude": 47.228285,
+          "longitude": 9.739463,
+          "name": "Schnifis",
+          "spot_id": 1132,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1130,
+      "latitude": 47.303835,
+      "longitude": 15.479189,
+      "name": "Gelderkogel",
+      "site_id": 49,
+      "takeoffs": [
+        {
+          "altitude": 1130,
+          "latitude": 47.303835,
+          "longitude": 15.479189,
+          "name": "Gelderkogel",
+          "spot_id": 1013,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 960,
+      "latitude": 47.898419,
+      "longitude": 13.817762,
+      "name": "Grünberg",
+      "site_id": 50,
+      "takeoffs": [
+        {
+          "altitude": 960,
+          "latitude": 47.898419,
+          "longitude": 13.817762,
+          "name": "Grünberg",
+          "spot_id": 168,
+          "wind_direction": "SW-WNW"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 47.742614,
+      "longitude": 13.35201,
+      "name": "Zwölferhorn",
+      "site_id": 51,
+      "takeoffs": [
+        {
+          "altitude": 1370,
+          "latitude": 47.743744,
+          "longitude": 13.358761,
+          "name": "Zwölferhorn",
+          "spot_id": 289,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1500,
+          "latitude": 47.742614,
+          "longitude": 13.35201,
+          "name": "Zwölferhorn",
+          "spot_id": 291,
+          "wind_direction": "NNW-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1100,
+      "latitude": 47.983213,
+      "longitude": 15.603085,
+      "name": "Muckenkogel",
+      "site_id": 52,
+      "takeoffs": [
+        {
+          "altitude": 1035,
+          "latitude": 47.986466,
+          "longitude": 15.59938,
+          "name": "Muckenkogel",
+          "spot_id": 140,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1090,
+          "latitude": 47.985207,
+          "longitude": 15.60103,
+          "name": "Muckenkogel",
+          "spot_id": 141,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1200,
+          "latitude": 47.977914,
+          "longitude": 15.608538,
+          "name": "Muckenkogel",
+          "spot_id": 144,
+          "wind_direction": "E"
+        },
+        {
+          "altitude": 1200,
+          "latitude": 47.977138,
+          "longitude": 15.608485,
+          "name": "Muckenkogel",
+          "spot_id": 145,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1280,
+          "latitude": 47.970621,
+          "longitude": 15.613912,
+          "name": "Muckenkogel",
+          "spot_id": 146,
+          "wind_direction": "NNE-NE"
+        },
+        {
+          "altitude": 1280,
+          "latitude": 47.970123,
+          "longitude": 15.60889,
+          "name": "Muckenkogel",
+          "spot_id": 147,
+          "wind_direction": "SSE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1760,
+      "latitude": 47.464715,
+      "longitude": 12.203033,
+      "name": "Hohe Salve",
+      "site_id": 53,
+      "takeoffs": [
+        {
+          "altitude": 1760,
+          "latitude": 47.464299,
+          "longitude": 12.202732,
+          "name": "Hohe Salve",
+          "spot_id": 999910,
+          "wind_direction": "SE-ENE"
+        }
+      ]
+    },
+    {
+      "altitude": 1950,
+      "latitude": 47.328614,
+      "longitude": 12.737419,
+      "name": "Schmittenhöhe",
+      "site_id": 54,
+      "takeoffs": [
+        {
+          "altitude": 1940,
+          "latitude": 47.330004,
+          "longitude": 12.738598,
+          "name": "Schmittenhöhe",
+          "spot_id": 952,
+          "wind_direction": "E-ESE"
+        },
+        {
+          "altitude": 1950,
+          "latitude": 47.3293,
+          "longitude": 12.736939,
+          "name": "Schmittenhöhe",
+          "spot_id": 957,
+          "wind_direction": "W-NNW"
+        },
+        {
+          "altitude": 1950,
+          "latitude": 47.328489,
+          "longitude": 12.737136,
+          "name": "Schmittenhöhe",
+          "spot_id": 960,
+          "wind_direction": "ESE-SE"
+        },
+        {
+          "altitude": 1940,
+          "latitude": 47.330004,
+          "longitude": 12.738598,
+          "name": "Schmittenhöhe",
+          "spot_id": 978,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 47.458318,
+      "longitude": 13.825853,
+      "name": "Stoderzinken",
+      "site_id": 55,
+      "takeoffs": [
+        {
+          "altitude": 2015,
+          "latitude": 47.459457,
+          "longitude": 13.827999,
+          "name": "Stoderzinken",
+          "spot_id": 650,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 2010,
+          "latitude": 47.458759,
+          "longitude": 13.827195,
+          "name": "Stoderzinken",
+          "spot_id": 652,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2010,
+          "latitude": 47.458648,
+          "longitude": 13.823862,
+          "name": "Stoderzinken",
+          "spot_id": 653,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1860,
+          "latitude": 47.4575,
+          "longitude": 13.819028,
+          "name": "Stoderzinken",
+          "spot_id": 655,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2020,
+      "latitude": 47.17317,
+      "longitude": 11.811676,
+      "name": "Penken",
+      "site_id": 56,
+      "takeoffs": [
+        {
+          "altitude": 2027,
+          "latitude": 47.171268,
+          "longitude": 11.810085,
+          "name": "Blick Stilluptal",
+          "spot_id": 999911,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 2074,
+          "latitude": 47.169144,
+          "longitude": 11.799064,
+          "name": "Finkenberg",
+          "spot_id": 1236,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 2020,
+          "latitude": 47.168451,
+          "longitude": 11.802778,
+          "name": "Finkenberg",
+          "spot_id": 1237,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1980,
+          "latitude": 47.176111,
+          "longitude": 11.816667,
+          "name": "Penken",
+          "spot_id": 1225,
+          "wind_direction": "NE-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 47.815177,
+      "longitude": 13.720282,
+      "name": "Feuerkogel",
+      "site_id": 57,
+      "takeoffs": [
+        {
+          "altitude": 1595,
+          "latitude": 47.816506,
+          "longitude": 13.719419,
+          "name": "Feuerkogel",
+          "spot_id": 228,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1575,
+          "latitude": 47.814261,
+          "longitude": 13.721571,
+          "name": "Feuerkogel",
+          "spot_id": 232,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 950,
+      "latitude": 47.886547,
+      "longitude": 14.163458,
+      "name": "Hirschwaldstein ",
+      "site_id": 58,
+      "takeoffs": [
+        {
+          "altitude": 960,
+          "latitude": 47.886367,
+          "longitude": 14.163877,
+          "name": "Hirschwaldstein ",
+          "spot_id": 175,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 790,
+          "latitude": 47.884622,
+          "longitude": 14.158392,
+          "name": "Hirschwaldstein ",
+          "spot_id": 178,
+          "wind_direction": "WSW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1800,
+      "latitude": 47.419271,
+      "longitude": 12.24455,
+      "name": "Choralpe",
+      "site_id": 59,
+      "takeoffs": [
+        {
+          "altitude": 1734,
+          "latitude": 47.421433,
+          "longitude": 12.245285,
+          "name": "Choralpe",
+          "spot_id": 750,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1755,
+          "latitude": 47.421103,
+          "longitude": 12.245327,
+          "name": "Choralpe",
+          "spot_id": 751,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 1800,
+          "latitude": 47.419106,
+          "longitude": 12.243839,
+          "name": "Choralpe",
+          "spot_id": 758,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1010,
+          "latitude": 47.422424,
+          "longitude": 12.220143,
+          "name": "Westendorf",
+          "spot_id": 746,
+          "wind_direction": "NW"
+        }
+      ]
+    },
+    {
+      "altitude": 540,
+      "latitude": 48.462906,
+      "longitude": 13.817336,
+      "name": "Marsbach",
+      "site_id": 60,
+      "takeoffs": [
+        {
+          "altitude": 540,
+          "latitude": 48.462906,
+          "longitude": 13.817336,
+          "name": "Marsbach",
+          "spot_id": 106,
+          "wind_direction": "S-WSW"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 47.235818,
+      "longitude": 13.147096,
+      "name": "Fulseck",
+      "site_id": 61,
+      "takeoffs": [
+        {
+          "altitude": 1980,
+          "latitude": 47.23715,
+          "longitude": 13.14836,
+          "name": "Fulseck",
+          "spot_id": 1111,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 47.235592,
+          "longitude": 13.14822,
+          "name": "Fulseck",
+          "spot_id": 1116,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 47.23534,
+          "longitude": 13.147437,
+          "name": "Fulseck",
+          "spot_id": 1117,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 2015,
+          "latitude": 47.233615,
+          "longitude": 13.148661,
+          "name": "Fulseck",
+          "spot_id": 1120,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1510,
+          "latitude": 47.240284,
+          "longitude": 13.126615,
+          "name": "Fulseck Mittelstation",
+          "spot_id": 1107,
+          "wind_direction": "W-N"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 47.216329,
+      "longitude": 11.827935,
+      "name": "Zillertal",
+      "site_id": 62,
+      "takeoffs": [
+        {
+          "altitude": 1715,
+          "latitude": 47.209136,
+          "longitude": 11.833957,
+          "name": "Brindlingalm",
+          "spot_id": 1167,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2040,
+          "latitude": 47.219235,
+          "longitude": 11.822754,
+          "name": "Melchboden",
+          "spot_id": 1152,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2010,
+          "latitude": 47.218992,
+          "longitude": 11.824621,
+          "name": "Melchboden",
+          "spot_id": 1153,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 1654,
+          "latitude": 47.21055,
+          "longitude": 11.836771,
+          "name": "Nasenalm",
+          "spot_id": 999912,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1125,
+          "latitude": 47.200342,
+          "longitude": 11.846003,
+          "name": "Perler",
+          "spot_id": 1188,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 950,
+      "latitude": 47.397929,
+      "longitude": 15.078611,
+      "name": "Holzbauer",
+      "site_id": 63,
+      "takeoffs": [
+        {
+          "altitude": 950,
+          "latitude": 47.397929,
+          "longitude": 15.078611,
+          "name": "Holzbauer",
+          "spot_id": 805,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2200,
+      "latitude": 46.874947,
+      "longitude": 12.787877,
+      "name": "Zettersfeld",
+      "site_id": 64,
+      "takeoffs": [
+        {
+          "altitude": 2200,
+          "latitude": 46.874947,
+          "longitude": 12.787877,
+          "name": "Zettersfeld",
+          "spot_id": 1498,
+          "wind_direction": "E-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1240,
+      "latitude": 47.904891,
+      "longitude": 14.325222,
+      "name": "Schoberstein",
+      "site_id": 65,
+      "takeoffs": [
+        {
+          "altitude": 1240,
+          "latitude": 47.904891,
+          "longitude": 14.325222,
+          "name": "Schoberstein",
+          "spot_id": 165,
+          "wind_direction": "E-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2010,
+      "latitude": 46.720164,
+      "longitude": 12.624254,
+      "name": "Golzentipp",
+      "site_id": 66,
+      "takeoffs": [
+        {
+          "altitude": 2070,
+          "latitude": 46.726763,
+          "longitude": 12.619264,
+          "name": "Golzentipp",
+          "spot_id": 1622,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 2010,
+          "latitude": 46.719524,
+          "longitude": 12.625096,
+          "name": "Golzentipp",
+          "spot_id": 1625,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1450,
+      "latitude": 47.432166,
+      "longitude": 12.093701,
+      "name": "Markbachjoch",
+      "site_id": 67,
+      "takeoffs": [
+        {
+          "altitude": 1230,
+          "latitude": 47.438122,
+          "longitude": 12.108839,
+          "name": "Markbachjoch",
+          "spot_id": 697,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1430,
+          "latitude": 47.432061,
+          "longitude": 12.093954,
+          "name": "Markbachjoch",
+          "spot_id": 712,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1425,
+          "latitude": 47.431945,
+          "longitude": 12.091468,
+          "name": "Markbachjoch",
+          "spot_id": 714,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1710,
+          "latitude": 47.425565,
+          "longitude": 12.069964,
+          "name": "Rosskopf",
+          "spot_id": 731,
+          "wind_direction": "N-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1535,
+      "latitude": 47.663456,
+      "longitude": 11.522737,
+      "name": "Brauneck",
+      "site_id": 68,
+      "takeoffs": [
+        {
+          "altitude": 1330,
+          "latitude": 47.66715,
+          "longitude": 11.538468,
+          "name": "Brauneck",
+          "spot_id": 9584,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1510,
+          "latitude": 47.663889,
+          "longitude": 11.526111,
+          "name": "Brauneck",
+          "spot_id": 9589,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 1540,
+          "latitude": 47.663425,
+          "longitude": 11.52186,
+          "name": "Brauneck",
+          "spot_id": 9590,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1535,
+          "latitude": 47.663456,
+          "longitude": 11.522737,
+          "name": "Brauneck",
+          "spot_id": 9591,
+          "wind_direction": "S"
+        }
+      ]
+    },
+    {
+      "altitude": 1640,
+      "latitude": 47.662291,
+      "longitude": 11.79204,
+      "name": "Wallberg",
+      "site_id": 69,
+      "takeoffs": [
+        {
+          "altitude": 1635,
+          "latitude": 47.663397,
+          "longitude": 11.794381,
+          "name": "Wallberg Alm",
+          "spot_id": 9592,
+          "wind_direction": "SW-N"
+        },
+        {
+          "altitude": 1580,
+          "latitude": 47.661047,
+          "longitude": 11.790737,
+          "name": "Wallberg Kircherl",
+          "spot_id": 9596,
+          "wind_direction": "NW-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1530,
+      "latitude": 47.747324,
+      "longitude": 12.24873,
+      "name": "Hochries",
+      "site_id": 70,
+      "takeoffs": [
+        {
+          "altitude": 1520,
+          "latitude": 47.748221,
+          "longitude": 12.250773,
+          "name": "Hochries",
+          "spot_id": 9463,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1530,
+          "latitude": 47.747324,
+          "longitude": 12.24873,
+          "name": "Hochries",
+          "spot_id": 9469,
+          "wind_direction": "W-N"
+        }
+      ]
+    },
+    {
+      "altitude": 600,
+      "latitude": 51.889874,
+      "longitude": 10.430977,
+      "name": "Rammelsberg",
+      "site_id": 71,
+      "takeoffs": [
+        {
+          "altitude": 600,
+          "latitude": 51.889874,
+          "longitude": 10.430977,
+          "name": "Rammelsberg",
+          "spot_id": 7528,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 611,
+          "latitude": 51.887391,
+          "longitude": 10.429943,
+          "name": "Rammelsberg",
+          "spot_id": 7530,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1165,
+      "latitude": 49.204212,
+      "longitude": 13.099105,
+      "name": "Osser",
+      "site_id": 72,
+      "takeoffs": [
+        {
+          "altitude": 1165,
+          "latitude": 49.204212,
+          "longitude": 13.099105,
+          "name": "Osser",
+          "spot_id": 8775,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 47.559999,
+      "longitude": 10.779847,
+      "name": "Tegelberg",
+      "site_id": 73,
+      "takeoffs": [
+        {
+          "altitude": 1310,
+          "latitude": 47.56806,
+          "longitude": 10.780548,
+          "name": "Tegelberg",
+          "spot_id": 9699,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1510,
+          "latitude": 47.563504,
+          "longitude": 10.782966,
+          "name": "Tegelberg",
+          "spot_id": 9708,
+          "wind_direction": "W-N"
+        },
+        {
+          "altitude": 1685,
+          "latitude": 47.559823,
+          "longitude": 10.779813,
+          "name": "Tegelberg",
+          "spot_id": 9713,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 2050,
+      "latitude": 47.442486,
+      "longitude": 11.057146,
+      "name": "Osterfelder",
+      "site_id": 74,
+      "takeoffs": [
+        {
+          "altitude": 1640,
+          "latitude": 47.452482,
+          "longitude": 11.068466,
+          "name": "Kreuzeck",
+          "spot_id": 9809,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1690,
+          "latitude": 47.452778,
+          "longitude": 11.079917,
+          "name": "Kreuzjoch",
+          "spot_id": 9808,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 2020,
+          "latitude": 47.439688,
+          "longitude": 11.052259,
+          "name": "Osterfelder",
+          "spot_id": 9813,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 2050,
+          "latitude": 47.438131,
+          "longitude": 11.050003,
+          "name": "Osterfelder",
+          "spot_id": 9815,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 1534,
+          "latitude": 47.455716,
+          "longitude": 11.081294,
+          "name": "Tröglhang",
+          "spot_id": 9806,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 876,
+      "latitude": 48.870952,
+      "longitude": 13.073238,
+      "name": "Hausstein",
+      "site_id": 75,
+      "takeoffs": [
+        {
+          "altitude": 876,
+          "latitude": 48.870952,
+          "longitude": 13.073238,
+          "name": "Hausstein",
+          "spot_id": 8975,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1190,
+      "latitude": 49.687826,
+      "longitude": 19.031477,
+      "name": "Skrzyczne",
+      "site_id": 76,
+      "takeoffs": [
+        {
+          "altitude": 1185,
+          "latitude": 49.688256,
+          "longitude": 19.03086,
+          "name": "Skrzyczne",
+          "spot_id": 16743,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1190,
+          "latitude": 49.687887,
+          "longitude": 19.031636,
+          "name": "Skrzyczne",
+          "spot_id": 16744,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 750,
+      "latitude": 49.786692,
+      "longitude": 19.224711,
+      "name": "Żar",
+      "site_id": 77,
+      "takeoffs": [
+        {
+          "altitude": 750,
+          "latitude": 49.786692,
+          "longitude": 19.224711,
+          "name": "Żar",
+          "spot_id": 16720,
+          "wind_direction": "S-N"
+        }
+      ]
+    },
+    {
+      "altitude": 610,
+      "latitude": 50.673017,
+      "longitude": 16.20965,
+      "name": "Mieroszów",
+      "site_id": 78,
+      "takeoffs": [
+        {
+          "altitude": 610,
+          "latitude": 50.673017,
+          "longitude": 16.20965,
+          "name": "Mieroszów",
+          "spot_id": 16675,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 965,
+      "latitude": 49.689508,
+      "longitude": 20.009618,
+      "name": "Szczebel",
+      "site_id": 79,
+      "takeoffs": [
+        {
+          "altitude": 965,
+          "latitude": 49.689508,
+          "longitude": 20.009618,
+          "name": "Szczebel",
+          "spot_id": 16742,
+          "wind_direction": "N-E"
+        }
+      ]
+    },
+    {
+      "altitude": 810,
+      "latitude": 49.772452,
+      "longitude": 20.141149,
+      "name": "Ciecien",
+      "site_id": 80,
+      "takeoffs": [
+        {
+          "altitude": 810,
+          "latitude": 49.772452,
+          "longitude": 20.141149,
+          "name": "Ciecien",
+          "spot_id": 16724,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 815,
+      "latitude": 50.692484,
+      "longitude": 16.276526,
+      "name": "Andrzejowka",
+      "site_id": 81,
+      "takeoffs": [
+        {
+          "altitude": 815,
+          "latitude": 50.692313,
+          "longitude": 16.27604,
+          "name": "Andrzejówka",
+          "spot_id": 16674,
+          "wind_direction": "W-N"
+        }
+      ]
+    },
+    {
+      "altitude": 2200,
+      "latitude": 46.413808,
+      "longitude": 8.106572,
+      "name": "Fiesch",
+      "site_id": 82,
+      "takeoffs": [
+        {
+          "altitude": 2174,
+          "latitude": 46.404897,
+          "longitude": 8.096215,
+          "name": "Galvera",
+          "spot_id": 23184,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2273,
+          "latitude": 46.415763,
+          "longitude": 8.106755,
+          "name": "Kühboden",
+          "spot_id": 23160,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 2160,
+          "latitude": 46.414405,
+          "longitude": 8.107923,
+          "name": "Kühboden",
+          "spot_id": 23162,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1260,
+      "latitude": 47.251977,
+      "longitude": 7.513094,
+      "name": "Weissenstein",
+      "site_id": 83,
+      "takeoffs": [
+        {
+          "altitude": 1390,
+          "latitude": 47.258101,
+          "longitude": 7.527691,
+          "name": "Röti",
+          "spot_id": 21612,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1260,
+          "latitude": 47.250945,
+          "longitude": 7.509755,
+          "name": "Weissenstein",
+          "spot_id": 21616,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 46.840941,
+      "longitude": 8.412766,
+      "name": "Brunni",
+      "site_id": 84,
+      "takeoffs": [
+        {
+          "altitude": 1850,
+          "latitude": 46.838124,
+          "longitude": 8.412209,
+          "name": "Brändlen",
+          "spot_id": 22291,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1870,
+          "latitude": 46.842706,
+          "longitude": 8.410117,
+          "name": "Brunnihütte",
+          "spot_id": 22280,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1700,
+          "latitude": 46.836247,
+          "longitude": 8.419241,
+          "name": "Ruchweg",
+          "spot_id": 22296,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2060,
+          "latitude": 46.842127,
+          "longitude": 8.415756,
+          "name": "Schönegg",
+          "spot_id": 22281,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1990,
+          "latitude": 46.841082,
+          "longitude": 8.415175,
+          "name": "Schönegg",
+          "spot_id": 22286,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1400,
+      "latitude": 46.706364,
+      "longitude": 7.822737,
+      "name": "Amisbühl",
+      "site_id": 85,
+      "takeoffs": [
+        {
+          "altitude": 1330,
+          "latitude": 46.702418,
+          "longitude": 7.822205,
+          "name": "Beatenberg",
+          "spot_id": 22628,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1280,
+          "latitude": 46.700384,
+          "longitude": 7.820625,
+          "name": "Bergbo",
+          "spot_id": 22632,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1580,
+          "latitude": 46.713799,
+          "longitude": 7.823946,
+          "name": "Howald",
+          "spot_id": 22606,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2150,
+      "latitude": 46.657618,
+      "longitude": 8.054753,
+      "name": "Grindelwald",
+      "site_id": 86,
+      "takeoffs": [
+        {
+          "altitude": 2126,
+          "latitude": 46.657582,
+          "longitude": 8.055204,
+          "name": "Grindelwald First",
+          "spot_id": 22701,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2300,
+          "latitude": 46.663788,
+          "longitude": 8.054913,
+          "name": "Oberjoch",
+          "spot_id": 22691,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1480,
+      "latitude": 46.834819,
+      "longitude": 7.904402,
+      "name": "Marbachegg",
+      "site_id": 87,
+      "takeoffs": [
+        {
+          "altitude": 1480,
+          "latitude": 46.834733,
+          "longitude": 7.904567,
+          "name": "Marbachegg",
+          "spot_id": 22300,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1480,
+          "latitude": 46.832532,
+          "longitude": 7.902812,
+          "name": "Marbachegg",
+          "spot_id": 22309,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2330,
+      "latitude": 46.229352,
+      "longitude": 7.528498,
+      "name": "Cret du Midi",
+      "site_id": 88,
+      "takeoffs": [
+        {
+          "altitude": 1915,
+          "latitude": 46.240637,
+          "longitude": 7.526651,
+          "name": "Sigeroulaz",
+          "spot_id": 23382,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 2330,
+          "latitude": 46.229352,
+          "longitude": 7.528498,
+          "name": "Vercorin",
+          "spot_id": 23396,
+          "wind_direction": "S-E"
+        }
+      ]
+    },
+    {
+      "altitude": 2300,
+      "latitude": 46.644081,
+      "longitude": 7.648422,
+      "name": "Niesen",
+      "site_id": 89,
+      "takeoffs": [
+        {
+          "altitude": 2300,
+          "latitude": 46.644081,
+          "longitude": 7.648422,
+          "name": "Niesen",
+          "spot_id": 22729,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2280,
+          "latitude": 46.643847,
+          "longitude": 7.644818,
+          "name": "Niesen",
+          "spot_id": 22730,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1700,
+          "latitude": 46.642318,
+          "longitude": 7.663287,
+          "name": "Schwandegg",
+          "spot_id": 22735,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 47.284444,
+      "longitude": 9.410824,
+      "name": "Ebenalp",
+      "site_id": 90,
+      "takeoffs": [
+        {
+          "altitude": 1600,
+          "latitude": 47.285066,
+          "longitude": 9.411575,
+          "name": "Ebenalp ",
+          "spot_id": 21590,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1600,
+          "latitude": 47.284198,
+          "longitude": 9.410357,
+          "name": "Ebenalp ",
+          "spot_id": 21591,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1600,
+          "latitude": 47.28324,
+          "longitude": 9.412678,
+          "name": "Ebenalp ",
+          "spot_id": 21595,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 950,
+      "latitude": 47.148155,
+      "longitude": 8.535542,
+      "name": "Zugerberg",
+      "site_id": 91,
+      "takeoffs": [
+        {
+          "altitude": 950,
+          "latitude": 47.148114,
+          "longitude": 8.535791,
+          "name": "Zugerberg",
+          "spot_id": 21699,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 2300,
+      "latitude": 46.100885,
+      "longitude": 7.22731,
+      "name": "Verbier",
+      "site_id": 92,
+      "takeoffs": [
+        {
+          "altitude": 2150,
+          "latitude": 46.121359,
+          "longitude": 7.232319,
+          "name": "Croix de Coeur",
+          "spot_id": 23535,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2320,
+          "latitude": 46.084088,
+          "longitude": 7.25875,
+          "name": "Fontanet",
+          "spot_id": 23569,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 2680,
+          "latitude": 46.103013,
+          "longitude": 7.266115,
+          "name": "Les Attelas",
+          "spot_id": 23558,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 2170,
+          "latitude": 46.090357,
+          "longitude": 7.25143,
+          "name": "Les Ruinettes",
+          "spot_id": 23566,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1825,
+          "latitude": 46.109082,
+          "longitude": 7.214584,
+          "name": "Mayen du Bry",
+          "spot_id": 999913,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 2295,
+          "latitude": 46.121847,
+          "longitude": 7.219323,
+          "name": "Savoleyres",
+          "spot_id": 23533,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 2360,
+          "latitude": 46.119431,
+          "longitude": 7.209649,
+          "name": "Savoleyres",
+          "spot_id": 23539,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1800,
+      "latitude": 47.002469,
+      "longitude": 9.691512,
+      "name": "Fanas",
+      "site_id": 93,
+      "takeoffs": [
+        {
+          "altitude": 1350,
+          "latitude": 46.995473,
+          "longitude": 9.667196,
+          "name": "Aldur",
+          "spot_id": 21944,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1770,
+          "latitude": 47.0013,
+          "longitude": 9.691475,
+          "name": "Eggli",
+          "spot_id": 21928,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1680,
+          "latitude": 46.998406,
+          "longitude": 9.69071,
+          "name": "Eggli",
+          "spot_id": 21941,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1820,
+          "latitude": 47.003236,
+          "longitude": 9.688915,
+          "name": "Fanas oberhalb Eggli",
+          "spot_id": 21922,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1790,
+          "latitude": 47.000854,
+          "longitude": 9.683884,
+          "name": "Hoereli",
+          "spot_id": 21934,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1790,
+          "latitude": 47.0006,
+          "longitude": 9.684714,
+          "name": "Hoereli",
+          "spot_id": 21935,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 2280,
+          "latitude": 47.011782,
+          "longitude": 9.697242,
+          "name": "Sassauna",
+          "spot_id": 21903,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 47.005023,
+          "longitude": 9.70128,
+          "name": "Stelli",
+          "spot_id": 21919,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1570,
+      "latitude": 46.200065,
+      "longitude": 8.788417,
+      "name": "Cimetta",
+      "site_id": 94,
+      "takeoffs": [
+        {
+          "altitude": 1670,
+          "latitude": 46.200764,
+          "longitude": 8.791006,
+          "name": "Cimetta ",
+          "spot_id": 23426,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1570,
+          "latitude": 46.199869,
+          "longitude": 8.788311,
+          "name": "Cimetta ",
+          "spot_id": 23427,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1910,
+      "latitude": 46.376698,
+      "longitude": 8.029404,
+      "name": "Riederalp",
+      "site_id": 95,
+      "takeoffs": [
+        {
+          "altitude": 1910,
+          "latitude": 46.377154,
+          "longitude": 8.030469,
+          "name": "Riederalp",
+          "spot_id": 23211,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 46.373877,
+          "longitude": 8.020588,
+          "name": "Riederalp",
+          "spot_id": 23219,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1920,
+          "latitude": 46.376072,
+          "longitude": 8.026421,
+          "name": "Riederalp",
+          "spot_id": 999914,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1400,
+      "latitude": 46.715555,
+      "longitude": 7.50997,
+      "name": "Mentschelen",
+      "site_id": 96,
+      "takeoffs": [
+        {
+          "altitude": 1400,
+          "latitude": 46.715555,
+          "longitude": 7.50997,
+          "name": "Mentschelen",
+          "spot_id": 22604,
+          "wind_direction": "N-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 2100,
+      "latitude": 46.443498,
+      "longitude": 7.496506,
+      "name": "Metschstand",
+      "site_id": 97,
+      "takeoffs": [
+        {
+          "altitude": 2100,
+          "latitude": 46.441736,
+          "longitude": 7.498202,
+          "name": "Gutfläck",
+          "spot_id": 23102,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 2065,
+          "latitude": 46.441306,
+          "longitude": 7.499478,
+          "name": "Gutfläck",
+          "spot_id": 23106,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 2100,
+          "latitude": 46.444721,
+          "longitude": 7.495474,
+          "name": "Metschstand",
+          "spot_id": 23097,
+          "wind_direction": "E"
+        },
+        {
+          "altitude": 2070,
+          "latitude": 46.443465,
+          "longitude": 7.496522,
+          "name": "Metschstand",
+          "spot_id": 23100,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2150,
+      "latitude": 46.812069,
+      "longitude": 10.272317,
+      "name": "Motta Naluns",
+      "site_id": 98,
+      "takeoffs": [
+        {
+          "altitude": 2150,
+          "latitude": 46.812445,
+          "longitude": 10.273648,
+          "name": "Motta Naluns",
+          "spot_id": 22357,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 2130,
+          "latitude": 46.810109,
+          "longitude": 10.27214,
+          "name": "Motta Naluns",
+          "spot_id": 22364,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 46.625272,
+      "longitude": 7.205676,
+      "name": "Vounetz",
+      "site_id": 99,
+      "takeoffs": [
+        {
+          "altitude": 1620,
+          "latitude": 46.626311,
+          "longitude": 7.207784,
+          "name": "Vounetz",
+          "spot_id": 22757,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 1600,
+          "latitude": 46.625262,
+          "longitude": 7.2061,
+          "name": "Vounetz",
+          "spot_id": 22760,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 730,
+      "latitude": 47.322537,
+      "longitude": 8.500834,
+      "name": "Balderen",
+      "site_id": 100,
+      "takeoffs": [
+        {
+          "altitude": 730,
+          "latitude": 47.322537,
+          "longitude": 8.500834,
+          "name": "Balderen",
+          "spot_id": 21536,
+          "wind_direction": "NE-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1550,
+      "latitude": 47.018549,
+      "longitude": 8.701557,
+      "name": "Rotenfluh",
+      "site_id": 101,
+      "takeoffs": [
+        {
+          "altitude": 1560,
+          "latitude": 47.021761,
+          "longitude": 8.704211,
+          "name": "Rotenfluh",
+          "spot_id": 21878,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1550,
+          "latitude": 47.018443,
+          "longitude": 8.70153,
+          "name": "Rotenfluh",
+          "spot_id": 21886,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 1520,
+          "latitude": 47.01767,
+          "longitude": 8.700749,
+          "name": "Rotenfluh",
+          "spot_id": 21889,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1200,
+      "latitude": 47.304009,
+      "longitude": 8.942937,
+      "name": "Scheidegg",
+      "site_id": 102,
+      "takeoffs": [
+        {
+          "altitude": 1200,
+          "latitude": 47.304055,
+          "longitude": 8.943019,
+          "name": "Scheidegg",
+          "spot_id": 21554,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 955,
+      "latitude": 47.325971,
+      "longitude": 7.627276,
+      "name": "Oberi Wängi",
+      "site_id": 103,
+      "takeoffs": [
+        {
+          "altitude": 955,
+          "latitude": 47.325971,
+          "longitude": 7.627276,
+          "name": "Oberi Wängi",
+          "spot_id": 21533,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2200,
+      "latitude": 46.834041,
+      "longitude": 9.215591,
+      "name": "Crap Sogn Gion",
+      "site_id": 104,
+      "takeoffs": [
+        {
+          "altitude": 2200,
+          "latitude": 46.834699,
+          "longitude": 9.216587,
+          "name": "Crap Sogn Gion",
+          "spot_id": 22301,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 2200,
+          "latitude": 46.834039,
+          "longitude": 9.215672,
+          "name": "Crap Sogn Gion",
+          "spot_id": 22303,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2060,
+      "latitude": 46.951209,
+      "longitude": 8.991096,
+      "name": "Braunwald",
+      "site_id": 105,
+      "takeoffs": [
+        {
+          "altitude": 1230,
+          "latitude": 46.938355,
+          "longitude": 8.998003,
+          "name": "Braunwald Kiosk",
+          "spot_id": 22039,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 1870,
+          "latitude": 46.955433,
+          "longitude": 8.984519,
+          "name": "Gumen Bergstation",
+          "spot_id": 999915,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2060,
+          "latitude": 46.959889,
+          "longitude": 8.987412,
+          "name": "Gumengrat",
+          "spot_id": 22005,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1180,
+      "latitude": 47.271302,
+      "longitude": 7.556011,
+      "name": "Niederwiler",
+      "site_id": 106,
+      "takeoffs": [
+        {
+          "altitude": 1175,
+          "latitude": 47.271302,
+          "longitude": 7.556011,
+          "name": "Niederwiler",
+          "spot_id": 21605,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1185,
+          "latitude": 47.270404,
+          "longitude": 7.561124,
+          "name": "Niederwiler",
+          "spot_id": 21606,
+          "wind_direction": "SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1100,
+      "latitude": 46.880967,
+      "longitude": 8.365498,
+      "name": "Büelen",
+      "site_id": 107,
+      "takeoffs": [
+        {
+          "altitude": 1100,
+          "latitude": 46.880967,
+          "longitude": 8.365498,
+          "name": "Büelen",
+          "spot_id": 22192,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 1180,
+      "latitude": 46.854299,
+      "longitude": 6.61212,
+      "name": "Mauborget",
+      "site_id": 108,
+      "takeoffs": [
+        {
+          "altitude": 1180,
+          "latitude": 46.854299,
+          "longitude": 6.61212,
+          "name": "Mauborget",
+          "spot_id": 22260,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2160,
+      "latitude": 46.70714,
+      "longitude": 8.799038,
+      "name": "Lai Alv",
+      "site_id": 109,
+      "takeoffs": [
+        {
+          "altitude": 2220,
+          "latitude": 46.707782,
+          "longitude": 8.80063,
+          "name": "Caischavedra",
+          "spot_id": 22617,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2155,
+          "latitude": 46.706553,
+          "longitude": 8.799194,
+          "name": "Disentis",
+          "spot_id": 22619,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 2480,
+          "latitude": 46.711575,
+          "longitude": 8.789373,
+          "name": "Lai Alv",
+          "spot_id": 22610,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1390,
+      "latitude": 46.205777,
+      "longitude": 8.985846,
+      "name": "Mornera",
+      "site_id": 110,
+      "takeoffs": [
+        {
+          "altitude": 1390,
+          "latitude": 46.205777,
+          "longitude": 8.985846,
+          "name": "Mornera",
+          "spot_id": 23418,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2020,
+      "latitude": 46.497594,
+      "longitude": 7.542219,
+      "name": "Tschenten",
+      "site_id": 111,
+      "takeoffs": [
+        {
+          "altitude": 2030,
+          "latitude": 46.497383,
+          "longitude": 7.542035,
+          "name": "Tschenten Alp",
+          "spot_id": 22990,
+          "wind_direction": "N"
+        },
+        {
+          "altitude": 2030,
+          "latitude": 46.497259,
+          "longitude": 7.541656,
+          "name": "Tschenten Alp",
+          "spot_id": 22992,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1921,
+          "latitude": 46.498947,
+          "longitude": 7.546452,
+          "name": "Tschentenegg",
+          "spot_id": 22983,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1520,
+      "latitude": 46.116496,
+      "longitude": 8.893752,
+      "name": "Monte Tamaro",
+      "site_id": 112,
+      "takeoffs": [
+        {
+          "altitude": 1515,
+          "latitude": 46.116839,
+          "longitude": 8.894167,
+          "name": "Monte Tamaro",
+          "spot_id": 23545,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1890,
+          "latitude": 46.107667,
+          "longitude": 8.880422,
+          "name": "Monte Tamaro",
+          "spot_id": 23554,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1650,
+      "latitude": 47.292055,
+      "longitude": 9.330325,
+      "name": "Kronberg",
+      "site_id": 113,
+      "takeoffs": [
+        {
+          "altitude": 1637,
+          "latitude": 47.292608,
+          "longitude": 9.333145,
+          "name": "Kronberg ",
+          "spot_id": 21566,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 47.291728,
+          "longitude": 9.328951,
+          "name": "Kronberg ",
+          "spot_id": 21567,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 47.291556,
+          "longitude": 9.326925,
+          "name": "Kronberg ",
+          "spot_id": 21568,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1650,
+          "latitude": 47.29136,
+          "longitude": 9.328859,
+          "name": "Kronberg ",
+          "spot_id": 21571,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1570,
+      "latitude": 46.946718,
+      "longitude": 8.536104,
+      "name": "Niederbauen",
+      "site_id": 114,
+      "takeoffs": [
+        {
+          "altitude": 1570,
+          "latitude": 46.946718,
+          "longitude": 8.536104,
+          "name": "Niederbauen",
+          "spot_id": 22028,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1310,
+      "latitude": 46.482836,
+      "longitude": 6.90735,
+      "name": "Pléiades",
+      "site_id": 115,
+      "takeoffs": [
+        {
+          "altitude": 1290,
+          "latitude": 46.478939,
+          "longitude": 6.909954,
+          "name": "Lally",
+          "spot_id": 23034,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1310,
+          "latitude": 46.482836,
+          "longitude": 6.90735,
+          "name": "Pléiades",
+          "spot_id": 23030,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1400,
+      "latitude": 46.545346,
+      "longitude": 7.112808,
+      "name": "Grandvillard",
+      "site_id": 116,
+      "takeoffs": [
+        {
+          "altitude": 1400,
+          "latitude": 46.545129,
+          "longitude": 7.113565,
+          "name": "Lévanchy",
+          "spot_id": 22913,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1740,
+          "latitude": 46.544357,
+          "longitude": 7.11897,
+          "name": "Merlas",
+          "spot_id": 22918,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1580,
+      "latitude": 46.771679,
+      "longitude": 6.468596,
+      "name": "Le Suchet",
+      "site_id": 117,
+      "takeoffs": [
+        {
+          "altitude": 1300,
+          "latitude": 46.77979,
+          "longitude": 6.484917,
+          "name": "Côtelette ",
+          "spot_id": 22457,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1580,
+          "latitude": 46.770089,
+          "longitude": 6.467202,
+          "name": "Le Suchet",
+          "spot_id": 22482,
+          "wind_direction": "NE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2200,
+      "latitude": 46.98283,
+      "longitude": 9.425383,
+      "name": "Pizol",
+      "site_id": 118,
+      "takeoffs": [
+        {
+          "altitude": 200,
+          "latitude": 47.007392,
+          "longitude": 9.401989,
+          "name": "Garmil",
+          "spot_id": 21915,
+          "wind_direction": "NE-E"
+        },
+        {
+          "altitude": 2200,
+          "latitude": 46.980986,
+          "longitude": 9.418063,
+          "name": "Muggerchamm",
+          "spot_id": 21964,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1700,
+          "latitude": 46.990411,
+          "longitude": 9.458701,
+          "name": "Ob Saess",
+          "spot_id": 21948,
+          "wind_direction": "N"
+        },
+        {
+          "altitude": 2200,
+          "latitude": 46.978325,
+          "longitude": 9.420629,
+          "name": "Pizol",
+          "spot_id": 21975,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 2230,
+          "latitude": 46.98002,
+          "longitude": 9.415378,
+          "name": "Pizolbahn",
+          "spot_id": 21966,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 2220,
+          "latitude": 46.980178,
+          "longitude": 9.436175,
+          "name": "Pizol Bergstation Wangs",
+          "spot_id": 21965,
+          "wind_direction": "N-NE"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 47.010074,
+          "longitude": 9.424378,
+          "name": "Pizol Furt",
+          "spot_id": 21909,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 1440,
+          "latitude": 47.006305,
+          "longitude": 9.422594,
+          "name": "Pizol Furt",
+          "spot_id": 21917,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 2200,
+          "latitude": 46.979162,
+          "longitude": 9.436514,
+          "name": "Pizol Laufböden",
+          "spot_id": 21972,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1940,
+          "latitude": 46.984523,
+          "longitude": 9.455798,
+          "name": "Zaunzegg",
+          "spot_id": 21960,
+          "wind_direction": "NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1060,
+      "latitude": 47.376288,
+      "longitude": 7.673723,
+      "name": "Hohwacht",
+      "site_id": 119,
+      "takeoffs": [
+        {
+          "altitude": 1060,
+          "latitude": 47.376288,
+          "longitude": 7.673723,
+          "name": "Hohwacht",
+          "spot_id": 21510,
+          "wind_direction": "NW-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 2300,
+      "latitude": 46.511517,
+      "longitude": 8.818582,
+      "name": "Carì",
+      "site_id": 120,
+      "takeoffs": [
+        {
+          "altitude": 2300,
+          "latitude": 46.511967,
+          "longitude": 8.819953,
+          "name": "Bertolin Du Lèi",
+          "spot_id": 22954,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 2000,
+          "latitude": 46.504888,
+          "longitude": 8.822037,
+          "name": "Carì",
+          "spot_id": 22974,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1700,
+          "latitude": 46.49513,
+          "longitude": 8.823846,
+          "name": "Carì",
+          "spot_id": 22996,
+          "wind_direction": "S"
+        }
+      ]
+    },
+    {
+      "altitude": 1945,
+      "latitude": 46.711256,
+      "longitude": 7.778218,
+      "name": "Niederhorn",
+      "site_id": 121,
+      "takeoffs": [
+        {
+          "altitude": 1945,
+          "latitude": 46.711256,
+          "longitude": 7.778218,
+          "name": "Niederhorn",
+          "spot_id": 22611,
+          "wind_direction": "SE-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1400,
+      "latitude": 46.417902,
+      "longitude": 6.950538,
+      "name": "Sonchaux",
+      "site_id": 122,
+      "takeoffs": [
+        {
+          "altitude": 1400,
+          "latitude": 46.418958,
+          "longitude": 6.950767,
+          "name": "Sonchaux",
+          "spot_id": 23155,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1400,
+          "latitude": 46.418196,
+          "longitude": 6.951088,
+          "name": "Sonchaux",
+          "spot_id": 23158,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1020,
+      "latitude": 47.1897,
+      "longitude": 9.074875,
+      "name": "Hüsliberg",
+      "site_id": 123,
+      "takeoffs": [
+        {
+          "altitude": 1020,
+          "latitude": 47.1897,
+          "longitude": 9.074875,
+          "name": "Hüsliberg",
+          "spot_id": 21652,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1240,
+      "latitude": 46.904463,
+      "longitude": 8.409588,
+      "name": "Brändlen",
+      "site_id": 124,
+      "takeoffs": [
+        {
+          "altitude": 1240,
+          "latitude": 46.905,
+          "longitude": 8.409611,
+          "name": "Brändlen",
+          "spot_id": 22110,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1215,
+          "latitude": 46.902543,
+          "longitude": 8.409769,
+          "name": "Brändlen",
+          "spot_id": 22119,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1030,
+      "latitude": 47.289391,
+      "longitude": 7.674831,
+      "name": "Schwängimatt",
+      "site_id": 125,
+      "takeoffs": [
+        {
+          "altitude": 1110,
+          "latitude": 47.287703,
+          "longitude": 7.671097,
+          "name": "Chutz",
+          "spot_id": 21581,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1040,
+          "latitude": 47.29134,
+          "longitude": 7.678437,
+          "name": "Schwängimatt ",
+          "spot_id": 21572,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1030,
+          "latitude": 47.288986,
+          "longitude": 7.674578,
+          "name": "Schwängimatt ",
+          "spot_id": 21577,
+          "wind_direction": "N"
+        }
+      ]
+    },
+    {
+      "altitude": 1926,
+      "latitude": 46.437935,
+      "longitude": 7.29326,
+      "name": "Wispile",
+      "site_id": 126,
+      "takeoffs": [
+        {
+          "altitude": 1890,
+          "latitude": 46.440619,
+          "longitude": 7.292515,
+          "name": "Wispile",
+          "spot_id": 23110,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 1900,
+          "latitude": 46.439969,
+          "longitude": 7.292208,
+          "name": "Wispile",
+          "spot_id": 23111,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1926,
+          "latitude": 46.437148,
+          "longitude": 7.293444,
+          "name": "Wispile",
+          "spot_id": 23120,
+          "wind_direction": "NE-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 750,
+      "latitude": 47.002236,
+      "longitude": 7.644627,
+      "name": "Rütiberg",
+      "site_id": 127,
+      "takeoffs": [
+        {
+          "altitude": 750,
+          "latitude": 47.002236,
+          "longitude": 7.644627,
+          "name": "Rütiberg",
+          "spot_id": 21925,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 1125,
+      "latitude": 47.173249,
+      "longitude": 7.138212,
+      "name": "Le Cernil",
+      "site_id": 128,
+      "takeoffs": [
+        {
+          "altitude": 1125,
+          "latitude": 47.173249,
+          "longitude": 7.138212,
+          "name": "Le Cernil",
+          "spot_id": 21665,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 2100,
+      "latitude": 46.556772,
+      "longitude": 7.873329,
+      "name": "Schildgrat",
+      "site_id": 129,
+      "takeoffs": [
+        {
+          "altitude": 2100,
+          "latitude": 46.556936,
+          "longitude": 7.872695,
+          "name": "Mürren ",
+          "spot_id": 22887,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 46.039812,
+      "longitude": 8.831931,
+      "name": "Monte Lema",
+      "site_id": 130,
+      "takeoffs": [
+        {
+          "altitude": 1600,
+          "latitude": 46.039812,
+          "longitude": 8.831931,
+          "name": "Monte Lema",
+          "spot_id": 23587,
+          "wind_direction": "E-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2500,
+      "latitude": 46.770892,
+      "longitude": 9.848059,
+      "name": "Jakobshorn",
+      "site_id": 131,
+      "takeoffs": [
+        {
+          "altitude": 2290,
+          "latitude": 46.7858,
+          "longitude": 9.84677,
+          "name": "Brämabüel",
+          "spot_id": 22445,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 2490,
+          "latitude": 46.780322,
+          "longitude": 9.849611,
+          "name": "Brämabüel",
+          "spot_id": 22455,
+          "wind_direction": "W-W"
+        },
+        {
+          "altitude": 2500,
+          "latitude": 46.772824,
+          "longitude": 9.845847,
+          "name": "Jakobshorn",
+          "spot_id": 22473,
+          "wind_direction": "SE-W"
+        },
+        {
+          "altitude": 2500,
+          "latitude": 46.766243,
+          "longitude": 9.850869,
+          "name": "Jakobshorn",
+          "spot_id": 22497,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1570,
+      "latitude": 46.662546,
+      "longitude": 7.901102,
+      "name": "Schynige Platte",
+      "site_id": 132,
+      "takeoffs": [
+        {
+          "altitude": 1570,
+          "latitude": 46.662546,
+          "longitude": 7.901102,
+          "name": "Schynige Platte",
+          "spot_id": 22693,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 850,
+      "latitude": 45.82557,
+      "longitude": 11.768005,
+      "name": "Bassano",
+      "site_id": 133,
+      "takeoffs": [
+        {
+          "altitude": 750,
+          "latitude": 45.811917,
+          "longitude": 11.745105,
+          "name": "Antenne Costalunga",
+          "spot_id": 12228,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 980,
+          "latitude": 45.828177,
+          "longitude": 11.768145,
+          "name": "Casette",
+          "spot_id": 12201,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 715,
+          "latitude": 45.819449,
+          "longitude": 11.763204,
+          "name": "Chalet Stella Alpina",
+          "spot_id": 12216,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1090,
+          "latitude": 45.836998,
+          "longitude": 11.748899,
+          "name": "Colle Campeggia",
+          "spot_id": 12185,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 550,
+          "latitude": 45.803333,
+          "longitude": 11.744444,
+          "name": "Da Moni Monitone",
+          "spot_id": 999916,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1560,
+          "latitude": 45.861475,
+          "longitude": 11.803933,
+          "name": "Panettone",
+          "spot_id": 12162,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 840,
+          "latitude": 45.823497,
+          "longitude": 11.768683,
+          "name": "Tappeti",
+          "spot_id": 12210,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1030,
+      "latitude": 45.833014,
+      "longitude": 9.301515,
+      "name": "Cornizzolo",
+      "site_id": 134,
+      "takeoffs": [
+        {
+          "altitude": 1005,
+          "latitude": 45.83351,
+          "longitude": 9.308568,
+          "name": "Monte Cornizzolo",
+          "spot_id": 12191,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1030,
+          "latitude": 45.833069,
+          "longitude": 9.302054,
+          "name": "Monte Cornizzolo",
+          "spot_id": 12192,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1020,
+          "latitude": 45.832882,
+          "longitude": 9.293658,
+          "name": "Monte Cornizzolo",
+          "spot_id": 12193,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1000,
+      "latitude": 46.230737,
+      "longitude": 12.806406,
+      "name": "Meduno",
+      "site_id": 135,
+      "takeoffs": [
+        {
+          "altitude": 1000,
+          "latitude": 46.230737,
+          "longitude": 12.806406,
+          "name": "Monte Valinis",
+          "spot_id": 11813,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 440,
+      "latitude": 41.591193,
+      "longitude": 12.95722,
+      "name": "Norma",
+      "site_id": 136,
+      "takeoffs": [
+        {
+          "altitude": 440,
+          "latitude": 41.591193,
+          "longitude": 12.95722,
+          "name": "Norma",
+          "spot_id": 13137,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1170,
+      "latitude": 46.273538,
+      "longitude": 13.175293,
+      "name": "Gemona",
+      "site_id": 137,
+      "takeoffs": [
+        {
+          "altitude": 860,
+          "latitude": 46.26927,
+          "longitude": 13.174135,
+          "name": "Garzette",
+          "spot_id": 11795,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1170,
+          "latitude": 46.273538,
+          "longitude": 13.175293,
+          "name": "Monte Quarnan",
+          "spot_id": 11794,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1950,
+      "latitude": 45.42129,
+      "longitude": 7.642906,
+      "name": "Santa Elisabetta",
+      "site_id": 138,
+      "takeoffs": [
+        {
+          "altitude": 940,
+          "latitude": 45.418304,
+          "longitude": 7.641943,
+          "name": "Belice",
+          "spot_id": 12419,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1400,
+          "latitude": 45.438796,
+          "longitude": 7.646923,
+          "name": "Santa Elisabetta",
+          "spot_id": 12417,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1300,
+      "latitude": 45.513169,
+      "longitude": 7.804236,
+      "name": "Cavallaria",
+      "site_id": 139,
+      "takeoffs": [
+        {
+          "altitude": 800,
+          "latitude": 45.488313,
+          "longitude": 7.801368,
+          "name": "Brosso",
+          "spot_id": 999921,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1380,
+          "latitude": 45.513079,
+          "longitude": 7.798423,
+          "name": "Cima Cavallaria",
+          "spot_id": 12403,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 45.512531,
+          "longitude": 7.803314,
+          "name": "Cima Cavallaria",
+          "spot_id": 12404,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 940,
+          "latitude": 45.506975,
+          "longitude": 7.809888,
+          "name": "Felci",
+          "spot_id": 12405,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1450,
+          "latitude": 45.520418,
+          "longitude": 7.807523,
+          "name": "Pian dei Muli",
+          "spot_id": 12399,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2380,
+      "latitude": 46.496294,
+      "longitude": 11.752142,
+      "name": "Col Rodella",
+      "site_id": 140,
+      "takeoffs": [
+        {
+          "altitude": 2380,
+          "latitude": 46.496294,
+          "longitude": 11.752142,
+          "name": "Col Rodella",
+          "spot_id": 11656,
+          "wind_direction": "NE-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1065,
+      "latitude": 45.921431,
+      "longitude": 8.672333,
+      "name": "Laveno",
+      "site_id": 141,
+      "takeoffs": [
+        {
+          "altitude": 1065,
+          "latitude": 45.922173,
+          "longitude": 8.674063,
+          "name": "Monte Nudo",
+          "spot_id": 12099,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1050,
+          "latitude": 45.911491,
+          "longitude": 8.643254,
+          "name": "Sasso del Ferro",
+          "spot_id": 12116,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1415,
+      "latitude": 46.030106,
+      "longitude": 11.827194,
+      "name": "Feltre",
+      "site_id": 142,
+      "takeoffs": [
+        {
+          "altitude": 1440,
+          "latitude": 46.030406,
+          "longitude": 11.816368,
+          "name": "Monte Avena",
+          "spot_id": 11995,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1415,
+          "latitude": 46.029956,
+          "longitude": 11.825964,
+          "name": "Monte Avena",
+          "spot_id": 11997,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1100,
+      "latitude": 46.003394,
+      "longitude": 12.21141,
+      "name": "Revine",
+      "site_id": 143,
+      "takeoffs": [
+        {
+          "altitude": 1115,
+          "latitude": 46.015751,
+          "longitude": 12.230966,
+          "name": "Pian delle Femme",
+          "spot_id": 12009,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1100,
+          "latitude": 46.002387,
+          "longitude": 12.208345,
+          "name": "Revine Lago",
+          "spot_id": 12026,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1480,
+      "latitude": 46.041762,
+      "longitude": 11.317039,
+      "name": "Panarotta",
+      "site_id": 144,
+      "takeoffs": [
+        {
+          "altitude": 1480,
+          "latitude": 46.041762,
+          "longitude": 11.317039,
+          "name": "Monte Panarotta",
+          "spot_id": 11982,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1300,
+      "latitude": 45.832086,
+      "longitude": 9.907456,
+      "name": "Monte Farno",
+      "site_id": 145,
+      "takeoffs": [
+        {
+          "altitude": 1140,
+          "latitude": 45.829163,
+          "longitude": 9.896308,
+          "name": "Delle Piante",
+          "spot_id": 12198,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1080,
+          "latitude": 45.828138,
+          "longitude": 9.892522,
+          "name": "Delle Piante",
+          "spot_id": 12202,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 45.832462,
+          "longitude": 9.907288,
+          "name": "Monte Farno",
+          "spot_id": 12194,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1150,
+          "latitude": 45.827835,
+          "longitude": 9.901116,
+          "name": "Roccette",
+          "spot_id": 12203,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1460,
+      "latitude": 44.464033,
+      "longitude": 10.160568,
+      "name": "Monte Caio",
+      "site_id": 146,
+      "takeoffs": [
+        {
+          "altitude": 1460,
+          "latitude": 44.46408,
+          "longitude": 10.160596,
+          "name": "Monte Caio",
+          "spot_id": 12595,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1490,
+      "latitude": 46.191709,
+      "longitude": 12.352477,
+      "name": "Monte Dolada",
+      "site_id": 147,
+      "takeoffs": [
+        {
+          "altitude": 1490,
+          "latitude": 46.191864,
+          "longitude": 12.352577,
+          "name": "Monte Dolada",
+          "spot_id": 11844,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1230,
+      "latitude": 42.514904,
+      "longitude": 12.883212,
+      "name": "Poggio Bustone",
+      "site_id": 148,
+      "takeoffs": [
+        {
+          "altitude": 1000,
+          "latitude": 42.493807,
+          "longitude": 12.897408,
+          "name": "Monte Rosata",
+          "spot_id": 12978,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1230,
+          "latitude": 42.514904,
+          "longitude": 12.883212,
+          "name": "Poggio Bustone",
+          "spot_id": 12972,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 42.796244,
+      "longitude": 13.196243,
+      "name": "Castelluccio",
+      "site_id": 149,
+      "takeoffs": [
+        {
+          "altitude": 1812,
+          "latitude": 42.813661,
+          "longitude": 13.176869,
+          "name": "Fontanile",
+          "spot_id": 12921,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1730,
+          "latitude": 42.810619,
+          "longitude": 13.175044,
+          "name": "Fontanile",
+          "spot_id": 12923,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1812,
+          "latitude": 42.813662,
+          "longitude": 13.17687,
+          "name": "Fontanile",
+          "spot_id": 999918,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1725,
+          "latitude": 42.742022,
+          "longitude": 13.17798,
+          "name": "Forca Canapine",
+          "spot_id": 12954,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1650,
+          "latitude": 42.784972,
+          "longitude": 13.250683,
+          "name": "Forca di Presta",
+          "spot_id": 12939,
+          "wind_direction": "W-N"
+        },
+        {
+          "altitude": 1530,
+          "latitude": 42.769821,
+          "longitude": 13.180623,
+          "name": "Inghiottitoio",
+          "spot_id": 12945,
+          "wind_direction": "E"
+        },
+        {
+          "altitude": 1358,
+          "latitude": 42.798474,
+          "longitude": 13.217282,
+          "name": "La Rotonda",
+          "spot_id": 12935,
+          "wind_direction": "N-NW"
+        },
+        {
+          "altitude": 1615,
+          "latitude": 42.82745,
+          "longitude": 13.195317,
+          "name": "Monte Veletta",
+          "spot_id": 12912,
+          "wind_direction": "NW"
+        },
+        {
+          "altitude": 1615,
+          "latitude": 42.827451,
+          "longitude": 13.195318,
+          "name": "Monte Veletta",
+          "spot_id": 999917,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 42.810642,
+          "longitude": 13.18267,
+          "name": "Poggio di Croce",
+          "spot_id": 12922,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1500,
+          "latitude": 42.767175,
+          "longitude": 13.177917,
+          "name": "Rifugio Perugia",
+          "spot_id": 12946,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1520,
+          "latitude": 42.765404,
+          "longitude": 13.178262,
+          "name": "Rifugio Perugia",
+          "spot_id": 12949,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 42.764906,
+          "longitude": 13.164369,
+          "name": "San Pellegrino",
+          "spot_id": 12950,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1620,
+          "latitude": 42.781173,
+          "longitude": 13.160454,
+          "name": "Tabellone",
+          "spot_id": 12940,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1660,
+          "latitude": 42.774732,
+          "longitude": 13.169939,
+          "name": "Vetosole",
+          "spot_id": 12942,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1500,
+          "latitude": 42.799711,
+          "longitude": 13.247578,
+          "name": "Vettoretto",
+          "spot_id": 12932,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 810,
+      "latitude": 44.996475,
+      "longitude": 7.447578,
+      "name": "Piossasco",
+      "site_id": 150,
+      "takeoffs": [
+        {
+          "altitude": 810,
+          "latitude": 44.996351,
+          "longitude": 7.44768,
+          "name": "Monte S. Giorgio",
+          "spot_id": 12494,
+          "wind_direction": "E-SW"
+        },
+        {
+          "altitude": 810,
+          "latitude": 44.996906,
+          "longitude": 7.448042,
+          "name": "Monte S. Giorgio",
+          "spot_id": 999919,
+          "wind_direction": "NE"
+        }
+      ]
+    },
+    {
+      "altitude": 665,
+      "latitude": 45.612803,
+      "longitude": 10.747589,
+      "name": "Gas Monte Belpo",
+      "site_id": 151,
+      "takeoffs": [
+        {
+          "altitude": 665,
+          "latitude": 45.612803,
+          "longitude": 10.747589,
+          "name": "Monte Belpo",
+          "spot_id": 12367,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2400,
+      "latitude": 46.914787,
+      "longitude": 11.900284,
+      "name": "Speikboden",
+      "site_id": 153,
+      "takeoffs": [
+        {
+          "altitude": 2040,
+          "latitude": 46.908602,
+          "longitude": 11.911991,
+          "name": "Pitersteiner Alm",
+          "spot_id": 11331,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 2400,
+          "latitude": 46.915032,
+          "longitude": 11.897283,
+          "name": "Speikboden",
+          "spot_id": 11320,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2380,
+          "latitude": 46.914408,
+          "longitude": 11.907675,
+          "name": "Speikboden",
+          "spot_id": 11322,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 2380,
+          "latitude": 46.914409,
+          "longitude": 11.907676,
+          "name": "Speikboden",
+          "spot_id": 999920,
+          "wind_direction": "NE"
+        }
+      ]
+    },
+    {
+      "altitude": 750,
+      "latitude": 45.543472,
+      "longitude": 10.27839,
+      "name": "Monte Maddalena",
+      "site_id": 154,
+      "takeoffs": [
+        {
+          "altitude": 850,
+          "latitude": 45.548697,
+          "longitude": 10.285822,
+          "name": "Monte Maddalena",
+          "spot_id": 12385,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 680,
+          "latitude": 45.538527,
+          "longitude": 10.272084,
+          "name": "Monte Maddalena",
+          "spot_id": 12389,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 620,
+          "latitude": 45.5371,
+          "longitude": 10.270608,
+          "name": "Monte Maddalena",
+          "spot_id": 12390,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2250,
+      "latitude": 46.738963,
+      "longitude": 11.956648,
+      "name": "Kronplatz",
+      "site_id": 155,
+      "takeoffs": [
+        {
+          "altitude": 2215,
+          "latitude": 46.741344,
+          "longitude": 11.955815,
+          "name": "Kronplatz",
+          "spot_id": 11421,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 2260,
+          "latitude": 46.739809,
+          "longitude": 11.958941,
+          "name": "Kronplatz",
+          "spot_id": 11425,
+          "wind_direction": "NW-NE"
+        },
+        {
+          "altitude": 2260,
+          "latitude": 46.738676,
+          "longitude": 11.955934,
+          "name": "Kronplatz",
+          "spot_id": 11426,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 2260,
+          "latitude": 46.737871,
+          "longitude": 11.959239,
+          "name": "Kronplatz",
+          "spot_id": 11428,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1185,
+      "latitude": 43.356697,
+      "longitude": 12.749912,
+      "name": "Monte Cucco",
+      "site_id": 156,
+      "takeoffs": [
+        {
+          "altitude": 900,
+          "latitude": 43.360019,
+          "longitude": 12.728325,
+          "name": "Monte Cucco",
+          "spot_id": 12846,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1185,
+          "latitude": 43.356697,
+          "longitude": 12.749912,
+          "name": "Monte Cucco",
+          "spot_id": 12847,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1130,
+          "latitude": 43.356004,
+          "longitude": 12.771558,
+          "name": "Monte Cucco",
+          "spot_id": 12848,
+          "wind_direction": "NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1115,
+      "latitude": 45.724263,
+      "longitude": 10.146428,
+      "name": "Sale Marasino",
+      "site_id": 157,
+      "takeoffs": [
+        {
+          "altitude": 1115,
+          "latitude": 45.724263,
+          "longitude": 10.146428,
+          "name": "Sale Marasino",
+          "spot_id": 12310,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 510,
+      "latitude": 41.941521,
+      "longitude": 12.807091,
+      "name": "Monte Ripoli",
+      "site_id": 158,
+      "takeoffs": [
+        {
+          "altitude": 520,
+          "latitude": 41.942567,
+          "longitude": 12.808347,
+          "name": "Monte Ripoli",
+          "spot_id": 13062,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 510,
+          "latitude": 41.941521,
+          "longitude": 12.807091,
+          "name": "Monte Ripoli",
+          "spot_id": 13065,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1490,
+      "latitude": 45.809697,
+      "longitude": 10.576386,
+      "name": "Monte Alpo",
+      "site_id": 159,
+      "takeoffs": [
+        {
+          "altitude": 1490,
+          "latitude": 45.809697,
+          "longitude": 10.576386,
+          "name": "Monte Alpo",
+          "spot_id": 12236,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 41.739667,
+      "longitude": 13.753708,
+      "name": "San Donato",
+      "site_id": 160,
+      "takeoffs": [
+        {
+          "altitude": 1455,
+          "latitude": 41.736518,
+          "longitude": 13.807997,
+          "name": "Forca d'Acero",
+          "spot_id": 13108,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1160,
+          "latitude": 41.741413,
+          "longitude": 13.743694,
+          "name": "San Donato",
+          "spot_id": 13106,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1535,
+          "latitude": 41.733557,
+          "longitude": 13.772412,
+          "name": "San Donato",
+          "spot_id": 13109,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 970,
+          "latitude": 41.726842,
+          "longitude": 13.749383,
+          "name": "San Donato",
+          "spot_id": 13110,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1150,
+          "latitude": 41.725935,
+          "longitude": 13.788532,
+          "name": "San Donato",
+          "spot_id": 13112,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1000,
+      "latitude": 45.781434,
+      "longitude": 11.498658,
+      "name": "Caltrano",
+      "site_id": 161,
+      "takeoffs": [
+        {
+          "altitude": 710,
+          "latitude": 45.779494,
+          "longitude": 11.502322,
+          "name": "Caltrano",
+          "spot_id": 12271,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1295,
+          "latitude": 45.789342,
+          "longitude": 11.482561,
+          "name": "Foraoro",
+          "spot_id": 12258,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 715,
+      "latitude": 46.225611,
+      "longitude": 13.262694,
+      "name": "Bernadia",
+      "site_id": 162,
+      "takeoffs": [
+        {
+          "altitude": 715,
+          "latitude": 46.225611,
+          "longitude": 13.262694,
+          "name": "Bernadia",
+          "spot_id": 11816,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1700,
+      "latitude": 45.773423,
+      "longitude": 10.86296,
+      "name": "Monte Baldo",
+      "site_id": 163,
+      "takeoffs": [
+        {
+          "altitude": 1730,
+          "latitude": 45.777028,
+          "longitude": 10.863412,
+          "name": "Monte Baldo",
+          "spot_id": 12273,
+          "wind_direction": "N-E"
+        },
+        {
+          "altitude": 1700,
+          "latitude": 45.773423,
+          "longitude": 10.86296,
+          "name": "Monte Baldo",
+          "spot_id": 12278,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1800,
+          "latitude": 45.680379,
+          "longitude": 10.815747,
+          "name": "Prada",
+          "spot_id": 12328,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 1800,
+          "latitude": 45.679206,
+          "longitude": 10.816554,
+          "name": "Prada",
+          "spot_id": 12331,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1350,
+      "latitude": 45.649914,
+      "longitude": 10.814935,
+      "name": "Colonei",
+      "site_id": 164,
+      "takeoffs": [
+        {
+          "altitude": 1360,
+          "latitude": 45.651584,
+          "longitude": 10.814777,
+          "name": "Colonei",
+          "spot_id": 12352,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1350,
+          "latitude": 45.647506,
+          "longitude": 10.809945,
+          "name": "Colonei",
+          "spot_id": 12354,
+          "wind_direction": "SE"
+        }
+      ]
+    },
+    {
+      "altitude": 910,
+      "latitude": 45.327454,
+      "longitude": 7.572553,
+      "name": "Rocca Canavese",
+      "site_id": 165,
+      "takeoffs": [
+        {
+          "altitude": 910,
+          "latitude": 45.327454,
+          "longitude": 7.572553,
+          "name": "Rocca Canavese",
+          "spot_id": 12443,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1900,
+      "latitude": 46.165393,
+      "longitude": 8.483369,
+      "name": "Trubbio",
+      "site_id": 166,
+      "takeoffs": [
+        {
+          "altitude": 1780,
+          "latitude": 46.162624,
+          "longitude": 8.475365,
+          "name": "Cima Due",
+          "spot_id": 11888,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 2015,
+          "latitude": 46.173018,
+          "longitude": 8.495324,
+          "name": "Cima Trubbio",
+          "spot_id": 11869,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1860,
+          "latitude": 46.166946,
+          "longitude": 8.492633,
+          "name": "Frascella",
+          "spot_id": 11878,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1690,
+          "latitude": 46.164114,
+          "longitude": 8.484867,
+          "name": "Piana di Vigezzo",
+          "spot_id": 11884,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 46.04605,
+      "longitude": 9.360353,
+      "name": "Giumello",
+      "site_id": 168,
+      "takeoffs": [
+        {
+          "altitude": 1560,
+          "latitude": 46.046566,
+          "longitude": 9.36899,
+          "name": "Alpe Giumello",
+          "spot_id": 11972,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1540,
+          "latitude": 46.04533,
+          "longitude": 9.35623,
+          "name": "Alpe Giumello",
+          "spot_id": 11973,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1760,
+          "latitude": 46.050417,
+          "longitude": 9.3573,
+          "name": "Monte Croce di Muggio",
+          "spot_id": 11966,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1070,
+      "latitude": 44.499047,
+      "longitude": 7.38195,
+      "name": "Liretta",
+      "site_id": 169,
+      "takeoffs": [
+        {
+          "altitude": 1070,
+          "latitude": 44.499047,
+          "longitude": 7.38195,
+          "name": "Col di Liretta",
+          "spot_id": 12585,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1540,
+          "latitude": 44.507711,
+          "longitude": 7.346767,
+          "name": "Monte San Bernardo",
+          "spot_id": 12583,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1200,
+      "latitude": 45.77962,
+      "longitude": 9.510186,
+      "name": "Valcava",
+      "site_id": 170,
+      "takeoffs": [
+        {
+          "altitude": 1370,
+          "latitude": 45.780627,
+          "longitude": 9.52246,
+          "name": "Valcava",
+          "spot_id": 12269,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1200,
+          "latitude": 45.779633,
+          "longitude": 9.510292,
+          "name": "Valcava",
+          "spot_id": 12270,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1075,
+      "latitude": 46.087408,
+      "longitude": 12.530311,
+      "name": "Aviano",
+      "site_id": 171,
+      "takeoffs": [
+        {
+          "altitude": 1075,
+          "latitude": 46.087408,
+          "longitude": 12.530311,
+          "name": "Antenne Castaldia",
+          "spot_id": 11944,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 780,
+          "latitude": 46.080918,
+          "longitude": 12.540786,
+          "name": "Bornass",
+          "spot_id": 11948,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1170,
+          "latitude": 46.097948,
+          "longitude": 12.545106,
+          "name": "Roccioni",
+          "spot_id": 11935,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 680,
+      "latitude": 44.818317,
+      "longitude": 9.071343,
+      "name": "Cà del Monte",
+      "site_id": 172,
+      "takeoffs": [
+        {
+          "altitude": 675,
+          "latitude": 44.818368,
+          "longitude": 9.071098,
+          "name": "Ca' del Monte",
+          "spot_id": 12533,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 680,
+          "latitude": 44.816454,
+          "longitude": 9.07332,
+          "name": "Ca' del Monte",
+          "spot_id": 12536,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1060,
+      "latitude": 43.701394,
+      "longitude": 11.555958,
+      "name": "Massanera",
+      "site_id": 173,
+      "takeoffs": [
+        {
+          "altitude": 1060,
+          "latitude": 43.70146,
+          "longitude": 11.556205,
+          "name": "Valdarno",
+          "spot_id": 12809,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 610,
+      "latitude": 42.192734,
+      "longitude": 13.9078,
+      "name": "Tocco da Casauria",
+      "site_id": 174,
+      "takeoffs": [
+        {
+          "altitude": 610,
+          "latitude": 42.192734,
+          "longitude": 13.9078,
+          "name": "Tocco da Casauria",
+          "spot_id": 13025,
+          "wind_direction": "N-E"
+        }
+      ]
+    },
+    {
+      "altitude": 575,
+      "latitude": 44.401926,
+      "longitude": 9.285223,
+      "name": "Orero",
+      "site_id": 175,
+      "takeoffs": [
+        {
+          "altitude": 575,
+          "latitude": 44.401926,
+          "longitude": 9.285223,
+          "name": "Orero",
+          "spot_id": 12614,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 760,
+      "latitude": 44.42616,
+      "longitude": 10.825721,
+      "name": "Monfestino",
+      "site_id": 176,
+      "takeoffs": [
+        {
+          "altitude": 760,
+          "latitude": 44.427706,
+          "longitude": 10.825891,
+          "name": "Monfestino",
+          "spot_id": 12606,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 760,
+          "latitude": 44.42616,
+          "longitude": 10.825721,
+          "name": "Monfestino",
+          "spot_id": 12608,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1240,
+      "latitude": 45.752761,
+      "longitude": 8.221945,
+      "name": "Monte Tovo",
+      "site_id": 177,
+      "takeoffs": [
+        {
+          "altitude": 1240,
+          "latitude": 45.752761,
+          "longitude": 8.221945,
+          "name": "Monte Tovo",
+          "spot_id": 12298,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 975,
+      "latitude": 45.16206,
+      "longitude": 7.463573,
+      "name": "Val della Torre",
+      "site_id": 178,
+      "takeoffs": [
+        {
+          "altitude": 1100,
+          "latitude": 45.165911,
+          "longitude": 7.465051,
+          "name": "Monte Rossell Cima",
+          "spot_id": 12456,
+          "wind_direction": "E-S"
+        },
+        {
+          "altitude": 975,
+          "latitude": 45.161857,
+          "longitude": 7.46348,
+          "name": "Val della Torre",
+          "spot_id": 12457,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 900,
+          "latitude": 45.160384,
+          "longitude": 7.461839,
+          "name": "Val della Torre",
+          "spot_id": 12458,
+          "wind_direction": "SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1150,
+      "latitude": 45.595276,
+      "longitude": 7.970669,
+      "name": "Muanda",
+      "site_id": 179,
+      "takeoffs": [
+        {
+          "altitude": 1460,
+          "latitude": 45.6001,
+          "longitude": 7.964457,
+          "name": "Muanda",
+          "spot_id": 12373,
+          "wind_direction": "E-SW"
+        },
+        {
+          "altitude": 1150,
+          "latitude": 45.595276,
+          "longitude": 7.970669,
+          "name": "Muanda",
+          "spot_id": 12377,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2080,
+      "latitude": 46.735204,
+      "longitude": 11.250066,
+      "name": "Hirzer",
+      "site_id": 180,
+      "takeoffs": [
+        {
+          "altitude": 2080,
+          "latitude": 46.735526,
+          "longitude": 11.251907,
+          "name": "Hirzer",
+          "spot_id": 11429,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1390,
+          "latitude": 46.733507,
+          "longitude": 11.227699,
+          "name": "Hirzer Mittelstation",
+          "spot_id": 11431,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1100,
+      "latitude": 45.784103,
+      "longitude": 9.794904,
+      "name": "Ganda",
+      "site_id": 181,
+      "takeoffs": [
+        {
+          "altitude": 850,
+          "latitude": 45.7836,
+          "longitude": 9.779617,
+          "name": "Amora",
+          "spot_id": 999922,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1110,
+          "latitude": 45.783359,
+          "longitude": 9.800148,
+          "name": "Monte Rena",
+          "spot_id": 12265,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1060,
+      "latitude": 46.181194,
+      "longitude": 13.779242,
+      "name": "Kobala",
+      "site_id": 182,
+      "takeoffs": [
+        {
+          "altitude": 1060,
+          "latitude": 46.181194,
+          "longitude": 13.779242,
+          "name": "Kobala",
+          "spot_id": 19107,
+          "wind_direction": "E-W"
+        },
+        {
+          "altitude": 1475,
+          "latitude": 46.190589,
+          "longitude": 13.795985,
+          "name": "Kobilja Glava",
+          "spot_id": 19100,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 590,
+      "latitude": 45.963566,
+      "longitude": 13.723545,
+      "name": "Lijak",
+      "site_id": 183,
+      "takeoffs": [
+        {
+          "altitude": 590,
+          "latitude": 45.963566,
+          "longitude": 13.723545,
+          "name": "Lijak",
+          "spot_id": 19197,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1400,
+      "latitude": 46.27288,
+      "longitude": 13.473253,
+      "name": "Stol",
+      "site_id": 184,
+      "takeoffs": [
+        {
+          "altitude": 1400,
+          "latitude": 46.27288,
+          "longitude": 13.473253,
+          "name": "Stol",
+          "spot_id": 19043,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1290,
+      "latitude": 45.81417,
+      "longitude": 6.246833,
+      "name": "Col de La Forclaz",
+      "site_id": 185,
+      "takeoffs": [
+        {
+          "altitude": 1290,
+          "latitude": 45.814184,
+          "longitude": 6.246918,
+          "name": "Col de La Forclaz",
+          "spot_id": 5236,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 900,
+      "latitude": 45.309165,
+      "longitude": 5.889879,
+      "name": "Saint Hilaire",
+      "site_id": 186,
+      "takeoffs": [
+        {
+          "altitude": 950,
+          "latitude": 45.310432,
+          "longitude": 5.890588,
+          "name": "St Hilaire",
+          "spot_id": 5732,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 900,
+          "latitude": 45.306839,
+          "longitude": 5.887796,
+          "name": "St Hilaire",
+          "spot_id": 5736,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1570,
+      "latitude": 43.978359,
+      "longitude": 6.479878,
+      "name": "St. André",
+      "site_id": 187,
+      "takeoffs": [
+        {
+          "altitude": 1570,
+          "latitude": 43.978359,
+          "longitude": 6.479878,
+          "name": "St. Andre",
+          "spot_id": 6664,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1525,
+          "latitude": 43.976868,
+          "longitude": 6.491306,
+          "name": "St. Andre",
+          "spot_id": 6665,
+          "wind_direction": "E-S"
+        }
+      ]
+    },
+    {
+      "altitude": 950,
+      "latitude": 45.853184,
+      "longitude": 6.223013,
+      "name": "Planfait",
+      "site_id": 188,
+      "takeoffs": [
+        {
+          "altitude": 950,
+          "latitude": 45.853184,
+          "longitude": 6.223013,
+          "name": "Planfait",
+          "spot_id": 5196,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1100,
+      "latitude": 43.725519,
+      "longitude": 6.947159,
+      "name": "Gourdon",
+      "site_id": 189,
+      "takeoffs": [
+        {
+          "altitude": 1015,
+          "latitude": 43.729468,
+          "longitude": 6.975174,
+          "name": "Cavillore",
+          "spot_id": 6784,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 590,
+          "latitude": 43.704167,
+          "longitude": 6.980838,
+          "name": "Kennedy",
+          "spot_id": 6803,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1095,
+          "latitude": 43.725519,
+          "longitude": 6.947159,
+          "name": "L'Embarnier",
+          "spot_id": 6793,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1120,
+          "latitude": 43.722972,
+          "longitude": 6.94395,
+          "name": "L'Embarnier",
+          "spot_id": 6794,
+          "wind_direction": "SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1200,
+      "latitude": 47.925513,
+      "longitude": 7.010918,
+      "name": "Treh",
+      "site_id": 190,
+      "takeoffs": [
+        {
+          "altitude": 1200,
+          "latitude": 47.925513,
+          "longitude": 7.010918,
+          "name": "Le Treh Markstein",
+          "spot_id": 4522,
+          "wind_direction": "S-W"
+        },
+        {
+          "altitude": 670,
+          "latitude": 47.903314,
+          "longitude": 6.992059,
+          "name": "Le Treh Siebach",
+          "spot_id": 4536,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 45.936962,
+      "longitude": 6.851135,
+      "name": "Planpraz",
+      "site_id": 191,
+      "takeoffs": [
+        {
+          "altitude": 2035,
+          "latitude": 45.938368,
+          "longitude": 6.851872,
+          "name": "Chamonix",
+          "spot_id": 5111,
+          "wind_direction": "NE-E"
+        },
+        {
+          "altitude": 200,
+          "latitude": 45.936847,
+          "longitude": 6.851172,
+          "name": "Le Brèvent",
+          "spot_id": 5112,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 880,
+      "latitude": 45.552883,
+      "longitude": 6.104744,
+      "name": "Montlambert",
+      "site_id": 192,
+      "takeoffs": [
+        {
+          "altitude": 880,
+          "latitude": 45.552883,
+          "longitude": 6.104744,
+          "name": "Montlambert",
+          "spot_id": 5491,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 2000,
+      "latitude": 44.85153,
+      "longitude": 6.472428,
+      "name": "Puy Aillaud",
+      "site_id": 193,
+      "takeoffs": [
+        {
+          "altitude": 2220,
+          "latitude": 44.85277,
+          "longitude": 6.454095,
+          "name": "Les Alpages",
+          "spot_id": 6138,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 2200,
+          "latitude": 44.857237,
+          "longitude": 6.460051,
+          "name": "Mont Pelvoux",
+          "spot_id": 6137,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 1660,
+          "latitude": 44.850275,
+          "longitude": 6.478213,
+          "name": "Puy Aillaud",
+          "spot_id": 6145,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 1340,
+      "latitude": 45.949609,
+      "longitude": 6.739708,
+      "name": "Plaine Joux",
+      "site_id": 194,
+      "takeoffs": [
+        {
+          "altitude": 1340,
+          "latitude": 45.949609,
+          "longitude": 6.739708,
+          "name": "Plaine Joux",
+          "spot_id": 5099,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 2015,
+      "latitude": 45.958267,
+      "longitude": 6.476802,
+      "name": "Mont Lachat",
+      "site_id": 195,
+      "takeoffs": [
+        {
+          "altitude": 2040,
+          "latitude": 45.95978,
+          "longitude": 6.476605,
+          "name": "Mont Lachat",
+          "spot_id": 5089,
+          "wind_direction": "NE-E"
+        },
+        {
+          "altitude": 2015,
+          "latitude": 45.958267,
+          "longitude": 6.476802,
+          "name": "Mont Lachat",
+          "spot_id": 5090,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1620,
+      "latitude": 46.054004,
+      "longitude": 6.697715,
+      "name": "Samoens",
+      "site_id": 196,
+      "takeoffs": [
+        {
+          "altitude": 1620,
+          "latitude": 46.054004,
+          "longitude": 6.697715,
+          "name": "Samoens",
+          "spot_id": 5051,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 820,
+      "latitude": 44.110537,
+      "longitude": 3.101984,
+      "name": "Millau",
+      "site_id": 197,
+      "takeoffs": [
+        {
+          "altitude": 820,
+          "latitude": 44.110963,
+          "longitude": 3.1023,
+          "name": "Puncho d'Agast",
+          "spot_id": 6595,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 810,
+          "latitude": 44.11045,
+          "longitude": 3.101219,
+          "name": "Puncho d'Agast",
+          "spot_id": 6597,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 822,
+          "latitude": 44.110077,
+          "longitude": 3.103971,
+          "name": "Puncho d'Agast",
+          "spot_id": 6598,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 815,
+          "latitude": 44.10989,
+          "longitude": 3.10324,
+          "name": "Puncho d'Agast",
+          "spot_id": 6600,
+          "wind_direction": "S"
+        }
+      ]
+    },
+    {
+      "altitude": 1300,
+      "latitude": 44.297853,
+      "longitude": 5.764086,
+      "name": "Chabre",
+      "site_id": 198,
+      "takeoffs": [
+        {
+          "altitude": 1215,
+          "latitude": 44.304202,
+          "longitude": 5.779235,
+          "name": "Chabre",
+          "spot_id": 6466,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1225,
+          "latitude": 44.302997,
+          "longitude": 5.776082,
+          "name": "Chabre",
+          "spot_id": 6467,
+          "wind_direction": "NW"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 44.298219,
+          "longitude": 5.766064,
+          "name": "Chabre",
+          "spot_id": 6470,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1330,
+          "latitude": 44.297105,
+          "longitude": 5.761686,
+          "name": "Chabre",
+          "spot_id": 6471,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1900,
+      "latitude": 44.403005,
+      "longitude": 6.37029,
+      "name": "St. Jean",
+      "site_id": 199,
+      "takeoffs": [
+        {
+          "altitude": 1900,
+          "latitude": 44.403005,
+          "longitude": 6.37029,
+          "name": "St. Jean",
+          "spot_id": 6409,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1200,
+      "latitude": 46.135635,
+      "longitude": 6.176453,
+      "name": "Salève",
+      "site_id": 200,
+      "takeoffs": [
+        {
+          "altitude": 1180,
+          "latitude": 46.14871,
+          "longitude": 6.188993,
+          "name": "La Clusaz",
+          "spot_id": 4998,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1245,
+          "latitude": 46.130092,
+          "longitude": 6.171747,
+          "name": "Les Crets",
+          "spot_id": 5014,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 1080,
+          "latitude": 46.154788,
+          "longitude": 6.194344,
+          "name": "Saleve Telepherique",
+          "spot_id": 23503,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1260,
+      "latitude": 44.443333,
+      "longitude": 6.371552,
+      "name": "St. Vincent Les Forts",
+      "site_id": 201,
+      "takeoffs": [
+        {
+          "altitude": 1260,
+          "latitude": 44.443333,
+          "longitude": 6.371552,
+          "name": "St. Vincent Les Forts",
+          "spot_id": 6395,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1600,
+      "latitude": 42.807726,
+      "longitude": 0.377249,
+      "name": "Val Louron",
+      "site_id": 202,
+      "takeoffs": [
+        {
+          "altitude": 1660,
+          "latitude": 42.807726,
+          "longitude": 0.377249,
+          "name": "Val Louron",
+          "spot_id": 7187,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 1600,
+          "latitude": 42.799212,
+          "longitude": 0.38279,
+          "name": "Val Louron",
+          "spot_id": 7198,
+          "wind_direction": "NE-SE"
+        },
+        {
+          "altitude": 1250,
+          "latitude": 42.798827,
+          "longitude": 0.395727,
+          "name": "Val Louron",
+          "spot_id": 7199,
+          "wind_direction": "E"
+        }
+      ]
+    },
+    {
+      "altitude": 1450,
+      "latitude": 45.771622,
+      "longitude": 2.963358,
+      "name": "Puy de Dôme",
+      "site_id": 203,
+      "takeoffs": [
+        {
+          "altitude": 1450,
+          "latitude": 45.771622,
+          "longitude": 2.963358,
+          "name": "Puy de Dôme",
+          "spot_id": 999923,
+          "wind_direction": "N-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1160,
+      "latitude": 47.898488,
+      "longitude": 6.918794,
+      "name": "Drumont",
+      "site_id": 204,
+      "takeoffs": [
+        {
+          "altitude": 1160,
+          "latitude": 47.898488,
+          "longitude": 6.918794,
+          "name": "Drumont",
+          "spot_id": 4543,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 1085,
+      "latitude": 42.969953,
+      "longitude": 0.885847,
+      "name": "Arbas",
+      "site_id": 205,
+      "takeoffs": [
+        {
+          "altitude": 1530,
+          "latitude": 42.958012,
+          "longitude": 0.890412,
+          "name": "Cornudère",
+          "spot_id": 7055,
+          "wind_direction": "N"
+        },
+        {
+          "altitude": 1530,
+          "latitude": 42.957327,
+          "longitude": 0.890183,
+          "name": "Cornudère",
+          "spot_id": 7056,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1217,
+          "latitude": 42.959767,
+          "longitude": 0.913861,
+          "name": "Herran",
+          "spot_id": 7052,
+          "wind_direction": "NW"
+        },
+        {
+          "altitude": 1085,
+          "latitude": 42.969953,
+          "longitude": 0.885847,
+          "name": "Planot de Loubat",
+          "spot_id": 7042,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 200,
+      "latitude": 48.928396,
+      "longitude": -0.468599,
+      "name": "Saint-Omer",
+      "site_id": 206,
+      "takeoffs": [
+        {
+          "altitude": 200,
+          "latitude": 48.92963,
+          "longitude": -0.469878,
+          "name": "Saint-Omer",
+          "spot_id": 4184,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 200,
+          "latitude": 48.926101,
+          "longitude": -0.466415,
+          "name": "Saint-Omer",
+          "spot_id": 4185,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 970,
+      "latitude": 43.80046,
+      "longitude": 6.955835,
+      "name": "Gréolières",
+      "site_id": 207,
+      "takeoffs": [
+        {
+          "altitude": 1700,
+          "latitude": 43.81657,
+          "longitude": 6.981756,
+          "name": "Gréolières",
+          "spot_id": 6739,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1500,
+          "latitude": 43.809853,
+          "longitude": 6.959093,
+          "name": "Gréolières",
+          "spot_id": 6746,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1450,
+          "latitude": 43.809167,
+          "longitude": 6.960833,
+          "name": "Gréolières",
+          "spot_id": 6747,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 970,
+          "latitude": 43.80046,
+          "longitude": 6.955835,
+          "name": "Gréolières",
+          "spot_id": 6752,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 840,
+      "latitude": 43.294893,
+      "longitude": -1.288695,
+      "name": "Baigura",
+      "site_id": 208,
+      "takeoffs": [
+        {
+          "altitude": 840,
+          "latitude": 43.294893,
+          "longitude": -1.288695,
+          "name": "Baigura",
+          "spot_id": 6910,
+          "wind_direction": "N-E"
+        },
+        {
+          "altitude": 765,
+          "latitude": 43.294015,
+          "longitude": -1.284202,
+          "name": "Baigura",
+          "spot_id": 6911,
+          "wind_direction": "E-SE"
+        },
+        {
+          "altitude": 840,
+          "latitude": 43.293651,
+          "longitude": -1.289827,
+          "name": "Baigura",
+          "spot_id": 6912,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 840,
+          "latitude": 43.293565,
+          "longitude": -1.291096,
+          "name": "Baigura",
+          "spot_id": 6913,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 840,
+          "latitude": 43.290732,
+          "longitude": -1.293788,
+          "name": "Baigura",
+          "spot_id": 999924,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1640,
+      "latitude": 46.144108,
+      "longitude": 6.54707,
+      "name": "Mieussy",
+      "site_id": 209,
+      "takeoffs": [
+        {
+          "altitude": 1640,
+          "latitude": 46.145776,
+          "longitude": 6.546481,
+          "name": "Mieussy",
+          "spot_id": 5002,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 1640,
+          "latitude": 46.141792,
+          "longitude": 6.545899,
+          "name": "Mieussy",
+          "spot_id": 5005,
+          "wind_direction": "S-W"
+        }
+      ]
+    },
+    {
+      "altitude": 800,
+      "latitude": 46.970081,
+      "longitude": 5.875746,
+      "name": "Mont Poupet",
+      "site_id": 210,
+      "takeoffs": [
+        {
+          "altitude": 800,
+          "latitude": 46.971573,
+          "longitude": 5.877512,
+          "name": "Mont Poupet",
+          "spot_id": 4744,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 800,
+          "latitude": 46.969302,
+          "longitude": 5.874659,
+          "name": "Mont Poupet",
+          "spot_id": 4748,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1445,
+      "latitude": 45.804881,
+      "longitude": 6.095235,
+      "name": "Semnoz",
+      "site_id": 211,
+      "takeoffs": [
+        {
+          "altitude": 1445,
+          "latitude": 45.804881,
+          "longitude": 6.095235,
+          "name": "Semnoz",
+          "spot_id": 5246,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 350,
+      "latitude": 49.948232,
+      "longitude": 4.624654,
+      "name": "Revin",
+      "site_id": 212,
+      "takeoffs": [
+        {
+          "altitude": 350,
+          "latitude": 49.948232,
+          "longitude": 4.624654,
+          "name": "Revin",
+          "spot_id": 3942,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 45.389923,
+      "longitude": 6.120826,
+      "name": "Collet d'Allevard",
+      "site_id": 213,
+      "takeoffs": [
+        {
+          "altitude": 1865,
+          "latitude": 45.393907,
+          "longitude": 6.139853,
+          "name": "Collet d'Allevard Speedriding",
+          "spot_id": 5652,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1560,
+          "latitude": 45.392372,
+          "longitude": 6.115248,
+          "name": "Déco",
+          "spot_id": 5657,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 2050,
+          "latitude": 45.385738,
+          "longitude": 6.147681,
+          "name": "Les Plagnes",
+          "spot_id": 5666,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 1400,
+          "latitude": 45.393688,
+          "longitude": 6.106711,
+          "name": "Malatrait",
+          "spot_id": 5654,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1680,
+          "latitude": 45.391485,
+          "longitude": 6.124201,
+          "name": "Super Collet",
+          "spot_id": 5661,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1340,
+      "latitude": 44.20347,
+      "longitude": 5.51052,
+      "name": "Bergies",
+      "site_id": 214,
+      "takeoffs": [
+        {
+          "altitude": 1340,
+          "latitude": 44.203688,
+          "longitude": 5.510726,
+          "name": "Bergies",
+          "spot_id": 6522,
+          "wind_direction": "W-NW"
+        },
+        {
+          "altitude": 1340,
+          "latitude": 44.203192,
+          "longitude": 5.510812,
+          "name": "Bergies",
+          "spot_id": 6523,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 1375,
+      "latitude": 42.990253,
+      "longitude": -0.196549,
+      "name": "Couraduque",
+      "site_id": 215,
+      "takeoffs": [
+        {
+          "altitude": 1375,
+          "latitude": 42.990253,
+          "longitude": -0.196549,
+          "name": "Couraduque",
+          "spot_id": 7015,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 2050,
+      "latitude": 42.510501,
+      "longitude": 1.989428,
+      "name": "Mauroux",
+      "site_id": 216,
+      "takeoffs": [
+        {
+          "altitude": 2050,
+          "latitude": 42.510501,
+          "longitude": 1.989428,
+          "name": "Mauroux",
+          "spot_id": 7301,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1125,
+      "latitude": 45.601792,
+      "longitude": 5.807355,
+      "name": "Aiguebelette",
+      "site_id": 217,
+      "takeoffs": [
+        {
+          "altitude": 1125,
+          "latitude": 45.601792,
+          "longitude": 5.807355,
+          "name": "Aiguebelette",
+          "spot_id": 5425,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 900,
+      "latitude": 45.626753,
+      "longitude": 5.946293,
+      "name": "Vérel",
+      "site_id": 218,
+      "takeoffs": [
+        {
+          "altitude": 900,
+          "latitude": 45.626753,
+          "longitude": 5.946293,
+          "name": "Vérel",
+          "spot_id": 5406,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1550,
+      "latitude": 44.576232,
+      "longitude": 6.023367,
+      "name": "Rabou",
+      "site_id": 219,
+      "takeoffs": [
+        {
+          "altitude": 1750,
+          "latitude": 44.594728,
+          "longitude": 6.047697,
+          "name": "Col de Guiziere",
+          "spot_id": 6273,
+          "wind_direction": "SE-NW"
+        },
+        {
+          "altitude": 1660,
+          "latitude": 44.591601,
+          "longitude": 6.046108,
+          "name": "Col de Guiziere",
+          "spot_id": 6281,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1715,
+          "latitude": 44.588605,
+          "longitude": 6.042725,
+          "name": "Col de Guiziere",
+          "spot_id": 6283,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 1520,
+          "latitude": 44.567802,
+          "longitude": 6.01943,
+          "name": "La Croupe",
+          "spot_id": 6297,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1200,
+      "latitude": 42.979687,
+      "longitude": -0.57165,
+      "name": "Accous",
+      "site_id": 220,
+      "takeoffs": [
+        {
+          "altitude": 1200,
+          "latitude": 42.979687,
+          "longitude": -0.57165,
+          "name": "Accous",
+          "spot_id": 7028,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1190,
+          "latitude": 42.974912,
+          "longitude": -0.561247,
+          "name": "Accous",
+          "spot_id": 7034,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1000,
+      "latitude": 36.895858,
+      "longitude": -5.414887,
+      "name": "Poniente",
+      "site_id": 221,
+      "takeoffs": [
+        {
+          "altitude": 1020,
+          "latitude": 36.898155,
+          "longitude": -5.394221,
+          "name": "Levante",
+          "spot_id": 20825,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 870,
+          "latitude": 36.903353,
+          "longitude": -5.40782,
+          "name": "Lijar ",
+          "spot_id": 20823,
+          "wind_direction": "NW"
+        },
+        {
+          "altitude": 900,
+          "latitude": 36.894919,
+          "longitude": -5.415934,
+          "name": "Poniente",
+          "spot_id": 20829,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1300,
+      "latitude": 37.14223,
+      "longitude": -3.519092,
+      "name": "Cenes",
+      "site_id": 222,
+      "takeoffs": [
+        {
+          "altitude": 1300,
+          "latitude": 37.14223,
+          "longitude": -3.519092,
+          "name": "Cenes",
+          "spot_id": 20737,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1300,
+          "latitude": 37.141234,
+          "longitude": -3.515637,
+          "name": "Cenes",
+          "spot_id": 20739,
+          "wind_direction": "S"
+        }
+      ]
+    },
+    {
+      "altitude": 1920,
+      "latitude": 40.421731,
+      "longitude": -5.300999,
+      "name": "Peña Negra",
+      "site_id": 223,
+      "takeoffs": [
+        {
+          "altitude": 1920,
+          "latitude": 40.421731,
+          "longitude": -5.300999,
+          "name": "Peña Negra",
+          "spot_id": 20309,
+          "wind_direction": "NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1000,
+      "latitude": 37.752185,
+      "longitude": -3.646149,
+      "name": "Pegalajar",
+      "site_id": 224,
+      "takeoffs": [
+        {
+          "altitude": 1075,
+          "latitude": 37.747574,
+          "longitude": -3.652439,
+          "name": "Despegue de Sur",
+          "spot_id": 20660,
+          "wind_direction": "SE"
+        },
+        {
+          "altitude": 930,
+          "latitude": 37.752185,
+          "longitude": -3.646149,
+          "name": "Pegalajar",
+          "spot_id": 20658,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1245,
+          "latitude": 37.764309,
+          "longitude": -3.604663,
+          "name": "Peña del Águila",
+          "spot_id": 20653,
+          "wind_direction": "NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1700,
+      "latitude": 42.529722,
+      "longitude": 0.53184,
+      "name": "Castejón de Sos",
+      "site_id": 225,
+      "takeoffs": [
+        {
+          "altitude": 2250,
+          "latitude": 42.537424,
+          "longitude": 0.543441,
+          "name": "Castejón de Sos",
+          "spot_id": 19806,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 2300,
+          "latitude": 42.533821,
+          "longitude": 0.552104,
+          "name": "Castejón de Sos",
+          "spot_id": 19810,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 1725,
+          "latitude": 42.529281,
+          "longitude": 0.525536,
+          "name": "Castejón de Sos",
+          "spot_id": 19815,
+          "wind_direction": "SW"
+        },
+        {
+          "altitude": 2100,
+          "latitude": 42.529999,
+          "longitude": 0.537493,
+          "name": "Pedras Blancas",
+          "spot_id": 19814,
+          "wind_direction": "W-N"
+        },
+        {
+          "altitude": 2100,
+          "latitude": 42.52848,
+          "longitude": 0.539063,
+          "name": "Pedras Blancas",
+          "spot_id": 19816,
+          "wind_direction": "SE-SW"
+        },
+        {
+          "altitude": 1200,
+          "latitude": 42.523996,
+          "longitude": 0.500507,
+          "name": "Rials",
+          "spot_id": 19820,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1200,
+          "latitude": 42.521553,
+          "longitude": 0.502045,
+          "name": "Rials",
+          "spot_id": 19824,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 715,
+      "latitude": 36.753857,
+      "longitude": -5.489613,
+      "name": "El Bosque",
+      "site_id": 226,
+      "takeoffs": [
+        {
+          "altitude": 635,
+          "latitude": 36.75734,
+          "longitude": -5.491038,
+          "name": "El Bosque",
+          "spot_id": 20882,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 715,
+          "latitude": 36.753857,
+          "longitude": -5.489613,
+          "name": "El Bosque",
+          "spot_id": 20883,
+          "wind_direction": "SW-W"
+        }
+      ]
+    },
+    {
+      "altitude": 1220,
+      "latitude": 37.132637,
+      "longitude": -4.183858,
+      "name": "Loja",
+      "site_id": 227,
+      "takeoffs": [
+        {
+          "altitude": 1015,
+          "latitude": 37.149278,
+          "longitude": -4.182129,
+          "name": "Loja Norte",
+          "spot_id": 20735,
+          "wind_direction": "NW-N"
+        },
+        {
+          "altitude": 1220,
+          "latitude": 37.132637,
+          "longitude": -4.183858,
+          "name": "Sierra de Loja",
+          "spot_id": 20742,
+          "wind_direction": "W-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1255,
+      "latitude": 40.256644,
+      "longitude": -4.905536,
+      "name": "Pedro Bernardo",
+      "site_id": 228,
+      "takeoffs": [
+        {
+          "altitude": 1255,
+          "latitude": 40.256644,
+          "longitude": -4.905536,
+          "name": "Pedro Bernardo",
+          "spot_id": 20335,
+          "wind_direction": "SW-W"
+        },
+        {
+          "altitude": 1020,
+          "latitude": 40.252477,
+          "longitude": -4.887892,
+          "name": "Pedro Bernardo",
+          "spot_id": 20337,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 680,
+      "latitude": 39.726128,
+      "longitude": -0.851117,
+      "name": "Villar de Arzobispo",
+      "site_id": 229,
+      "takeoffs": [
+        {
+          "altitude": 680,
+          "latitude": 39.726128,
+          "longitude": -0.851117,
+          "name": "Villar de Arzobispo",
+          "spot_id": 20426,
+          "wind_direction": "E-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 690,
+      "latitude": 40.138121,
+      "longitude": -0.225401,
+      "name": "Figueroles",
+      "site_id": 230,
+      "takeoffs": [
+        {
+          "altitude": 690,
+          "latitude": 40.138121,
+          "longitude": -0.225401,
+          "name": "Figueroles",
+          "spot_id": 20358,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 510,
+      "latitude": 37.005422,
+      "longitude": -5.547091,
+      "name": "Montellano",
+      "site_id": 231,
+      "takeoffs": [
+        {
+          "altitude": 380,
+          "latitude": 37.007285,
+          "longitude": -5.542673,
+          "name": "Montellano",
+          "spot_id": 20774,
+          "wind_direction": "NE"
+        },
+        {
+          "altitude": 510,
+          "latitude": 37.005422,
+          "longitude": -5.547091,
+          "name": "Montellano",
+          "spot_id": 20776,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 840,
+      "latitude": 38.486284,
+      "longitude": -0.675177,
+      "name": "Palomaret",
+      "site_id": 232,
+      "takeoffs": [
+        {
+          "altitude": 840,
+          "latitude": 38.486284,
+          "longitude": -0.675177,
+          "name": "Palomaret",
+          "spot_id": 20563,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 640,
+      "latitude": 43.106414,
+      "longitude": -2.940459,
+      "name": "Santa Marina de Orozco",
+      "site_id": 233,
+      "takeoffs": [
+        {
+          "altitude": 640,
+          "latitude": 43.106414,
+          "longitude": -2.940459,
+          "name": "Santa Marina de Orozco",
+          "spot_id": 19531,
+          "wind_direction": "NW-NE"
+        }
+      ]
+    },
+    {
+      "altitude": 1780,
+      "latitude": 38.253938,
+      "longitude": -2.658605,
+      "name": "El Yelmo",
+      "site_id": 234,
+      "takeoffs": [
+        {
+          "altitude": 1780,
+          "latitude": 38.253938,
+          "longitude": -2.658605,
+          "name": "El Yelmo",
+          "spot_id": 20603,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 225,
+      "latitude": 39.835221,
+      "longitude": 3.096204,
+      "name": "Alcúdia",
+      "site_id": 235,
+      "takeoffs": [
+        {
+          "altitude": 225,
+          "latitude": 39.835221,
+          "longitude": 3.096204,
+          "name": "Alcúdia",
+          "spot_id": 20403,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 1225,
+      "latitude": 42.644998,
+      "longitude": -1.187827,
+      "name": "Arangoiti",
+      "site_id": 236,
+      "takeoffs": [
+        {
+          "altitude": 1280,
+          "latitude": 42.64746,
+          "longitude": -1.194138,
+          "name": "Arangoiti",
+          "spot_id": 19757,
+          "wind_direction": "N"
+        },
+        {
+          "altitude": 1225,
+          "latitude": 42.644998,
+          "longitude": -1.187827,
+          "name": "Arangoiti",
+          "spot_id": 19759,
+          "wind_direction": "S"
+        },
+        {
+          "altitude": 1330,
+          "latitude": 42.644707,
+          "longitude": -1.196017,
+          "name": "Arangoiti",
+          "spot_id": 19760,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 404,
+      "latitude": 43.246067,
+      "longitude": -2.269681,
+      "name": "Arrona",
+      "site_id": 237,
+      "takeoffs": [
+        {
+          "altitude": 404,
+          "latitude": 43.246067,
+          "longitude": -2.269681,
+          "name": "Arrona",
+          "spot_id": 19471,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1250,
+      "latitude": 42.332417,
+      "longitude": -0.609076,
+      "name": "Loarre",
+      "site_id": 238,
+      "takeoffs": [
+        {
+          "altitude": 1250,
+          "latitude": 42.332417,
+          "longitude": -0.609076,
+          "name": "Loarre",
+          "spot_id": 19913,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 1500,
+      "latitude": 41.879838,
+      "longitude": -7.720896,
+      "name": "Larouco",
+      "site_id": 239,
+      "takeoffs": [
+        {
+          "altitude": 1490,
+          "latitude": 41.884791,
+          "longitude": -7.725821,
+          "name": "Larouco",
+          "spot_id": 16809,
+          "wind_direction": "W"
+        },
+        {
+          "altitude": 1500,
+          "latitude": 41.879838,
+          "longitude": -7.720896,
+          "name": "Larouco",
+          "spot_id": 16811,
+          "wind_direction": "SE-S"
+        },
+        {
+          "altitude": 1254,
+          "latitude": 41.916535,
+          "longitude": -7.714404,
+          "name": "Larouco",
+          "spot_id": 20098,
+          "wind_direction": "NW-N"
+        }
+      ]
+    },
+    {
+      "altitude": 1110,
+      "latitude": 40.533001,
+      "longitude": -7.446122,
+      "name": "Linhares",
+      "site_id": 240,
+      "takeoffs": [
+        {
+          "altitude": 1110,
+          "latitude": 40.536457,
+          "longitude": -7.443766,
+          "name": "Sierra de Estrela",
+          "spot_id": 16945,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 1160,
+          "latitude": 40.532801,
+          "longitude": -7.445719,
+          "name": "Sierra de Estrela",
+          "spot_id": 16947,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 1000,
+      "latitude": 40.419087,
+      "longitude": -7.455377,
+      "name": "Vale de Amoreira",
+      "site_id": 241,
+      "takeoffs": [
+        {
+          "altitude": 1240,
+          "latitude": 40.430868,
+          "longitude": -7.455601,
+          "name": "Manteigas",
+          "spot_id": 16955,
+          "wind_direction": "S-SW"
+        },
+        {
+          "altitude": 820,
+          "latitude": 40.403501,
+          "longitude": -7.454438,
+          "name": "Vale de Amoreira",
+          "spot_id": 16963,
+          "wind_direction": "NE-SE"
+        }
+      ]
+    },
+    {
+      "altitude": 450,
+      "latitude": 47.55507,
+      "longitude": 18.996604,
+      "name": "Óbuda",
+      "site_id": 242,
+      "takeoffs": [
+        {
+          "altitude": 420,
+          "latitude": 47.551645,
+          "longitude": 18.988719,
+          "name": "Hármashatárhegy",
+          "spot_id": 10726,
+          "wind_direction": "SW-NW"
+        },
+        {
+          "altitude": 430,
+          "latitude": 47.55596,
+          "longitude": 19.002686,
+          "name": "Óbuda",
+          "spot_id": 10722,
+          "wind_direction": "NE-E"
+        }
+      ]
+    },
+    {
+      "altitude": 290,
+      "latitude": 47.68875,
+      "longitude": 18.708818,
+      "name": "Csolnok",
+      "site_id": 243,
+      "takeoffs": [
+        {
+          "altitude": 290,
+          "latitude": 47.68875,
+          "longitude": 18.708818,
+          "name": "Csolnok",
+          "spot_id": 10700,
+          "wind_direction": "SE-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 350,
+      "latitude": 46.87171,
+      "longitude": 17.504184,
+      "name": "Csobánc",
+      "site_id": 244,
+      "takeoffs": [
+        {
+          "altitude": 350,
+          "latitude": 46.87171,
+          "longitude": 17.504184,
+          "name": "Csobánc",
+          "spot_id": 10762,
+          "wind_direction": "N-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 425,
+      "latitude": 47.619067,
+      "longitude": 18.408336,
+      "name": "Vértesszőlős",
+      "site_id": 245,
+      "takeoffs": [
+        {
+          "altitude": 425,
+          "latitude": 47.619067,
+          "longitude": 18.408336,
+          "name": "Vértesszőlős",
+          "spot_id": 10713,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 500,
+      "latitude": 47.928133,
+      "longitude": 20.411503,
+      "name": "Eged",
+      "site_id": 246,
+      "takeoffs": [
+        {
+          "altitude": 500,
+          "latitude": 47.928133,
+          "longitude": 20.411503,
+          "name": "Eged",
+          "spot_id": 10669,
+          "wind_direction": "SE-NW"
+        },
+        {
+          "altitude": 490,
+          "latitude": 47.927404,
+          "longitude": 20.420247,
+          "name": "Eged DK",
+          "spot_id": 10670,
+          "wind_direction": "SE-S"
+        }
+      ]
+    },
+    {
+      "altitude": 350,
+      "latitude": 47.34986,
+      "longitude": 18.300244,
+      "name": "Csákberény",
+      "site_id": 247,
+      "takeoffs": [
+        {
+          "altitude": 350,
+          "latitude": 47.34986,
+          "longitude": 18.300244,
+          "name": "Csákberény",
+          "spot_id": 10735,
+          "wind_direction": "S-SW"
+        }
+      ]
+    },
+    {
+      "altitude": 615,
+      "latitude": 47.909983,
+      "longitude": 19.761144,
+      "name": "Nyikom",
+      "site_id": 248,
+      "takeoffs": [
+        {
+          "altitude": 615,
+          "latitude": 47.909983,
+          "longitude": 19.761144,
+          "name": "Nyikom",
+          "spot_id": 10675,
+          "wind_direction": "SW-NW"
+        }
+      ]
+    },
+    {
+      "altitude": 470,
+      "latitude": 47.792691,
+      "longitude": 19.969311,
+      "name": "Sárhegy",
+      "site_id": 249,
+      "takeoffs": [
+        {
+          "altitude": 470,
+          "latitude": 47.792691,
+          "longitude": 19.969311,
+          "name": "Sárhegy",
+          "spot_id": 10686,
+          "wind_direction": "SE"
+        }
+      ]
+    },
+    {
+      "altitude": 444,
+      "latitude": 47.653301,
+      "longitude": 18.435554,
+      "name": "Tardos",
+      "site_id": 250,
+      "takeoffs": [
+        {
+          "altitude": 444,
+          "latitude": 47.653301,
+          "longitude": 18.435554,
+          "name": "Tardos",
+          "spot_id": 10708,
+          "wind_direction": "NE-SE"
+        }
+      ]
+    }
+  ]
+}

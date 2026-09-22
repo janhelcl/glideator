@@ -17,6 +17,7 @@ import pandas as pd
 from ..tracking import log_experiment
 from .benchmark import (
     PRESSURE_LEVELS_HPA,
+    PRODUCTION_WEATHER_FEATURES,
     XCFeatureContract,
     frame_fingerprint,
     split_temporal,
@@ -29,6 +30,13 @@ from .selection import split_development
 
 JEV_MODEL_VERSION = "jev-1.13.0"
 JEV_PROMPT_VERSION = "xc-semantic-weather-history-v1"
+JEV_RAW_SITE_PROMPT_VERSION = "xc-raw-weather-prod-sites-v2"
+JEV_SEMANTIC_STATE = "semantic-weather-v1"
+JEV_RAW_SITE_STATE = "raw-weather-prod-sites-v2"
+JEV_PROMPT_STATES = {
+    JEV_PROMPT_VERSION: JEV_SEMANTIC_STATE,
+    JEV_RAW_SITE_PROMPT_VERSION: JEV_RAW_SITE_STATE,
+}
 JEV_INPUT_PRICE_PER_BILLION_TOKENS_USD = 42.0
 
 
@@ -159,6 +167,105 @@ def fit_historical_priors(
         site_month_rates=site_month_rates,
         site_month_counts=site_month_counts,
     )
+
+
+@dataclass(frozen=True)
+class TakeoffContext:
+    spot_id: int
+    name: str
+    latitude: float
+    longitude: float
+    altitude_m: int
+    wind_direction: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "altitude_m": self.altitude_m,
+            "suitable_wind_direction": self.wind_direction,
+        }
+
+
+@dataclass(frozen=True)
+class SiteContext:
+    site_id: int
+    name: str
+    latitude: float
+    longitude: float
+    altitude_m: int
+    takeoffs: tuple[TakeoffContext, ...]
+
+
+def load_site_context_snapshot(
+    path: Path,
+    *,
+    required_site_ids: set[int],
+) -> tuple[dict[int, SiteContext], str]:
+    """Load and validate the frozen production site/takeoff snapshot."""
+
+    if not path.exists():
+        raise FileNotFoundError(f"Jev site-context snapshot not found: {path}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("Jev site-context snapshot must use schema_version=1")
+    source = payload.get("source", {})
+    if source.get("environment") != "production":
+        raise ValueError("Jev site-context snapshot must identify production as its source")
+
+    contexts: dict[int, SiteContext] = {}
+    seen_spot_ids: set[int] = set()
+    for record in payload.get("sites", []):
+        site_id = int(record["site_id"])
+        if site_id in contexts:
+            raise ValueError(f"Duplicate site_id {site_id} in Jev site-context snapshot")
+        name = str(record.get("name") or "").strip()
+        if not name:
+            raise ValueError(f"Missing site name for site_id {site_id}")
+
+        takeoffs: list[TakeoffContext] = []
+        for item in record.get("takeoffs", []):
+            spot_id = int(item["spot_id"])
+            if spot_id in seen_spot_ids:
+                raise ValueError(f"Duplicate spot_id {spot_id} in Jev site-context snapshot")
+            seen_spot_ids.add(spot_id)
+            takeoff_name = str(item.get("name") or "").strip()
+            wind_direction = str(item.get("wind_direction") or "").strip()
+            if not takeoff_name or not wind_direction:
+                raise ValueError(
+                    f"Takeoff {spot_id} must have both a name and wind direction"
+                )
+            takeoffs.append(
+                TakeoffContext(
+                    spot_id=spot_id,
+                    name=takeoff_name,
+                    latitude=float(item["latitude"]),
+                    longitude=float(item["longitude"]),
+                    altitude_m=int(item["altitude"]),
+                    wind_direction=wind_direction,
+                )
+            )
+
+        contexts[site_id] = SiteContext(
+            site_id=site_id,
+            name=name,
+            latitude=float(record["latitude"]),
+            longitude=float(record["longitude"]),
+            altitude_m=int(record["altitude"]),
+            takeoffs=tuple(takeoffs),
+        )
+
+    missing = sorted(required_site_ids - set(contexts))
+    if missing:
+        raise ValueError(
+            "Production site-context snapshot is missing evaluation sites: "
+            + ", ".join(str(value) for value in missing[:20])
+        )
+
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    fingerprint = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return contexts, fingerprint
 
 
 def _feature(row: pd.Series, name: str, hour: int) -> float:
@@ -367,10 +474,109 @@ def build_jev_state(row: pd.Series) -> dict[str, Any]:
     }
 
 
+def build_raw_site_jev_state(
+    row: pd.Series,
+    *,
+    weather_features: tuple[str, ...],
+    site_context: SiteContext,
+) -> dict[str, Any]:
+    """Preserve every canonical weather value and add frozen production site context."""
+
+    if weather_features != PRODUCTION_WEATHER_FEATURES:
+        raise ValueError(
+            "Raw Jev context requires the exact canonical 77-feature weather contract"
+        )
+
+    date = pd.Timestamp(row["date"])
+    month = int(date.month)
+    if month in {12, 1, 2}:
+        season = "winter"
+    elif month in {3, 4, 5}:
+        season = "spring"
+    elif month in {6, 7, 8}:
+        season = "summer"
+    else:
+        season = "autumn"
+
+    forecast = []
+    for hour in WEATHER_TIMES:
+        raw_features = {
+            name: float(row[f"{name}_{hour}"])
+            for name in weather_features
+        }
+        if len(raw_features) != len(weather_features):
+            raise ValueError("Raw Jev state did not preserve the full weather feature contract")
+        forecast.append(
+            {
+                "local_time": f"{hour:02d}:00",
+                "raw_gfs_features": raw_features,
+            }
+        )
+
+    return {
+        "task_context": (
+            "Forecast the maximum recorded paragliding XC result for one launch and day. "
+            "The outcome depends on whether conditions are flyable, cross-country potential, "
+            "and whether pilots are likely to fly and record a result."
+        ),
+        "site": {
+            "site_id": str(site_context.site_id),
+            "name": site_context.name,
+            "latitude": float(row["latitude"]),
+            "longitude": float(row["longitude"]),
+            "launch_altitude_m": float(row["altitude"]),
+            "takeoffs": [takeoff.as_dict() for takeoff in site_context.takeoffs],
+            "takeoff_note": (
+                "All takeoffs and suitable wind-direction ranges come from a frozen "
+                "snapshot of the production Glideator database."
+            ),
+        },
+        "calendar": {
+            "date": str(date.date()),
+            "year": int(date.year),
+            "month": date.month_name(),
+            "day_of_year": int(date.dayofyear),
+            "season": season,
+            "weekend": bool(date.weekday() >= 5),
+        },
+        "weather_feature_conventions": {
+            "u_wind_and_v_wind": "m/s vector components",
+            "wind_gust": "m/s",
+            "temperature_and_dewpoint": "kelvin",
+            "surface_pressure": "pascal",
+            "precipitable_water": "kg/m^2",
+            "relative_humidity": "percent",
+            "geopotential_height": "metres above mean sea level",
+            "pressure_levels": "hPa encoded in feature names",
+        },
+        "forecast": forecast,
+        "reading_note": (
+            "Use the complete numeric forecast as supplied. Each time contains every "
+            "weather feature in the canonical XC contract; no category binning was applied."
+        ),
+    }
+
+
 def build_jev_questions(
     row: pd.Series,
     priors: HistoricalPriors,
+    *,
+    state_representation: str = JEV_SEMANTIC_STATE,
 ) -> dict[str, dict[str, Any]]:
+    if state_representation == JEV_SEMANTIC_STATE:
+        decision_guidance = (
+            "Judge the proposition directly from the semantic forecast and historical "
+            "frequencies. Do not perform new meteorological arithmetic."
+        )
+    elif state_representation == JEV_RAW_SITE_STATE:
+        decision_guidance = (
+            "Judge the proposition from the complete numeric forecast, named site, "
+            "takeoff wind ranges and historical frequencies. Interpret numeric values "
+            "using the supplied feature conventions."
+        )
+    else:
+        raise ValueError(f"Unsupported Jev state representation {state_representation!r}")
+
     questions: dict[str, dict[str, Any]] = {}
     for target_index, (target_name, threshold) in enumerate(
         zip(TARGET_NAMES, XC_THRESHOLDS, strict=True)
@@ -383,10 +589,7 @@ def build_jev_questions(
                     f"day will achieve strictly more than {threshold} XC points."
                 ),
                 "historical_evidence": priors.evidence(row, target_index),
-                "decision_guidance": (
-                    "Judge the proposition directly from the semantic forecast and historical "
-                    "frequencies. Do not perform new meteorological arithmetic."
-                ),
+                "decision_guidance": decision_guidance,
             },
             "criteria": {
                 "true": f"The day's recorded maximum XC score is greater than {threshold}.",
@@ -398,12 +601,18 @@ def build_jev_questions(
 
 def _cache_semantics(config: dict[str, Any]) -> dict[str, Any]:
     model = config["model"]
+    prompt_version = str(model.get("prompt_version", JEV_PROMPT_VERSION))
     return {
         "model_version": str(model.get("version", JEV_MODEL_VERSION)),
-        "prompt_version": str(model.get("prompt_version", JEV_PROMPT_VERSION)),
+        "prompt_version": prompt_version,
         "historical_prior_strength": float(model.get("historical_prior_strength", 20.0)),
         "target_encoding": "independent-noul",
-        "state_representation": "semantic-weather-v1",
+        "state_representation": str(
+            model.get(
+                "state_representation",
+                JEV_PROMPT_STATES.get(prompt_version, JEV_SEMANTIC_STATE),
+            )
+        ),
     }
 
 
@@ -466,13 +675,35 @@ async def _call_jev(
     priors: HistoricalPriors,
     requested_model: str,
     limiter: _StartRateLimiter,
+    features: XCFeatureContract,
+    state_representation: str,
+    site_contexts: dict[int, SiteContext],
 ) -> dict[str, Any]:
     await limiter.wait()
+    if state_representation == JEV_SEMANTIC_STATE:
+        state = build_jev_state(row)
+    elif state_representation == JEV_RAW_SITE_STATE:
+        site_id = int(row["site_id"])
+        site_context = site_contexts.get(site_id)
+        if site_context is None:
+            raise ValueError(f"Missing Jev site context for site_id {site_id}")
+        state = build_raw_site_jev_state(
+            row,
+            weather_features=features.weather_features,
+            site_context=site_context,
+        )
+    else:  # guarded before workers start
+        raise ValueError(f"Unsupported Jev state representation {state_representation!r}")
+
     started = time.perf_counter()
     response = await client.system_one(
         model=requested_model,
-        state=build_jev_state(row),
-        questions=build_jev_questions(row, priors),
+        state=state,
+        questions=build_jev_questions(
+            row,
+            priors,
+            state_representation=state_representation,
+        ),
     )
     latency = time.perf_counter() - started
     resolved_model = str(getattr(response, "model"))
@@ -497,12 +728,14 @@ async def _call_jev(
         "output_tokens": _usage_value(usage, "output_tokens"),
     }
 
-
 async def _predict_missing(
     *,
     rows: list[pd.Series],
     priors: HistoricalPriors,
     model_config: dict[str, Any],
+    features: XCFeatureContract,
+    state_representation: str,
+    site_contexts: dict[int, SiteContext],
     predictions_path: Path,
     failures_path: Path,
     client_factory: Callable[[dict[str, Any]], Any] | None,
@@ -562,6 +795,9 @@ async def _predict_missing(
                         priors=priors,
                         requested_model=requested_model,
                         limiter=limiter,
+                        features=features,
+                        state_representation=state_representation,
+                        site_contexts=site_contexts,
                     )
                     async with write_lock:
                         _append_jsonl(predictions_path, record)
@@ -594,6 +830,7 @@ def _tracking_tags(config: dict[str, Any], report: dict[str, Any]) -> dict[str, 
         "foundation_model": "jev",
         "foundation_model_version": str(model["version"]),
         "prompt_version": str(model["prompt_version"]),
+        "state_representation": str(model["state_representation"]),
         "target_encoding": "independent-noul",
         "hosted_model": "true",
         "benchmark_id": str(report["benchmark_id"]),
@@ -635,10 +872,19 @@ def run_xc_jev(
             f"got {requested_model!r}"
         )
     prompt_version = str(model_config.get("prompt_version", JEV_PROMPT_VERSION))
-    if prompt_version != JEV_PROMPT_VERSION:
+    expected_state = JEV_PROMPT_STATES.get(prompt_version)
+    if expected_state is None:
         raise ValueError(
-            f"Unsupported Jev prompt version {prompt_version!r}; expected "
-            f"{JEV_PROMPT_VERSION!r}"
+            f"Unsupported Jev prompt version {prompt_version!r}; expected one of "
+            f"{sorted(JEV_PROMPT_STATES)}"
+        )
+    state_representation = str(
+        model_config.get("state_representation", expected_state)
+    )
+    if state_representation != expected_state:
+        raise ValueError(
+            f"Prompt {prompt_version!r} requires state representation "
+            f"{expected_state!r}; got {state_representation!r}"
         )
     if limit is not None and limit <= 0:
         raise ValueError("Jev smoke-run limit must be positive")
@@ -665,6 +911,19 @@ def run_xc_jev(
         drop=True
     )
     eval_fingerprint = frame_fingerprint(evaluation, features)
+
+    site_contexts: dict[int, SiteContext] = {}
+    site_context_fingerprint: str | None = None
+    if state_representation == JEV_RAW_SITE_STATE:
+        snapshot_value = data_config.get("site_context_path")
+        if not snapshot_value:
+            raise ValueError(
+                "data.site_context_path is required for the raw weather/site Jev context"
+            )
+        site_contexts, site_context_fingerprint = load_site_context_snapshot(
+            Path(str(snapshot_value)),
+            required_site_ids=set(int(value) for value in evaluation["site_id"].unique()),
+        )
 
     validation_start = model_config.get("validation_start")
     if validation_start is None:
@@ -695,6 +954,8 @@ def run_xc_jev(
         "feature_contract": features.as_dict(),
         "cache_semantics": _cache_semantics(config),
     }
+    if site_context_fingerprint is not None:
+        manifest_payload["site_context_fingerprint"] = site_context_fingerprint
     manifest = {
         **manifest_payload,
         "cache_fingerprint": _cache_fingerprint(manifest_payload),
@@ -730,6 +991,9 @@ def run_xc_jev(
             rows=pending_rows,
             priors=priors,
             model_config=model_config,
+            features=features,
+            state_representation=state_representation,
+            site_contexts=site_contexts,
             predictions_path=predictions_path,
             failures_path=failures_path,
             client_factory=client_factory,
@@ -815,6 +1079,8 @@ def run_xc_jev(
             "version": requested_model,
             "sdk_version": "0.7.0",
             "prompt_version": prompt_version,
+            "state_representation": state_representation,
+            "site_context_fingerprint": site_context_fingerprint,
             "target_encoding": "independent-noul",
             "historical_prior_strength": float(
                 model_config.get("historical_prior_strength", 20.0)

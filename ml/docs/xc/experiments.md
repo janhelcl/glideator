@@ -201,6 +201,20 @@ Jev's higher-threshold ROC-AUC reached `0.87467` at XC100, showing useful zero-s
 
 **Decision:** reject Jev 1.13 as the main XC model and do not start a prompt/representation tuning campaign. Preserve the implementation and result as a reproducible negative benchmark. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and the [Jev model page](models/jev.md).
 
+## Completed bounded context ablation: Jev raw weather + production sites
+
+The frozen follow-up supplied all 77 canonical numeric GFS features at 09:00, 12:00 and 15:00, the production site name, and every takeoff with its stored wind-direction range. Model version, pre-2023 priors, questions, evaluator and 82,584-row benchmark remained unchanged.
+
+| Model | Macro BCE ↓ | Macro Brier ↓ | Macro ROC-AUC ↑ | Monotonic violation rate ↓ |
+| --- | ---: | ---: | ---: | ---: |
+| Conventional MLP (seed 42) | **0.15686** | **0.04762** | **0.94206** | **0.00138** |
+| Jev semantic context | 0.31116 | 0.08475 | 0.84939 | 0.17268 |
+| Jev raw weather + production sites | 0.30780 | 0.08240 | 0.82614 | 0.110 |
+
+Relative to semantic context, raw weather and production site metadata improved BCE by `0.00336`, Brier by `0.00235`, and monotonicity by about `0.063`, but reduced ROC-AUC by `0.02325`. The full run cost approximately `$32` and wrote its report to `outputs/xc/baselines/jev-1.13-raw-prod-sites/evaluation.json`.
+
+**Decision:** reject the raw-context variant and close the Jev 1.13 experiment line. The richer input changes the calibration/ranking trade-off but remains decisively behind the conventional MLP. Do not continue Jev prompt tuning or add post-hoc monotonic correction. Because the first 2024 result informed this follow-up, the direct comparison is exploratory rather than fresh promotion evidence. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and [Jev raw weather + production site context](models/jev-raw-prod-sites.md).
+
 ## Next architecture direction
 
 Return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
