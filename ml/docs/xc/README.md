@@ -179,15 +179,9 @@ The smoke run checkpoints responses and the full command resumes them. Only comp
 
 The complete 82,584-row run produced macro BCE `0.31116`, Brier `0.08475`, ROC-AUC `0.84939`, and monotonic violation rate `0.17268`. Jev is rejected as the main XC model; the implementation remains as a reproducible hosted-model benchmark. See the [Jev model page](models/jev.md) and [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md).
 
-A single frozen context ablation is queued to test the main identified omission: it supplies all 231 numeric weather values, the production site name, and every production takeoff with its wind direction.
+The frozen raw-context ablation supplied all 231 numeric weather values, the production site name, and every production takeoff with its stored wind direction. It produced BCE `0.30780`, Brier `0.08240`, ROC-AUC `0.82614`, and monotonic violation rate `0.110` at an approximate API cost of `$32`.
 
-~~~bash
-glideator-ml benchmark-jev xc \
-  --config configs/xc/baselines/jev_1_13_raw_prod_sites.yaml \
-  --limit 100
-~~~
-
-The production site snapshot is committed and fingerprinted; the raw/full analytics spots relation is not queried. See [Jev raw weather + production site context](models/jev-raw-prod-sites.md).
+This modestly improved BCE, Brier and monotonicity over the semantic context, while reducing ROC-AUC, and remained decisively behind the conventional MLP. The variant is rejected and the Jev 1.13 experiment line is closed. The production site snapshot remains committed and fingerprinted; the raw/full analytics spots relation was not queried. See [Jev raw weather + production site context](models/jev-raw-prod-sites.md) and [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md).
 
 ## Serving boundary
 
