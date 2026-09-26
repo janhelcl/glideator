@@ -1,0 +1,39 @@
+task: s2s
+
+data:
+  source: database
+  database_url_env: ML_DATABASE_URL
+  schema: glideator_mart
+  split_strategy: pilot
+  eval_fraction: 0.20
+  min_eval_history: 1
+  split_seed: 42
+
+model:
+  name: asymmetric
+  seed: 42
+  n_factors: 64
+  epochs: 50
+  learning_rate: 0.005
+  weight_decay: 0.0001
+  temperature: 0.1
+  batch_size: 256
+  negative_samples: 50
+  negative_sampling_power: 0.75
+  add_inbatch_negatives: false
+  device: auto
+
+evaluation:
+  benchmark_id: s2s-v1
+  ks: [5, 10]
+
+artifact:
+  output_dir: outputs/s2s/asymmetric
+  filename: s2s_asymmetric.pkl
+
+tracking:
+  enabled: true
+  experiment_name: glideator-s2s
+  run_name: asymmetric
+  tracking_uri_env: MLFLOW_TRACKING_URI
+  default_tracking_uri: sqlite:///mlruns/mlflow.db
