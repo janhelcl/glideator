@@ -215,6 +215,19 @@ Relative to semantic context, raw weather and production site metadata improved 
 
 **Decision:** reject the raw-context variant and close the Jev 1.13 experiment line. The richer input changes the calibration/ranking trade-off but remains decisively behind the conventional MLP. Do not continue Jev prompt tuning or add post-hoc monotonic correction. Because the first 2024 result informed this follow-up, the direct comparison is exploratory rather than fresh promotion evidence. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and [Jev raw weather + production site context](models/jev-raw-prod-sites.md).
 
-## Next architecture direction
+## Active weather-profile experiment: shared pressure-level MLP
 
-Return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
+The next trainable candidate changes the vertical inductive bias rather than incrementally modifying Conv1D. For each forecast time, it applies one shared MLP `[16, 8]` to the five standardized variables at each of the 13 pressure levels, flattens the resulting tokens in canonical 1000→500 hPa order, and projects them to a 32d profile embedding.
+
+The profile branch is additive to the frozen conventional raw bypass and shared per-time MLP. The experiment deliberately excludes AGL/masking and level attention so it isolates level-wise representation learning with simple ordered aggregation.
+
+Config: `configs/xc/architecture/weather_profiles/shared_level_mlp.yaml`.
+
+Run the seed-42 screen with:
+
+~~~bash
+cd ml
+glideator-ml run xc --config configs/xc/architecture/weather_profiles/shared_level_mlp.yaml
+~~~
+
+Only a coherent BCE/Brier improvement without a material ROC-AUC regression earns paired confirmation on seeds 42–46. If the improvement replicates, attention across level tokens is the next distinct hypothesis. If it does not, close this encoder before adding AGL/masking or tuning its width.

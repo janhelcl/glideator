@@ -211,17 +211,26 @@ def fit_xc(
                     len(PRESSURE_PROFILE_FEATURE_PATTERNS),
                     len(PRESSURE_LEVELS_HPA),
                 ],
-                "weather_profile_conv_channels": list(
-                    config.get("weather_profile_conv_channels", [8, 8])
-                ),
                 "weather_profile_embedding_dim": int(
                     config.get("weather_profile_embedding_dim", 32)
                 ),
-                "weather_profile_kernel_size": int(
-                    config.get("weather_profile_kernel_size", 3)
-                ),
             }
         )
+        if profile_encoder_type == "vertical_conv":
+            model_config.update(
+                {
+                    "weather_profile_conv_channels": list(
+                        config.get("weather_profile_conv_channels", [8, 8])
+                    ),
+                    "weather_profile_kernel_size": int(
+                        config.get("weather_profile_kernel_size", 3)
+                    ),
+                }
+            )
+        elif profile_encoder_type == "level_mlp":
+            model_config["weather_profile_level_hidden_units"] = list(
+                config.get("weather_profile_level_hidden_units", [16, 8])
+            )
 
         if bool(config.get("weather_profile_use_agl_mask", False)):
             agl_means, agl_stds, surface_pressure_index, site_altitude_index = (

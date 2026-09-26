@@ -196,6 +196,61 @@ class VerticalProfileConvEncoder(nn.Module):
         return self.projection(self.convolution(profile))
 
 
+class SharedPressureLevelEncoder(nn.Module):
+    """Encode each ordered pressure level with one shared MLP.
+
+    The same level network is applied independently to every pressure surface.
+    Its tokens are then flattened in the canonical lower-to-upper pressure order
+    before a final projection. This isolates level-wise representation learning
+    without introducing convolution or attention across levels.
+    """
+
+    def __init__(
+        self,
+        *,
+        num_variables: int,
+        num_levels: int,
+        hidden_units: Sequence[int],
+        output_dim: int,
+        dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        if num_variables < 1 or num_levels < 1:
+            raise ValueError("Pressure-profile shape must be positive")
+        if not hidden_units or any(units < 1 for units in hidden_units):
+            raise ValueError("profile level hidden_units must contain positive values")
+        if output_dim < 1:
+            raise ValueError("profile output_dim must be positive")
+
+        self.num_levels = num_levels
+        self.level_encoder = _deep_tower(
+            num_variables,
+            hidden_units,
+            dropout=dropout,
+        )
+
+        projection: list[nn.Module] = [
+            nn.Flatten(start_dim=1),
+            nn.Linear(num_levels * hidden_units[-1], output_dim),
+            nn.ReLU(),
+        ]
+        if dropout:
+            projection.append(nn.Dropout(p=dropout))
+        self.projection = nn.Sequential(*projection)
+
+    def forward(self, profile: torch.Tensor) -> torch.Tensor:
+        if profile.ndim != 3:
+            raise ValueError("Pressure profile must have shape [batch, variables, levels]")
+        if profile.shape[2] != self.num_levels:
+            raise ValueError("Pressure profile level count does not match the encoder")
+
+        # [batch, variables, levels] -> [batch, levels, variables]. Linear
+        # layers operate on the last dimension, sharing weights across levels.
+        level_inputs = profile.transpose(1, 2)
+        level_tokens = self.level_encoder(level_inputs)
+        return self.projection(level_tokens)
+
+
 class ExpandedGlideatorNet(nn.Module):
     """Production XC architecture, migrated into the model-family workspace.
 
@@ -226,6 +281,7 @@ class ExpandedGlideatorNet(nn.Module):
         weather_profile_indices: Sequence[int] | None = None,
         weather_profile_shape: Sequence[int] = (5, 13),
         weather_profile_conv_channels: Sequence[int] = (8, 8),
+        weather_profile_level_hidden_units: Sequence[int] = (16, 8),
         weather_profile_embedding_dim: int = 32,
         weather_profile_kernel_size: int = 3,
         weather_profile_use_agl_mask: bool = False,
@@ -293,16 +349,16 @@ class ExpandedGlideatorNet(nn.Module):
 
         self.weather_profile_encoder_type = weather_profile_encoder_type
         self.weather_profile_use_agl_mask = bool(weather_profile_use_agl_mask)
-        self.weather_profile_encoder: VerticalProfileConvEncoder | None = None
+        self.weather_profile_encoder: nn.Module | None = None
         profile_output_dim = 0
         if weather_profile_encoder_type is not None:
-            if weather_profile_encoder_type != "vertical_conv":
+            if weather_profile_encoder_type not in {"vertical_conv", "level_mlp"}:
                 raise ValueError(
                     f"Unknown weather_profile_encoder_type: {weather_profile_encoder_type}"
                 )
             if weather_profile_indices is None:
                 raise ValueError(
-                    "weather_profile_indices are required for vertical_conv"
+                    "weather_profile_indices are required for a profile encoder"
                 )
             if len(weather_profile_shape) != 2:
                 raise ValueError("weather_profile_shape must be [variables, levels]")
@@ -389,14 +445,23 @@ class ExpandedGlideatorNet(nn.Module):
                 )
                 encoder_variables += 1
 
-            self.weather_profile_encoder = VerticalProfileConvEncoder(
-                num_variables=encoder_variables,
-                num_levels=profile_levels,
-                conv_channels=weather_profile_conv_channels,
-                output_dim=weather_profile_embedding_dim,
-                kernel_size=weather_profile_kernel_size,
-                dropout=self.dropout,
-            )
+            if weather_profile_encoder_type == "vertical_conv":
+                self.weather_profile_encoder = VerticalProfileConvEncoder(
+                    num_variables=encoder_variables,
+                    num_levels=profile_levels,
+                    conv_channels=weather_profile_conv_channels,
+                    output_dim=weather_profile_embedding_dim,
+                    kernel_size=weather_profile_kernel_size,
+                    dropout=self.dropout,
+                )
+            else:
+                self.weather_profile_encoder = SharedPressureLevelEncoder(
+                    num_variables=encoder_variables,
+                    num_levels=profile_levels,
+                    hidden_units=weather_profile_level_hidden_units,
+                    output_dim=weather_profile_embedding_dim,
+                    dropout=self.dropout,
+                )
             profile_output_dim = weather_profile_embedding_dim
 
         single_time_output_dim = 0

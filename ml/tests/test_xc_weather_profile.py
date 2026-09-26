@@ -15,7 +15,11 @@ from glideator_ml.xc.benchmark import (
     XCFeatureContract,
     pressure_profile_indices,
 )
-from glideator_ml.xc.model import ExpandedGlideatorNet, StandardScalerLayer
+from glideator_ml.xc.model import (
+    ExpandedGlideatorNet,
+    SharedPressureLevelEncoder,
+    StandardScalerLayer,
+)
 from glideator_ml.xc.training import _profile_agl_scaling
 
 
@@ -37,9 +41,18 @@ AGL_CANDIDATE = (
     / "weather_profiles"
     / "vertical_conv_agl_mask.yaml"
 )
+LEVEL_MLP_CANDIDATE = (
+    ROOT
+    / "configs"
+    / "xc"
+    / "architecture"
+    / "weather_profiles"
+    / "shared_level_mlp.yaml"
+)
 PROFILE_CONFIG_KEYS = {
     "weather_profile_encoder_type",
     "weather_profile_conv_channels",
+    "weather_profile_level_hidden_units",
     "weather_profile_embedding_dim",
     "weather_profile_kernel_size",
 }
@@ -105,6 +118,73 @@ def test_vertical_profile_branch_is_shared_and_added_to_existing_branches() -> N
     assert isinstance(first_fusion_layer, nn.Linear)
 
     # Per time slice: 87 raw inputs + 5 MLP outputs + 7 profile outputs.
+    assert first_fusion_layer.in_features == 3 * (87 + 5 + 7)
+
+    features = {
+        "weather": {
+            key: torch.randn(4, len(PRODUCTION_WEATHER_FEATURES))
+            for key in model.time_keys
+        },
+        "site": torch.randn(4, 3),
+        "site_id": torch.tensor([0, 1, 2, 3]),
+        "date": torch.tensor(
+            [
+                [0.0, 2026.0, 0.1, 0.9],
+                [1.0, 2026.0, 0.2, 0.8],
+                [0.0, 2025.0, 0.3, 0.7],
+                [0.0, 2024.0, 0.4, 0.6],
+            ]
+        ),
+    }
+    assert model(features).shape == (4, 11)
+
+
+def test_shared_level_encoder_preserves_order_and_shares_level_weights() -> None:
+    encoder = SharedPressureLevelEncoder(
+        num_variables=2,
+        num_levels=3,
+        hidden_units=(1,),
+        output_dim=1,
+    )
+    level_linear = encoder.level_encoder[0]
+    projection = encoder.projection[1]
+    assert isinstance(level_linear, nn.Linear)
+    assert isinstance(projection, nn.Linear)
+
+    with torch.no_grad():
+        level_linear.weight.copy_(torch.tensor([[1.0, 10.0]]))
+        level_linear.bias.zero_()
+        projection.weight.copy_(torch.tensor([[1.0, 100.0, 10000.0]]))
+        projection.bias.zero_()
+
+    profile = torch.tensor([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]])
+    # Shared level tokens are [41, 52, 63] in the original pressure order.
+    expected = torch.tensor([[41.0 + 100.0 * 52.0 + 10000.0 * 63.0]])
+    torch.testing.assert_close(encoder(profile), expected)
+
+
+def test_shared_level_profile_branch_is_added_to_frozen_conventional_model() -> None:
+    profile_indices = pressure_profile_indices(PRODUCTION_WEATHER_FEATURES)
+    model = ExpandedGlideatorNet(
+        weather_scaler=_scaler(PRODUCTION_WEATHER_FEATURES),
+        site_scaler=_scaler(("latitude", "longitude", "altitude")),
+        num_launches=5,
+        num_targets=11,
+        deep_hidden_units=(8, 4),
+        cross_layers=0,
+        site_embedding_dim=3,
+        parallel_deep_hidden_units=(6, 5),
+        dropout=0.10,
+        weather_profile_encoder_type="level_mlp",
+        weather_profile_indices=profile_indices,
+        weather_profile_shape=(5, 13),
+        weather_profile_level_hidden_units=(16, 8),
+        weather_profile_embedding_dim=7,
+    )
+
+    assert isinstance(model.weather_profile_encoder, SharedPressureLevelEncoder)
+    first_fusion_layer = model.deep_net[0]
+    assert isinstance(first_fusion_layer, nn.Linear)
     assert first_fusion_layer.in_features == 3 * (87 + 5 + 7)
 
     features = {
@@ -252,3 +332,22 @@ def test_agl_candidate_changes_only_the_profile_representation() -> None:
         agl["model"], "name", "weather_profile_use_agl_mask"
     ) == _without(vertical["model"], "name")
     assert agl["model"]["weather_profile_use_agl_mask"] is True
+
+
+def test_shared_level_config_changes_only_the_profile_branch() -> None:
+    baseline = load_config(BASELINE)
+    candidate = load_config(LEVEL_MLP_CANDIDATE)
+
+    assert candidate["task"] == baseline["task"]
+    assert candidate["data"] == baseline["data"]
+    assert candidate["evaluation"] == baseline["evaluation"]
+    assert candidate["tracking"] == baseline["tracking"]
+    assert _without(candidate["artifact"], "output_dir") == _without(
+        baseline["artifact"], "output_dir"
+    )
+    assert _without(candidate["model"], "name", *PROFILE_CONFIG_KEYS) == _without(
+        baseline["model"], "name"
+    )
+    assert candidate["model"]["weather_profile_encoder_type"] == "level_mlp"
+    assert candidate["model"]["weather_profile_level_hidden_units"] == [16, 8]
+    assert candidate["model"]["weather_profile_embedding_dim"] == 32
