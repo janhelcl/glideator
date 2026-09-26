@@ -215,6 +215,23 @@ Relative to semantic context, raw weather and production site metadata improved 
 
 **Decision:** reject the raw-context variant and close the Jev 1.13 experiment line. The richer input changes the calibration/ranking trade-off but remains decisively behind the conventional MLP. Do not continue Jev prompt tuning or add post-hoc monotonic correction. Because the first 2024 result informed this follow-up, the direct comparison is exploratory rather than fresh promotion evidence. See [ADR 0016](../decisions/0016-xc-reject-jev-1-13.md) and [Jev raw weather + production site context](models/jev-raw-prod-sites.md).
 
-## Next architecture direction
+## Completed weather-profile experiment: shared pressure-level MLP
 
-Return to the frozen conventional MLP as the promotion baseline. The next trainable weather-specific experiment should change the vertical inductive bias rather than incrementally modifying Conv1D. Start with a shared per-pressure-level encoder and an ordered flatten/fusion aggregation so the first test isolates level-wise representation learning without introducing attention at the same time. If that shows signal, attention across level tokens is the next distinct hypothesis.
+The next trainable candidate changes the vertical inductive bias rather than incrementally modifying Conv1D. For each forecast time, it applies one shared MLP `[16, 8]` to the five standardized variables at each of the 13 pressure levels, flattens the resulting tokens in canonical 1000→500 hPa order, and projects them to a 32d profile embedding.
+
+The profile branch is additive to the frozen conventional raw bypass and shared per-time MLP. The experiment deliberately excludes AGL/masking and level attention so it isolates level-wise representation learning with simple ordered aggregation.
+
+The seed-42 screen failed the pre-specified requirement for a coherent BCE/Brier improvement:
+
+| Metric | Conventional MLP | Shared level MLP | Delta (candidate − control) |
+| --- | ---: | ---: | ---: |
+| Macro BCE ↓ | **0.15686** | 0.15794 | +0.00108 |
+| Macro Brier ↓ | **0.04762** | 0.04785 | +0.00023 |
+| Macro ROC-AUC ↑ | 0.94206 | **0.94233** | +0.00027 |
+| Monotonic violation rate ↓ | **0.00140** | 0.00209 | +0.00069 |
+| Best epoch | 86 | 86 | — |
+| Parameters | 48,523 | 58,259 | +9,736 |
+
+The candidate regressed both primary calibration losses while increasing monotonic violations and parameter count. The `0.00027` ROC-AUC improvement is too small and isolated to justify paired-seed confirmation.
+
+**Decision:** reject the shared pressure-level MLP at seed 42. Do not run seeds 43–46, tune its width, add AGL/masking, or proceed to level attention on this encoder. Keep the implementation and config as a reproducible negative experiment. See [ADR 0017](../decisions/0017-xc-reject-shared-level-mlp.md).
