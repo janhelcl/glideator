@@ -1,6 +1,6 @@
 # Shared pressure-level MLP
 
-**Role:** active weather-profile architecture experiment  
+**Role:** rejected weather-profile architecture experiment
 **Config:** `configs/xc/architecture/weather_profiles/shared_level_mlp.yaml`
 
 ## Hypothesis
@@ -46,7 +46,22 @@ Do not add AGL/masking or level attention to this first run. They are separate
 representation hypotheses. If the shared level encoder shows repeatable signal,
 attention across level tokens is the next experiment.
 
+## Result
+
+The seed-42 screen produced BCE `0.15794`, Brier `0.04785`, ROC-AUC `0.94233`,
+and monotonic violation rate `0.00209`, compared with `0.15686`, `0.04762`,
+`0.94206`, and `0.00140` for the frozen conventional MLP. The candidate used
+58,259 parameters versus 48,523 and reached the same best epoch, 86.
+
+The tiny ROC-AUC gain did not offset regressions in both primary calibration
+losses, worse monotonicity, and 9,736 additional parameters. The candidate
+therefore failed the pre-specified seed-42 screen and did not earn paired-seed
+confirmation.
+
+**Decision:** reject the shared level encoder without tuning, AGL/masking, or
+level-attention follow-ups. See [ADR 0017](../../decisions/0017-xc-reject-shared-level-mlp.md).
+
 ## Serving implications
 
-Inputs and outputs are unchanged. The candidate remains an experiment artifact
-until paired-seed confirmation and the normal ONNX promotion gate both pass.
+Inputs and outputs are unchanged. The rejected candidate is not eligible for
+ONNX promotion or a production serving change.
