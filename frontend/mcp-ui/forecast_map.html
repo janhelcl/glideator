@@ -55,8 +55,10 @@
     .missing { width: 8px; height: 8px; border-radius: 50%; background: gray; margin-left: 4px; }
     footer a { color: var(--link); }
     #status, #tile-status { color: var(--muted); margin: 6px 0 0; font-size: .88rem; }
-    .site-popup strong { display: block; }
-    .site-popup p { margin: 3px 0 6px; }
+    #map .popup-content { max-width: min(220px, calc(100vw - 72px)); }
+    @media (pointer: coarse) {
+      #map .popup-details-button { padding-block: 7px; }
+    }
     [hidden] { display: none !important; }
   </style>
 </head>
