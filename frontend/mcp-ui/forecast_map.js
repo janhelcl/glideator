@@ -1,6 +1,8 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createForecastMarkerIcon } from '../src/components/forecastMapMarkers';
+import '../src/components/forecastMapPopup.css';
+import { getColor } from '../src/utils/colorUtils';
 import { OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '../src/utils/mapTiles';
 import { connectChartWidget } from './chartHost';
 
@@ -41,19 +43,36 @@ function updateWebLink() {
   webMap.href = getUrl('/', { lat: lat.toFixed(4), lng: lng.toFixed(4), zoom: map.getZoom() });
 }
 
-function sitePopup(site, description) {
+function sitePopup(site, probability, percent) {
   const content = document.createElement('div');
-  content.className = 'site-popup';
-  const name = document.createElement('strong');
+  content.className = 'popup-content';
+  const header = document.createElement('div');
+  header.className = 'popup-header';
+  const name = document.createElement('h3');
   name.textContent = site.name;
-  const probability = document.createElement('p');
-  probability.textContent = description;
+  name.title = site.name;
+  header.append(name);
+
+  const metricBar = document.createElement('div');
+  metricBar.className = 'popup-metric-bar';
+  const badge = document.createElement('span');
+  badge.className = 'popup-metric-value';
+  badge.style.backgroundColor = getColor(probability);
+  badge.style.opacity = probability === null ? '0.5' : '1';
+  badge.textContent = percent;
+  badge.title = probability === null ? 'No forecast available' : `Chance of ${forecastLabel(metric.value)}`;
+  metricBar.append(badge);
+
+  const footer = document.createElement('div');
+  footer.className = 'popup-footer';
   const link = document.createElement('a');
+  link.className = 'popup-details-button';
   link.href = getUrl(`/details/${site.site_id}`);
   link.target = '_blank';
   link.rel = 'noopener';
-  link.textContent = 'View site forecast';
-  content.append(name, probability, link);
+  link.textContent = 'View Details';
+  footer.append(link);
+  content.append(header, metricBar, footer);
   return content;
 }
 
@@ -65,13 +84,14 @@ function updateDisplay() {
     const probability = forecast?.values[index];
     const available = Number.isFinite(probability);
     if (available) withForecast++;
+    const percent = available ? `${Math.round(probability * 100)}%` : 'N/A';
     const description = available
-      ? `${Math.round(probability * 100)}% chance of ${forecastLabel(metric.value)}`
+      ? `${percent} chance of ${forecastLabel(metric.value)}`
       : 'No forecast available';
     marker.setIcon(createForecastMarkerIcon(available ? probability : null));
     marker.getElement().setAttribute('aria-label', `${site.name}: ${description}`);
     marker.getElement().title = site.name;
-    marker.setPopupContent(sitePopup(site, description));
+    marker.setPopupContent(sitePopup(site, available ? probability : null, percent));
   }
   status.textContent = withForecast
     ? `${dayLabel(date.value)} · ${withForecast} of ${markers.length} sites with forecasts`
@@ -129,7 +149,7 @@ function renderResult(result) {
     marker: L.marker([site.latitude, site.longitude], {
       title: site.name,
       icon: createForecastMarkerIcon(null),
-    }).addTo(map).bindPopup(''),
+    }).addTo(map).bindPopup('', { closeButton: false, className: 'custom-popup' }),
   }));
   map.on('moveend', updateWebLink);
   updateDisplay();
