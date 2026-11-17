@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import BaseModel, Field, TypeAdapter
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.database import AsyncSessionLocal
 from app.mcp_analytics import track_mcp_tool
 from app.services import site_search, trip_planner_service
@@ -21,7 +21,12 @@ READ_ONLY_ANNOTATIONS = ToolAnnotations(
 )
 FORECAST_CHART_V1_URI = "ui://parra-glideator/forecast-chart-v1.html"
 FORECAST_CHART_URI = "ui://parra-glideator/forecast-chart-v2.html"
-FORECAST_CHART_RESOURCE_META = {"ui": {"prefersBorder": True, "csp": {}}}
+SEASONALITY_CHART_URI = "ui://parra-glideator/seasonality-chart-v1.html"
+CHART_RESOURCE_META = {"ui": {"prefersBorder": True, "csp": {}}}
+MONTH_NAMES = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
 
 
 class ChartDay(BaseModel):
@@ -35,6 +40,18 @@ class SiteForecastChart(BaseModel):
     metric: schemas.XcMetric
     selected_date: Optional[date]
     days: list[ChartDay]
+
+
+class SeasonalityMonth(BaseModel):
+    month: Annotated[int, Field(ge=1, le=12)]
+    average_days: dict[schemas.XcMetric, float]
+
+
+class SiteSeasonalityChart(BaseModel):
+    site_id: int
+    site_name: str
+    metric: schemas.XcMetric
+    months: list[SeasonalityMonth]
 
 
 class PublicSiteResources(BaseModel):
@@ -85,7 +102,7 @@ mcp = FastMCP(
     name="forecast-chart-v1",
     title="Parra-Glideator forecast chart",
     mime_type="text/html;profile=mcp-app",
-    meta=FORECAST_CHART_RESOURCE_META,
+    meta=CHART_RESOURCE_META,
 )
 def forecast_chart_v1_resource() -> str:
     return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart.html").read_text(encoding="utf-8")
@@ -96,10 +113,21 @@ def forecast_chart_v1_resource() -> str:
     name="forecast-chart",
     title="Parra-Glideator forecast charts",
     mime_type="text/html;profile=mcp-app",
-    meta=FORECAST_CHART_RESOURCE_META,
+    meta=CHART_RESOURCE_META,
 )
 def forecast_chart_resource() -> str:
     return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart_v2.html").read_text(encoding="utf-8")
+
+
+@mcp.resource(
+    SEASONALITY_CHART_URI,
+    name="seasonality-chart",
+    title="Parra-Glideator seasonality chart",
+    mime_type="text/html;profile=mcp-app",
+    meta=CHART_RESOURCE_META,
+)
+def seasonality_chart_resource() -> str:
+    return Path(__file__).with_name("mcp_ui").joinpath("seasonality_chart_v1.html").read_text(encoding="utf-8")
 
 
 @mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
@@ -173,6 +201,13 @@ async def get_site_resources(site_id: int) -> PublicSiteResources:
     return PublicSiteResources.model_validate(public_data)
 
 
+def _average_flight_days(stats: models.FlightStats) -> dict[schemas.XcMetric, float]:
+    return {
+        metric: getattr(stats, trip_planner_service.get_flight_stats_attr_for_metric(metric))
+        for metric in get_args(schemas.XcMetric)
+    }
+
+
 @mcp.tool(title="Get site seasonal statistics", annotations=READ_ONLY_ANNOTATIONS)
 @track_mcp_tool("get_site_seasonal_stats")
 async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
@@ -187,39 +222,54 @@ async def get_site_seasonal_stats(site_id: int) -> Dict[str, Dict[str, float]]:
     async with AsyncSessionLocal() as db:
         site_seasonal_stats = await crud.get_flight_stats_by_site_id(db, site_id)
 
-    month_names = {
-        1: "January",
-        2: "February",
-        3: "March",
-        4: "April",
-        5: "May",
-        6: "June",
-        7: "July",
-        8: "August",
-        9: "September",
-        10: "October",
-        11: "November",
-        12: "December",
+    return {
+        MONTH_NAMES[stats.month - 1]: {
+            f"days_over_{metric[2:]}XC_points_or_more": value
+            for metric, value in _average_flight_days(stats).items()
+        }
+        for stats in site_seasonal_stats
     }
 
-    result = {}
-    for stats in site_seasonal_stats:
-        month_name = month_names[stats.month]
-        result[month_name] = {
-            "days_over_0XC_points_or_more": stats.avg_days_over_0,
-            "days_over_10XC_points_or_more": stats.avg_days_over_10,
-            "days_over_20XC_points_or_more": stats.avg_days_over_20,
-            "days_over_30XC_points_or_more": stats.avg_days_over_30,
-            "days_over_40XC_points_or_more": stats.avg_days_over_40,
-            "days_over_50XC_points_or_more": stats.avg_days_over_50,
-            "days_over_60XC_points_or_more": stats.avg_days_over_60,
-            "days_over_70XC_points_or_more": stats.avg_days_over_70,
-            "days_over_80XC_points_or_more": stats.avg_days_over_80,
-            "days_over_90XC_points_or_more": stats.avg_days_over_90,
-            "days_over_100XC_points_or_more": stats.avg_days_over_100,
-        }
 
-    return result
+@mcp.tool(
+    title="Show site seasonality chart",
+    annotations=READ_ONLY_ANNOTATIONS,
+    meta={"ui": {"resourceUri": SEASONALITY_CHART_URI}},
+)
+@track_mcp_tool("show_site_seasonality_chart")
+async def show_site_seasonality_chart(
+    site_id: Annotated[int, Field(description="Parra-Glideator site ID. Use find_sites when unknown.")],
+    metric: Annotated[schemas.XcMetric, Field(description="Initial XC threshold. XC0 means any flight.")] = "XC0",
+) -> Annotated[CallToolResult, SiteSeasonalityChart]:
+    """Use this when the user asks for a chart of a paragliding site's historical flying season.
+
+    Shows the historical average number of flight days per month at the selected XC threshold.
+    The widget can switch among all 11 thresholds. Use get_site_seasonal_stats for a data-only
+    lookup. Historical averages do not forecast conditions for a particular date.
+    """
+    async with AsyncSessionLocal() as db:
+        site = await crud.get_site(db, site_id)
+        if not site:
+            raise ValueError(f"No paragliding site found for site ID {site_id}")
+        monthly_stats = await crud.get_flight_stats_by_site_id(db, site_id)
+
+    months = [
+        SeasonalityMonth(month=stats.month, average_days=_average_flight_days(stats))
+        for stats in monthly_stats
+    ]
+    chart = SiteSeasonalityChart(site_id=site_id, site_name=site.name, metric=metric, months=months)
+    if months:
+        label = "any flight" if metric == "XC0" else f"{metric[2:]}+ XC points"
+        summary = [f"{site.name} · Historical average days per month with {label}"]
+        summary.extend(
+            f"{MONTH_NAMES[entry.month - 1]}  {entry.average_days[metric]:.1f} days" for entry in months
+        )
+    else:
+        summary = [f"No historical flight statistics are available for {site.name}."]
+    return CallToolResult(
+        content=[TextContent(type="text", text="\n".join(summary))],
+        structuredContent=chart.model_dump(mode="json"),
+    )
 
 
 @mcp.tool(title="Get site flight-potential forecast", annotations=READ_ONLY_ANNOTATIONS)

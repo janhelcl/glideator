@@ -1,4 +1,5 @@
 import { renderFlightForecastChart, renderFlightQualityChart } from '../src/components/forecastCharts';
+import { connectChartWidget } from './chartHost';
 
 const site = document.querySelector('#site');
 const controls = document.querySelector('#controls');
@@ -8,7 +9,6 @@ const charts = document.querySelector('#charts');
 const qualityChart = document.querySelector('#flight-quality');
 const forecastChart = document.querySelector('#flight-forecast');
 const detail = document.querySelector('#detail');
-const main = document.querySelector('main');
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
 });
@@ -81,42 +81,8 @@ const chartObserver = new ResizeObserver(drawCharts);
 chartObserver.observe(qualityChart.parentElement);
 chartObserver.observe(forecastChart.parentElement);
 
-// View-only MCP Apps bridge. All chart data arrives in the initial tool result.
-const send = (message) => window.parent.postMessage({ jsonrpc: '2.0', ...message }, '*');
-const applyTheme = (theme) => {
-  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
-};
-applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-
-const resizeObserver = new ResizeObserver(() => send({
-  method: 'ui/notifications/size-changed',
-  params: { height: Math.ceil(main.getBoundingClientRect().height) },
-}));
-
-window.addEventListener('message', ({ source, data }) => {
-  if (source !== window.parent || data?.jsonrpc !== '2.0') return;
-  if (data.id === 'initialize' && data.result) {
-    applyTheme(data.result.hostContext?.theme);
-    send({ method: 'ui/notifications/initialized' });
-    resizeObserver.observe(main);
-  }
-  if (data.method === 'ui/notifications/tool-result') renderResult(data.params);
-  if (data.method === 'ui/notifications/host-context-changed') applyTheme(data.params.theme);
-  if (data.method === 'ui/resource-teardown') {
-    resizeObserver.disconnect();
-    chartObserver.disconnect();
-  }
-  if (data.method === 'ui/resource-teardown' || data.method === 'ping') {
-    send({ id: data.id, result: {} });
-  }
-});
-
-send({
-  id: 'initialize',
-  method: 'ui/initialize',
-  params: {
-    protocolVersion: '2026-01-26',
-    appInfo: { name: 'Parra-Glideator forecast charts', version: '2.0.0' },
-    appCapabilities: {},
-  },
+connectChartWidget({
+  appInfo: { name: 'Parra-Glideator forecast charts', version: '2.0.0' },
+  onResult: renderResult,
+  onTeardown: () => chartObserver.disconnect(),
 });
