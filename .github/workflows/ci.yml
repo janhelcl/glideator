@@ -96,7 +96,8 @@ jobs:
 
   e2e:
     name: Playwright smoke tests
-    runs-on: ubuntu-latest
+    # Keep the runner compatible with the pinned Playwright version in frontend/e2e/package.json.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     defaults:
