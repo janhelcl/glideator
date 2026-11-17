@@ -44,6 +44,10 @@ test('copies a clean dated forecast URL from the global app bar', async ({ page 
   await expect(page.getByRole('heading', { name: 'Raná', level: 1 })).toBeVisible();
   await expect(page).toHaveTitle(/Raná: 52% chance of a 20\+ point flight/);
   await expect(page.getByText(`Chances of a Flight on ${date}`, { exact: true })).toBeVisible();
+  const dailyChart = page.getByRole('img', { name: `Chances of a Flight on ${date}`, exact: true });
+  const forecastChart = page.getByRole('img', { name: 'Chances of a 20+ Point Flight', exact: true });
+  await expect(dailyChart.locator('rect.bar')).toHaveCount(11);
+  await expect(forecastChart.locator('circle.dot')).toHaveCount(7);
   await expect(page.locator('meta[property="og:url"]').last()).toHaveAttribute(
     'content',
     'http://127.0.0.1:4173/details/1',
