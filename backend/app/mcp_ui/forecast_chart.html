@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parra-Glideator flight activity forecast</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --text: #1d2622;
+      --muted: #52615a;
+      --line: #d5e2da;
+      --selected: #e4f2e9;
+      --bar: #568b75;
+      --accent: #216751;
+      font: 14px/1.4 system-ui, sans-serif;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --text: #edf6f0;
+      --muted: #b7c8bf;
+      --line: #4b6055;
+      --selected: #274439;
+      --bar: #6fac92;
+      --accent: #8fdbb9;
+    }
+    :root[data-theme="light"] { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); }
+    main { padding: 12px; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+    }
+    h1 { margin: 0; font-size: 1.3rem; overflow-wrap: anywhere; }
+    header p { margin: 2px 0 0; color: var(--muted); }
+    label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    select {
+      min-height: 36px;
+      padding: 4px 6px;
+      font: inherit;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .days {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 40px), 1fr));
+      gap: 2px;
+      margin-top: 12px;
+    }
+    .day {
+      display: grid;
+      grid-template-rows: auto 80px auto auto;
+      justify-items: center;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      padding: 5px 0;
+      cursor: pointer;
+      font: inherit;
+    }
+    .day:hover, .day[aria-pressed="true"] { background: var(--selected); }
+    .day[aria-pressed="true"] { border-color: var(--accent); }
+    .day:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .value { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .track {
+      display: flex;
+      align-items: end;
+      width: min(55%, 34px);
+      height: 66px;
+      border-bottom: 1px solid var(--line);
+    }
+    .bar { width: 100%; background: var(--bar); border-radius: 4px 4px 0 0; }
+    .day[aria-pressed="true"] .bar { background: var(--accent); }
+    .day-number, .note { color: var(--muted); }
+    .day-number { font-size: .83rem; }
+    #detail { margin: 10px 0 0; font-weight: 600; }
+    .note { margin: 6px 0 0; font-size: .86rem; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1 id="site">Parra-Glideator</h1>
+        <p>Flight activity forecast</p>
+      </div>
+      <label hidden>Threshold <select id="metric"></select></label>
+    </header>
+    <div id="days" class="days" role="group" aria-label="Choose a forecast date" hidden></div>
+    <p id="detail" role="status">Loading forecast…</p>
+    <p class="note">Check current weather and local conditions before flying.</p>
+  </main>
+  <script>
+    const site = document.querySelector('#site');
+    const metric = document.querySelector('#metric');
+    const days = document.querySelector('#days');
+    const detail = document.querySelector('#detail');
+    const dateFormat = new Intl.DateTimeFormat(undefined, {
+      weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
+    });
+    const weekdayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
+    const dayFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', timeZone: 'UTC' });
+    const percentages = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 });
+
+    const metricLabel = (threshold) => threshold === 'XC0' ? 'Any flight' : `${threshold.slice(2)}+ XC points`;
+    for (let points = 0; points <= 100; points += 10) {
+      const threshold = `XC${points}`;
+      metric.add(new Option(metricLabel(threshold), threshold));
+    }
+
+    let forecast;
+    let selectedDate;
+
+    function updateSelection() {
+      for (const button of days.children) {
+        button.setAttribute('aria-pressed', String(button.dataset.date === selectedDate));
+      }
+      const day = forecast.days.find((item) => item.date === selectedDate);
+      const value = day?.probabilities[metric.value];
+      const label = dateFormat.format(new Date(selectedDate));
+      detail.textContent = value == null
+        ? `${label} · No data for ${metricLabel(metric.value).toLowerCase()}`
+        : `${label} · ${percentages.format(value)} chance of ${metricLabel(metric.value).toLowerCase()}`;
+    }
+
+    function renderDays() {
+      days.replaceChildren(...forecast.days.map((day) => {
+        const value = day.probabilities[metric.value];
+        const date = new Date(day.date);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'day';
+        button.dataset.date = day.date;
+        button.setAttribute('aria-label', `${dateFormat.format(date)}, ${value == null ? 'no data' : percentages.format(value)}`);
+        const percentage = document.createElement('span');
+        percentage.className = 'value';
+        percentage.textContent = value == null ? '—' : percentages.format(value);
+        const track = document.createElement('span');
+        track.className = 'track';
+        track.setAttribute('aria-hidden', 'true');
+        const bar = document.createElement('span');
+        bar.className = 'bar';
+        bar.style.height = `${(value ?? 0) * 100}%`;
+        track.append(bar);
+        const weekday = document.createElement('span');
+        weekday.textContent = weekdayFormat.format(date);
+        const dayNumber = document.createElement('span');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = dayFormat.format(date);
+        button.append(percentage, track, weekday, dayNumber);
+        button.addEventListener('click', () => {
+          selectedDate = day.date;
+          updateSelection();
+        });
+        return button;
+      }));
+      updateSelection();
+    }
+
+    function renderResult(result) {
+      forecast = result.structuredContent;
+      const hasDays = !result.isError && Boolean(forecast?.days.length);
+      metric.closest('label').hidden = !hasDays;
+      days.hidden = !hasDays;
+      if (!forecast || result.isError) {
+        detail.textContent = 'The forecast could not be loaded.';
+        return;
+      }
+      site.textContent = forecast.site_name;
+      if (!hasDays) {
+        detail.textContent = 'No flight activity forecast is currently available.';
+        return;
+      }
+      metric.value = forecast.metric;
+      selectedDate = forecast.selected_date ?? forecast.days[0].date;
+      renderDays();
+    }
+    metric.addEventListener('change', renderDays);
+
+    // This view only receives tool results and host context from its MCP Apps parent.
+    const send = (message) => window.parent.postMessage({ jsonrpc: '2.0', ...message }, '*');
+    const applyTheme = (theme) => {
+      if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+    };
+    applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    window.addEventListener('message', ({ source, data }) => {
+      if (source !== window.parent || data?.jsonrpc !== '2.0') return;
+      if (data.id === 'initialize' && data.result) {
+        applyTheme(data.result.hostContext?.theme);
+        send({ method: 'ui/notifications/initialized' });
+        new ResizeObserver(() => send({
+          method: 'ui/notifications/size-changed',
+          params: { height: Math.ceil(document.querySelector('main').getBoundingClientRect().height) },
+        })).observe(document.querySelector('main'));
+      }
+      if (data.method === 'ui/notifications/tool-result') renderResult(data.params);
+      if (data.method === 'ui/notifications/host-context-changed') applyTheme(data.params.theme);
+      if (data.method === 'ui/resource-teardown' || data.method === 'ping') {
+        send({ id: data.id, result: {} });
+      }
+    });
+
+    send({
+      id: 'initialize',
+      method: 'ui/initialize',
+      params: {
+        protocolVersion: '2026-01-26',
+        appInfo: { name: 'Parra-Glideator forecast chart', version: '1.0.0' },
+        appCapabilities: {},
+      },
+    });
+  </script>
+</body>
+</html>

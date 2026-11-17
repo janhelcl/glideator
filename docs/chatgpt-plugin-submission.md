@@ -4,7 +4,7 @@ This document is the source of truth for submitting the existing Parra-Glideator
 
 ## Technical shape
 
-- **Plugin type:** MCP-only, no custom UI
+- **Plugin type:** MCP tools with an optional inline forecast chart
 - **MCP URL:** `https://www.parra-glideator.com/mcp`
 - **Authentication:** none; public read-only data
 - **Primary capability:** rank and compare paragliding sites using forecast-derived flight/XC potential and historical fallback data
@@ -27,6 +27,7 @@ Every tool is read-only and accesses Parra-Glideator data without creating, upda
 | `get_site_resources` | Return already-curated local links | `true` | `false` | `false` |
 | `get_site_seasonal_stats` | Return historical monthly XC-activity statistics | `true` | `false` | `false` |
 | `get_site_predictions` | Return forecast-derived XC-activity probabilities | `true` | `false` | `false` |
+| `show_site_forecast_chart` | Show those probabilities with date and XC threshold controls | `true` | `false` | `false` |
 | `get_site_takeoffs_and_landings` | Return stored launch/landing metadata | `true` | `false` | `false` |
 | `plan_trip` | Rank sites for dates and optional travel constraints | `true` | `false` | `false` |
 
@@ -141,6 +142,14 @@ All positive cases use the public production dataset and require no account or c
 
 **Fixture/data:** No login. Use the current production site-information record for Bassano. The stored guide may evolve as Parra-Glideator content is updated.
 
+### Positive 7 — interactive forecast chart
+
+**Prompt:** `Show me the Bassano forecast chart for 50+ XC points.`
+
+**Expected behavior:** Call `find_sites` for Bassano, then `show_site_forecast_chart` with the resolved site ID and `metric: "XC50"`. The chart shows available forecast dates in order. Selecting a different date or threshold updates the display without a new tool call. Compare the percentages with the Bassano forecast on the website using the same dates and threshold. A client without MCP Apps UI can read the same numbers from the tool's text or structured output.
+
+**Fixture/data:** No login. Use the live Bassano forecast. After deploying, rescan the connected MCP server in the existing plugin's submission dashboard. When the chart tool is live, replay this case in ChatGPT on web and Android.
+
 ## Required negative review test cases
 
 ### Negative 1 — unsupported safety verdict
@@ -194,7 +203,7 @@ Do not invent or pre-populate a token in source control.
 5. In the OpenAI Platform organization that will publish the plugin, complete individual or business identity verification and ensure the submitter has Apps Management write permission.
 6. Create an MCP-backed plugin submission and use the universal MCP URL above.
 7. Enter the listing copy, initial release notes, policy URLs, and `frontend/public/logo512.png` from this document.
-8. Use Scan Tools and verify all eight tools, their input/output schemas, server instructions, and the three required annotations.
+8. Use Scan Tools and verify the nine tools, their input/output schemas, server instructions, and the three required annotations.
 9. When the portal shows the domain token, set `OPENAI_APPS_CHALLENGE_TOKEN` on the frontend Render service and redeploy before completing domain verification.
 10. Add at least five positive and three negative test cases above, choose the intended country availability, complete the policy attestations, and submit for review.
 
@@ -211,7 +220,7 @@ The public submission itself must submit the MCP server through the OpenAI plugi
 - [ ] Backend MCP changes deployed
 - [ ] Frontend legal/support pages deployed
 - [ ] `https://www.parra-glideator.com/mcp` connects from ChatGPT Developer mode
-- [ ] Tool scan shows all eight tools
+- [ ] Tool scan shows all nine tools and the forecast chart resource
 - [ ] Every tool shows `readOnlyHint=true`
 - [ ] Every tool shows `destructiveHint=false`
 - [ ] Every tool shows `openWorldHint=false`
