@@ -6,7 +6,7 @@ describe('getLightweightTileConfig', () => {
     const config = getLightweightTileConfig('   ');
 
     expect(config.provider).toBe('openstreetmap');
-    expect(config.url).toBe('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    expect(config.url).toBe('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
     expect(config.url).not.toContain('cartocdn.com');
   });
 

@@ -11,7 +11,9 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LayersIcon from '@mui/icons-material/Layers';
 import debounce from 'lodash/debounce';
 import LoadingSpinner from './LoadingSpinner';
-import { getLightweightTileConfig } from '../utils/mapTiles';
+import { getLightweightTileConfig, OPENSTREETMAP_ATTRIBUTION, OPENSTREETMAP_TILE_URL } from '../utils/mapTiles';
+import { getColor } from '../utils/colorUtils';
+import { createForecastMarkerIcon } from './forecastMapMarkers';
 
 // Fix default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -223,11 +225,6 @@ const MapView = React.memo(({
     }, {});
   }, [metrics]);
 
-  const rgbToRgba = (rgb, alpha) => {
-    const [r, g, b] = rgb.match(/\d+/g);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
-
   const getPredictionValue = useCallback((site) => {
     const prediction = site.predictions.find(
       (pred) => pred.date === selectedDate
@@ -240,68 +237,17 @@ const MapView = React.memo(({
     return 'N/A';
   }, [selectedMetric, selectedDate, metricIndexMap]);
 
-  const getColor = (probability) => {
-    if (probability === 'N/A') return 'gray';
-    const p = Math.max(0, Math.min(1, probability));
-    const r = Math.round(255 * (1 - p));
-    const g = Math.round(255 * p);
-    return `rgb(${r}, ${g}, 0)`;
-  };
-
-  const createCustomIcon = useCallback((color, isLightweight = false) => {
-    if (isLightweight) {
-      // Create a much simpler icon for lightweight maps - no glow, no hover effects
-      return L.divIcon({
-        className: '',
-        html: `
-          <div class="simple-marker" style="background-color: ${color}; width: 4px; height: 4px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.5);"></div>
-        `,
-        iconSize: [4, 4],
-        iconAnchor: [2, 2],
-      });
-    }
-    
-    // Regular detailed icon with glow for standard maps
-    const rgbaGlow = rgbToRgba(color, 0.7);
-    const rgbaGlowHover = rgbToRgba(color, 1);
-    const uniqueId = `marker-${Math.random().toString(36).substr(2, 9)}`;
-
-    const styleTag = `
-      <style>
-        #${uniqueId} {
-          --marker-color: ${color};
-          --marker-glow-color: ${rgbaGlow};
-          --marker-glow-hover-color: ${rgbaGlowHover};
-        }
-      </style>
-    `;
-
-    return L.divIcon({
-      className: '',
-      html: `
-        ${styleTag}
-        <div class="glowing-marker" id="${uniqueId}">
-          <div class="glow"></div>
-          <div class="point"></div>
-        </div>
-      `,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6],
-      popupAnchor: [0, -6],
-    });
-  }, []);
-
   const markers = useMemo(() => {
     return sites.map((site) => {
       const probability = getPredictionValue(site);
-      const color = probability !== 'N/A' ? getColor(probability) : 'gray';
+      const color = getColor(probability);
       const percentValue = probability !== 'N/A' ? `${Math.round(probability * 100)}%` : 'N/A';
 
       return (
         <Marker
           key={`site-${site.site_id}`}
           position={[site.latitude, site.longitude]}
-          icon={createCustomIcon(color, isSmallMap && lightweight)}
+          icon={createForecastMarkerIcon(probability, isSmallMap && lightweight)}
           interactive={!isSmallMap}
           ref={(ref) => {
             if (ref && getMarkerRef && typeof getMarkerRef === 'function') {
@@ -354,7 +300,7 @@ const MapView = React.memo(({
         </Marker>
       );
     });
-  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, lightweight, getMarkerRef, createCustomIcon, getPredictionValue]);
+  }, [sites, selectedMetric, selectedDate, navigate, isSmallMap, lightweight, getMarkerRef, getPredictionValue]);
 
   // Handle slider change (updates local state)
   const handleSliderChange = (event, newValue) => {
@@ -605,8 +551,8 @@ const MapView = React.memo(({
         /* Render the appropriate TileLayer based on mapType */
         mapType === 'basic' ? (
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='Map data: &copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a> contributors'
+            url={OPENSTREETMAP_TILE_URL}
+            attribution={OPENSTREETMAP_ATTRIBUTION}
           />
         ) : (
           <TileLayer
