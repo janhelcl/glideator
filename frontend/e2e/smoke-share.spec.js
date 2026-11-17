@@ -71,6 +71,18 @@ test('copies a clean dated forecast URL from the global app bar', async ({ page 
   await expect(page.getByRole('button', { name: 'Share forecast for Raná' })).toBeVisible();
 });
 
+test('plots monthly historical days for the selected XC threshold', async ({ page }) => {
+  await page.goto('/details/1?tab=season&metric=XC20');
+
+  const chart = page.getByRole('img', { name: 'Days with 20+ Point Flights, historical monthly averages' });
+  await expect(chart.locator('.x-axis .tick text')).toHaveText([
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ]);
+  await expect(chart.locator('.value-label')).toHaveText([
+    '0.0', '0.1', '0.5', '1.8', '3.7', '4.5', '4.2', '3.6', '2.1', '0.6', '0.1', '0.0',
+  ]);
+});
+
 test('shares a privacy-rounded forecast map state', async ({ page }) => {
   const date = todayUtc();
   await page.goto(`/?date=${date}&metric=XC20&lat=50.12345&lng=14.98765&zoom=7.8&mapType=topographic&campaign=pilot`);

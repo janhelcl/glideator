@@ -8,7 +8,15 @@ import pytest
 os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/glideator")
 
 from app import crud, mcp_analytics, schemas
-from app.mcp import FORECAST_CHART_URI, FORECAST_CHART_V1_URI, _normalize_site_name, _serialize_site_info, mcp
+from app.mcp import (
+    FORECAST_CHART_URI,
+    FORECAST_CHART_V1_URI,
+    SEASONALITY_CHART_URI,
+    _normalize_site_name,
+    _serialize_site_info,
+    get_site_seasonal_stats,
+    mcp,
+)
 
 
 EXPECTED_TOOLS = {
@@ -17,6 +25,7 @@ EXPECTED_TOOLS = {
     "get_site_info",
     "get_site_resources",
     "get_site_seasonal_stats",
+    "show_site_seasonality_chart",
     "get_site_predictions",
     "show_site_forecast_chart",
     "get_site_takeoffs_and_landings",
@@ -153,6 +162,40 @@ async def test_forecast_chart_returns_sorted_probabilities_and_text(monkeypatch)
     assert "2030-01-01  0%" in result.content[0].text
     assert "2030-01-02  No data" in result.content[0].text
     assert "No forecast is available for 2030-01-03" in result.content[0].text
+
+
+@pytest.mark.asyncio
+async def test_seasonality_chart_preserves_months_and_raw_statistics(monkeypatch):
+    months = [
+        SimpleNamespace(month=month, **{
+            f"avg_days_over_{threshold}": value if threshold == 50 else 0.0
+            for threshold in range(0, 101, 10)
+        })
+        for month, value in [(1, 0.0), (3, 5.2)]
+    ]
+    monkeypatch.setattr(crud, "get_site", AsyncMock(return_value=SimpleNamespace(name="Bassano")))
+    monkeypatch.setattr(crud, "get_flight_stats_by_site_id", AsyncMock(return_value=months))
+    monkeypatch.setattr(mcp_analytics, "_record_mcp_tool_event", AsyncMock())
+
+    tools = {tool.name: tool for tool in await mcp.list_tools()}
+    assert tools["show_site_seasonality_chart"].meta["ui"]["resourceUri"] == SEASONALITY_CHART_URI
+    assert tools["get_site_seasonal_stats"].meta is None
+    resource, = await mcp.read_resource(SEASONALITY_CHART_URI)
+    assert resource.mime_type == "text/html;profile=mcp-app"
+    assert resource.meta["ui"]["csp"] == {}
+    assert 'id="seasonality"' in resource.content
+
+    raw = await get_site_seasonal_stats(133)
+    result = await mcp.call_tool("show_site_seasonality_chart", {"site_id": 133, "metric": "XC50"})
+    data = result.structuredContent
+    assert data["site_name"] == "Bassano"
+    assert data["metric"] == "XC50"
+    assert [row["month"] for row in data["months"]] == [1, 3]
+    assert data["months"][0]["average_days"]["XC50"] == raw["January"]["days_over_50XC_points_or_more"] == 0.0
+    assert data["months"][1]["average_days"]["XC50"] == raw["March"]["days_over_50XC_points_or_more"] == 5.2
+    assert len(data["months"][1]["average_days"]) == 11
+    assert "March  5.2 days" in result.content[0].text
+    assert "February" not in result.content[0].text
 
 
 @pytest.mark.asyncio
