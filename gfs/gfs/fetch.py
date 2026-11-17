@@ -1,4 +1,6 @@
+from contextlib import ExitStack
 from datetime import timedelta
+from pathlib import Path
 import warnings
 import logging
 import tempfile
@@ -170,21 +172,22 @@ def _download_grib_data(date, run, delta, lat_gfs, lon_gfs):
     lat = xr.DataArray(points['lat'], dims=['points'])
     lon = xr.DataArray(points['lon'], dims=['points'])
     try:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            logger.debug("Created temporary file for GRIB data")
+        with tempfile.TemporaryDirectory() as temp_dir, ExitStack() as datasets:
+            temp_file_path = Path(temp_dir) / "forecast.grib2"
             response = requests.get(url)
-            temp_file.write(response.content)
-            temp_file_path = temp_file.name
+            temp_file_path.write_bytes(response.content)
             logger.debug(f"Downloaded GRIB data to temporary file: {temp_file_path}")
 
-            grib_data = cfgrib.open_datasets(temp_file_path, backend_kwargs={'indexpath': ''})
+            grib_data = cfgrib.open_datasets(str(temp_file_path), backend_kwargs={'indexpath': ''})
+            for dataset in grib_data:
+                datasets.enter_context(dataset)
             logger.debug("Opened GRIB datasets successfully")
             pds = []
-            for idx in range(len(grib_data)):
-                pdf = grib_data[idx].sel(latitude=lat, longitude=lon).to_stacked_array('x', sample_dims=['points']).to_pandas()
+            for idx, dataset in enumerate(grib_data, start=1):
+                pdf = dataset.sel(latitude=lat, longitude=lon).to_stacked_array('x', sample_dims=['points']).to_pandas()
                 pdf.columns = flatten_column_names(pdf.columns)
                 pds.append(pdf)
-                logger.debug(f"Processed GRIB dataset {idx+1}/{len(grib_data)}")
+                logger.debug(f"Processed GRIB dataset {idx}/{len(grib_data)}")
 
             pdf = reduce(lambda x, y: pd.merge(x, y, on = 'points'), pds)
             logger.debug("Merged all GRIB datasets")
