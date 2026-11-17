@@ -91,8 +91,8 @@ jobs:
       - name: Run frontend tests
         run: npm run test:coverage
 
-      - name: Check the shared MCP chart bundles
-        run: npm run check:mcp-forecast && npm run check:mcp-seasonality
+      - name: Check the shared MCP widget bundles
+        run: npm run check:mcp-forecast && npm run check:mcp-seasonality && npm run check:mcp-map
 
       - name: Build frontend
         run: npm run build

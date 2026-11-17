@@ -43,6 +43,8 @@
     "check:mcp-forecast": "node scripts/build-mcp-chart.mjs forecast --check",
     "build:mcp-seasonality": "node scripts/build-mcp-chart.mjs seasonality",
     "check:mcp-seasonality": "node scripts/build-mcp-chart.mjs seasonality --check",
+    "build:mcp-map": "node scripts/build-mcp-chart.mjs map",
+    "check:mcp-map": "node scripts/build-mcp-chart.mjs map --check",
     "build": "SITEMAP_BASE_URL=https://www.parra-glideator.com node scripts/generate-sitemap.mjs && npm run build:client && npm run build:ssr",
     "build:e2e": "npm run build:client && npm run build:ssr",
     "test": "vitest run",

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parra-Glideator forecast map</title>
+  <!-- WIDGET_STYLE -->
+  <style>
+    :root {
+      color-scheme: light;
+      --text: #1d2622;
+      --muted: #52615a;
+      --border: #d5e2da;
+      --link: #216751;
+      font: 14px/1.4 system-ui, sans-serif;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --text: #edf6f0;
+      --muted: #b7c8bf;
+      --border: #4b6055;
+      --link: #8fdbb9;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); }
+    main { padding: 12px; }
+    h1 { font-size: 1.3rem; margin: 0; }
+    header, .controls, footer, .legend, label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+    header, footer { justify-content: space-between; }
+    .controls { margin: 8px 0; }
+    label { gap: 6px; font-weight: 600; }
+    select, button {
+      min-height: 36px;
+      padding: 4px 8px;
+      font: inherit;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    button { cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+    #map {
+      width: 100%;
+      height: 340px;
+      isolation: isolate;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #dae1e6;
+    }
+    [data-display-mode="fullscreen"] #map { height: clamp(340px, 70vh, 760px); }
+    footer { margin-top: 8px; font-size: .86rem; }
+    .legend { gap: 6px; color: var(--muted); }
+    .ramp { width: 60px; height: 8px; border-radius: 9px; background: linear-gradient(90deg, #f00, #0f0); }
+    .missing { width: 8px; height: 8px; border-radius: 50%; background: gray; margin-left: 4px; }
+    footer a { color: var(--link); }
+    #status, #tile-status { color: var(--muted); margin: 6px 0 0; font-size: .88rem; }
+    .site-popup strong { display: block; }
+    .site-popup p { margin: 3px 0 6px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Forecast map</h1>
+      <button id="expand" type="button" hidden>Expand map</button>
+    </header>
+    <div id="results" hidden>
+      <div class="controls">
+        <label>Date <select id="date"></select></label>
+        <label>Threshold <select id="metric"></select></label>
+      </div>
+      <div id="map" aria-label="Paragliding forecast map"></div>
+      <p id="tile-status" hidden>Basemap tiles are unavailable. You can still select sites or open the map on Glideator.</p>
+      <footer>
+        <div class="legend" aria-label="Forecast probability scale">
+          0% <span class="ramp" aria-hidden="true"></span> 100%
+          <span class="missing" aria-hidden="true"></span> No forecast
+        </div>
+        <a id="web-map" href="https://www.parra-glideator.com/" target="_blank" rel="noopener">Open in Glideator</a>
+      </footer>
+    </div>
+    <p id="status" role="status">Loading forecasts…</p>
+  </main>
+  <!-- WIDGET_SCRIPT -->
+</body>
+</html>

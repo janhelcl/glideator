@@ -11,6 +11,7 @@ from app import crud, mcp_analytics, schemas
 from app.mcp import (
     FORECAST_CHART_URI,
     FORECAST_CHART_V1_URI,
+    FORECAST_MAP_URI,
     SEASONALITY_CHART_URI,
     _normalize_site_name,
     _serialize_site_info,
@@ -28,6 +29,7 @@ EXPECTED_TOOLS = {
     "show_site_seasonality_chart",
     "get_site_predictions",
     "show_site_forecast_chart",
+    "show_forecast_map",
     "get_site_takeoffs_and_landings",
     "plan_trip",
 }
@@ -196,6 +198,49 @@ async def test_seasonality_chart_preserves_months_and_raw_statistics(monkeypatch
     assert len(data["months"][1]["average_days"]) == 11
     assert "March  5.2 days" in result.content[0].text
     assert "February" not in result.content[0].text
+
+
+@pytest.mark.asyncio
+async def test_forecast_map_sends_forecasts_to_widget_and_selection_to_model(monkeypatch):
+    sites = [
+        schemas.SiteResponse(
+            name="Bassano", latitude=45.8, longitude=11.7, altitude=800, site_id=133, tags=["Alps"],
+            predictions=[schemas.PredictionValues(
+                date="2030-01-02", values=[0.75] * 11,
+                computed_at="2030-01-01T00:00:00", gfs_forecast_at="2030-01-01T00:00:00",
+            )],
+        ),
+        schemas.SiteResponse(
+            name="Raná", latitude=50.4, longitude=13.8, altitude=457, site_id=1,
+            predictions=[], tags=[],
+        ),
+    ]
+    monkeypatch.setattr(crud, "get_sites_with_predictions", AsyncMock(return_value=sites))
+    monkeypatch.setattr(mcp_analytics, "_record_mcp_tool_event", AsyncMock())
+
+    tools = {tool.name: tool for tool in await mcp.list_tools()}
+    assert tools["show_forecast_map"].meta["ui"]["resourceUri"] == FORECAST_MAP_URI
+    resource, = await mcp.read_resource(FORECAST_MAP_URI)
+    assert resource.mime_type == "text/html;profile=mcp-app"
+    assert resource.meta["ui"]["csp"] == {"resourceDomains": ["https://tile.openstreetmap.org"]}
+    assert 'id="map"' in resource.content
+    assert "<!-- WIDGET_STYLE -->" not in resource.content
+
+    result = await mcp.call_tool("show_forecast_map", {"metric": "XC50", "focus_site_id": 133})
+    assert result.structuredContent == {
+        "date": "2030-01-02", "metric": "XC50", "available_dates": ["2030-01-02"],
+        "site_count": 2, "sites_with_forecast": 1, "focus_site_id": 133,
+        "map_url": "https://www.parra-glideator.com/?metric=XC50&date=2030-01-02&lat=45.8000&lng=11.7000&zoom=8",
+    }
+    assert result.meta["sites"][0] == {
+        "site_id": 133, "name": "Bassano", "latitude": 45.8, "longitude": 11.7,
+        "predictions": [{"date": "2030-01-02", "values": [0.75] * 11}],
+    }
+    assert result.meta["sites"][1]["predictions"] == []
+
+    missing = await mcp.call_tool("show_forecast_map", {"query_date": "2030-01-03"})
+    assert missing.structuredContent["date"] == "2030-01-03"
+    assert missing.structuredContent["sites_with_forecast"] == 0
 
 
 @pytest.mark.asyncio

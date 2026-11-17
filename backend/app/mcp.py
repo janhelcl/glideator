@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
 from typing import Annotated, Dict, List, Optional, get_args
+from urllib.parse import urlencode
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import CallToolResult, TextContent, ToolAnnotations
@@ -22,6 +23,7 @@ READ_ONLY_ANNOTATIONS = ToolAnnotations(
 FORECAST_CHART_V1_URI = "ui://parra-glideator/forecast-chart-v1.html"
 FORECAST_CHART_URI = "ui://parra-glideator/forecast-chart-v2.html"
 SEASONALITY_CHART_URI = "ui://parra-glideator/seasonality-chart-v1.html"
+FORECAST_MAP_URI = "ui://parra-glideator/forecast-map-v1.html"
 CHART_RESOURCE_META = {"ui": {"prefersBorder": True, "csp": {}}}
 MONTH_NAMES = (
     "January", "February", "March", "April", "May", "June",
@@ -52,6 +54,16 @@ class SiteSeasonalityChart(BaseModel):
     site_name: str
     metric: schemas.XcMetric
     months: list[SeasonalityMonth]
+
+
+class ForecastMapSummary(BaseModel):
+    date: Optional[date]
+    metric: schemas.XcMetric
+    available_dates: list[date]
+    site_count: int
+    sites_with_forecast: int
+    focus_site_id: Optional[int]
+    map_url: str
 
 
 class PublicSiteResources(BaseModel):
@@ -128,6 +140,22 @@ def forecast_chart_resource() -> str:
 )
 def seasonality_chart_resource() -> str:
     return Path(__file__).with_name("mcp_ui").joinpath("seasonality_chart_v1.html").read_text(encoding="utf-8")
+
+
+@mcp.resource(
+    FORECAST_MAP_URI,
+    name="forecast-map",
+    title="Parra-Glideator forecast map",
+    mime_type="text/html;profile=mcp-app",
+    meta={
+        "ui": {
+            "prefersBorder": True,
+            "csp": {"resourceDomains": ["https://tile.openstreetmap.org"]},
+        },
+    },
+)
+def forecast_map_resource() -> str:
+    return Path(__file__).with_name("mcp_ui").joinpath("forecast_map_v1.html").read_text(encoding="utf-8")
 
 
 @mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
@@ -379,6 +407,72 @@ async def show_site_forecast_chart(
     return CallToolResult(
         content=[TextContent(type="text", text="\n".join(summary))],
         structuredContent=chart.model_dump(mode="json"),
+    )
+
+
+@mcp.tool(
+    title="Show paragliding forecast map",
+    annotations=READ_ONLY_ANNOTATIONS,
+    meta={"ui": {"resourceUri": FORECAST_MAP_URI}},
+)
+@track_mcp_tool("show_forecast_map")
+async def show_forecast_map(
+    query_date: Annotated[Optional[date], Field(description="Initial forecast date in YYYY-MM-DD format.")] = None,
+    metric: Annotated[schemas.XcMetric, Field(description="Initial XC threshold. XC0 means any flight.")] = "XC0",
+    focus_site_id: Annotated[Optional[int], Field(description="Optional site ID to center the map on.")] = None,
+) -> Annotated[CallToolResult, ForecastMapSummary]:
+    """Use this when the user wants to see paragliding flight potential on a map.
+
+    Shows color-coded probabilities for the same sites as the public Glideator map.
+    Users can switch forecast dates and XC thresholds or tap a site for its details.
+    If a user named a site to center on, resolve it with find_sites first.
+    Use plan_trip for ranked results or a distance-limited itinerary.
+    """
+    async with AsyncSessionLocal() as db:
+        sites = await crud.get_sites_with_predictions(db, limit=1000)
+
+    dates = sorted({prediction.date for site in sites for prediction in site.predictions})
+    selected_date = query_date or (dates[0] if dates else None)
+    focus = next((site for site in sites if site.site_id == focus_site_id), None)
+    if focus_site_id is not None and focus is None:
+        raise ValueError(f"No paragliding site found for site ID {focus_site_id}")
+
+    params = {"metric": metric}
+    if selected_date:
+        params["date"] = selected_date.isoformat()
+    if focus:
+        params.update(lat=f"{focus.latitude:.4f}", lng=f"{focus.longitude:.4f}", zoom="8")
+    map_url = f"https://www.parra-glideator.com/?{urlencode(params)}"
+    sites_with_forecast = sum(
+        any(prediction.date == selected_date for prediction in site.predictions) for site in sites
+    )
+    summary = ForecastMapSummary(
+        date=selected_date,
+        metric=metric,
+        available_dates=dates,
+        site_count=len(sites),
+        sites_with_forecast=sites_with_forecast,
+        focus_site_id=focus_site_id,
+        map_url=map_url,
+    )
+    if selected_date in dates:
+        message = f"Parra-Glideator {metric} forecast map for {selected_date}: {sites_with_forecast} sites with forecasts."
+    else:
+        period = f" for {selected_date}" if selected_date else ""
+        message = f"No map forecasts are available{period}."
+
+    # The widget gets the entire public date/threshold grid. Keep model-visible output compact.
+    fields = {
+        "site_id": True,
+        "name": True,
+        "latitude": True,
+        "longitude": True,
+        "predictions": {"__all__": {"date", "values"}},
+    }
+    return CallToolResult(
+        content=[TextContent(type="text", text=f"{message}\nOpen the map on Glideator: {map_url}")],
+        structuredContent=summary.model_dump(mode="json"),
+        _meta={"sites": [site.model_dump(mode="json", include=fields) for site in sites]},
     )
 
 

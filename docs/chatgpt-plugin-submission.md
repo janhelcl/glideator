@@ -4,7 +4,7 @@ This document is the source of truth for submitting the existing Parra-Glideator
 
 ## Technical shape
 
-- **Plugin type:** MCP tools with inline forecast and seasonality charts
+- **Plugin type:** MCP tools with inline forecast and seasonality charts and an interactive forecast map
 - **MCP URL:** `https://www.parra-glideator.com/mcp`
 - **Authentication:** none; public read-only data
 - **Primary capability:** rank and compare paragliding sites using forecast-derived flight/XC potential and historical fallback data
@@ -27,6 +27,7 @@ Every tool is read-only and accesses Parra-Glideator data without creating, upda
 | `get_site_resources` | Return already-curated local links | `true` | `false` | `false` |
 | `get_site_seasonal_stats` | Return historical monthly XC-activity statistics | `true` | `false` | `false` |
 | `show_site_seasonality_chart` | Show historical average flight days per month with an XC threshold control | `true` | `false` | `false` |
+| `show_forecast_map` | Plot forecast probabilities on the main site map, with date and XC threshold controls | `true` | `false` | `false` |
 | `get_site_predictions` | Return forecast-derived XC-activity probabilities | `true` | `false` | `false` |
 | `show_site_forecast_chart` | Show those probabilities with date and XC threshold controls | `true` | `false` | `false` |
 | `get_site_takeoffs_and_landings` | Return stored launch/landing metadata | `true` | `false` | `false` |
@@ -161,7 +162,17 @@ The website and widget share the D3 renderer in `frontend/src/components/forecas
 
 **Fixture/data:** No login. Replay on web and Android after the plugin scan publishes the new tool.
 
-The Season tab and seasonality widget share `frontend/src/components/seasonalityChart.js`. After editing the renderer or widget sources, run `npm run build:mcp-seasonality` in `frontend` and commit the regenerated HTML. Rebuild both widgets after changing the shared `frontend/mcp-ui/chartHost.js` bridge.
+The Season tab and seasonality widget share `frontend/src/components/seasonalityChart.js`. After editing the renderer or widget sources, run `npm run build:mcp-seasonality` in `frontend` and commit the regenerated HTML.
+
+### Positive 9 — interactive forecast map
+
+**Prompt:** `Show me the paragliding forecast map around Bassano for 50+ XC points this Saturday.`
+
+**Expected behavior:** Call `find_sites` and `show_forecast_map` with Bassano's site ID as the focus, the requested date, and `metric: "XC50"`. Verify that the map centers on Bassano, changing the date or threshold refreshes marker colors, and tapping a marker shows its probability and a link to the site forecast. The map includes the public forecast locations. A client without MCP Apps UI receives a link to Glideator's map.
+
+**Fixture/data:** No login. Choose a Saturday within the current forecast horizon. Verify OpenStreetMap tiles and attribution, zoom, and the optional fullscreen control in ChatGPT on web and Android. When tiles fail to load, site markers and the Glideator link remain available.
+
+The map widget shares the website's Leaflet marker renderer in `frontend/src/components/forecastMapMarkers.js`. After editing the renderer or widget sources, run `npm run build:mcp-map` in `frontend` and commit the regenerated HTML. Rebuild all three widgets after changing `frontend/mcp-ui/chartHost.js`.
 
 ## Required negative review test cases
 
@@ -216,7 +227,7 @@ Do not invent or pre-populate a token in source control.
 5. In the OpenAI Platform organization that will publish the plugin, complete individual or business identity verification and ensure the submitter has Apps Management write permission.
 6. Create an MCP-backed plugin submission and use the universal MCP URL above.
 7. Enter the listing copy, initial release notes, policy URLs, and `frontend/public/logo512.png` from this document.
-8. Use Scan Tools and verify the ten tools, their input/output schemas, server instructions, and the three required annotations.
+8. Use Scan Tools and verify the eleven tools, their input/output schemas, server instructions, and the three required annotations.
 9. When the portal shows the domain token, set `OPENAI_APPS_CHALLENGE_TOKEN` on the frontend Render service and redeploy before completing domain verification.
 10. Add at least five positive and three negative test cases above, choose the intended country availability, complete the policy attestations, and submit for review.
 
@@ -233,7 +244,7 @@ The public submission itself must submit the MCP server through the OpenAI plugi
 - [ ] Backend MCP changes deployed
 - [ ] Frontend legal/support pages deployed
 - [ ] `https://www.parra-glideator.com/mcp` connects from ChatGPT Developer mode
-- [ ] Tool scan shows all ten tools and the forecast and seasonality chart resources
+- [ ] Tool scan shows all eleven tools and the three UI resources used by tools
 - [ ] Every tool shows `readOnlyHint=true`
 - [ ] Every tool shows `destructiveHint=false`
 - [ ] Every tool shows `openWorldHint=false`
