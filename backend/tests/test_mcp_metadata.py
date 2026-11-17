@@ -8,7 +8,7 @@ import pytest
 os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/glideator")
 
 from app import crud, mcp_analytics, schemas
-from app.mcp import FORECAST_CHART_URI, _normalize_site_name, _serialize_site_info, mcp
+from app.mcp import FORECAST_CHART_URI, FORECAST_CHART_V1_URI, _normalize_site_name, _serialize_site_info, mcp
 
 
 EXPECTED_TOOLS = {
@@ -119,6 +119,10 @@ async def test_forecast_chart_advertises_readable_mcp_app_resource():
     assert resource.mime_type == "text/html;profile=mcp-app"
     assert resource.meta["ui"]["csp"] == {}
     assert "ui/notifications/tool-result" in resource.content
+    assert 'id="flight-quality"' in resource.content
+    assert 'id="flight-forecast"' in resource.content
+    legacy_resource, = await mcp.read_resource(FORECAST_CHART_V1_URI)
+    assert legacy_resource.mime_type == "text/html;profile=mcp-app"
 
 
 @pytest.mark.asyncio

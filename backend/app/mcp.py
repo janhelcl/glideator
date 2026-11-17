@@ -19,7 +19,9 @@ READ_ONLY_ANNOTATIONS = ToolAnnotations(
     destructiveHint=False,
     openWorldHint=False,
 )
-FORECAST_CHART_URI = "ui://parra-glideator/forecast-chart-v1.html"
+FORECAST_CHART_V1_URI = "ui://parra-glideator/forecast-chart-v1.html"
+FORECAST_CHART_URI = "ui://parra-glideator/forecast-chart-v2.html"
+FORECAST_CHART_RESOURCE_META = {"ui": {"prefersBorder": True, "csp": {}}}
 
 
 class ChartDay(BaseModel):
@@ -79,14 +81,25 @@ mcp = FastMCP(
 
 
 @mcp.resource(
-    FORECAST_CHART_URI,
-    name="forecast-chart",
+    FORECAST_CHART_V1_URI,
+    name="forecast-chart-v1",
     title="Parra-Glideator forecast chart",
     mime_type="text/html;profile=mcp-app",
-    meta={"ui": {"prefersBorder": True, "csp": {}}},
+    meta=FORECAST_CHART_RESOURCE_META,
+)
+def forecast_chart_v1_resource() -> str:
+    return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart.html").read_text(encoding="utf-8")
+
+
+@mcp.resource(
+    FORECAST_CHART_URI,
+    name="forecast-chart",
+    title="Parra-Glideator forecast charts",
+    mime_type="text/html;profile=mcp-app",
+    meta=FORECAST_CHART_RESOURCE_META,
 )
 def forecast_chart_resource() -> str:
-    return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart.html").read_text(encoding="utf-8")
+    return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart_v2.html").read_text(encoding="utf-8")
 
 
 @mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
@@ -279,7 +292,8 @@ async def show_site_forecast_chart(
 ) -> Annotated[CallToolResult, SiteForecastChart]:
     """Use this when the user asks to show, plot, or visualize a paragliding site's forecast.
 
-    Shows daily forecast-derived probabilities with interactive date and XC threshold controls.
+    Shows a bar chart of all XC thresholds for a selected day and a line chart of the selected
+    threshold across the forecast dates, with interactive date and threshold controls.
     Use get_site_predictions for a data-only lookup. A probability estimates flight activity and
     does not determine whether flying is safe or legal.
     """

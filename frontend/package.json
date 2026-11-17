@@ -39,6 +39,8 @@
     "start:ssr": "node server/index.js",
     "build:client": "vite build --outDir dist/client",
     "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist/server",
+    "build:mcp-forecast": "node scripts/build-mcp-forecast.mjs",
+    "check:mcp-forecast": "node scripts/build-mcp-forecast.mjs --check",
     "build": "SITEMAP_BASE_URL=https://www.parra-glideator.com node scripts/generate-sitemap.mjs && npm run build:client && npm run build:ssr",
     "build:e2e": "npm run build:client && npm run build:ssr",
     "test": "vitest run",

@@ -146,9 +146,11 @@ All positive cases use the public production dataset and require no account or c
 
 **Prompt:** `Show me the Bassano forecast chart for 50+ XC points.`
 
-**Expected behavior:** Call `find_sites` for Bassano, then `show_site_forecast_chart` with the resolved site ID and `metric: "XC50"`. The chart shows available forecast dates in order. Selecting a different date or threshold updates the display without a new tool call. Compare the percentages with the Bassano forecast on the website using the same dates and threshold. A client without MCP Apps UI can read the same numbers from the tool's text or structured output.
+**Expected behavior:** Call `find_sites` for Bassano, then `show_site_forecast_chart` with the resolved site ID and `metric: "XC50"`. The green bar chart shows the 11 XC thresholds for the selected day. The blue line chart shows XC50 across the available forecast dates. Change the date and verify that the bars and selected point update. Change the threshold and verify that the line and selected bar update. The controls use the initial tool result locally. A client without MCP Apps UI can read the same numbers from the tool's text or structured output.
 
 **Fixture/data:** No login. Use the live Bassano forecast. After deploying, rescan the connected MCP server in the existing plugin's submission dashboard. When the chart tool is live, replay this case in ChatGPT on web and Android.
+
+The website and widget share the D3 renderer in `frontend/src/components/forecastCharts.js`. After editing that renderer or the widget sources, run `npm run build:mcp-forecast` in `frontend` and commit the regenerated HTML in `backend/app/mcp_ui`. The backend serves the older resource as well so an installed plugin can still load it during the rescan.
 
 ## Required negative review test cases
 
