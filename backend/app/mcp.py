@@ -1,9 +1,11 @@
 import unicodedata
-from datetime import datetime
-from typing import Dict, List, Literal, Optional
+from collections import defaultdict
+from datetime import date, datetime
+from pathlib import Path
+from typing import Annotated, Dict, List, Optional, get_args
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import ToolAnnotations
+from mcp.types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import BaseModel, Field, TypeAdapter
 
 from app import crud, schemas
@@ -17,6 +19,20 @@ READ_ONLY_ANNOTATIONS = ToolAnnotations(
     destructiveHint=False,
     openWorldHint=False,
 )
+FORECAST_CHART_URI = "ui://parra-glideator/forecast-chart-v1.html"
+
+
+class ChartDay(BaseModel):
+    date: date
+    probabilities: dict[schemas.XcMetric, float]
+
+
+class SiteForecastChart(BaseModel):
+    site_id: int
+    site_name: str
+    metric: schemas.XcMetric
+    selected_date: Optional[date]
+    days: list[ChartDay]
 
 
 class PublicSiteResources(BaseModel):
@@ -54,9 +70,23 @@ mcp = FastMCP(
     # Remote MCP clients should not depend on an in-memory session surviving
     # proxies, reconnects, or deploys. JSON responses also avoid an SSE stream
     # for ordinary read-only tool calls.
+    # Match Uvicorn's public bind address. FastMCP's loopback default restricts
+    # Host headers to local addresses, including when mounted behind our proxy.
+    host="0.0.0.0",
     stateless_http=True,
     json_response=True,
 )
+
+
+@mcp.resource(
+    FORECAST_CHART_URI,
+    name="forecast-chart",
+    title="Parra-Glideator forecast chart",
+    mime_type="text/html;profile=mcp-app",
+    meta={"ui": {"prefersBorder": True, "csp": {}}},
+)
+def forecast_chart_resource() -> str:
+    return Path(__file__).with_name("mcp_ui").joinpath("forecast_chart.html").read_text(encoding="utf-8")
 
 
 @mcp.tool(title="Find paragliding sites", annotations=READ_ONLY_ANNOTATIONS)
@@ -236,6 +266,58 @@ async def get_site_predictions(
     return result
 
 
+@mcp.tool(
+    title="Show site forecast chart",
+    annotations=READ_ONLY_ANNOTATIONS,
+    meta={"ui": {"resourceUri": FORECAST_CHART_URI}},
+)
+@track_mcp_tool("show_site_forecast_chart")
+async def show_site_forecast_chart(
+    site_id: Annotated[int, Field(description="Parra-Glideator site ID. Use find_sites when unknown.")],
+    metric: Annotated[schemas.XcMetric, Field(description="Initial XC threshold. XC0 means any flight.")] = "XC0",
+    query_date: Annotated[Optional[date], Field(description="Initially selected date, in YYYY-MM-DD format.")] = None,
+) -> Annotated[CallToolResult, SiteForecastChart]:
+    """Use this when the user asks to show, plot, or visualize a paragliding site's forecast.
+
+    Shows daily forecast-derived probabilities with interactive date and XC threshold controls.
+    Use get_site_predictions for a data-only lookup. A probability estimates flight activity and
+    does not determine whether flying is safe or legal.
+    """
+    async with AsyncSessionLocal() as db:
+        site = await crud.get_site(db, site_id)
+        if not site:
+            raise ValueError(f"No paragliding site found for site ID {site_id}")
+        predictions = await crud.get_predictions(db, site_id)
+
+    metrics = get_args(schemas.XcMetric)
+    by_date = defaultdict(dict)
+    for prediction in predictions:
+        if prediction.metric in metrics and 0 <= prediction.value <= 1:
+            by_date[prediction.date][prediction.metric] = prediction.value
+
+    days = [ChartDay(date=day, probabilities=values) for day, values in sorted(by_date.items())]
+    selected_date = query_date or (days[0].date if days else None)
+    chart = SiteForecastChart(
+        site_id=site_id, site_name=site.name, metric=metric, selected_date=selected_date, days=days
+    )
+    if days:
+        label = "any flight" if metric == "XC0" else f"{metric[2:]}+ XC points"
+        summary = [f"{site.name} · Forecast-derived chance of {label}"]
+        if selected_date not in by_date:
+            summary.append(f"No forecast is available for {selected_date.isoformat()}.")
+        for day in days:
+            value = day.probabilities.get(metric)
+            probability = "No data" if value is None else f"{int(value * 100 + 0.5)}%"
+            summary.append(f"{day.date.isoformat()}  {probability}")
+    else:
+        summary = [f"No flight activity forecast is currently available for {site.name}."]
+    summary.append("Check current weather and local conditions before flying.")
+    return CallToolResult(
+        content=[TextContent(type="text", text="\n".join(summary))],
+        structuredContent=chart.model_dump(mode="json"),
+    )
+
+
 @mcp.tool(title="Get site takeoffs and landings", annotations=READ_ONLY_ANNOTATIONS)
 @track_mcp_tool("get_site_takeoffs_and_landings")
 async def get_site_takeoffs_and_landings(site_id: int) -> List[schemas.Spot]:
@@ -260,19 +342,7 @@ async def get_site_takeoffs_and_landings(site_id: int) -> List[schemas.Spot]:
 async def plan_trip(
     start_date: str,
     end_date: str,
-    metric: Literal[
-        "XC0",
-        "XC10",
-        "XC20",
-        "XC30",
-        "XC40",
-        "XC50",
-        "XC60",
-        "XC70",
-        "XC80",
-        "XC90",
-        "XC100",
-    ] = "XC0",
+    metric: schemas.XcMetric = "XC0",
     user_latitude: Optional[float] = None,
     user_longitude: Optional[float] = None,
     max_distance_km: Optional[float] = None,

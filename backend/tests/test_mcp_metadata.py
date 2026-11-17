@@ -1,12 +1,14 @@
 import os
+from datetime import date
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
 os.environ.setdefault("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/glideator")
 
-from app import schemas
-from app.mcp import _normalize_site_name, _serialize_site_info, mcp
+from app import crud, mcp_analytics, schemas
+from app.mcp import FORECAST_CHART_URI, _normalize_site_name, _serialize_site_info, mcp
 
 
 EXPECTED_TOOLS = {
@@ -16,6 +18,7 @@ EXPECTED_TOOLS = {
     "get_site_resources",
     "get_site_seasonal_stats",
     "get_site_predictions",
+    "show_site_forecast_chart",
     "get_site_takeoffs_and_landings",
     "plan_trip",
 }
@@ -104,6 +107,48 @@ async def test_site_resources_exposes_structured_public_output():
     assert "meteostation_urls" in properties
     assert "source_run_id" not in properties
     assert "run_extracted_at" not in properties
+
+
+@pytest.mark.asyncio
+async def test_forecast_chart_advertises_readable_mcp_app_resource():
+    tools = {tool.name: tool for tool in await mcp.list_tools()}
+    assert tools["show_site_forecast_chart"].meta["ui"]["resourceUri"] == FORECAST_CHART_URI
+    assert tools["get_site_predictions"].meta is None
+
+    resource, = await mcp.read_resource(FORECAST_CHART_URI)
+    assert resource.mime_type == "text/html;profile=mcp-app"
+    assert resource.meta["ui"]["csp"] == {}
+    assert "ui/notifications/tool-result" in resource.content
+
+
+@pytest.mark.asyncio
+async def test_forecast_chart_returns_sorted_probabilities_and_text(monkeypatch):
+    first, second = date(2030, 1, 1), date(2030, 1, 2)
+    monkeypatch.setattr(crud, "get_site", AsyncMock(return_value=SimpleNamespace(name="Raná")))
+    monkeypatch.setattr(crud, "get_predictions", AsyncMock(return_value=[
+        SimpleNamespace(date=second, metric="XC0", value=0.4),
+        SimpleNamespace(date=first, metric="XC50", value=0.0),
+        SimpleNamespace(date=first, metric="XC0", value=0.67),
+    ]))
+    monkeypatch.setattr(mcp_analytics, "_record_mcp_tool_event", AsyncMock())
+
+    result = await mcp.call_tool(
+        "show_site_forecast_chart", {"site_id": 42, "metric": "XC50", "query_date": "2030-01-03"}
+    )
+
+    assert result.structuredContent == {
+        "site_id": 42,
+        "site_name": "Raná",
+        "metric": "XC50",
+        "selected_date": "2030-01-03",
+        "days": [
+            {"date": "2030-01-01", "probabilities": {"XC0": 0.67, "XC50": 0.0}},
+            {"date": "2030-01-02", "probabilities": {"XC0": 0.4}},
+        ],
+    }
+    assert "2030-01-01  0%" in result.content[0].text
+    assert "2030-01-02  No data" in result.content[0].text
+    assert "No forecast is available for 2030-01-03" in result.content[0].text
 
 
 @pytest.mark.asyncio
